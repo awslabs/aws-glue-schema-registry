@@ -1,0 +1,413 @@
+<?xml version="1.0"?>
+<!DOCTYPE module PUBLIC
+        "-//Puppy Crawl//DTD Check Configuration 1.3//EN"
+        "http://www.puppycrawl.com/dtds/configuration_1_3.dtd">
+<!--
+/*
+ * Copyright 2019 Amazon.com, Inc. or its affiliates.
+ * Licensed under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+  -->
+<module name="Checker">
+
+    <!-- [Miscellaneous] -->
+    <module name="Translation"> <!-- Checks that property files contain the same keys. -->
+        <property name="severity" value="${checkstyle.translation.severity}" default="error"/>
+        <property name="fileExtensions" value="${checkstyle.translation.fileextensions}" default="properties"/>
+        <property name="baseName" value="${checkstyle.translation.basename}" default="^messages.*$"/>
+        <property name="requiredTranslations" value="${checkstyle.translation.requiredtranslations}" default=""/>
+    </module>
+
+    <!-- [Regexp] -->
+    <module name="RegexpSingleline">
+        <property name="severity" value="${checkstyle.regexpsingleline.trailingspaces.severity}" default="error"/>
+        <property name="ignoreCase" value="${checkstyle.regexpsingleline.trailingspaces.ignorecase}" default="false"/>
+        <property name="minimum" value="${checkstyle.regexpsingleline.trailingspaces.minimum}" default="0"/>
+        <property name="maximum" value="${checkstyle.regexpsingleline.trailingspaces.maximum}" default="0"/>
+        <property name="fileExtensions" value="${checkstyle.regexpsingleline.trailingspaces.fileextensions}" default=""/>
+        <property name="format" value="\s+$"/>
+        <property name="message" value="Line has trailing spaces."/>
+    </module>
+
+    <!-- [Size Violations] Check for long source files -->
+    <module name="FileLength">
+        <property name="severity" value="${checkstyle.filelength.severity}" default="info"/>
+        <property name="max" value="${checkstyle.filelength.max}" default="300"/>
+        <property name="fileExtensions" value="${checkstyle.filelength.fileextensions}" default=""/>
+    </module>
+
+    <!-- Check for Windows newlines. The `checkstyle` target disables this check when running on Windows. -->
+    <module name="RegexpMultiline">
+        <property name="severity" value="${checkstyle.crlf.severity}" default="error"/>
+        <property name="message" value="File contains carriage return (Windows newlines). Run `dos2unix` to convert this file to Unix line endings."/>
+        <property name="format" value="\r"/>
+    </module>
+
+    <!-- [Filters] Suppression Filters to avoid Checkstyle checks on particular files & methods. -->
+    <!-- See http://checkstyle.sourceforge.net/config_filters.html -->
+    <module name="SuppressionFilter">
+        <property name="file" value="${checkstyle.suppression.filter}" />
+        <property name="optional" value="${checkstyle.suppression.optional}" default="false" />
+    </module>
+
+    <module name="SuppressWarningsFilter"/>
+
+    <module name="TreeWalker">
+        <property name="tabWidth" value="${checkstyle.treewalker.tabwidth}" default="4"/>
+
+        <!-- Make annotations available to suppress warnings, such as:
+            @SuppressWarnings({"checkstyle:ParameterNumber", "checkstyle:MethodLength"})
+            public void someLongMethod() throws Exception {
+        -->
+        <module name="SuppressWarningsHolder" />
+
+        <!-- [Annotations] Checks annotation tags -->
+        <!-- See http://checkstyle.sourceforge.net/config_annotation.html -->
+
+        <!-- [Block Checks] Checks those {}'s. -->
+        <!-- See http://checkstyle.sourceforge.net/config_blocks.html -->
+        <module name="EmptyBlock">
+            <property name="severity" value="${checkstyle.emptyblock.severity}" default="error"/>
+            <property name="option" value="${checkstyle.emptyblock.option}" default="text"/>
+            <property name="tokens" value="${checkstyle.emptyblock.tokens}" default="LITERAL_WHILE, LITERAL_TRY, LITERAL_FINALLY, LITERAL_DO, LITERAL_IF, LITERAL_ELSE, LITERAL_FOR, INSTANCE_INIT, STATIC_INIT, LITERAL_SWITCH, LITERAL_SYNCHRONIZED"/>
+        </module>
+        <module name="LeftCurly">
+            <property name="severity" value="${checkstyle.leftcurly.severity}" default="error"/>
+            <property name="option" value="${checkstyle.leftcurly.option}" default="eol"/>
+            <property name="ignoreEnums" value="${checkstyle.leftcurly.ignoreenums}" default="true"/>
+            <property name="tokens" value="${checkstyle.leftcurly.tokens}" default="INTERFACE_DEF, CLASS_DEF, ANNOTATION_DEF, ENUM_DEF, CTOR_DEF, METHOD_DEF, ENUM_CONSTANT_DEF, LITERAL_WHILE, LITERAL_TRY, LITERAL_CATCH, LITERAL_FINALLY, LITERAL_SYNCHRONIZED, LITERAL_SWITCH, LITERAL_DO, LITERAL_IF, LITERAL_ELSE, LITERAL_FOR, STATIC_INIT, OBJBLOCK, LAMBDA"/>
+        </module>
+        <module name="NeedBraces">
+            <property name="severity" value="${checkstyle.needbraces.severity}" default="error"/>
+            <property name="allowSingleLineStatement" value="${checkstyle.needbraces.allowsinglelinestatement}" default="true"/>
+            <property name="allowEmptyLoopBody" value="${checkstyle.needbraces.allowemptyloopbody}" default="true"/>
+            <property name="tokens" value="${checkstyle.needbraces.tokens}" default="LITERAL_DO, LITERAL_ELSE, LITERAL_FOR, LITERAL_IF, LITERAL_WHILE"/>
+        </module>
+        <module name="RightCurly">
+            <property name="severity" value="${checkstyle.rightcurly.severity}" default="error"/>
+            <property name="option" value="${checkstyle.rightcurly.option}" default="same"/>
+            <property name="tokens" value="${checkstyle.rightcurly.tokens}" default="LITERAL_TRY, LITERAL_CATCH, LITERAL_FINALLY, LITERAL_IF, LITERAL_ELSE"/>
+        </module>
+
+        <!-- [Class Design] Checks for class design. -->
+        <!-- See http://checkstyle.sourceforge.net/config_design.html -->
+        <module name="InterfaceIsType">
+            <property name="severity" value="${checkstyle.interfaceistype.severity}" default="error"/>
+            <property name="allowMarkerInterfaces" value="${checkstyle.interfaceistype.allowmarkerinterfaces}" default="true"/>
+        </module>
+        <module name="VisibilityModifier">
+            <property name="severity" value="${checkstyle.visibilitymodifier.severity}" default="error"/>
+            <property name="packageAllowed" value="${checkstyle.visibilitymodifier.packageallowed}" default="false"/>
+            <property name="protectedAllowed" value="${checkstyle.visibilitymodifier.protectedallowed}" default="false"/>
+            <property name="publicMemberPattern" value="${checkstyle.visibilitymodifier.publicmemberpattern}" default="^serialVersionUID$"/>
+            <property name="allowPublicFinalFields" value="${checkstyle.visibilitymodifier.allowpublicfinalfields}" default="true"/>
+            <property name="allowPublicImmutableFields" value="${checkstyle.visibilitymodifier.allowpublicimmutablefields}" default="true"/>
+            <property name="immutableClassCanonicalNames" value="${checkstyle.visibilitymodifier.immutableclasscanonicalnames}" default="java.lang.String, java.lang.Integer, java.lang.Byte, java.lang.Character, java.lang.Short, java.lang.Boolean, java.lang.Long, java.lang.Double, java.lang.Float, java.lang.StackTraceElement, java.math.BigInteger, java.math.BigDecimal, java.io.File, java.util.Locale, java.util.UUID, java.net.URL, java.net.URI, java.net.Inet4Address, java.net.Inet6Address, java.net.InetSocketAddress"/>
+            <property name="ignoreAnnotationCanonicalNames" value="${checkstyle.visibilitymodifier.ignoreannotationcanonicalnames}" default="org.junit.Rule, org.junit.ClassRule, com.google.common.annotations.VisibleForTesting"/>
+        </module>
+
+        <!-- [Coding] Checks for common coding problems. -->
+        <!-- See http://checkstyle.sourceforge.net/config_coding.html -->
+        <module name="EmptyStatement">
+            <property name="severity" value="${checkstyle.emptystatement.severity}" default="error"/>
+        </module>
+        <module name="EqualsHashCode">
+            <property name="severity" value="${checkstyle.equalshashcode.severity}" default="error"/>
+        </module>
+        <module name="HiddenField">
+            <property name="severity" value="${checkstyle.hiddenfield.severity}" default="error"/>
+            <property name="ignoreFormat" value="${checkstyle.hiddenfield.ignoreformat}" default=""/>
+            <property name="ignoreConstructorParameter" value="${checkstyle.hiddenfield.ignoreconstructorparameter}" default="true"/>
+            <property name="ignoreSetter" value="${checkstyle.hiddenfield.ignoresetter}" default="true"/>
+            <property name="setterCanReturnItsClass" value="${checkstyle.hiddenfield.settercanreturnitsclass}" default="false"/>
+            <property name="ignoreAbstractMethods" value="${checkstyle.hiddenfield.ignoreabstractmethods}" default="false"/>
+            <property name="tokens" value="${checkstyle.hiddenfield.tokens}" default="VARIABLE_DEF, PARAMETER_DEF, LAMBDA"/>
+        </module>
+        <module name="IllegalInstantiation">
+            <property name="severity" value="${checkstyle.illegalinstantiation.severity}" default="error"/>
+            <property name="classes" value="${checkstyle.illegalinstantiation.classes}" default=""/>
+            <property name="tokens" value="${checkstyle.illegalinstantiation.tokens}" default="CLASS_DEF"/>
+        </module>
+        <module name="InnerAssignment">
+            <property name="severity" value="${checkstyle.innerassignment.severity}" default="error"/>
+        </module>
+        <module name="MagicNumber">
+            <property name="severity" value="${checkstyle.magicnumber.severity}" default="ignore"/>
+            <property name="ignoreNumbers" value="${checkstyle.magicnumber.ignoreNumbers}" default="-1, 0, 1, 2"/>
+            <property name="ignoreHashCodeMethod" value="${checkstyle.magicnumber.ignorehashcodemethod}" default="true"/>
+            <property name="ignoreAnnotation" value="${checkstyle.magicnumber.ignoreannotation}" default="true"/>
+            <property name="ignoreFieldDeclaration" value="${checkstyle.magicnumber.ignorefielddeclaration}" default="true"/>
+            <property name="constantWaiverParentToken" value="${checkstyle.magicnumber.constantwaiverparenttoken}" default="ASSIGN, ARRAY_INIT, EXPR, UNARY_PLUS, UNARY_MINUS, TYPECAST, ELIST, LITERAL_NEW, METHOD_CALL, STAR, DIV, PLUS, MINUS"/>
+            <property name="tokens" value="${checkstyle.magicnumber.tokens}" default="NUM_DOUBLE, NUM_FLOAT, NUM_INT, NUM_LONG"/>
+        </module>
+        <module name="MissingSwitchDefault">
+            <property name="severity" value="${checkstyle.missingswitchdefault.severity}" default="error"/>
+        </module>
+        <module name="NoFinalizer">
+            <property name="severity" value="${checkstyle.nofinalizer.severity}" default="error"/>
+        </module>
+        <module name="OneStatementPerLine">
+            <property name="severity" value="${checkstyle.onestatementperline.severity}" default="error"/>
+        </module>
+        <module name="SimplifyBooleanExpression">
+            <property name="severity" value="${checkstyle.simplifybooleanexpression.severity}" default="error"/>
+        </module>
+        <module name="SimplifyBooleanReturn">
+            <property name="severity" value="${checkstyle.simplifybooleanreturn.severity}" default="error"/>
+        </module>
+
+        <!-- [Headers] Checks that source files begin with specified headers. -->
+        <!-- See http://checkstyle.sourceforge.net/config_header.html#Content -->
+
+        <!-- [Imports] Checks for import statements. -->
+        <!-- See http://checkstyle.sourceforge.net/config_imports.html -->
+        <module name="AvoidStarImport">
+            <property name="severity" value="${checkstyle.avoidstarimport.severity}" default="error"/>
+            <property name="excludes" value="${checkstyle.avoidstarimport.excludes}" default=""/>
+            <property name="allowClassImports" value="${checkstyle.avoidstarimport.allowclassimports}" default="false"/>
+            <property name="allowStaticMemberImports" value="${checkstyle.avoidstarimport.allowstaticmemberimports}" default="false"/>
+        </module>
+        <module name="IllegalImport"> <!-- by default, rejects all sun.* packages -->
+            <property name="severity" value="${checkstyle.illegalimport.severity}" default="error"/>
+            <property name="illegalPkgs" value="${checkstyle.illegalimport.illegalpkgs}" default="sun"/>
+        </module>
+        <module name="RedundantImport">
+            <property name="severity" value="${checkstyle.redundantimport.severity}" default="error"/>
+        </module>
+        <module name="UnusedImports">
+            <property name="severity" value="${checkstyle.unusedimports.severity}" default="error"/>
+            <property name="processJavadoc" value="${checkstyle.unusedimports.processjavadoc}" default="true"/>
+        </module>
+
+        <!-- [Metrics] -->
+        <!-- See http://checkstyle.sourceforge.net/config_metrics.html -->
+
+        <!-- [Miscellaneous] -->
+        <!-- See http://checkstyle.sourceforge.net/config_misc.html -->
+        <module name="ArrayTypeStyle">
+            <property name="severity" value="${checkstyle.arraytypestyle.severity}" default="error"/>
+            <property name="javaStyle" value="${checkstyle.arraytypestyle.javastyle}" default="true"/>
+        </module>
+        <module name="FinalParameters">
+            <property name="severity" value="${checkstyle.finalparameters.severity}" default="ignore"/>
+            <property name="ignorePrimitiveTypes" value="${checkstyle.finalparameters.ignoreprimitivetypes}" default="false"/>
+            <property name="tokens" value="${checkstyle.finalparameters.tokens}" default="METHOD_DEF, CTOR_DEF"/>
+        </module>
+        <module name="TodoComment">
+            <property name="severity" value="${checkstyle.todocomment.severity}" default="info"/>
+            <property name="format" value="${checkstyle.todocomment.format}" default="(TODO)|(todo:)|(FIXME)|(fixme)"/>
+        </module>
+        <module name="UpperEll">
+            <property name="severity" value="${checkstyle.upperell.severity}" default="error"/>
+        </module>
+
+        <!-- [Modifiers] -->
+        <!-- See http://checkstyle.sourceforge.net/config_modifier.html -->
+        <module name="ModifierOrder">
+            <property name="severity" value="${checkstyle.modifierorder.severity}" default="error"/>
+        </module>
+        <module name="RedundantModifier">
+            <property name="severity" value="${checkstyle.redundantmodifier.severity}" default="error"/>
+            <property name="tokens" value="${checkstyle.redundantmodifier.tokens}" default="METHOD_DEF, VARIABLE_DEF, ANNOTATION_FIELD_DEF, INTERFACE_DEF, CTOR_DEF, CLASS_DEF, ENUM_DEF, RESOURCE"/>
+        </module>
+
+        <!-- [Naming Conventions] Checks that validate identifiers for particular code elements. -->
+        <!-- http://checkstyle.sourceforge.net/config_naming.html -->
+        <module name="ConstantName">
+            <property name="severity" value="${checkstyle.constantname.severity}" default="error"/>
+            <property name="format" value="${checkstyle.constantname.format}" default="^[A-Z][A-Z0-9]*(_[A-Z0-9]+)*$"/>
+            <property name="applyToPublic" value="${checkstyle.constantname.applytopublic}" default="true"/>
+            <property name="applyToProtected" value="${checkstyle.constantname.applytoprotected}" default="true"/>
+            <property name="applyToPackage" value="${checkstyle.constantname.applytopackage}" default="true"/>
+            <property name="applyToPrivate" value="${checkstyle.constantname.applytoprivate}" default="true"/>
+            <message key="name.invalidPattern"
+                     value="Constant name ''{0}'' must match pattern ''{1}''."/>
+        </module>
+        <module name="LocalFinalVariableName">
+            <property name="severity" value="${checkstyle.localfinalvariablename.severity}" default="error"/>
+            <property name="format" value="${checkstyle.localfinalvariablename.format}" default="^[a-z][a-zA-Z0-9]*$"/>
+            <property name="tokens" value="${checkstyle.localfinalvariablename.tokens}" default="VARIABLE_DEF, PARAMETER_DEF"/>
+            <message key="name.invalidPattern"
+                     value="Local final variable name ''{0}'' must match pattern ''{1}''."/>
+        </module>
+        <module name="LocalVariableName">
+            <property name="severity" value="${checkstyle.localvariablename.severity}" default="error"/>
+            <property name="format" value="${checkstyle.localvariablename.severity}" default="^[a-z][a-zA-Z0-9]*$"/>
+            <property name="allowOneCharVarInForLoop" value="${checkstyle.localvariablename.allowonecharvarinforloop}" default="false"/>
+            <message key="name.invalidPattern"
+                     value="Local variable name ''{0}'' must match pattern ''{1}''."/>
+        </module>
+        <module name="MemberName">
+            <property name="severity" value="${checkstyle.membername.severity}" default="error"/>
+            <property name="format" value="${checkstyle.membername.format}" default="^[a-z][a-zA-Z0-9]*$"/>
+            <property name="applyToPublic" value="${checkstyle.membername.applytopublic}" default="true"/>
+            <property name="applyToProtected" value="${checkstyle.membername.applytoprotected}" default="true"/>
+            <property name="applyToPackage" value="${checkstyle.membername.applytopackage}" default="true"/>
+            <property name="applyToPrivate" value="${checkstyle.membername.applytoprivate}" default="true"/>
+            <message key="name.invalidPattern"
+                     value="Member name ''{0}'' must match pattern ''{1}''."/>
+        </module>
+        <module name="MethodName">
+            <property name="id" value="MethodNameRegular"/>
+            <property name="severity" value="${checkstyle.methodname.severity}" default="error"/>
+            <property name="format" value="${checkstyle.methodname.format}" default="^[a-z][a-zA-Z0-9]*$"/>
+            <property name="allowClassName" value="${checkstyle.methodname.allowclassname}" default="false"/>
+            <property name="applyToPublic" value="${checkstyle.methodname.applytopublic}" default="true"/>
+            <property name="applyToProtected" value="${checkstyle.methodname.applytoprotected}" default="true"/>
+            <property name="applyToPackage" value="${checkstyle.methodname.applytopackage}" default="true"/>
+            <property name="applyToPrivate" value="${checkstyle.methodname.applytoprivate}" default="true"/>
+            <message key="name.invalidPattern"
+                     value="Method name ''{0}'' must match pattern ''{1}''."/>
+        </module>
+        <module name="MethodName">
+            <property name="id" value="MethodNameTest"/>
+            <property name="severity" value="${checkstyle.methodname.severity}" default="error"/>
+            <property name="format" value="${checkstyle.methodname.format}"
+                      default="^test[a-zA-Z0-9]*_[a-z][a-zA-Z0-9]*_[a-z][a-zA-Z0-9]*$"/>
+            <property name="allowClassName" value="${checkstyle.methodname.allowclassname}" default="false"/>
+            <property name="applyToPublic" value="${checkstyle.methodname.applytopublic}" default="true"/>
+            <property name="applyToProtected" value="${checkstyle.methodname.applytoprotected}" default="false"/>
+            <property name="applyToPackage" value="${checkstyle.methodname.applytopackage}" default="false"/>
+            <property name="applyToPrivate" value="${checkstyle.methodname.applytoprivate}" default="false"/>
+            <message key="name.invalidPattern"
+                     value="Method name ''{0}'' must match pattern ''{1}''."/>
+        </module>
+        <module name="PackageName">
+            <property name="severity" value="${checkstyle.packagename.severity}" default="error"/>
+            <property name="format" value="${checkstyle.packagename.format}" default="^[a-z]+(\.[a-zA-Z_][a-zA-Z0-9_]*)*$"/>
+            <message key="name.invalidPattern"
+                     value="Package name ''{0}'' must match pattern ''{1}''."/>
+        </module>
+        <module name="ParameterName">
+            <property name="severity" value="${checkstyle.parametername.severity}" default="error"/>
+            <property name="format" value="${checkstyle.parametername.format}" default="^[a-z][a-zA-Z0-9]*$"/>
+            <property name="ignoreOverridden" value="${checkstyle.parametername.ignoreoverridden}" default="false"/>
+            <property name="accessModifiers" value="${checkstyle.parametername.accessmodifiers}" default="public, protected, package, private"/>
+            <message key="name.invalidPattern"
+                     value="Parameter name ''{0}'' must match pattern ''{1}''."/>
+        </module>
+        <module name="StaticVariableName">
+            <property name="severity" value="${checkstyle.staticvariablename.severity}" default="error"/>
+            <property name="format" value="${checkstyle.staticvariablename.format}" default="^[a-z][a-zA-Z0-9]*$"/>
+            <property name="applyToPublic" value="${checkstyle.staticvariablename.applytopublic}" default="true"/>
+            <property name="applyToProtected" value="${checkstyle.staticvariablename.applytoprotected}" default="true"/>
+            <property name="applyToPackage" value="${checkstyle.staticvariablename.applytopackage}" default="true"/>
+            <property name="applyToPrivate" value="${checkstyle.staticvariablename.applytoprivate}" default="true"/>
+            <message key="name.invalidPattern"
+                     value="Static variable name ''{0}'' must match pattern ''{1}''."/>
+        </module>
+        <module name="TypeName">
+            <property name="severity" value="${checkstyle.typename.severity}" default="error"/>
+            <property name="format" value="${checkstyle.typename.format}" default="^[A-Z][a-zA-Z0-9]*$"/>
+            <property name="applyToPublic" value="${checkstyle.typename.applytopublic}" default="true"/>
+            <property name="applyToProtected" value="${checkstyle.typename.applytoprotected}" default="true"/>
+            <property name="applyToPackage" value="${checkstyle.typename.applytopackage}" default="true"/>
+            <property name="applyToPrivate" value="${checkstyle.typename.applytoprivate}" default="true"/>
+            <property name="tokens" value="${checkstyle.typename.tokens}" default="CLASS_DEF, INTERFACE_DEF, ENUM_DEF, ANNOTATION_DEF"/>
+            <message key="name.invalidPattern"
+                     value="Type name ''{0}'' must match pattern ''{1}''."/>
+        </module>
+
+        <!-- [Regexp] -->
+        <!-- See http://checkstyle.sourceforge.net/config_regexp.html -->
+
+        <!-- [Size Violations] -->
+        <!-- See http://checkstyle.sourceforge.net/config_sizes.html -->
+        <module name="MethodLength">
+            <property name="severity" value="${checkstyle.methodlength.severity}" default="error"/>
+            <property name="max" value="${checkstyle.methodlength.max}" default="150"/>
+            <property name="countEmpty" value="${checkstyle.methodlength.countempty}" default="true"/>
+            <property name="tokens" value="${checkstyle.methodlength.tokens}" default="METHOD_DEF, CTOR_DEF"/>
+        </module>
+        <module name="ParameterNumber">
+            <property name="severity" value="${checkstyle.parameternumber.severity}" default="info"/>
+            <property name="max" value="${checkstyle.parameternumber.max}" default="4"/>
+            <property name="ignoreOverriddenMethods" value="${checkstyle.parameternumber.ignoreoverriddenmethods}" default="false"/>
+            <property name="tokens" value="${checkstyle.parameternumber.tokens}" default="METHOD_DEF, CTOR_DEF"/>
+        </module>
+
+        <!-- [Whitespace] -->
+        <!-- See http://checkstyle.sourceforge.net/config_whitespace.html -->
+        <module name="EmptyForIteratorPad">
+            <property name="severity" value="${checkstyle.emptyforiteratorpad.severity}" default="error"/>
+            <property name="option" value="${checkstyle.emptyforiteratorpad.option}" default="nospace"/>
+        </module>
+        <module name="GenericWhitespace">
+            <property name="severity" value="${checkstyle.genericwhitespace.severity}" default="error"/>
+            <message key="ws.followed"
+                     value="GenericWhitespace ''{0}'' is followed by whitespace."/>
+            <message key="ws.preceded"
+                     value="GenericWhitespace ''{0}'' is preceded with whitespace."/>
+            <message key="ws.illegalFollow"
+                     value="GenericWhitespace ''{0}'' should followed by whitespace."/>
+            <message key="ws.notPreceded"
+                     value="GenericWhitespace ''{0}'' is not preceded with whitespace."/>
+        </module>
+        <module name="MethodParamPad">
+            <property name="severity" value="${checkstyle.methodparampad.severity}" default="error"/>
+            <property name="allowLineBreaks" value="${checkstyle.methodparampad.allowlinebreaks}" default="false"/>
+            <property name="option" value="${checkstyle.methodparampad.option}" default="nospace"/>
+            <property name="tokens" value="${checkstyle.methodparampad.tokens}" default="CTOR_DEF, LITERAL_NEW, METHOD_CALL, METHOD_DEF, SUPER_CTOR_CALL, ENUM_CONSTANT_DEF"/>
+        </module>
+        <module name="NoWhitespaceAfter">
+            <property name="severity" value="${checkstyle.nowhitespaceafter.severity}" default="error"/>
+            <property name="allowLineBreaks" value="${checkstyle.nowhitespaceafter.allowlinebreaks}" default="true"/>
+            <property name="tokens" value="${checkstyle.nowhitespaceafter.tokens}" default="INC, DEC, UNARY_MINUS, UNARY_PLUS, BNOT, LNOT, DOT, ARRAY_DECLARATOR, INDEX_OP"/>
+        </module>
+        <module name="NoWhitespaceBefore">
+            <property name="severity" value="${checkstyle.nowhitespacebefore.severity}" default="error"/>
+            <property name="allowLineBreaks" value="${checkstyle.nowhitespacebefore.allowlinebreaks}" default="false"/>
+            <property name="tokens" value="${checkstyle.nowhitespacebefore.tokens}" default="COMMA, SEMI, POST_INC, POST_DEC, ELLIPSIS"/>
+        </module>
+        <module name="OperatorWrap">
+            <property name="severity" value="${checkstyle.operatorwrap.severity}" default="info"/>
+            <property name="tokens" value="${checkstyle.operatorwrap.tokens}" default="QUESTION, COLON, EQUAL, NOT_EQUAL, DIV, PLUS, MINUS, STAR, MOD, SR, BSR, GE, GT, SL, LE, LT, BXOR, BOR, LOR, BAND, LAND, TYPE_EXTENSION_AND, LITERAL_INSTANCEOF"/>
+            <property name="option" value="${checkstyle.operatorwrap.option}" default="nl"/>
+        </module>
+        <module name="ParenPad">
+            <property name="severity" value="${checkstyle.parenpad.severity}" default="error"/>
+            <property name="option" value="${checkstyle.parenpad.option}" default="nospace"/>
+        </module>
+        <module name="TypecastParenPad">
+            <property name="severity" value="${checkstyle.typecastparenpad.severity}" default="error"/>
+            <property name="option" value="${checkstyle.typecastparenpad.option}" default="nospace"/>
+        </module>
+        <module name="WhitespaceAfter">
+            <property name="severity" value="${checkstyle.whitespaceafter.severity}" default="error"/>
+            <property name="tokens" value="${checkstyle.whitespaceafter.tokens}" default="COMMA, SEMI, TYPECAST, LITERAL_IF, LITERAL_ELSE, LITERAL_WHILE, LITERAL_DO, LITERAL_FOR, DO_WHILE"/>
+        </module>
+        <module name="WhitespaceAround">
+            <property name="severity" value="${checkstyle.whitespacearound.severity}" default="error"/>
+            <property name="allowEmptyConstructors" value="${checkstyle.whitespacearound.allowemptyconstructors}" default="true"/>
+            <property name="allowEmptyMethods" value="${checkstyle.whitespacearound.allowemptymethods}" default="true"/>
+            <property name="allowEmptyTypes" value="${checkstyle.whitespacearound.allowemptytypes}" default="true"/>
+            <property name="allowEmptyLoops" value="${checkstyle.whitespacearound.allowemptyloops}" default="true"/>
+            <property name="allowEmptyLambdas" value="${checkstyle.whitespacearound.allowemptylambdas}" default="true"/>
+            <property name="allowEmptyCatches" value="${checkstyle.whitespacearound.allowemptycatches}" default="true"/>
+            <property name="ignoreEnhancedForColon" value="${checkstyle.whitespacearound.ignoreenhancedforcolon}" default="true"/>
+            <property name="tokens" value="${checkstyle.whitespacearound.tokens}" default="ASSIGN, BAND, BAND_ASSIGN, BOR, BOR_ASSIGN, BSR, BSR_ASSIGN, BXOR, BXOR_ASSIGN, COLON, DIV, DIV_ASSIGN, DO_WHILE, EQUAL, GE, GT, LAMBDA, LAND, LCURLY, LE, LITERAL_CATCH, LITERAL_DO, LITERAL_ELSE, LITERAL_FINALLY, LITERAL_FOR, LITERAL_IF, LITERAL_RETURN, LITERAL_SWITCH, LITERAL_SYNCHRONIZED, LITERAL_TRY, LITERAL_WHILE, LOR, LT, MINUS, MINUS_ASSIGN, MOD, MOD_ASSIGN, NOT_EQUAL, PLUS, PLUS_ASSIGN, QUESTION, RCURLY, SL, SLIST, SL_ASSIGN, SR, SR_ASSIGN, STAR, STAR_ASSIGN, LITERAL_ASSERT, TYPE_EXTENSION_AND"/>
+            <message key="ws.notFollowed"
+                     value="WhitespaceAround: ''{0}'' is not followed by whitespace."/>
+            <message key="ws.notPreceded"
+                     value="WhitespaceAround: ''{0}'' is not preceded with whitespace."/>
+        </module>
+
+        <module name="SuppressionCommentFilter">
+            <property name="offCommentFormat" value="${checkstyle.suppression.offcommentformat}" default="CHECKSTYLE\:SUPPRESS\:([\w\|]+)"/>
+            <property name="onCommentFormat"  value="${checkstyle.suppression.oncommentformat}"  default="CHECKSTYLE\:UNSUPPRESS\:([\w\|]+)$"/>
+            <property name="checkCPP"  value="${checkstyle.suppression.checkcpp}" default="true"/>
+            <property name="checkC"  value="${checkstyle.suppression.checkc}"   default="true"/>
+            <property name="checkFormat" value="${checkstyle.suppression.checkformat}" default="$1"/>
+        </module>
+    </module>
+</module>

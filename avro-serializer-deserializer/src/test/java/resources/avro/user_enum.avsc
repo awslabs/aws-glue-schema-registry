@@ -1,0 +1,6 @@
+{
+   "type" : "enum",
+   "name" : "Numbers", 
+   "namespace": "data", 
+   "symbols" : [ "ONE", "TWO", "THREE", "FOUR" ]
+}

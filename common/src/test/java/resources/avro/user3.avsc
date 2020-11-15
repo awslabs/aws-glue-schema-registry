@@ -1,0 +1,14 @@
+{
+  "namespace": "com.amazonaws.services.schemaregistry.serializers.avro",
+  "type": "record",
+  "name": "User3",
+  "doc" : "This schema is created for testing purpose",
+  "fields": [
+      {"name": "name", "type": "string" },
+      {"name": "favorite_number",  "type": ["null", "int"] },
+      {"name": "meta", "type": {"type": "map", "values": "long"}},
+      {"name": "listOfColours","type": {"type" : "array", "items" : "int" }},
+      {"name": "integerEnum", "type": { "type" : "enum", "name": "integerEnums", "symbols" : ["ONE", "TWO", "THREE", "FOUR"]}}
+      
+  ]
+}

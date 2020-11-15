@@ -1,0 +1,9 @@
+{ 
+   "type" : "record", 
+   "namespace" : "com.amazonaws.services.schemaregistry.serializers.avro", 
+   "name" : "empdetails", 
+   "fields" : 
+   [ 
+      { "name" : "experience", "type": ["int", "null"] }, { "name" : "age", "type": "int" } 
+   ] 
+}

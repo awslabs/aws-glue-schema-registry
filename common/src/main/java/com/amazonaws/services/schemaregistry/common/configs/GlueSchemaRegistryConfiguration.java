@@ -1,0 +1,246 @@
+/*
+ * Copyright 2020 Amazon.com, Inc. or its affiliates.
+ * Licensed under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.amazonaws.services.schemaregistry.common.configs;
+
+import com.amazonaws.services.schemaregistry.exception.AWSSchemaRegistryException;
+import com.amazonaws.services.schemaregistry.utils.AWSSchemaRegistryConstants;
+import com.amazonaws.services.schemaregistry.utils.AWSSchemaRegistryUtils;
+import com.amazonaws.services.schemaregistry.utils.AvroRecordType;
+import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.EnumUtils;
+import software.amazon.awssdk.services.glue.model.Compatibility;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Properties;
+import java.util.stream.Collectors;
+
+/**
+ * Glue Schema Registry Configuration entries.
+ *
+ */
+@Slf4j
+@Data
+public class GlueSchemaRegistryConfiguration {
+
+    private AWSSchemaRegistryConstants.COMPRESSION compressionType = AWSSchemaRegistryConstants.COMPRESSION.NONE;
+    private String endPoint;
+    private String region;
+    private long timeToLiveMillis = 24 * 60 * 60 * 1000L;
+    private int cacheSize = 200;
+    private AvroRecordType avroRecordType;
+    private String registryName;
+    private Compatibility compatibilitySetting;
+    private String description;
+    private boolean schemaAutoRegistrationEnabled = false;
+    private Map<String, String> tags = new HashMap<>();
+    private Map<String, String> metadata;
+
+    private static final String DELIMITER = "-";
+
+    public GlueSchemaRegistryConfiguration(String region) {
+        Map<String, Object> config = new HashMap<>();
+        config.put(AWSSchemaRegistryConstants.AWS_REGION, region);
+        buildConfigs(config);
+    }
+
+    public GlueSchemaRegistryConfiguration(Map<String, ?> configs) {
+        buildConfigs(configs);
+    }
+
+    public GlueSchemaRegistryConfiguration(Properties properties) {
+        buildConfigs(getMapFromPropertiesFile(properties));
+    }
+
+    private void buildConfigs(Map<String, ?> configs) {
+        buildSchemaRegistryConfigs(configs);
+        buildCacheConfigs(configs);
+    }
+
+    private void buildSchemaRegistryConfigs(Map<String, ?> configs) {
+        validateAndSetAWSRegion(configs);
+        validateAndSetAWSEndpoint(configs);
+        validateAndSetRegistryName(configs);
+        validateAndSetDescription(configs);
+        validateAndSetAvroRecordType(configs);
+        validateAndSetCompatibility(configs);
+        validateAndSetCompressionType(configs);
+        validateAndSetSchemaAutoRegistrationSetting(configs);
+        validateAndSetTags(configs);
+        validateAndSetMetadata(configs);
+    }
+
+    private void buildCacheConfigs(Map<String, ?> configs) {
+        validateAndSetCacheSize(configs);
+        validateAndSetCacheTTL(configs);
+    }
+
+    private void validateAndSetCompressionType(Map<String, ?> configs) {
+        if (isPresent(configs, AWSSchemaRegistryConstants.COMPRESSION_TYPE)
+                && validateCompressionType((String) configs.get(AWSSchemaRegistryConstants.COMPRESSION_TYPE))) {
+            this.compressionType = AWSSchemaRegistryConstants.COMPRESSION
+                    .valueOf(((String) configs.get(AWSSchemaRegistryConstants.COMPRESSION_TYPE)).toUpperCase());
+        }
+    }
+
+    private boolean validateCompressionType(String compressionType) {
+        if (!EnumUtils.isValidEnum(AWSSchemaRegistryConstants.COMPRESSION.class, compressionType.toUpperCase())) {
+            String errorMessage = String.format("Invalid Compression type : %s, Accepted values are : %s",
+                    compressionType, AWSSchemaRegistryConstants.COMPRESSION.values());
+            throw new AWSSchemaRegistryException(errorMessage);
+        }
+        return true;
+    }
+
+    private void validateAndSetAWSRegion(Map<String, ?> configs) {
+        if (isPresent(configs, AWSSchemaRegistryConstants.AWS_REGION)) {
+            this.region = String.valueOf(configs.get(AWSSchemaRegistryConstants.AWS_REGION));
+        } else {
+            throw new AWSSchemaRegistryException("Region is not defined in the properties");
+        }
+    }
+
+    private void validateAndSetCompatibility(Map<String, ?> configs) {
+        if (isPresent(configs, AWSSchemaRegistryConstants.COMPATIBILITY_SETTING)) {
+            this.compatibilitySetting = Compatibility.fromValue(String.valueOf(configs.get(AWSSchemaRegistryConstants.COMPATIBILITY_SETTING)).toUpperCase());
+
+            if (this.compatibilitySetting == null
+                    || this.compatibilitySetting == Compatibility.UNKNOWN_TO_SDK_VERSION) {
+                String errorMessage = String.format("Invalid compatibility setting : %s, Accepted values are : %s",
+                        configs.get(AWSSchemaRegistryConstants.COMPATIBILITY_SETTING),
+                        Compatibility.knownValues());
+                throw new AWSSchemaRegistryException(errorMessage);
+            }
+        } else {
+            this.compatibilitySetting = AWSSchemaRegistryConstants.DEFAULT_COMPATIBILITY_SETTING;
+        }
+    }
+
+    private void validateAndSetRegistryName(Map<String, ?> configs) {
+        if (isPresent(configs, AWSSchemaRegistryConstants.REGISTRY_NAME)) {
+            this.registryName = String.valueOf(configs.get(AWSSchemaRegistryConstants.REGISTRY_NAME));
+        } else {
+            this.registryName = AWSSchemaRegistryConstants.DEFAULT_REGISTRY_NAME;
+        }
+    }
+
+    private void validateAndSetAWSEndpoint(Map<String, ?> configs) {
+        if (isPresent(configs, AWSSchemaRegistryConstants.AWS_ENDPOINT)) {
+            this.endPoint = String.valueOf(configs.get(AWSSchemaRegistryConstants.AWS_ENDPOINT));
+        }
+    }
+
+    private void validateAndSetDescription(Map<String, ?> configs) throws AWSSchemaRegistryException {
+        if (isPresent(configs, AWSSchemaRegistryConstants.DESCRIPTION)) {
+            this.description = String.valueOf(configs.get(AWSSchemaRegistryConstants.DESCRIPTION));
+        } else {
+            this.description = buildDescriptionFromProperties();
+        }
+    }
+
+    private void validateAndSetCacheSize(Map<String, ?> configs) {
+        if (isPresent(configs, AWSSchemaRegistryConstants.CACHE_SIZE)) {
+            String value = (String) configs.get(AWSSchemaRegistryConstants.CACHE_SIZE);
+
+            try {
+                this.cacheSize = Integer.parseInt(value);
+            } catch (NumberFormatException e) {
+                String message = String.format("Cache size property is not a valid size : %s", value);
+                throw new AWSSchemaRegistryException(message, e);
+            }
+        } else {
+            log.info("Cache Size is not found, using default {}", cacheSize);
+        }
+    }
+
+    private void validateAndSetCacheTTL(Map<String, ?> configs) {
+        if (isPresent(configs, AWSSchemaRegistryConstants.CACHE_TIME_TO_LIVE_MILLIS)) {
+            String value = (String) configs.get(AWSSchemaRegistryConstants.CACHE_TIME_TO_LIVE_MILLIS);
+            try {
+                this.timeToLiveMillis = Long.parseLong(value);
+            } catch (NumberFormatException e) {
+                String message = String.format("Time to live cache property is not a valid time : %s", value);
+                throw new AWSSchemaRegistryException(message, e);
+            }
+        } else {
+            log.info("Cache Time to live is not found, using default {}", timeToLiveMillis);
+        }
+    }
+
+    private void validateAndSetAvroRecordType(Map<String, ?> configs) {
+        if (isPresent(configs, AWSSchemaRegistryConstants.AVRO_RECORD_TYPE)) {
+            this.avroRecordType =
+                    AvroRecordType.valueOf((String) configs.get(AWSSchemaRegistryConstants.AVRO_RECORD_TYPE));
+        }
+    }
+
+    private void validateAndSetSchemaAutoRegistrationSetting(Map<String, ?> configs) {
+        if (isPresent(configs, AWSSchemaRegistryConstants.SCHEMA_AUTO_REGISTRATION_SETTING)) {
+            this.schemaAutoRegistrationEnabled = Boolean.parseBoolean(configs.get(AWSSchemaRegistryConstants.SCHEMA_AUTO_REGISTRATION_SETTING).toString());
+        } else {
+            log.info("schemaAutoRegistrationEnabled is not defined in the properties. Using the default value {}",
+                    schemaAutoRegistrationEnabled);
+        }
+    }
+
+    private void validateAndSetTags(Map<String, ?> configs) throws AWSSchemaRegistryException {
+        if (isPresent(configs, AWSSchemaRegistryConstants.TAGS)) {
+            Map<String, String> tagsMap;
+            if (configs.get(AWSSchemaRegistryConstants.TAGS) instanceof HashMap) {
+                tagsMap = (Map<String, String>) configs.get(AWSSchemaRegistryConstants.TAGS);
+                this.tags = tagsMap;
+            } else {
+                throw new AWSSchemaRegistryException(AWSSchemaRegistryConstants.TAGS_CONFIG_NOT_HASHMAP_MSG);
+            }
+        } else {
+            log.info("Tags value is not defined in the properties. No tags are assigned");
+        }
+    }
+
+    private void validateAndSetMetadata(Map<String, ?> configs) {
+        if (isPresent(configs, AWSSchemaRegistryConstants.METADATA)) {
+            if (configs.get(AWSSchemaRegistryConstants.METADATA) instanceof HashMap) {
+                Map<String, String> map = (Map<String, String>) configs.get(AWSSchemaRegistryConstants.METADATA);
+                this.metadata = map;
+            } else {
+                throw new AWSSchemaRegistryException("The metadata instance is not a hash map");
+            }
+        }
+    }
+
+    private boolean isPresent(Map<String, ?> configs, String key) {
+        if (!AWSSchemaRegistryUtils.getInstance().checkIfPresentInMap(configs, key)) {
+            log.debug("{} key is not present in the configs {}", key, configs);
+            return false;
+        }
+        return true;
+    }
+
+    private Map<String, ?> getMapFromPropertiesFile(Properties properties) {
+        return new HashMap<>(properties.entrySet().stream()
+                .collect(Collectors.toMap(e -> e.getKey().toString(), e -> e.getValue())));
+    }
+
+    private String buildDescriptionFromProperties() throws AWSSchemaRegistryException {
+        StringBuilder message = new StringBuilder();
+        message.append("DEFAULT-DESCRIPTION")
+                .append(DELIMITER).append(region)
+                .append(DELIMITER).append(registryName);
+
+        return message.toString();
+    }
+}
