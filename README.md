@@ -1,6 +1,6 @@
 
 # AWS Glue Schema Registry Library
-![Build Status](https://travis-ci.org/awslabs/aws-glue-schema-registry.svg?branch=master)
+![Build Status](tbd)
 [![Apache 2 License](https://img.shields.io/github/license/awslabs/s2n.svg)](http://aws.amazon.com/apache-2-0/)
 ![Java](https://img.shields.io/badge/language-java-blue.svg)
 
@@ -9,11 +9,13 @@ schemas while ensuring data produced was validated by registered schemas.
 **AWS Glue Schema Registry Library** offers Serializers and Deserializers that plug-in with Glue Schema Registry.
 
 ## Getting Started
-1. **Sign up for AWS** &mdash; Before you begin, you need an AWS account. For more information about creating an AWS account and retrieving your AWS credentials, see [AWS Account and Credentials][docs-signup] in the AWS SDK for Java Developer Guide.
+1. **Sign up for AWS** &mdash; Before you begin, you need an AWS account. For more information about creating an AWS 
+account and retrieving your AWS credentials, see [AWS Account and Credentials](https://docs.aws.amazon.com/sdk-for-java/latest/developer-guide/home.html) in the AWS SDK for Java Developer Guide.
 1. **Sign up for AWS Glue Schema Registry** &mdash; Go to the AWS Glue Schema Registry console to sign up for the 
-service and create an AWS Glue Schema Registry. For more information, see [Create a Glue Schema 
-Registry](https://docs.aws.amazon.com/glue/latest/dg/schema-registry.html) in the AWS Glue Developer Guide.
+service and create an AWS Glue Schema Registry. For more information, see [Getting Started with Glue Schema 
+Registry](https://docs.aws.amazon.com/glue/latest/dg/schema-registry-gs.html) in the AWS Glue Developer Guide.
 1. **Minimum requirements** &mdash; To use the AWS Glue Schema Registry, you'll need **Java 1.8+**.
+
 ## Features
 
 1. AVRO Messages/records are serialized on producer front and deserialized on the consumer front by using 
