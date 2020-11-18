@@ -20,14 +20,14 @@ Registry](https://docs.aws.amazon.com/glue/latest/dg/schema-registry-gs.html) in
 
 1. AVRO Messages/records are serialized on producer front and deserialized on the consumer front by using 
 schema-registry-serde.
-1. Streaming for avro message types is supported by using schema-registry-kafkastreams-serde.
+1. Kafka Streams support for AWS Glue Schema Registry.
 1. Records can be compressed to reduce message size.
 1. An inbuilt local in-memory cache to save calls to AWS Glue Schema Registry. The schema version id for a schema 
 definition is cached on Producer side and schema for a schema version id is cached on the Consumer side.
 1. Auto registration of schema can be enabled for any new schema to be auto-registered.
 1. For AVRO Schemas, Evolution check is performed while registering.
 1. Migration from a third party Schema Registry.
-1. Flink support using AWS Glue Schema Registry.
+1. Flink support for AWS Glue Schema Registry.
 1. Kafka Connect support for AWS Glue Schema Registry.
 
 ## Building from Source
@@ -46,7 +46,7 @@ To simply run the tests, execute the following maven command:
 
 `mvn test`
 
-## Using the AWS Glue Schema Registry Library Serializer Deserializer
+## Using the AWS Glue Schema Registry Library Serializer / Deserializer
 The recommended way to use the AWS Glue Schema Registry Library for Java is to consume it from Maven.
 
 ### Maven Dependency
@@ -175,16 +175,15 @@ By default, compression is disabled. Customers can choose ZLIB as compressionTyp
 
 ### In-Memory Cache settings
 
-In Memory cache is used by Producer to store schema to schema version id mapping and by comsumer to store schema 
+In Memory cache is used by Producer to store schema to schema version id mapping and by consumer to store schema 
 version id to schema mapping. This cache allows Producers and Consumers to save time and hits on IO calls to Schema 
 Registry.
 
 The cache is available by default. However, it can be fine-tuned by providing cache specific properties.
 
 ```java
-    properties.put(AWSSchemaRegistryConstants.CACHE_TIME_TO_LIVE_MILLIS, "60000"); // If not passed, defaults to 24 
-    Hours
-    properties.put(AWSSchemaRegistryConstants.CACHE_SIZE, "100"); // If not passed, defaults to 200
+    properties.put(AWSSchemaRegistryConstants.CACHE_TIME_TO_LIVE_MILLIS, "60000"); // If not passed, defaults to 24 Hours
+    properties.put(AWSSchemaRegistryConstants.CACHE_SIZE, "100"); // Maximum number of elements in a cache - If not passed, defaults to 200
 ```
 
 ### Migrating from a third party Schema Registry

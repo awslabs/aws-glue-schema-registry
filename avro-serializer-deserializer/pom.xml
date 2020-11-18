@@ -19,9 +19,13 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>software.aws.glue</groupId>
+    <groupId>software.amazon.glue</groupId>
     <artifactId>schema-registry-serde</artifactId>
     <name>AWS Glue Schema Registry AVRO Serializer Deserializer</name>
+    <description>The AWS Glue Schema Registry Serializer/Deserializer enables Java developers to easily integrate
+        their Apache Kafka and AWS Kinesis applications with AWS Glue Schema Registry
+    </description>
+    <url>https://aws.amazon.com/glue</url>
     <version>1.0.0</version>
     <packaging>jar</packaging>
 
@@ -35,10 +39,17 @@
             </roles>
         </developer>
     </developers>
+    <licenses>
+        <license>
+            <name>Apache License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
 
     <dependencies>
         <dependency>
-            <groupId>software.aws.glue</groupId>
+            <groupId>software.amazon.glue</groupId>
             <artifactId>schema-registry-common</artifactId>
             <version>1.0.0</version>
         </dependency>
@@ -148,6 +159,10 @@
                         </goals>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
