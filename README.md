@@ -49,10 +49,13 @@ To simply run the tests, execute the following maven command:
 ## Using the AWS Glue Schema Registry Library Serializer / Deserializer
 The recommended way to use the AWS Glue Schema Registry Library for Java is to consume it from Maven.
 
+**Using AWS Glue Schema Registry with Amazon MSK** &mdash; To set-up Amazon Managed Streaming for Apache Kafka see 
+[Getting started with Amazon MSK.](https://docs.aws.amazon.com/msk/latest/developerguide/getting-started.html)
+
 ### Maven Dependency
   ``` xml
   <dependency>
-      <groupId>software.aws.glue</groupId>
+      <groupId>software.amazon.glue</groupId>
       <artifactId>schema-registry-serde</artifactId>
       <version>1.0.0</version>
   </dependency>
@@ -162,6 +165,14 @@ Registry Description can be provided by setting this property -
     properties.put(AWSSchemaRegistryConstants.DESCRIPTION, "This registry is used for several purposes."); // If not passed, constructs a description
 ```
 
+### Providing Compatibility Setting for Schema
+
+Registry Description can be provided by setting this property - 
+
+```java
+    properties.put(AWSSchemaRegistryConstants.COMPATIBILITY_SETTING, Compatibility.FULL); // Pass a compatibility mode. If not passed, uses Compatibility.BACKWARD
+```
+
 ### Using Compression
 
 Deserialized byte array can be compressed to save on data usage over the network and storage on the topic/stream. The 
@@ -197,16 +208,15 @@ property for value class along with the third party jar.
 
 ### Using Kafka Connect with AWS Glue Schema Registry
 
-### Maven Dependency
-  ``` xml
-  <dependency>
-        <groupId>software.aws.glue</groupId>
-        <artifactId>schema-registry-kafkaconnect-converter</artifactId>
-        <version>1.0.0</version>
-  </dependency>
-  ```
+* Clone this repop, build and copy dependencies
+```java
+git clone git@github.com:awslabs/aws-glue-schema-registry.git
+cd aws-glue-schema-registry
+mvn clean install
+mvn dependency:copy-dependencies
+```
 
-Configure Kafka Connectors with following properties
+* Configure Kafka Connectors with following properties
 
 ```java
     key.converter=com.amazonaws.services.schemaregistry.kafkaconnect.AWSKafkaAvroConverter
@@ -218,13 +228,81 @@ Configure Kafka Connectors with following properties
     key.converter.avroRecordType=GENERIC_RECORD
     value.converter.avroRecordType=GENERIC_RECORD
 ```
+* Add command below to *Launch mode* section under *kafka-run-class.sh*
+
+``` 
+-cp $CLASSPATH:"<your aws glue schema registry base directory>/target/dependency/*" 
+```
+
+It should look like this
+
+```
+    # Launch mode
+    if [ "x$DAEMON_MODE" = "xtrue" ]; then
+      nohup "$JAVA" $KAFKA_HEAP_OPTS $KAFKA_JVM_PERFORMANCE_OPTS $KAFKA_GC_LOG_OPTS $KAFKA_JMX_OPTS $KAFKA_LOG4J_OPTS -cp $CLASSPATH:"/Users/johndoe/aws-glue-schema-registry/target/dependency/*" $KAFKA_OPTS "$@" > "$CONSOLE_OUTPUT_FILE" 2>&1 < /dev/null &
+    else
+      exec "$JAVA" $KAFKA_HEAP_OPTS $KAFKA_JVM_PERFORMANCE_OPTS $KAFKA_GC_LOG_OPTS $KAFKA_JMX_OPTS $KAFKA_LOG4J_OPTS -cp $CLASSPATH:"/Users/johndoe/aws-glue-schema-registry/target/dependency/*" $KAFKA_OPTS "$@"
+    fi
+```
+
+* If using bash, run the below commands to set-up your CLASSPATH in your bash_profile. (For any other shell, update the environment accordingly.)
+  ```bash
+      echo 'export GSR_LIB_BASE_DIR=<>' >>~/.bash_profile
+      echo 'export GSR_LIB_VERSION=1.0.0' >>~/.bash_profile
+      echo 'export KAFKA_HOME=<your kafka installation directory>' >>~/.bash_profile
+      echo 'export CLASSPATH=$CLASSPATH:$GSR_LIB_BASE_DIR/avro-kafkaconnect-converter/target/schema-registry-kafkaconnect-converter-$GSR_LIB_VERSION.jar:$GSR_LIB_BASE_DIR/common/target/schema-registry-common-$GSR_LIB_VERSION.jar:$GSR_LIB_BASE_DIR/avro-serializer-deserializer/target/schema-registry-serde-$GSR_LIB_VERSION.jar' >>~/.bash_profile
+      source ~/.bash_profile
+    ```
+* (Optional) If you wish to test with a simple file source then clone the file source connector.
+  
+  ```bash
+      git clone https://github.com/mmolimar/kafka-connect-fs.git
+      cd kafka-connect-fs/
+    ```
+  
+  Under source connector configuration(config/kafka-connect-fs.properties), edit the data format to Avro, file reader 
+  to AvroFileReader and update an 
+  example Avro object from the file path you are reading from. For example:
+  
+  ```
+      fs.uris=<path to a sample avro object>
+      policy.regexp=^.*\.avro$
+      file_reader.class=com.github.mmolimar.kafka.connect.fs.file.reader.AvroFileReader
+  ```
+  
+  Install source connector
+  
+  ```
+      mvn clean package
+      echo "export CLASSPATH=\$CLASSPATH:\"\$(find target/ -type f -name '*.jar'| grep '\-package' | tr '\n' ':')\"" >>~/.bash_profile
+      source ~/.bash_profile
+  ```
+  
+  Update the sink properties under *<your Apache Kafka installation directory>/config/connect-file-sink.properties*
+  
+  ```
+  file=<output file full path>
+  topics=<my topic>
+  ```
+  
+  Start Source Connector (In this example it is file source connector)
+  
+  ```
+  $KAFKA_HOME/bin/connect-standalone.sh $KAFKA_HOME/config/connect-standalone.properties config/kafka-connect-fs.properties
+  ```
+ 
+  Run Sink Connector (In this example it is file sink connector))
+  
+  ```
+  $KAFKA_HOME/bin/connect-standalone.sh $KAFKA_HOME/config/connect-standalone.properties $KAFKA_HOME/config/connect-file-sink.properties
+  ```
 
 ### Using Kafka Streams with AWS Glue Schema Registry
 
 ### Maven Dependency
   ``` xml
   <dependency>
-        <groupId>software.aws.glue</groupId>
+        <groupId>software.amazon.glue</groupId>
         <artifactId>schema-registry-kafkastreams-serde</artifactId>
         <version>1.0.0</version>
   </dependency>
@@ -259,10 +337,17 @@ The recommended way to use the AWS Glue Schema Registry Flink Connector for Java
 
 **Minimum requirements** &mdash; Apache Flink versions supported **Flink 1.11+**
 
+**Working with Kinesis Data Analytics** &mdash; AWS Glue Schema Registry can be setup with [Amazon Kinesis Data 
+Analytics 
+for Apache Flink](https://docs.aws.amazon.com/kinesisanalytics/latest/java/what-is.html).
+
+For using Amazon VPC with Kinesis Data Analytics please see [Configuring Kinesis Data Analytics for Apache Flink 
+inside Amazon VPC.](https://docs.aws.amazon.com/kinesisanalytics/latest/java/vpc.html) 
+
 ### Maven Dependency
   ``` xml
   <dependency>
-       <groupId>software.aws.glue</groupId>
+       <groupId>software.amazon.glue</groupId>
        <artifactId>schema-registry-flink-serde</artifactId>
        <version>1.0.0</version>
   </dependency>
