@@ -212,7 +212,7 @@ property for value class along with the third party jar.
 
 ### Using Kafka Connect with AWS Glue Schema Registry
 
-* Clone this repop, build and copy dependencies
+* Clone this repo, build and copy dependencies
 ```java
 git clone git@github.com:awslabs/aws-glue-schema-registry.git
 cd aws-glue-schema-registry
