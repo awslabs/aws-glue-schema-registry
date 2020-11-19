@@ -1,6 +1,6 @@
 
 # AWS Glue Schema Registry Library
-![Build Status](tbd)
+![Build Status](https://github.com/awslabs/aws-glue-schema-registry/workflows/MavenCI/badge.svg?branch=master&event=push)
 [![Apache 2 License](https://img.shields.io/github/license/awslabs/s2n.svg)](http://aws.amazon.com/apache-2-0/)
 ![Java](https://img.shields.io/badge/language-java-blue.svg)
 
