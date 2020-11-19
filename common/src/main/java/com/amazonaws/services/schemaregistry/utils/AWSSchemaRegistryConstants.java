@@ -103,7 +103,7 @@ public final class AWSSchemaRegistryConstants {
     /**
      * Default Compatibility setting if not passed by the client.
      */
-    public static final Compatibility DEFAULT_COMPATIBILITY_SETTING = Compatibility.NONE;
+    public static final Compatibility DEFAULT_COMPATIBILITY_SETTING = Compatibility.BACKWARD;
     /**
      * Secondary deserializer class name, which will be initialized by the
      * deserializer, if client passes and will be used if magic bytes does not

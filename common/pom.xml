@@ -19,10 +19,13 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>software.aws.glue</groupId>
+    <groupId>software.amazon.glue</groupId>
     <artifactId>schema-registry-common</artifactId>
     <version>1.0.0</version>
     <name>AWS Glue Schema Registry common</name>
+    <description>The AWS Glue Schema Common is the common package used by AWS Glue Schema Registry Library and has
+        the core functionality.
+    </description>
     <packaging>jar</packaging>
 
     <developers>
@@ -35,12 +38,19 @@
             </roles>
         </developer>
     </developers>
+    <licenses>
+        <license>
+            <name>Apache License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
 
     <dependencies>
         <dependency>
-            <groupId>software.amazon.awssdk.services.glue</groupId>
-            <artifactId>AwsJavaSdk-Glue</artifactId>
-            <version>2.0</version>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>glue</artifactId>
+            <version>2.15.32</version>
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/org.apache.avro/avro -->
@@ -60,27 +70,33 @@
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>aws-json-protocol</artifactId>
-            <version>2.13.42</version>
+            <version>2.15.30</version>
         </dependency>
 
-        <!-- https://mvnrepository.com/artifact/software.amazon.awssdk/cloudwatch -->
+<!--        &lt;!&ndash; https://mvnrepository.com/artifact/software.amazon.awssdk/cloudwatch &ndash;&gt;-->
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>cloudwatch</artifactId>
-            <version>2.13.42</version>
+            <version>2.15.30</version>
+        </dependency>
+
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>sdk-core</artifactId>
+            <version>2.15.30</version>
         </dependency>
 
         <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>kafka-clients</artifactId>
-            <version>2.4.1</version>
+            <version>2.5.0</version>
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/org.apache.kafka/kafka-streams -->
         <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>kafka-streams</artifactId>
-            <version>2.4.1</version>
+            <version>2.5.0</version>
         </dependency>
 
         <dependency>
@@ -187,6 +203,10 @@
                         </goals>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
             </plugin>
             <plugin>
                 <groupId>org.jacoco</groupId>
