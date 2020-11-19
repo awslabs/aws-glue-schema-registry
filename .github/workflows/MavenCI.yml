@@ -36,21 +36,11 @@ jobs:
         key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
         restore-keys: ${{ runner.os }}-m2
     
-    - name: Clean and build. 
+    - name: Clean, build and install 
       run: mvn --file pom.xml clean install
     
-    - name: Run tests.
+    - name: Run tests
       run: mvn --file pom.xml test
     
-    - name: Build package.
+    - name: Build package
       run: mvn -B package --file pom.xml
-    
-    - name: Create Directory and copy JAR
-      run: mkdir artifacts && cp target/*.jar artifacts
-    
-    - name: Upload JAR
-      uses: actions/upload-artifact@v2
-      with:
-        name: Project Artifact ZIP
-        path: artifacts
-
