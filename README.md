@@ -127,6 +127,10 @@ The recommended way to use the AWS Glue Schema Registry Library for Java is to c
 
 ```
 
+### Using AWS Glue Schema Registry with Kinesis Data Streams
+
+[Getting started with AWS Glue Schema Registry with AWS Kinesis Data Streams](https://docs.aws.amazon.com/glue/latest/dg/schema-registry-integrations.html#schema-registry-integrations-kds)
+
 ### Using Auto-Registration
 
 Auto-Registration allows any record produced with new schema to be automatically registered with the AWS Glue Schema 
