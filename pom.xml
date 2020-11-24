@@ -69,7 +69,6 @@
         <module>avro-kafkastreams-serde</module>
         <module>avro-kafkaconnect-converter</module>
         <module>avro-flink-serde</module>
-        <module>examples</module>
     </modules>
 
     <dependencies>
@@ -240,7 +239,8 @@
                 <artifactId>maven-javadoc-plugin</artifactId>
                 <version>3.2.0</version>
                 <configuration>
-                    <source>8</source>
+                    <show>public</show>
+                    <bottom><![CDATA[Copyright &#169; 2019 Amazon Web Services, Inc. All Rights Reserved.]]></bottom>
                 </configuration>
                 <executions>
                     <execution>
