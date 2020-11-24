@@ -190,10 +190,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <configuration>
-                    <show>public</show>
-                    <bottom><![CDATA[Copyright &#169; 2019 Amazon Web Services, Inc. All Rights Reserved.]]></bottom>
-                </configuration>
                 <executions>
                     <execution>
                         <id>attach-javadocs</id>
