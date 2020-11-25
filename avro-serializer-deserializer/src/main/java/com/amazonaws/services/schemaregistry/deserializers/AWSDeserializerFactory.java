@@ -60,7 +60,7 @@ public class AWSDeserializerFactory {
                     return awsAvroDeserializer;
                 });
 
-                log.info("Returning Avro de-serializer instance from AWSDeserializerFactory");
+                log.debug("Returning Avro de-serializer instance from AWSDeserializerFactory");
                 return this.deserializerMap.get(dataFormat);
             default:
                 String message = String.format("Data Format is not supported %s", dataFormat);

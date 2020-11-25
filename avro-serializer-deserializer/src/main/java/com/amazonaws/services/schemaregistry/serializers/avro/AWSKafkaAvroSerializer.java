@@ -69,7 +69,7 @@ public class AWSKafkaAvroSerializer implements Serializer<Object> {
 
     @Override
     public void configure(@NonNull Map<String, ?> configs, boolean isKey) {
-        log.info("Configuring Amazon Schema Registry Service using these properties: {}", configs);
+        log.info("Configuring Amazon Glue Schema Registry Service using these properties: {}", configs);
         schemaName = AWSSchemaRegistryUtils.getInstance().getSchemaName(configs);
 
         if (schemaName == null) {
@@ -89,14 +89,14 @@ public class AWSKafkaAvroSerializer implements Serializer<Object> {
 
         UUID schemaVersionIdFromRegistry = null;
         if (this.schemaVersionId == null) {
-            log.info("Schema Version Id is null. Trying to register the schema.");
+            log.debug("Schema Version Id is null. Trying to register the schema.");
             schemaVersionIdFromRegistry = avroSerializer.registerSchema(prepareInput(data, topic));
         } else {
             schemaVersionIdFromRegistry = this.schemaVersionId;
         }
 
         if (schemaVersionIdFromRegistry != null) {
-            log.info("Schema Version Id received from the from schema registry: {}", schemaVersionIdFromRegistry);
+            log.debug("Schema Version Id received from schema registry: {}", schemaVersionIdFromRegistry);
             result = avroSerializer.serialize(data, schemaVersionIdFromRegistry);
         }
 
