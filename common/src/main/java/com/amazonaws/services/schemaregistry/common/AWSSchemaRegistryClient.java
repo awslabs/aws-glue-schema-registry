@@ -282,7 +282,7 @@ public class AWSSchemaRegistryClient {
                              Map<String, String> metadata) throws AWSSchemaRegistryException {
         UUID schemaVersionId = null;
         try {
-            log.debug("Auto Creating schema with schemaName: {} and schemaDefinition : {}", schemaName,
+            log.info("Auto Creating schema with schemaName: {} and schemaDefinition : {}", schemaName,
                       schemaDefinition);
             CreateSchemaResponse createSchemaResponse =
                     client.createSchema(getCreateSchemaRequestObject(schemaName, dataFormat, schemaDefinition));
