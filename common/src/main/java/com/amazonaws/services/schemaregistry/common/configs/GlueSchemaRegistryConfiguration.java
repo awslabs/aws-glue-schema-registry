@@ -163,7 +163,7 @@ public class GlueSchemaRegistryConfiguration {
                 throw new AWSSchemaRegistryException(message, e);
             }
         } else {
-            log.debug("Cache Size is not found, using default {}", cacheSize);
+            log.info("Cache Size is not found, using default {}", cacheSize);
         }
     }
 
@@ -177,7 +177,7 @@ public class GlueSchemaRegistryConfiguration {
                 throw new AWSSchemaRegistryException(message, e);
             }
         } else {
-            log.debug("Cache Time to live is not found, using default {}", timeToLiveMillis);
+            log.info("Cache Time to live is not found, using default {}", timeToLiveMillis);
         }
     }
 
@@ -192,7 +192,7 @@ public class GlueSchemaRegistryConfiguration {
         if (isPresent(configs, AWSSchemaRegistryConstants.SCHEMA_AUTO_REGISTRATION_SETTING)) {
             this.schemaAutoRegistrationEnabled = Boolean.parseBoolean(configs.get(AWSSchemaRegistryConstants.SCHEMA_AUTO_REGISTRATION_SETTING).toString());
         } else {
-            log.debug("schemaAutoRegistrationEnabled is not defined in the properties. Using the default value {}",
+            log.info("schemaAutoRegistrationEnabled is not defined in the properties. Using the default value {}",
                     schemaAutoRegistrationEnabled);
         }
     }
@@ -207,7 +207,7 @@ public class GlueSchemaRegistryConfiguration {
                 throw new AWSSchemaRegistryException(AWSSchemaRegistryConstants.TAGS_CONFIG_NOT_HASHMAP_MSG);
             }
         } else {
-            log.debug("Tags value is not defined in the properties. No tags are assigned");
+            log.info("Tags value is not defined in the properties. No tags are assigned");
         }
     }
 
