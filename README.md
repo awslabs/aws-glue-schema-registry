@@ -129,7 +129,11 @@ The recommended way to use the AWS Glue Schema Registry Library for Java is to c
 
 ### Using AWS Glue Schema Registry with Kinesis Data Streams
 
-[Getting started with AWS Glue Schema Registry with AWS Kinesis Data Streams](https://docs.aws.amazon.com/glue/latest/dg/schema-registry-integrations.html#schema-registry-integrations-kds)
+**Kinesis Client library (KCL) / Kinesis Producer Library (KPL):** [Getting started with AWS Glue Schema Registry with AWS Kinesis Data Streams](https://docs.aws.amazon.com/glue/latest/dg/schema-registry-integrations.html#schema-registry-integrations-kds)
+
+If you cannot use KCL / KPL libraries for Kinesis Data Streams integration,
+**See [examples](examples/) for working example 
+
 
 ### Using Auto-Registration
 
