@@ -108,7 +108,7 @@ The recommended way to use the AWS Glue Schema Registry Library for Java is to c
 
 ```java
         properties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
-        properties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, AWSKafkaAvroDeSerializer.class.getName();
+        properties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, AWSKafkaAvroDeserializer.class.getName();
         properties.put(AWSSchemaRegistryConstants.AWS_REGION, "us-east-1");
         properties.put(AWSSchemaRegistryConstants.AVRO_RECORD_TYPE, AvroRecordType.GENERIC_RECORD.getName());
         
