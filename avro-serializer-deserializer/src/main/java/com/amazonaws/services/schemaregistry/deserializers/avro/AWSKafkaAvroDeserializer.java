@@ -74,7 +74,7 @@ public class AWSKafkaAvroDeserializer implements Deserializer<Object> {
      */
     @Override
     public void configure(@NonNull Map<String, ?> configs, boolean isKey) {
-        log.info("Configuring Amazon Schema Registry Service using these properties: {}", configs.toString());
+        log.info("Configuring Amazon Glue Schema Registry Service using these properties: {}", configs.toString());
         this.awsDeserializer = AWSDeserializer.builder().credentialProvider(this.credentialProvider).configs(configs)
                 .build();
 

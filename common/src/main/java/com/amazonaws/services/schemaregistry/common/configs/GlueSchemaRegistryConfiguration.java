@@ -224,7 +224,7 @@ public class GlueSchemaRegistryConfiguration {
 
     private boolean isPresent(Map<String, ?> configs, String key) {
         if (!AWSSchemaRegistryUtils.getInstance().checkIfPresentInMap(configs, key)) {
-            log.debug("{} key is not present in the configs {}", key, configs);
+            log.info("{} key is not present in the configs {}", key, configs);
             return false;
         }
         return true;

@@ -85,7 +85,7 @@ public final class AWSSchemaRegistrySerializerCache implements AWSCache<Schema, 
 
     @Override
     public void put(Schema key, UUID value) {
-        log.info("Associating key {} with value {}", key, value);
+        log.debug("Associating key {} with value {}", key, value);
         cache.put(key, value);
     }
 

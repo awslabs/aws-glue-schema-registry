@@ -127,7 +127,7 @@ public class AWSSchemaRegistryClient {
             String message = String.format(
                     "Getting Schema Version Id for : schemaDefinition = %s, schemaName = %s, dataFormat = %s",
                     schemaDefinition, schemaName, dataFormat);
-            log.info(message);
+            log.debug(message);
             GetSchemaByDefinitionResponse response = null;
             response = client.getSchemaByDefinition(buildGetSchemaByDefinitionRequest(schemaDefinition, schemaName));
             return returnSchemaVersionIdIfAvailable(response);
@@ -169,14 +169,14 @@ public class AWSSchemaRegistryClient {
             String exceptionCauseMessage = e.getCause().getMessage();
 
             if (exceptionCauseMessage.contains(AWSSchemaRegistryConstants.SCHEMA_VERSION_NOT_FOUND_MSG)) {
-                log.info(exceptionCauseMessage);
+                log.debug(exceptionCauseMessage);
 
                 if (!this.glueSchemaRegistryConfiguration.isSchemaAutoRegistrationEnabled()) {
                     throw new AWSSchemaRegistryException(AWSSchemaRegistryConstants.AUTO_REGISTRATION_IS_DISABLED_MSG, e);
                 }
                 schemaVersionId = registerSchemaVersion(schemaDefinition, schemaName, dataFormat, metadata);
             } else if (exceptionCauseMessage.contains(AWSSchemaRegistryConstants.SCHEMA_NOT_FOUND_MSG)) {
-                log.info(exceptionCauseMessage);
+                log.debug(exceptionCauseMessage);
 
                 if (!this.glueSchemaRegistryConfiguration.isSchemaAutoRegistrationEnabled()) {
                     throw new AWSSchemaRegistryException(AWSSchemaRegistryConstants.AUTO_REGISTRATION_IS_DISABLED_MSG, e);
@@ -282,7 +282,7 @@ public class AWSSchemaRegistryClient {
                              Map<String, String> metadata) throws AWSSchemaRegistryException {
         UUID schemaVersionId = null;
         try {
-            log.debug("Auto Creating schema with schemaName: {} and schemaDefinition : {}", schemaName,
+            log.info("Auto Creating schema with schemaName: {} and schemaDefinition : {}", schemaName,
                       schemaDefinition);
             CreateSchemaResponse createSchemaResponse =
                     client.createSchema(getCreateSchemaRequestObject(schemaName, dataFormat, schemaDefinition));
