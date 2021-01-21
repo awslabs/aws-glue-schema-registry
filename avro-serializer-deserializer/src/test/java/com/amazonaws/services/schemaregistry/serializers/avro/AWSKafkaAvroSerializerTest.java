@@ -31,8 +31,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
-import software.amazon.awssdk.services.glue.model.EntityNotFoundException;
 import software.amazon.awssdk.services.glue.model.DataFormat;
+import software.amazon.awssdk.services.glue.model.EntityNotFoundException;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -199,6 +199,12 @@ public class AWSKafkaAvroSerializerTest extends AWSSchemaRegistryValidationUtil 
 
         String schemaDefinition = AVROUtils.getInstance().getSchemaDefinition(genericRecordWithAllTypes);
         AWSKafkaAvroSerializer awsKafkaAvroSerializer = initialize(configs, schemaDefinition, mockClient, USER_SCHEMA_VERSION_ID);
+
+        String schemaName =
+                new CustomerProvidedSchemaNamingStrategy().getSchemaName("User-Topic", genericRecordWithAllTypes);
+
+        when(mockClient.getORRegisterSchemaVersionId(eq(schemaDefinition), eq(schemaName),
+                                                     eq(DataFormat.AVRO.name()), anyMap())).thenReturn(USER_SCHEMA_VERSION_ID);
 
         byte[] serialize = awsKafkaAvroSerializer.serialize("User-Topic", genericRecordWithAllTypes);
         testForSerializedData(serialize, USER_SCHEMA_VERSION_ID, compressionType);
