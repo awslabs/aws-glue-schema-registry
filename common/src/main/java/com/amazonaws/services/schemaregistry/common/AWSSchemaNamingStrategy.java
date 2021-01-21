@@ -20,6 +20,9 @@ package com.amazonaws.services.schemaregistry.common;
  * An implementation of this interface can be provided and passed via property.
  */
 public interface AWSSchemaNamingStrategy {
+    default String getSchemaName(String transportName, Object data) {
+        return getSchemaName(transportName);
+    }
     /**
      * Returns the schemaName.
      *

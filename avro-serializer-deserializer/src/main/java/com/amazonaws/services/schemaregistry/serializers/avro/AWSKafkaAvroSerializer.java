@@ -116,9 +116,9 @@ public class AWSKafkaAvroSerializer implements Serializer<Object> {
      * @param topic Name of the topic
      * @return schemaName.
      */
-    private String getSchemaName(String topic) {
+    private String getSchemaName(String topic, Object data) {
         if (schemaName == null) {
-            return schemaNamingStrategy.getSchemaName(topic);
+            return schemaNamingStrategy.getSchemaName(topic, data);
         }
 
         return schemaName;
@@ -129,7 +129,7 @@ public class AWSKafkaAvroSerializer implements Serializer<Object> {
         return AWSSerializerInput.builder()
                 .schemaDefinition(AVROUtils.getInstance()
                                           .getSchemaDefinition(data))
-                .schemaName(getSchemaName(topic))
+                .schemaName(getSchemaName(topic, data))
                 .transportName(topic)
                 .build();
     }
