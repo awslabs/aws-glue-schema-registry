@@ -2,13 +2,13 @@ version: '2'
 
 services:
   zookeeper:
-    image: 'bitnami/zookeeper:latest'
+    image: 'public.ecr.aws/bitnami/zookeeper:latest'
     ports:
       - '2182:2181'
     environment:
       - ALLOW_ANONYMOUS_LOGIN=yes
   kafka1:
-    image: 'bitnami/kafka:latest'
+    image: 'public.ecr.aws/bitnami/kafka:latest'
     ports:
       - '9092:9092'
     environment:
