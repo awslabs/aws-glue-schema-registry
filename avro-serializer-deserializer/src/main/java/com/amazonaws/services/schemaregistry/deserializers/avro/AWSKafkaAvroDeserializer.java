@@ -43,6 +43,8 @@ public class AWSKafkaAvroDeserializer implements Deserializer<Object> {
     @Setter
     private AWSDeserializer awsDeserializer;
 
+    private SecondaryDeserializer secondaryDeserializer = SecondaryDeserializer.newInstance();
+
     /**
      * Constructor used by Kafka consumer.
      */
@@ -123,11 +125,10 @@ public class AWSKafkaAvroDeserializer implements Deserializer<Object> {
      * Configure the secondary de-serializer and validate if it's from Kafka.
      */
     private void configureSecondaryDeser(Map<String, ?> configs, boolean isKey) {
-        if (!SecondaryDeserializer.getInstance().validate(configs)) {
+        if (!secondaryDeserializer.validate(configs)) {
             throw new AWSSchemaRegistryException("The secondary deserializer is not from Kafka");
         }
-
-        SecondaryDeserializer.getInstance().configure(configs, isKey);
+        secondaryDeserializer.configure(configs, isKey);
     }
 
     /**
@@ -136,7 +137,7 @@ public class AWSKafkaAvroDeserializer implements Deserializer<Object> {
     private Object deserializeByHeaderVersionByte(String topic, byte[] data, Byte headerVersionByte) {
         return headerVersionByte.equals(AWSSchemaRegistryConstants.HEADER_VERSION_BYTE)
                 ? this.awsDeserializer.deserialize(prepareInput(data, topic))
-                : SecondaryDeserializer.getInstance().deserialize(topic, data);
+                : secondaryDeserializer.deserialize(topic, data);
     }
 
     private Byte getHeaderVersionByte(byte[] data) {

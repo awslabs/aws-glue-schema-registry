@@ -27,12 +27,11 @@ import java.util.Map;
 public class SecondaryDeserializer {
     private Class<?> clz;
     private Object obj;
-    private static final SecondaryDeserializer INSTANCE = new SecondaryDeserializer();
 
     private SecondaryDeserializer() {}
 
-    public static SecondaryDeserializer getInstance() {
-        return INSTANCE;
+    public static SecondaryDeserializer newInstance() {
+        return new SecondaryDeserializer();
     }
 
     public void configure(Map<String, ?> configs, boolean isKey) {
