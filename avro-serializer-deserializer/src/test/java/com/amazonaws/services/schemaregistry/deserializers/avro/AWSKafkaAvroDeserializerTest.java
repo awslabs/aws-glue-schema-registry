@@ -17,7 +17,6 @@ package com.amazonaws.services.schemaregistry.deserializers.avro;
 import static com.amazonaws.services.schemaregistry.utils.AWSSchemaRegistryConstants.SECONDARY_DESERIALIZER;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
