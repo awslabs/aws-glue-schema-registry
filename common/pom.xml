@@ -21,7 +21,7 @@
 
     <groupId>software.amazon.glue</groupId>
     <artifactId>schema-registry-common</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
     <name>AWS Glue Schema Registry common</name>
     <description>The AWS Glue Schema Common is the common package used by AWS Glue Schema Registry Library and has
         the core functionality.

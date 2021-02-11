@@ -26,7 +26,7 @@
         their Apache Kafka and AWS Kinesis applications with AWS Glue Schema Registry
     </description>
     <url>https://aws.amazon.com/glue</url>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
     <packaging>jar</packaging>
 
     <developers>
@@ -66,7 +66,7 @@
         <dependency>
             <groupId>software.amazon.glue</groupId>
             <artifactId>schema-registry-common</artifactId>
-            <version>1.0.0</version>
+            <version>1.0.1</version>
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/software.amazon.awssdk/arns -->
