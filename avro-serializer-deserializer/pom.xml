@@ -73,14 +73,13 @@
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>arns</artifactId>
-            <version>2.15.26</version>
+            <version>2.15.32</version>
         </dependency>
 
-        <!-- https://mvnrepository.com/artifact/org.apache.avro/avro -->
         <dependency>
-            <groupId>org.apache.avro</groupId>
-            <artifactId>avro</artifactId>
-            <version>1.9.2</version>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>kafka-clients</artifactId>
+            <version>2.5.0</version>
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/org.mockito/mockito-junit-jupiter -->
@@ -127,18 +126,6 @@
             <artifactId>junit-jupiter-api</artifactId>
             <version>5.6.2</version>
             <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <version>1.18.2</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok-utils</artifactId>
-            <version>1.18.12</version>
         </dependency>
 
     </dependencies>
