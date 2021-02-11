@@ -14,8 +14,10 @@
  */
 package com.amazonaws.services.schemaregistry.deserializers.avro;
 
+import static com.amazonaws.services.schemaregistry.utils.AWSSchemaRegistryConstants.SECONDARY_DESERIALIZER;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -26,6 +28,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.amazonaws.services.schemaregistry.deserializers.AWSDeserializer;
+
+import org.apache.kafka.common.serialization.Deserializer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -175,5 +179,51 @@ public class AWSKafkaAvroDeserializerTest {
         awsKafkaAvroDeserializer.configure(configs, false);
 
         assertDoesNotThrow(() -> awsKafkaAvroDeserializer.close());
+    }
+
+    /**
+     * Test asserting that the secondaryDeserializer in {@link AWSKafkaAvroDeserializer}
+     * can be configured independently for each instance of {@link AWSKafkaAvroDeserializer}.
+     */
+    @Test
+    public void test_deserialize_assureSecondaryDeserializersAreIndependent(){
+        // given - 2 AWSKafkaAvroDeserializer deserializer instances both with secondary deserializers,
+        // each having a unique configuration
+        Map<String, Object> config_1 = new HashMap<>(configs);
+        config_1.put(SECONDARY_DESERIALIZER, TestingDeserializerImpl.class.getName());
+        config_1.put(TestingDeserializerImpl.CUSTOM_CONFIG_KEY, "firstValue");
+        AWSKafkaAvroDeserializer deserializer_1 = new AWSKafkaAvroDeserializer(config_1);
+
+        Map<String, Object> config_2 = new HashMap<>(configs);
+        config_2.put(SECONDARY_DESERIALIZER, TestingDeserializerImpl.class.getName());
+        config_2.put(TestingDeserializerImpl.CUSTOM_CONFIG_KEY, "secondValue");
+        AWSKafkaAvroDeserializer deserializer_2 = new AWSKafkaAvroDeserializer(config_2);
+
+        byte[] testValue = new byte[1];
+        testValue[0] = (byte) 0; // some value other than (byte) 3 which would be the HEADER_VERSION_BYTE for the AWSKafkaAvroDeserializer itself to be called
+
+        // when - calling both deserializers
+        Object deserializedValue_1 = deserializer_1.deserialize(null, testValue);
+        Object deserializedValue_2 = deserializer_2.deserialize(null, testValue);
+
+        // then - each deserializer delegated the deserialization call to it's own custom configured secondary deserializer
+        // this proves we are able to configure the secondary deserializers independently
+        assertEquals("firstValue", deserializedValue_1);
+        assertEquals("secondValue", deserializedValue_2);
+    }
+
+    public static class TestingDeserializerImpl implements Deserializer<Object> {
+        public static final String CUSTOM_CONFIG_KEY = "secondary.custom.config";
+        private String value;
+
+        @Override
+        public Object deserialize(final String s, final byte[] bytes) {
+            return value;
+        }
+
+        @Override
+        public void configure(final Map<String, ?> configs, final boolean isKey) {
+            value = (String) configs.get(CUSTOM_CONFIG_KEY);
+        }
     }
 }
