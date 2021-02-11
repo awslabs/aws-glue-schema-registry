@@ -84,39 +84,6 @@
             <version>1.7.30</version>
         </dependency>
 
-        <!-- https://mvnrepository.com/artifact/software.amazon.awssdk/aws-json-protocol -->
-        <dependency>
-            <groupId>software.amazon.awssdk</groupId>
-            <artifactId>aws-json-protocol</artifactId>
-            <version>2.15.30</version>
-        </dependency>
-
-<!--        &lt;!&ndash; https://mvnrepository.com/artifact/software.amazon.awssdk/cloudwatch &ndash;&gt;-->
-        <dependency>
-            <groupId>software.amazon.awssdk</groupId>
-            <artifactId>cloudwatch</artifactId>
-            <version>2.15.30</version>
-        </dependency>
-
-        <dependency>
-            <groupId>software.amazon.awssdk</groupId>
-            <artifactId>sdk-core</artifactId>
-            <version>2.15.30</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.kafka</groupId>
-            <artifactId>kafka-clients</artifactId>
-            <version>2.5.0</version>
-        </dependency>
-
-        <!-- https://mvnrepository.com/artifact/org.apache.kafka/kafka-streams -->
-        <dependency>
-            <groupId>org.apache.kafka</groupId>
-            <artifactId>kafka-streams</artifactId>
-            <version>2.5.0</version>
-        </dependency>
-
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
