@@ -165,6 +165,13 @@ Schema Name can be provided by setting this property -
     properties.put(AWSSchemaRegistryConstants.SCHEMA_NAME, "my-schema"); // If not passed, uses transport name (topic name in case of Kafka)
 ```
 
+Alternatively, a schema registry naming strategy implementation can be provided.
+```java
+    properties.put(AWSSchemaRegistryConstants.SCHEMA_NAMING_GENERATION_CLASS,
+                    "com.amazonaws.services.schemaregistry.serializers.avro.CustomerProvidedSchemaNamingStrategy");
+```
+An example test implementation class is [here](https://github.com/awslabs/aws-glue-schema-registry/blob/master/avro-serializer-deserializer/src/test/java/com/amazonaws/services/schemaregistry/serializers/avro/CustomerProvidedSchemaNamingStrategy.java).
+
 ### Providing Registry Description
 
 Registry Description can be provided by setting this property - 
