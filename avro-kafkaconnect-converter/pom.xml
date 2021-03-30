@@ -21,7 +21,7 @@
 
     <groupId>software.amazon.glue</groupId>
     <artifactId>schema-registry-kafkaconnect-converter</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
     <name>AWS Glue Schema Registry Kafka Connect AVRO Converter</name>
     <description>The AWS Glue Schema Registry Kafka Connect Converter enables Java developers to easily integrate
         their Kafka Connect applications with AWS Glue Schema Registry
@@ -66,7 +66,14 @@
         <dependency>
             <groupId>software.amazon.glue</groupId>
             <artifactId>schema-registry-serde</artifactId>
-            <version>1.0.0</version>
+            <version>1.0.1</version>
+        </dependency>
+
+        <!-- https://mvnrepository.com/artifact/org.apache.kafka/connect-api -->
+        <dependency>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>connect-api</artifactId>
+            <version>2.5.0</version>
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/org.mockito/mockito-junit-jupiter -->

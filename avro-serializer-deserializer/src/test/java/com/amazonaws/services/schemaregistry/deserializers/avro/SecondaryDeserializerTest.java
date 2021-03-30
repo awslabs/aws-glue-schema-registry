@@ -63,7 +63,7 @@ public class SecondaryDeserializerTest {
      */
     @BeforeEach
     public void setup() {
-        secondaryDeserializer = SecondaryDeserializer.getInstance();
+        secondaryDeserializer = SecondaryDeserializer.newInstance();
 
         this.configs.put(AWSSchemaRegistryConstants.AWS_ENDPOINT, "https://test");
         this.configs.put(AWSSchemaRegistryConstants.AWS_REGION, "us-west-2");

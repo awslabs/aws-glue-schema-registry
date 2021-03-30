@@ -57,7 +57,7 @@ The recommended way to use the AWS Glue Schema Registry Library for Java is to c
   <dependency>
       <groupId>software.amazon.glue</groupId>
       <artifactId>schema-registry-serde</artifactId>
-      <version>1.0.0</version>
+      <version>1.0.1</version>
   </dependency>
   ```
 ### Code Example
@@ -165,6 +165,13 @@ Schema Name can be provided by setting this property -
     properties.put(AWSSchemaRegistryConstants.SCHEMA_NAME, "my-schema"); // If not passed, uses transport name (topic name in case of Kafka)
 ```
 
+Alternatively, a schema registry naming strategy implementation can be provided.
+```java
+    properties.put(AWSSchemaRegistryConstants.SCHEMA_NAMING_GENERATION_CLASS,
+                    "com.amazonaws.services.schemaregistry.serializers.avro.CustomerProvidedSchemaNamingStrategy");
+```
+An example test implementation class is [here](https://github.com/awslabs/aws-glue-schema-registry/blob/master/avro-serializer-deserializer/src/test/java/com/amazonaws/services/schemaregistry/serializers/avro/CustomerProvidedSchemaNamingStrategy.java).
+
 ### Providing Registry Description
 
 Registry Description can be provided by setting this property - 
@@ -257,7 +264,7 @@ It should look like this
 * If using bash, run the below commands to set-up your CLASSPATH in your bash_profile. (For any other shell, update the environment accordingly.)
   ```bash
       echo 'export GSR_LIB_BASE_DIR=<>' >>~/.bash_profile
-      echo 'export GSR_LIB_VERSION=1.0.0' >>~/.bash_profile
+      echo 'export GSR_LIB_VERSION=1.0.1' >>~/.bash_profile
       echo 'export KAFKA_HOME=<your kafka installation directory>' >>~/.bash_profile
       echo 'export CLASSPATH=$CLASSPATH:$GSR_LIB_BASE_DIR/avro-kafkaconnect-converter/target/schema-registry-kafkaconnect-converter-$GSR_LIB_VERSION.jar:$GSR_LIB_BASE_DIR/common/target/schema-registry-common-$GSR_LIB_VERSION.jar:$GSR_LIB_BASE_DIR/avro-serializer-deserializer/target/schema-registry-serde-$GSR_LIB_VERSION.jar' >>~/.bash_profile
       source ~/.bash_profile
@@ -313,7 +320,7 @@ It should look like this
   <dependency>
         <groupId>software.amazon.glue</groupId>
         <artifactId>schema-registry-kafkastreams-serde</artifactId>
-        <version>1.0.0</version>
+        <version>1.0.1</version>
   </dependency>
   ```
 
@@ -358,7 +365,7 @@ inside Amazon VPC.](https://docs.aws.amazon.com/kinesisanalytics/latest/java/vpc
   <dependency>
        <groupId>software.amazon.glue</groupId>
        <artifactId>schema-registry-flink-serde</artifactId>
-       <version>1.0.0</version>
+       <version>1.0.1</version>
   </dependency>
   ```
 ### Code Example

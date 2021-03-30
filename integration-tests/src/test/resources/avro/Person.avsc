@@ -1,0 +1,12 @@
+{
+     "type": "record",
+     "namespace": "com.amazon.aws.kinesis.schemaregistry.kafka.serdes",
+     "name": "Person",
+     "fields": [
+       { "name": "firstName", "type": "string", "doc": "First Name" },
+       { "name": "lastName", "type": "string", "doc": "Last Name" },
+       { "name": "age", "type": "int", "doc": "Age" },
+       { "name": "height", "type": "float", "doc": "Height in centimeters" },
+       { "name": "employed", "type": "boolean", "default": true, "doc": "Employment status" }
+     ]
+}

@@ -1,0 +1,8 @@
+{
+    "namespace": "com.amazon.aws.kinesis.schemaregistry.kafka.serdes",
+    "type": "record",
+    "name": "backwardAll3",
+    "fields": [
+        {"name": "f1", "type": "string"}
+    ]
+}
