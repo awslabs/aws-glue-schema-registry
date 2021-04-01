@@ -21,7 +21,7 @@
 
     <groupId>software.amazon.glue</groupId>
     <artifactId>schema-registry-build-tools</artifactId>
-    <version>1.0.1</version>
+    <version>1.0.2</version>
     <name>AWS Glue Schema Registry Build Tools</name>
     <description>The AWS Glue Schema Registry build tools helps run code coverage for AWS Glue Schema Registry Library
     </description>
@@ -82,22 +82,22 @@
         <dependency>
             <groupId>software.amazon.glue</groupId>
             <artifactId>schema-registry-serde</artifactId>
-            <version>1.0.1</version>
+            <version>1.0.2</version>
         </dependency>
         <dependency>
             <groupId>software.amazon.glue</groupId>
             <artifactId>schema-registry-common</artifactId>
-            <version>1.0.1</version>
+            <version>1.0.2</version>
         </dependency>
         <dependency>
             <groupId>software.amazon.glue</groupId>
             <artifactId>schema-registry-kafkastreams-serde</artifactId>
-            <version>1.0.1</version>
+            <version>1.0.2</version>
         </dependency>
         <dependency>
             <groupId>software.amazon.glue</groupId>
             <artifactId>schema-registry-flink-serde</artifactId>
-            <version>1.0.1</version>
+            <version>1.0.2</version>
         </dependency>
     </dependencies>
 

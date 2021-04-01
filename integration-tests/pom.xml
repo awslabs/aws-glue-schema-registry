@@ -21,7 +21,7 @@
 
     <groupId>software.amazon.glue</groupId>
     <artifactId>schema-registry-integration-tests</artifactId>
-    <version>1.0.1</version>
+    <version>1.0.2</version>
     <name>AWS Glue Schema Registry Integration Tests</name>
     <description>The AWS Glue Schema Registry tests would do a sanity check for the schema registry library.
     </description>
