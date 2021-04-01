@@ -21,7 +21,7 @@
 
     <groupId>software.amazon.glue</groupId>
     <artifactId>schema-registry-examples</artifactId>
-    <version>1.0.1</version>
+    <version>1.0.2</version>
     <name>AWS Glue Schema Registry examples</name>
     <description>The AWS Glue Schema examples has sample code for using Schema Registry with different applications.
     </description>
@@ -79,7 +79,7 @@
         <dependency>
             <groupId>software.amazon.glue</groupId>
             <artifactId>schema-registry-serde</artifactId>
-            <version>1.0.1</version>
+            <version>1.0.2</version>
         </dependency>
 
         <dependency>

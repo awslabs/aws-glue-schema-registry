@@ -21,7 +21,7 @@
 
     <groupId>software.amazon.glue</groupId>
     <artifactId>schema-registry-parent</artifactId>
-    <version>1.0.1</version>
+    <version>1.0.2</version>
     <packaging>pom</packaging>
     <name>AWS Glue Schema Registry Library</name>
     <description>The AWS Glue Schema Registry Library for Java enables Java developers to easily integrate their
@@ -113,7 +113,7 @@
                     <dependency>
                         <groupId>software.amazon.glue</groupId>
                         <artifactId>schema-registry-build-tools</artifactId>
-                        <version>1.0.1</version>
+                        <version>1.0.2</version>
                     </dependency>
                 </dependencies>
                 <configuration>
