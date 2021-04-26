@@ -32,4 +32,13 @@ public class CustomerProvidedSchemaNamingStrategy implements AWSSchemaNamingStra
                 .getSchema(data);
         return String.format("%s-%s", transportName, schema.getName());
     }
+
+    @Override
+    public String getSchemaName(String transportName,
+                                Object data,
+                                boolean isKey) {
+        Schema schema = AVROUtils.getInstance()
+                .getSchema(data);
+        return String.format("%s-%s-%s", transportName, schema.getName(), isKey ? "key" : "value");
+    }
 }

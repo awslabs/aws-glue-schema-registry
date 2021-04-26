@@ -213,6 +213,7 @@
                         <!-- Ignore exception classes -->
                         <exclude>**/AWSIncompatibleDataException*</exclude>
                         <exclude>**/AWSSchemaRegistryException*</exclude>
+                        <exclude>**/AWSSchemaNamingStrategy*</exclude>
                     </excludes>
                 </configuration>
                 <executions>
