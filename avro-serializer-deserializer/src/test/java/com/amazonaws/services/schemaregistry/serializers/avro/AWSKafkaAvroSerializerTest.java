@@ -201,7 +201,7 @@ public class AWSKafkaAvroSerializerTest extends AWSSchemaRegistryValidationUtil 
         AWSKafkaAvroSerializer awsKafkaAvroSerializer = initialize(configs, schemaDefinition, mockClient, USER_SCHEMA_VERSION_ID);
 
         String schemaName =
-                new CustomerProvidedSchemaNamingStrategy().getSchemaName("User-Topic", genericRecordWithAllTypes);
+                new CustomerProvidedSchemaNamingStrategy().getSchemaName("User-Topic", genericRecordWithAllTypes, true);
 
         when(mockClient.getORRegisterSchemaVersionId(eq(schemaDefinition), eq(schemaName),
                                                      eq(DataFormat.AVRO.name()), anyMap())).thenReturn(USER_SCHEMA_VERSION_ID);
@@ -350,10 +350,11 @@ public class AWSKafkaAvroSerializerTest extends AWSSchemaRegistryValidationUtil 
     @Test
     public void testPrepareInput_nullDefinitionData_throwsException() throws NoSuchMethodException {
         AWSKafkaAvroSerializer awsKafkaAvroSerializer = new AWSKafkaAvroSerializer();
-        Method method = AWSKafkaAvroSerializer.class.getDeclaredMethod("prepareInput", Object.class, String.class);
+        Method method = AWSKafkaAvroSerializer.class.getDeclaredMethod("prepareInput", Object.class, String.class,
+                                                                       Boolean.class);
         method.setAccessible(true);
         try {
-            method.invoke(awsKafkaAvroSerializer,  null, "User-Topic");
+            method.invoke(awsKafkaAvroSerializer,  null, "User-Topic", true);
         } catch(Exception e) {
             assertEquals(IllegalArgumentException.class, e.getCause().getClass());
         }

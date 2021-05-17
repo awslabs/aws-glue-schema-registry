@@ -37,6 +37,7 @@ public class AWSKafkaAvroSerializer implements Serializer<Object> {
     private final UUID schemaVersionId;
     private String schemaName;
     private AWSSchemaNamingStrategy schemaNamingStrategy;
+    private boolean isKey;
 
     /**
      * Constructor used by Kafka producer when passing as the property.
@@ -71,6 +72,7 @@ public class AWSKafkaAvroSerializer implements Serializer<Object> {
     public void configure(@NonNull Map<String, ?> configs, boolean isKey) {
         log.info("Configuring Amazon Glue Schema Registry Service using these properties: {}", configs);
         schemaName = AWSSchemaRegistryUtils.getInstance().getSchemaName(configs);
+        this.isKey = isKey;
 
         if (schemaName == null) {
             schemaNamingStrategy = AWSSchemaRegistryUtils.getInstance().configureSchemaNamingStrategy(configs);
@@ -90,7 +92,7 @@ public class AWSKafkaAvroSerializer implements Serializer<Object> {
         UUID schemaVersionIdFromRegistry = null;
         if (this.schemaVersionId == null) {
             log.debug("Schema Version Id is null. Trying to register the schema.");
-            schemaVersionIdFromRegistry = avroSerializer.registerSchema(prepareInput(data, topic));
+            schemaVersionIdFromRegistry = avroSerializer.registerSchema(prepareInput(data, topic, isKey));
         } else {
             schemaVersionIdFromRegistry = this.schemaVersionId;
         }
@@ -116,20 +118,21 @@ public class AWSKafkaAvroSerializer implements Serializer<Object> {
      * @param topic Name of the topic
      * @return schemaName.
      */
-    private String getSchemaName(String topic, Object data) {
+    private String getSchemaName(String topic, Object data, Boolean isKey) {
         if (schemaName == null) {
-            return schemaNamingStrategy.getSchemaName(topic, data);
+            return schemaNamingStrategy.getSchemaName(topic, data, isKey);
         }
 
         return schemaName;
     }
 
     private AWSSerializerInput prepareInput(@NonNull Object data,
-                                            String topic) {
+                                            String topic,
+                                            Boolean isKey) {
         return AWSSerializerInput.builder()
                 .schemaDefinition(AVROUtils.getInstance()
                                           .getSchemaDefinition(data))
-                .schemaName(getSchemaName(topic, data))
+                .schemaName(getSchemaName(topic, data, isKey))
                 .transportName(topic)
                 .build();
     }
