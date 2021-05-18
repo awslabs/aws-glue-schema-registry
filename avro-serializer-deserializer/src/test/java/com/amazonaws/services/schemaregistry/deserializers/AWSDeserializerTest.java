@@ -444,41 +444,6 @@ public class AWSDeserializerTest {
     }
 
     /**
-     * Tests getDataFormat method for null result by passing null schema version ID
-     * @throws NoSuchMethodException
-     * @throws InvocationTargetException
-     * @throws IllegalAccessException
-     */
-    @Test
-    public void testGetDataFormat_nullSchemaVersionId_returnsNull() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-        AWSDeserializer awsDeserializer = createAwsDeserializer();
-        Method method = AWSDeserializer.class.getDeclaredMethod("getDataFormat", UUID.class);
-        method.setAccessible(true);
-
-        assertNull(method.invoke(awsDeserializer, (UUID) null));
-    }
-
-    /***
-     * Tests getDataFormat for AVRO type by passing AVRO schema version ID
-     * @throws NoSuchMethodException
-     * @throws InvocationTargetException
-     * @throws IllegalAccessException
-     */
-    @Test
-    public void testGetDataFormat_validSchemaVersionId_returnsDataFormat() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-        AWSDeserializer awsDeserializer = createAwsDeserializer(mockDeserializerFactory);
-        AWSSchemaRegistryDeserializerCache deserializerCache = invalidateAndGetCache();
-        deserializerCache.put(USER_SCHEMA_VERSION_ID, new Schema(userSchemaDefinition, DataFormat.AVRO.name(),
-                USER_SCHEMA_NAME));
-
-        awsDeserializer.setCache(deserializerCache);
-        Method method = AWSDeserializer.class.getDeclaredMethod("getDataFormat", UUID.class);
-        method.setAccessible(true);
-
-        assertEquals(DataFormat.AVRO, method.invoke(awsDeserializer, USER_SCHEMA_VERSION_ID));
-    }
-
-    /**
      * Tests invoking close method.
      */
     @Test

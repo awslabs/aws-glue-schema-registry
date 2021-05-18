@@ -20,7 +20,6 @@ import com.amazonaws.services.schemaregistry.common.AWSDeserializerInput;
 import com.amazonaws.services.schemaregistry.common.AWSSchemaRegistryClient;
 import com.amazonaws.services.schemaregistry.common.Schema;
 import com.amazonaws.services.schemaregistry.common.configs.GlueSchemaRegistryConfiguration;
-import com.amazonaws.services.schemaregistry.deserializers.avro.AWSAvroDeserializer;
 import com.amazonaws.services.schemaregistry.exception.AWSIncompatibleDataException;
 import com.amazonaws.services.schemaregistry.exception.AWSSchemaRegistryException;
 import lombok.Builder;
@@ -35,7 +34,6 @@ import software.amazon.awssdk.services.glue.model.DataFormat;
 import software.amazon.awssdk.services.glue.model.GetSchemaVersionResponse;
 
 import java.io.Closeable;
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.Properties;
@@ -125,14 +123,6 @@ public class AWSDeserializer implements Closeable {
         return awsDeserializerSchema.getSchema();
     }
 
-    private DataFormat getDataFormat(UUID schemaVersionId) {
-        DataFormat dataFormat = null;
-        if (schemaVersionId != null && cache.get(schemaVersionId) != null) {
-            dataFormat = DataFormat.valueOf(cache.get(schemaVersionId).getDataFormat());
-        }
-        return dataFormat;
-    }
-
     /**
      * Fetches the schema definition for a the serialized data.
      *
@@ -177,23 +167,6 @@ public class AWSDeserializer implements Closeable {
         }
         AWSDeserializerDataParser awsDeserializerDataParser = AWSDeserializerDataParser.getInstance();
         return awsDeserializerDataParser.isDataCompatible(ByteBuffer.wrap(data), new StringBuilder());
-    }
-
-    /**
-     * Get the byte array of Avro object to be de-serialized
-     *
-     * @param buffer byte buffer to be de-serialized
-     * @return byte array of Avro object to be de-serialized
-     * @throws IOException Exception during decompression
-     */
-    public byte[] getAvroDeserializedData(@NonNull ByteBuffer buffer) throws IOException {
-        AwsDeserializerSchema awsDeserializerSchema = getAwsDeserializerSchema(buffer);
-        Schema schema = awsDeserializerSchema.getSchema();
-        DataFormat dataFormat = DataFormat.valueOf(schema.getDataFormat());
-        AWSAvroDeserializer awsAvroDeserializer =
-                (AWSAvroDeserializer) deserializerFactory.getInstance(dataFormat, this.glueSchemaRegistryConfiguration);
-
-        return awsAvroDeserializer.getDeserializedData(buffer);
     }
 
     /**
