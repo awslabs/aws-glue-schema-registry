@@ -18,7 +18,6 @@ import com.amazonaws.services.schemaregistry.common.AWSCompressionFactory;
 import com.amazonaws.services.schemaregistry.common.AWSDataFormatDeserializer;
 import com.amazonaws.services.schemaregistry.common.configs.GlueSchemaRegistryConfiguration;
 import com.amazonaws.services.schemaregistry.deserializers.AWSDeserializerDataParser;
-import com.amazonaws.services.schemaregistry.utils.AWSSchemaRegistryConstants;
 import com.amazonaws.services.schemaregistry.utils.AvroRecordType;
 import com.amazonaws.services.schemaregistry.exception.AWSIncompatibleDataException;
 import com.amazonaws.services.schemaregistry.exception.AWSSchemaRegistryException;
@@ -107,18 +106,14 @@ public class AWSAvroDeserializer implements AWSDataFormatDeserializer {
     @Override
     public Object deserialize(@NonNull UUID schemaVersionId, @NonNull ByteBuffer buffer, @NonNull String schema) {
         try {
+            AWSDeserializerDataParser awsDeserializerDataParser = AWSDeserializerDataParser.getInstance();
             // Validate the data
             StringBuilder errorMessageBuilder = new StringBuilder();
-            if (!AWSDeserializerDataParser.getInstance().isDataCompatible(buffer, errorMessageBuilder)) {
+            if (!awsDeserializerDataParser.isDataCompatible(buffer, errorMessageBuilder)) {
                 throw new AWSIncompatibleDataException(errorMessageBuilder.toString());
             }
 
-            // Skip the schema version id
-            buffer.getLong();
-            // Skip the schema version id
-            buffer.getLong();
-
-            byte[] data = getDeserializedData(buffer);
+            byte[] data = awsDeserializerDataParser.getPlainData(buffer);
 
             log.debug("Length of actual message: {}, schema version id = {}", data.length, schemaVersionId);
 
@@ -137,36 +132,8 @@ public class AWSAvroDeserializer implements AWSDataFormatDeserializer {
         }
     }
 
-    public byte[] getDeserializedData(ByteBuffer buffer) throws IOException {
-        byte[] data = new byte[buffer.remaining()];
-        buffer.get(data);
-
-        if (AWSDeserializerDataParser.getInstance().isCompressionEnabled(buffer)) {
-            data = decompressData(buffer, getHeaderLength(), dataLength(buffer));
-        }
-
-        return data;
-    }
-
     private BinaryDecoder getBinaryDecoder(byte[] data, int start, int end) {
         return DecoderFactory.get().binaryDecoder(data, start, end, null);
-    }
-
-    private int dataLength(ByteBuffer data) {
-        return data.limit() - getHeaderLength();
-
-    }
-
-    private int getHeaderLength() {
-        return AWSSchemaRegistryConstants.HEADER_VERSION_BYTE_SIZE + AWSSchemaRegistryConstants.COMPRESSION_BYTE_SIZE
-                + AWSSchemaRegistryConstants.SCHEMA_VERSION_ID_SIZE;
-    }
-
-    private byte[] decompressData(ByteBuffer buffer, int start, int end) throws IOException {
-        return compressionFactory
-                .getCompressionHandler(AWSDeserializerDataParser.getInstance().getCompressionByte(buffer))
-                .decompress(buffer.array(), start, end);
-
     }
 
     private Schema getSchemaDefinition(String schema) {
