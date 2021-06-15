@@ -257,7 +257,7 @@ public class GlueSchemaRegistryKafkaStreamsSerdeTest {
      * Tests invoking close method.
      */
     @ParameterizedTest
-    @EnumSource(value = DataFormat.class, mode = EnumSource.Mode.EXCLUDE, names = {"UNKNOWN_TO_SDK_VERSION"})
+    @EnumSource(value = DataFormat.class, mode = EnumSource.Mode.EXCLUDE, names = {"UNKNOWN_TO_SDK_VERSION", "PROTOBUF"})
     public void testClose_succeeds(DataFormat dataFormat) {
         configs = getProperties(dataFormat, AvroRecordType.GENERIC_RECORD);
         glueSchemaRegistryKafkaStreamsSerde = createTestGlueSchemaRegistryKafkaStreamsSerde(dataFormat);
@@ -268,7 +268,7 @@ public class GlueSchemaRegistryKafkaStreamsSerdeTest {
      * Test the invocation of configure method
      */
     @ParameterizedTest
-    @EnumSource(value = DataFormat.class, mode = EnumSource.Mode.EXCLUDE, names = {"UNKNOWN_TO_SDK_VERSION"})
+    @EnumSource(value = DataFormat.class, mode = EnumSource.Mode.EXCLUDE, names = {"UNKNOWN_TO_SDK_VERSION", "PROTOBUF"})
     public void testConfigure_succeeds(DataFormat dataFormat) {
         configs = getProperties(dataFormat, AvroRecordType.GENERIC_RECORD);
         glueSchemaRegistryKafkaStreamsSerde = createTestGlueSchemaRegistryKafkaStreamsSerde(dataFormat);

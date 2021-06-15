@@ -19,6 +19,7 @@ import com.amazonaws.services.schemaregistry.common.configs.GlueSchemaRegistryCo
 import com.amazonaws.services.schemaregistry.exception.AWSSchemaRegistryException;
 import com.amazonaws.services.schemaregistry.serializers.avro.AvroSerializer;
 import com.amazonaws.services.schemaregistry.serializers.json.JsonSerializer;
+import com.amazonaws.services.schemaregistry.serializers.protobuf.ProtobufSerializer;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.services.glue.model.DataFormat;
@@ -52,6 +53,11 @@ public class GlueSchemaRegistrySerializerFactory {
                 this.serializerMap.computeIfAbsent(dataFormat, key -> new JsonSerializer(glueSchemaRegistryConfig));
 
                 log.debug("Returning Json serializer instance from GlueSchemaRegistrySerializerFactory");
+                return this.serializerMap.get(dataFormat);
+            case PROTOBUF:
+                this.serializerMap.computeIfAbsent(dataFormat, key -> new ProtobufSerializer(glueSchemaRegistryConfig));
+
+                log.debug("Returning Protobuf serializer instance from GlueSchemaRegistrySerializerFactory");
                 return this.serializerMap.get(dataFormat);
             default:
                 String message = String.format("Unsupported data format: %s", dataFormat);
