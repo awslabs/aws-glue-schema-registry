@@ -110,6 +110,8 @@
         <commons.cli.version>1.2</commons.cli.version>
         <awaitility.version>3.0.0</awaitility.version>
         <localstack.utils>0.2.11</localstack.utils>
+        <protobuf.java.version>3.17.3</protobuf.java.version>
+        <localstack.utils>0.2.11</localstack.utils>
     </properties>
 
     <dependencyManagement>
@@ -342,6 +344,12 @@
                 <version>${hamcrest.version}</version>
                 <scope>test</scope>
             </dependency>
+            <dependency>
+                <groupId>com.google.protobuf</groupId>
+                <artifactId>protobuf-java</artifactId>
+                <version>${protobuf.java.version}</version>
+            </dependency>
+
         </dependencies>
     </dependencyManagement>
 
