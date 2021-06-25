@@ -1,0 +1,24 @@
+{
+  "schema": {
+    "$id": "https://example.com/address.schema.json",
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+      "f2": { "type": "number", "maximum": 1000 }
+    }
+  },
+  "payload": [
+    {
+      "f1": "Ferrari",
+      "f2": 488
+    },
+    {
+      "f1": "McLaren",
+      "f2": 720
+    },
+    {
+      "f1": "Porsche",
+      "f2": 911
+    }
+  ]
+}

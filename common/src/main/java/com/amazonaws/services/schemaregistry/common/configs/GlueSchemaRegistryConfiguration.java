@@ -17,26 +17,28 @@ package com.amazonaws.services.schemaregistry.common.configs;
 
 import com.amazonaws.services.schemaregistry.exception.AWSSchemaRegistryException;
 import com.amazonaws.services.schemaregistry.utils.AWSSchemaRegistryConstants;
-import com.amazonaws.services.schemaregistry.utils.AWSSchemaRegistryUtils;
 import com.amazonaws.services.schemaregistry.utils.AvroRecordType;
+import com.amazonaws.services.schemaregistry.utils.GlueSchemaRegistryUtils;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.EnumUtils;
 import software.amazon.awssdk.services.glue.model.Compatibility;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
 /**
  * Glue Schema Registry Configuration entries.
- *
  */
 @Slf4j
 @Data
 public class GlueSchemaRegistryConfiguration {
-
+    private static final String DELIMITER = "-";
     private AWSSchemaRegistryConstants.COMPRESSION compressionType = AWSSchemaRegistryConstants.COMPRESSION.NONE;
     private String endPoint;
     private String region;
@@ -50,7 +52,8 @@ public class GlueSchemaRegistryConfiguration {
     private Map<String, String> tags = new HashMap<>();
     private Map<String, String> metadata;
 
-    private static final String DELIMITER = "-";
+    private List<SerializationFeature> jacksonSerializationFeatures;
+    private List<DeserializationFeature> jacksonDeserializationFeatures;
 
     public GlueSchemaRegistryConfiguration(String region) {
         Map<String, Object> config = new HashMap<>();
@@ -80,6 +83,8 @@ public class GlueSchemaRegistryConfiguration {
         validateAndSetCompatibility(configs);
         validateAndSetCompressionType(configs);
         validateAndSetSchemaAutoRegistrationSetting(configs);
+        validateAndSetJacksonSerializationFeatures(configs);
+        validateAndSetJacksonDeserializationFeatures(configs);
         validateAndSetTags(configs);
         validateAndSetMetadata(configs);
     }
@@ -90,17 +95,18 @@ public class GlueSchemaRegistryConfiguration {
     }
 
     private void validateAndSetCompressionType(Map<String, ?> configs) {
-        if (isPresent(configs, AWSSchemaRegistryConstants.COMPRESSION_TYPE)
-                && validateCompressionType((String) configs.get(AWSSchemaRegistryConstants.COMPRESSION_TYPE))) {
-            this.compressionType = AWSSchemaRegistryConstants.COMPRESSION
-                    .valueOf(((String) configs.get(AWSSchemaRegistryConstants.COMPRESSION_TYPE)).toUpperCase());
+        if (isPresent(configs, AWSSchemaRegistryConstants.COMPRESSION_TYPE) && validateCompressionType(
+                (String) configs.get(AWSSchemaRegistryConstants.COMPRESSION_TYPE))) {
+            this.compressionType = AWSSchemaRegistryConstants.COMPRESSION.valueOf(
+                    ((String) configs.get(AWSSchemaRegistryConstants.COMPRESSION_TYPE)).toUpperCase());
         }
     }
 
     private boolean validateCompressionType(String compressionType) {
         if (!EnumUtils.isValidEnum(AWSSchemaRegistryConstants.COMPRESSION.class, compressionType.toUpperCase())) {
-            String errorMessage = String.format("Invalid Compression type : %s, Accepted values are : %s",
-                    compressionType, AWSSchemaRegistryConstants.COMPRESSION.values());
+            String errorMessage =
+                    String.format("Invalid Compression type : %s, Accepted values are : %s", compressionType,
+                                  AWSSchemaRegistryConstants.COMPRESSION.values());
             throw new AWSSchemaRegistryException(errorMessage);
         }
         return true;
@@ -116,13 +122,15 @@ public class GlueSchemaRegistryConfiguration {
 
     private void validateAndSetCompatibility(Map<String, ?> configs) {
         if (isPresent(configs, AWSSchemaRegistryConstants.COMPATIBILITY_SETTING)) {
-            this.compatibilitySetting = Compatibility.fromValue(String.valueOf(configs.get(AWSSchemaRegistryConstants.COMPATIBILITY_SETTING)).toUpperCase());
+            this.compatibilitySetting = Compatibility.fromValue(
+                    String.valueOf(configs.get(AWSSchemaRegistryConstants.COMPATIBILITY_SETTING))
+                            .toUpperCase());
 
             if (this.compatibilitySetting == null
-                    || this.compatibilitySetting == Compatibility.UNKNOWN_TO_SDK_VERSION) {
+                || this.compatibilitySetting == Compatibility.UNKNOWN_TO_SDK_VERSION) {
                 String errorMessage = String.format("Invalid compatibility setting : %s, Accepted values are : %s",
-                        configs.get(AWSSchemaRegistryConstants.COMPATIBILITY_SETTING),
-                        Compatibility.knownValues());
+                                                    configs.get(AWSSchemaRegistryConstants.COMPATIBILITY_SETTING),
+                                                    Compatibility.knownValues());
                 throw new AWSSchemaRegistryException(errorMessage);
             }
         } else {
@@ -190,10 +198,12 @@ public class GlueSchemaRegistryConfiguration {
 
     private void validateAndSetSchemaAutoRegistrationSetting(Map<String, ?> configs) {
         if (isPresent(configs, AWSSchemaRegistryConstants.SCHEMA_AUTO_REGISTRATION_SETTING)) {
-            this.schemaAutoRegistrationEnabled = Boolean.parseBoolean(configs.get(AWSSchemaRegistryConstants.SCHEMA_AUTO_REGISTRATION_SETTING).toString());
+            this.schemaAutoRegistrationEnabled = Boolean.parseBoolean(
+                    configs.get(AWSSchemaRegistryConstants.SCHEMA_AUTO_REGISTRATION_SETTING)
+                            .toString());
         } else {
             log.info("schemaAutoRegistrationEnabled is not defined in the properties. Using the default value {}",
-                    schemaAutoRegistrationEnabled);
+                     schemaAutoRegistrationEnabled);
         }
     }
 
@@ -222,8 +232,38 @@ public class GlueSchemaRegistryConfiguration {
         }
     }
 
-    private boolean isPresent(Map<String, ?> configs, String key) {
-        if (!AWSSchemaRegistryUtils.getInstance().checkIfPresentInMap(configs, key)) {
+    private void validateAndSetJacksonSerializationFeatures(Map<String, ?> configs) {
+        if (isPresent(configs, AWSSchemaRegistryConstants.JACKSON_SERIALIZATION_FEATURES)) {
+            if (configs.get(AWSSchemaRegistryConstants.JACKSON_SERIALIZATION_FEATURES) instanceof List) {
+                List<String> serialzationFeatures =
+                        (List<String>) configs.get(AWSSchemaRegistryConstants.JACKSON_SERIALIZATION_FEATURES);
+                this.jacksonSerializationFeatures = serialzationFeatures.stream()
+                        .map(sf -> SerializationFeature.valueOf(sf))
+                        .collect(Collectors.toList());
+            } else {
+                throw new AWSSchemaRegistryException("Jackson Serialization features should be a list");
+            }
+        }
+    }
+
+    private void validateAndSetJacksonDeserializationFeatures(Map<String, ?> configs) {
+        if (isPresent(configs, AWSSchemaRegistryConstants.JACKSON_DESERIALIZATION_FEATURES)) {
+            if (configs.get(AWSSchemaRegistryConstants.JACKSON_DESERIALIZATION_FEATURES) instanceof List) {
+                List<String> deserialzationFeatures =
+                        (List<String>) configs.get(AWSSchemaRegistryConstants.JACKSON_DESERIALIZATION_FEATURES);
+                this.jacksonDeserializationFeatures = deserialzationFeatures.stream()
+                        .map(dsf -> DeserializationFeature.valueOf(dsf))
+                        .collect(Collectors.toList());
+            } else {
+                throw new AWSSchemaRegistryException("Jackson Deserialization features should be a list");
+            }
+        }
+    }
+
+    private boolean isPresent(Map<String, ?> configs,
+                              String key) {
+        if (!GlueSchemaRegistryUtils.getInstance()
+                .checkIfPresentInMap(configs, key)) {
             log.info("{} key is not present in the configs {}", key, configs);
             return false;
         }
@@ -231,15 +271,19 @@ public class GlueSchemaRegistryConfiguration {
     }
 
     private Map<String, ?> getMapFromPropertiesFile(Properties properties) {
-        return new HashMap<>(properties.entrySet().stream()
-                .collect(Collectors.toMap(e -> e.getKey().toString(), e -> e.getValue())));
+        return new HashMap<>(properties.entrySet()
+                                     .stream()
+                                     .collect(Collectors.toMap(e -> e.getKey()
+                                             .toString(), e -> e.getValue())));
     }
 
     private String buildDescriptionFromProperties() throws AWSSchemaRegistryException {
         StringBuilder message = new StringBuilder();
         message.append("DEFAULT-DESCRIPTION")
-                .append(DELIMITER).append(region)
-                .append(DELIMITER).append(registryName);
+                .append(DELIMITER)
+                .append(region)
+                .append(DELIMITER)
+                .append(registryName);
 
         return message.toString();
     }

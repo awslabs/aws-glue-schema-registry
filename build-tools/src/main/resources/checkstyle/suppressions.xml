@@ -25,4 +25,8 @@
     <suppress files="/configuration/*.*" checks="ParameterNumber"/>
     <suppress files="^((?!Test).)*$" id="MethodNameTest"/>
     <suppress files=".*Test\.java$" id="MethodNameRegular"/>
+    <suppress files="com[\\/]amazonaws[\\/]services[\\/]schemaregistry[\\/]kafkaconnect[\\/]avrodata[\\/]"
+              checks="[a-zA-Z0-9]*"/>
+    <suppress files="AvroData\.java"
+              checks="[a-zA-Z0-9]*"/>
 </suppressions>

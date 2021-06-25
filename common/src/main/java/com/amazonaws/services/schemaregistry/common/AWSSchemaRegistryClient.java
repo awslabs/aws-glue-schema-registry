@@ -23,6 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
 import software.amazon.awssdk.core.retry.RetryPolicy;
+import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.glue.GlueClient;
 import software.amazon.awssdk.services.glue.GlueClientBuilder;
@@ -83,6 +84,7 @@ public class AWSSchemaRegistryClient {
                 .builder()
                 .credentialsProvider(credentialsProvider)
                 .overrideConfiguration(overrideConfiguration)
+                .httpClient(UrlConnectionHttpClient.builder().build())
                 .region(Region.of(glueSchemaRegistryConfiguration.getRegion()));
 
         if (glueSchemaRegistryConfiguration.getEndPoint() != null) {

@@ -1,0 +1,25 @@
+{
+  "schema": {
+    "$id": "https://example.com/address.schema.json",
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+      "f1": { "type": "string" },
+      "f2": { "type": "integer", "maximum": 50 }
+    }
+  },
+  "payload": [
+    {
+      "f1": "covid",
+      "f2": 19
+    },
+    {
+      "f1": "iphone",
+      "f2": 12
+    },
+    {
+      "f1": "Stranger Things",
+      "f2": 4
+    }
+  ]
+}

@@ -33,10 +33,13 @@ public class AWSSerializerInput {
     private String schemaName;
 
     @Getter
+    private String dataFormat;
+
+    @Getter
     private String transportName;
 
     @Builder
-    public AWSSerializerInput(String schemaDefinition, String schemaName, String transportName) {
+    public AWSSerializerInput(String schemaDefinition, String schemaName, String dataFormat, String transportName) {
         this.schemaDefinition = schemaDefinition;
 
         if (transportName != null) {
@@ -50,5 +53,7 @@ public class AWSSerializerInput {
         } else {
             this.schemaName = new AWSSchemaNamingStrategyDefaultImpl().getSchemaName(transportName);
         }
+
+        this.dataFormat = dataFormat;
     }
 }

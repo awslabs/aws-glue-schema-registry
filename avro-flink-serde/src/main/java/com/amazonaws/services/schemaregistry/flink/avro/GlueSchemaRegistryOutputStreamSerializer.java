@@ -17,9 +17,10 @@ package com.amazonaws.services.schemaregistry.flink.avro;
 
 import com.amazonaws.services.schemaregistry.common.configs.GlueSchemaRegistryConfiguration;
 import com.amazonaws.services.schemaregistry.serializers.GlueSchemaRegistrySerializationFacade;
-import com.amazonaws.services.schemaregistry.utils.AWSSchemaRegistryUtils;
+import com.amazonaws.services.schemaregistry.utils.GlueSchemaRegistryUtils;
 import org.apache.avro.Schema;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
+import software.amazon.awssdk.services.glue.model.DataFormat;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -61,16 +62,16 @@ public class GlueSchemaRegistryOutputStreamSerializer {
     public void registerSchemaAndSerializeStream(Schema schema, OutputStream out, byte[] data) throws IOException {
         byte[] bytes = glueSchemaRegistrySerializationFacade.encode(
                 transportName,
-                new com.amazonaws.services.schemaregistry.common.Schema(schema.toString(), "Avro", getSchemaName()),
+                new com.amazonaws.services.schemaregistry.common.Schema(schema.toString(), DataFormat.AVRO.toString(), getSchemaName()),
                 data);
         out.write(bytes);
     }
 
     private String getSchemaName() {
-        String schemaName = AWSSchemaRegistryUtils.getInstance().getSchemaName(configs);
+        String schemaName = GlueSchemaRegistryUtils.getInstance().getSchemaName(configs);
 
         return schemaName != null
                 ? schemaName
-                : AWSSchemaRegistryUtils.getInstance().configureSchemaNamingStrategy(configs).getSchemaName(transportName);
+                : GlueSchemaRegistryUtils.getInstance().configureSchemaNamingStrategy(configs).getSchemaName(transportName);
     }
 }

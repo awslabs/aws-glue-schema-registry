@@ -6,4 +6,4 @@ docker-compose up &
 sleep 10
 
 # Run mvn tests by downloading latest snapshot dependency versions
-mvn clean install -U -X
+mvn verify -Psurefire -U -X

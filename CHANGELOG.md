@@ -9,8 +9,5 @@
 * Added Kinesis Data Streams usage examples
 * Added integration tests
 
-## Release 1.0.2
-* Reorganize dependency files
-* Upgrade to Avro 1.10.2
-* Fixing integration test build failures. 
-* Update to latest secure version of Guava.
+## Release 1.1.0
+* Added Support for JSONSchema Format.

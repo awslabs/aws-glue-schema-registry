@@ -17,15 +17,15 @@ package com.amazonaws.services.schemaregistry.kafkaconnect;
 
 import com.amazonaws.services.schemaregistry.common.AWSDeserializerInput;
 import com.amazonaws.services.schemaregistry.common.AWSSchemaRegistryClient;
-import com.amazonaws.services.schemaregistry.deserializers.AWSDeserializer;
+import com.amazonaws.services.schemaregistry.deserializers.GlueSchemaRegistryDeserializationFacade;
 import com.amazonaws.services.schemaregistry.deserializers.avro.AWSKafkaAvroDeserializer;
 import com.amazonaws.services.schemaregistry.exception.AWSSchemaRegistryException;
 import com.amazonaws.services.schemaregistry.kafkaconnect.avrodata.AvroData;
 import com.amazonaws.services.schemaregistry.kafkaconnect.avrodata.AvroDataConfig;
-import com.amazonaws.services.schemaregistry.serializers.avro.AWSAvroSerializer;
+import com.amazonaws.services.schemaregistry.serializers.GlueSchemaRegistrySerializationFacade;
 import com.amazonaws.services.schemaregistry.serializers.avro.AWSKafkaAvroSerializer;
-import com.amazonaws.services.schemaregistry.utils.AvroRecordType;
 import com.amazonaws.services.schemaregistry.utils.AWSSchemaRegistryConstants;
+import com.amazonaws.services.schemaregistry.utils.AvroRecordType;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
@@ -154,16 +154,21 @@ public class AWSKafkaAvroConverterTest {
      *
      * @return a mocked AWSKafkaAvroSerializer instance
      */
-    private AWSKafkaAvroSerializer createSerializer(String schemaDefinition, UUID schemaVersionId) {
-        AWSAvroSerializer avroSerializer = AWSAvroSerializer.builder().configs(configs)
-                .credentialProvider(mockCredProvider).schemaRegistryClient(mockClient).build();
+    private AWSKafkaAvroSerializer createSerializer(String schemaDefinition,
+                                                    UUID schemaVersionId) {
+        GlueSchemaRegistrySerializationFacade glueSchemaRegistrySerializationFacade =
+                GlueSchemaRegistrySerializationFacade.builder()
+                        .configs(configs)
+                        .credentialProvider(mockCredProvider)
+                        .schemaRegistryClient(mockClient)
+                        .build();
 
-        when(mockClient.getORRegisterSchemaVersionId(eq(schemaDefinition), eq("User-Topic"), eq(DataFormat.AVRO.name()), anyMap()))
-                .thenReturn(schemaVersionId);
+        when(mockClient.getORRegisterSchemaVersionId(eq(schemaDefinition), eq("User-Topic"),
+                                                     eq(DataFormat.AVRO.name()), anyMap())).thenReturn(schemaVersionId);
         AWSKafkaAvroSerializer awsKafkaAvroSerializer = new AWSKafkaAvroSerializer(mockCredProvider, null);
         awsKafkaAvroSerializer.configure(configs, true);
 
-        awsKafkaAvroSerializer.setAvroSerializer(avroSerializer);
+        awsKafkaAvroSerializer.setGlueSchemaRegistrySerializationFacade(glueSchemaRegistrySerializationFacade);
 
         return awsKafkaAvroSerializer;
     }
@@ -173,17 +178,22 @@ public class AWSKafkaAvroConverterTest {
      *
      * @return a mocked AWSKafkaAvroDeserializer instance
      */
-    private AWSKafkaAvroDeserializer createDeserializer(Object record, byte[] bytes, String schemaDefinition) {
-        AWSDeserializer awsDeserializer = mock(AWSDeserializer.class);
-        AWSDeserializerInput awsDeserializerInput = AWSDeserializerInput.builder().buffer(ByteBuffer.wrap(bytes))
-                .transportName(testTopic).build();
+    private AWSKafkaAvroDeserializer createDeserializer(Object record,
+                                                        byte[] bytes,
+                                                        String schemaDefinition) {
+        GlueSchemaRegistryDeserializationFacade glueSchemaRegistryDeserializationFacade =
+                mock(GlueSchemaRegistryDeserializationFacade.class);
+        AWSDeserializerInput awsDeserializerInput = AWSDeserializerInput.builder()
+                .buffer(ByteBuffer.wrap(bytes))
+                .transportName(testTopic)
+                .build();
 
-        when(awsDeserializer.deserialize(awsDeserializerInput)).thenReturn(record);
-        when(awsDeserializer.getSchemaDefinition(bytes)).thenReturn(schemaDefinition);
+        when(glueSchemaRegistryDeserializationFacade.deserialize(awsDeserializerInput)).thenReturn(record);
+        when(glueSchemaRegistryDeserializationFacade.getSchemaDefinition(bytes)).thenReturn(schemaDefinition);
         AWSKafkaAvroDeserializer awsKafkaAvroDeserializer = new AWSKafkaAvroDeserializer(mockCredProvider, null);
         awsKafkaAvroDeserializer.configure(configs, true);
 
-        awsKafkaAvroDeserializer.setAwsDeserializer(awsDeserializer);
+        awsKafkaAvroDeserializer.setGlueSchemaRegistryDeserializationFacade(glueSchemaRegistryDeserializationFacade);
 
         return awsKafkaAvroDeserializer;
     }

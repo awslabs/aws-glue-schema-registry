@@ -14,20 +14,22 @@ account and retrieving your AWS credentials, see [AWS Account and Credentials](h
 1. **Sign up for AWS Glue Schema Registry** &mdash; Go to the AWS Glue Schema Registry console to sign up for the 
 service and create an AWS Glue Schema Registry. For more information, see [Getting Started with Glue Schema 
 Registry](https://docs.aws.amazon.com/glue/latest/dg/schema-registry-gs.html) in the AWS Glue Developer Guide.
-1. **Minimum requirements** &mdash; To use the AWS Glue Schema Registry, you'll need **Java 1.8+**.
+1. **Minimum requirements** &mdash; To use the AWS Glue Schema Registry, you'll need **Java > 1.8 and < Java 15**.
 
 ## Features
 
-1. AVRO Messages/records are serialized on producer front and deserialized on the consumer front by using 
+1. Messages/records are serialized on producer front and deserialized on the consumer front by using 
 schema-registry-serde.
+1. Support for AVRO and JSON Data formats (with [JSON Schema](https://json-schema.org/) Draft04, Draft07).
 1. Kafka Streams support for AWS Glue Schema Registry.
 1. Records can be compressed to reduce message size.
 1. An inbuilt local in-memory cache to save calls to AWS Glue Schema Registry. The schema version id for a schema 
 definition is cached on Producer side and schema for a schema version id is cached on the Consumer side.
 1. Auto registration of schema can be enabled for any new schema to be auto-registered.
-1. For AVRO Schemas, Evolution check is performed while registering.
+1. For Schemas, Evolution check is performed while registering.
 1. Migration from a third party Schema Registry.
-1. Flink support for AWS Glue Schema Registry.
+1. [Flink support](https://ci.apache.org/projects/flink/flink-docs-release-1.14/docs/connectors/datastream/kafka/) for
+ AWS Glue Schema Registry.
 1. Kafka Connect support for AWS Glue Schema Registry.
 
 ## Building from Source
@@ -36,7 +38,7 @@ After you've downloaded the code from GitHub, you can build it using Maven.
 
 The following maven command will clean the target directory, compile the project, execute the tests and package the project build into a JAR.
 
-`mvn clean install`
+`cd build-tools/ && mvn clean install && cd .. && mvn clean install`
 
 Alternatively, one could git clone this repo and run ``mvn clean install``.
 
@@ -57,7 +59,7 @@ The recommended way to use the AWS Glue Schema Registry Library for Java is to c
   <dependency>
       <groupId>software.amazon.glue</groupId>
       <artifactId>schema-registry-serde</artifactId>
-      <version>1.0.2</version>
+      <version>1.1.0</version>
   </dependency>
   ```
 ### Code Example
@@ -66,7 +68,8 @@ The recommended way to use the AWS Glue Schema Registry Library for Java is to c
 
 ```java
         properties.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
-        properties.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, AWSKafkaAvroSerializer.class.getName());
+        properties.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, GlueSchemaRegistryKafkaSerializer.class.getName());
+        properties.put(AWSSchemaRegistryConstants.DATA_FORMAT, DataFormat.AVRO.name());
         properties.put(AWSSchemaRegistryConstants.AWS_REGION, "us-east-1");
         properties.put(AWSSchemaRegistryConstants.REGISTRY_NAME, "my-registry");
         properties.put(AWSSchemaRegistryConstants.SCHEMA_NAME, "my-schema");
@@ -108,7 +111,8 @@ The recommended way to use the AWS Glue Schema Registry Library for Java is to c
 
 ```java
         properties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
-        properties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, AWSKafkaAvroDeserializer.class.getName();
+        properties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, GlueSchemaRegistryKafkaDeserializer.class
+        .getName();
         properties.put(AWSSchemaRegistryConstants.AWS_REGION, "us-east-1");
         properties.put(AWSSchemaRegistryConstants.AVRO_RECORD_TYPE, AvroRecordType.GENERIC_RECORD.getName());
         
@@ -127,12 +131,148 @@ The recommended way to use the AWS Glue Schema Registry Library for Java is to c
 
 ```
 
+#### Producer for Kafka with JSON format
+
+```java
+        properties.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+        properties.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, GlueSchemaRegistryKafkaSerializer.class.getName());
+        properties.put(AWSSchemaRegistryConstants.DATA_FORMAT, DataFormat.JSON.name());
+        properties.put(AWSSchemaRegistryConstants.AWS_REGION, "us-east-1");
+        properties.put(AWSSchemaRegistryConstants.REGISTRY_NAME, "my-registry");
+        properties.put(AWSSchemaRegistryConstants.SCHEMA_NAME, "my-schema");
+        
+        String jsonSchema = "{\n" + "        \"$schema\": \"http://json-schema.org/draft-04/schema#\",\n"
+                                                + "        \"type\": \"object\",\n" + "        \"properties\": {\n" + "          \"employee\": {\n"
+                                                + "            \"type\": \"object\",\n" + "            \"properties\": {\n"
+                                                + "              \"name\": {\n" + "                \"type\": \"string\"\n" + "              },\n"
+                                                + "              \"age\": {\n" + "                \"type\": \"integer\"\n" + "              },\n"
+                                                + "              \"city\": {\n" + "                \"type\": \"string\"\n" + "              }\n"
+                                                + "            },\n" + "            \"required\": [\n" + "              \"name\",\n"
+                                                + "              \"age\",\n" + "              \"city\"\n" + "            ]\n" + "          }\n"
+                                                + "        },\n" + "        \"required\": [\n" + "          \"employee\"\n" + "        ]\n"
+                                                + "      }";
+        String jsonPayload = "{\n" + "        \"employee\": {\n" + "          \"name\": \"John\",\n" + "          \"age\": 30,\n"
+                                                 + "          \"city\": \"New York\"\n" + "        }\n" + "      }";
+        
+        JsonDataWithSchema jsonSchemaWithData = JsonDataWithSchema.builder(jsonSchema, jsonPayload);
+
+        List<JsonDataWithSchema> genericJsonRecords = new ArrayList<>();
+        genericJsonRecords.add(jsonSchemaWithData);
+        
+        try (KafkaProducer<String, JsonDataWithSchema> producer = new KafkaProducer<String, JsonDataWithSchema>(properties)) {
+            for (int i = 0; i < genericJsonRecords.size(); i++) {
+                JsonDataWithSchema r = genericJsonRecords.get(i);
+
+                final ProducerRecord<String, JsonDataWithSchema> record;
+                record = new ProducerRecord<String, JsonDataWithSchema>(topic, "message-" + i, r);
+
+                producer.send(record);
+                System.out.println("Sent message " + i);
+                Thread.sleep(1000L);
+            }
+            producer.flush();
+            System.out.println("Successfully produced 10 messages to a topic called " + topic);
+
+        } catch (final InterruptedException | SerializationException e) {
+            e.printStackTrace();
+        }
+```
+
+#### Consumer for Kafka with JSON format
+
+```java
+        properties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+        properties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, GlueSchemaRegistryKafkaDeserializer.class
+        .getName();
+        properties.put(AWSSchemaRegistryConstants.AWS_REGION, "us-east-1");
+        
+        try (final KafkaConsumer<String, JsonDataWithSchema> consumer = new KafkaConsumer<String, JsonDataWithSchema>(properties)) {
+            consumer.subscribe(Collections.singletonList(topic));
+
+            while (true) {
+                final ConsumerRecords<String, JsonDataWithSchema> records = consumer.poll(100);
+                for (final ConsumerRecord<String, JsonDataWithSchema> record : records) {
+                    final String key = record.key();
+                    final JsonDataWithSchema value = record.value();
+                    System.out.println("Received message: key = " + key + ", value = " + value);
+                }
+            }
+        }
+
+```
+
+### Dealing with Specific Record (JAVA POJO) for JSON
+
+You could use a Java POJO and pass the object as a record. This is similar to the notion of a Specific Record in AVRO.
+We use [mbknor-jackson-jsonschema](https://github.com/mbknor/mbknor-jackson-jsonSchema) to generate a JSON Schema for
+ the POJO passed. This library can also inject additional information in the JSON Schema.
+ 
+ **GSR Library uses the "className" to fully classified class name to deserialize back to an Object of the POJO**
+
+Example class :
+
+```java
+
+@JsonSchemaDescription("This is a car")
+@JsonSchemaTitle("Simple Car Schema")
+@Builder
+@AllArgsConstructor
+@EqualsAndHashCode
+// Fully qualified class name to be added to an additionally injected property
+// called className for deserializer to determine which class to deserialize
+// the bytes into
+@JsonSchemaInject(
+        strings = {@JsonSchemaString(path = "className",
+                value = "com.amazonaws.services.schemaregistry.integrationtests.generators.Car")}
+)
+// List of annotations to help infer JSON Schema are defined by https://github.com/mbknor/mbknor-jackson-jsonSchema
+public class Car {
+    @JsonProperty(required = true)
+    private String make;
+
+    @JsonProperty(required = true)
+    private String model;
+
+    @JsonSchemaDefault("true")
+    @JsonProperty
+    public boolean used;
+
+    @JsonSchemaInject(ints = {@JsonSchemaInt(path = "multipleOf", value = 1000)})
+    @Max(200000)
+    @JsonProperty
+    private int miles;
+
+    @Min(2000)
+    @JsonProperty
+    private int year;
+
+    @JsonProperty
+    private Date purchaseDate;
+
+    @JsonProperty
+    @JsonFormat(shape = JsonFormat.Shape.NUMBER)
+    private Date listedDate;
+
+    @JsonProperty
+    private String[] owners;
+
+    @JsonProperty
+    private Collection<Float> serviceChecks;
+
+    // Empty constructor is required by Jackson to deserialize bytes
+    // into an Object of this class
+    public Car() {}
+}
+
+```
+
 ### Using AWS Glue Schema Registry with Kinesis Data Streams
 
 **Kinesis Client library (KCL) / Kinesis Producer Library (KPL):** [Getting started with AWS Glue Schema Registry with AWS Kinesis Data Streams](https://docs.aws.amazon.com/glue/latest/dg/schema-registry-integrations.html#schema-registry-integrations-kds)
 
 If you cannot use KCL / KPL libraries for Kinesis Data Streams integration,
-**See [examples](examples/) for working example 
+**See [examples](examples/) and [integration-tests](integration-tests/)for working example with Kinesis SDK, KPL and 
+KCL.
 
 
 ### Using Auto-Registration
@@ -228,6 +368,9 @@ property for value class along with the third party jar.
 ```java
 git clone git@github.com:awslabs/aws-glue-schema-registry.git
 cd aws-glue-schema-registry
+cd build-tools
+mvn clean install
+cd ..
 mvn clean install
 mvn dependency:copy-dependencies
 ```
@@ -264,7 +407,7 @@ It should look like this
 * If using bash, run the below commands to set-up your CLASSPATH in your bash_profile. (For any other shell, update the environment accordingly.)
   ```bash
       echo 'export GSR_LIB_BASE_DIR=<>' >>~/.bash_profile
-      echo 'export GSR_LIB_VERSION=1.0.2' >>~/.bash_profile
+      echo 'export GSR_LIB_VERSION=1.1.0' >>~/.bash_profile
       echo 'export KAFKA_HOME=<your kafka installation directory>' >>~/.bash_profile
       echo 'export CLASSPATH=$CLASSPATH:$GSR_LIB_BASE_DIR/avro-kafkaconnect-converter/target/schema-registry-kafkaconnect-converter-$GSR_LIB_VERSION.jar:$GSR_LIB_BASE_DIR/common/target/schema-registry-common-$GSR_LIB_VERSION.jar:$GSR_LIB_BASE_DIR/avro-serializer-deserializer/target/schema-registry-serde-$GSR_LIB_VERSION.jar' >>~/.bash_profile
       source ~/.bash_profile
@@ -313,6 +456,9 @@ It should look like this
   $KAFKA_HOME/bin/connect-standalone.sh $KAFKA_HOME/config/connect-standalone.properties $KAFKA_HOME/config/connect-file-sink.properties
   ```
 
+* For more examples for running Kafka Connect with Avro and JSON formats, refer script **run-local-tests.sh** under 
+**integration-tests** module.
+
 ### Using Kafka Streams with AWS Glue Schema Registry
 
 ### Maven Dependency
@@ -320,7 +466,7 @@ It should look like this
   <dependency>
         <groupId>software.amazon.glue</groupId>
         <artifactId>schema-registry-kafkastreams-serde</artifactId>
-        <version>1.0.2</version>
+        <version>1.1.0</version>
   </dependency>
   ```
 
@@ -365,7 +511,7 @@ inside Amazon VPC.](https://docs.aws.amazon.com/kinesisanalytics/latest/java/vpc
   <dependency>
        <groupId>software.amazon.glue</groupId>
        <artifactId>schema-registry-flink-serde</artifactId>
-       <version>1.0.2</version>
+       <version>1.0.1</version>
   </dependency>
   ```
 ### Code Example
