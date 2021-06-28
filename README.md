@@ -203,7 +203,7 @@ The recommended way to use the AWS Glue Schema Registry Library for Java is to c
 
 ### Dealing with Specific Record (JAVA POJO) for JSON
 
-You could use a Java POJO and pass the object as a record. This is similar to the notion of a Specific Record in AVRO.
+You could use a Java POJO and pass the object as a record.
 We use [mbknor-jackson-jsonschema](https://github.com/mbknor/mbknor-jackson-jsonSchema) to generate a JSON Schema for
  the POJO passed. This library can also inject additional information in the JSON Schema.
  
@@ -271,7 +271,7 @@ public class Car {
 **Kinesis Client library (KCL) / Kinesis Producer Library (KPL):** [Getting started with AWS Glue Schema Registry with AWS Kinesis Data Streams](https://docs.aws.amazon.com/glue/latest/dg/schema-registry-integrations.html#schema-registry-integrations-kds)
 
 If you cannot use KCL / KPL libraries for Kinesis Data Streams integration,
-**See [examples](examples/) and [integration-tests](integration-tests/)for working example with Kinesis SDK, KPL and 
+**See [examples](examples/) and [integration-tests](integration-tests/) for working example with Kinesis SDK, KPL and 
 KCL.
 
 
@@ -511,7 +511,7 @@ inside Amazon VPC.](https://docs.aws.amazon.com/kinesisanalytics/latest/java/vpc
   <dependency>
        <groupId>software.amazon.glue</groupId>
        <artifactId>schema-registry-flink-serde</artifactId>
-       <version>1.0.1</version>
+       <version>1.0.2</version>
   </dependency>
   ```
 ### Code Example

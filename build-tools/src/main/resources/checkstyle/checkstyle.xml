@@ -48,7 +48,7 @@
 
     <!-- Check for Windows newlines. The `checkstyle` target disables this check when running on Windows. -->
     <module name="RegexpMultiline">
-        <property name="severity" value="${checkstyle.crlf.severity}" default="error"/>
+        <property name="severity" value="${checkstyle.crlf.severity}" default="ignore"/>
         <property name="message" value="File contains carriage return (Windows newlines). Run `dos2unix` to convert this file to Unix line endings."/>
         <property name="format" value="\r"/>
     </module>

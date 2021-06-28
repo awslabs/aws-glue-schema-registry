@@ -72,7 +72,7 @@
         <dependency>
             <groupId>software.amazon.glue</groupId>
             <artifactId>schema-registry-serde</artifactId>
-            <version>1.0.1</version>
+            <version>1.0.2</version>
             <classifier>tests</classifier>
             <type>test-jar</type>
             <scope>test</scope>
