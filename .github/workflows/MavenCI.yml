@@ -35,6 +35,9 @@ jobs:
         path: ~/.m2
         key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
         restore-keys: ${{ runner.os }}-m2
+        
+    - name: install build-tools 
+      run: mvn --file build-tools/pom.xml clean install
     
     - name: Clean, build and install 
       run: mvn --file pom.xml clean install
