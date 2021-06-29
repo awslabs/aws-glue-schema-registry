@@ -371,7 +371,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
-                <version>3.1.1</version>
+                <version>3.1.2</version>
                 <dependencies>
                     <dependency>
                         <groupId>${project.groupId}</groupId>
@@ -381,8 +381,10 @@
                 </dependencies>
                 <configuration>
                     <suppressionsFileExpression>checkstyle.suppression.filter</suppressionsFileExpression>
-                    <configLocation>checkstyle/checkstyle.xml</configLocation>
-                    <suppressionsLocation>checkstyle/suppressions.xml</suppressionsLocation>
+                    <configLocation>${user.dir}/build-tools/src/main/resources/checkstyle.xml
+                    </configLocation>
+                    <suppressionsLocation>${user.dir}/build-tools/src/main/resources/suppressions.xml
+                    </suppressionsLocation>
                     <encoding>UTF-8</encoding>
                     <consoleOutput>true</consoleOutput>
                     <failsOnError>true</failsOnError>
