@@ -4,14 +4,19 @@ services:
   zookeeper:
     image: 'public.ecr.aws/bitnami/zookeeper:latest'
     ports:
-      - '2182:2181'
+      - '2181:2182'
     environment:
       - ALLOW_ANONYMOUS_LOGIN=yes
-  kafka1:
+
+  kafka:
     image: 'public.ecr.aws/bitnami/kafka:latest'
     ports:
       - '9092:9092'
+    links:
+      - zookeeper
+    container_name: local_kafka
     environment:
+      - KAFKA_BROKER_ID=1
       - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
       - KAFKA_LISTENERS=PLAINTEXT://0.0.0.0:9092
       - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://localhost:9092

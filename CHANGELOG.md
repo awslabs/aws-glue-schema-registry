@@ -9,8 +9,12 @@
 * Added Kinesis Data Streams usage examples
 * Added integration tests
 
-## Release 1.0.2
-* Reorganize dependency files
-* Upgrade to Avro 1.10.2
-* Fixing integration test build failures. 
-* Update to latest secure version of Guava.
+## Release 1.1.0
+* Added Support for JSONSchema Format.
+* Added Validation logic while using encode method for calls through KPL.
+* Generalized Kafka Specific Serializer/Deserializer to a data format agnostic classes like 
+GlueSchemaRegistryKafkaSerializer/GlueSchemaRegistryKafkaDeserializer.
+* Generalized AWSKafkaAvroSerDe to GlueSchemaRegistryKafkaSerDe for it to be used for multiple data formats.
+* Using better convention for poms and maven inheritance.
+* Added JSON Kafka Converter.
+* Improved integration tests to run with local dockerized streaming systems.

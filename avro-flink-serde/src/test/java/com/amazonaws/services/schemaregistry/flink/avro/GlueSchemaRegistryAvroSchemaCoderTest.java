@@ -15,7 +15,7 @@
 
 package com.amazonaws.services.schemaregistry.flink.avro;
 
-import com.amazonaws.services.schemaregistry.caching.AWSSchemaRegistrySerializerCache;
+import com.amazonaws.services.schemaregistry.caching.GlueSchemaRegistrySerializerCache;
 import com.amazonaws.services.schemaregistry.common.AWSSchemaRegistryClient;
 import com.amazonaws.services.schemaregistry.common.configs.GlueSchemaRegistryConfiguration;
 import com.amazonaws.services.schemaregistry.exception.AWSSchemaRegistryException;
@@ -232,9 +232,9 @@ public class GlueSchemaRegistryAvroSchemaCoderTest {
         return new UUID(mostSigBits, leastSigBits);
     }
 
-    private AWSSchemaRegistrySerializerCache invalidateAndGetCache() {
-        AWSSchemaRegistrySerializerCache serializerCache =
-                AWSSchemaRegistrySerializerCache.getInstance(mockConfigs);
+    private GlueSchemaRegistrySerializerCache invalidateAndGetCache() {
+        GlueSchemaRegistrySerializerCache serializerCache =
+                GlueSchemaRegistrySerializerCache.getInstance(mockConfigs);
         serializerCache.flushCache();
         return serializerCache;
     }

@@ -1,0 +1,5 @@
+{
+  "description": "number schema",
+  "type": "number",
+  "additionalProperties": false
+}

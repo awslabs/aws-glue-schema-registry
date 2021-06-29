@@ -1,0 +1,88 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": [
+    "object"
+  ],
+  "properties": {
+    "eventID": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "eventName": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "userIdentity": {
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "recordFormat": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "tableName": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "awsRegion": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "dynamodb": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "ApproximateCreationDateTime": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "Keys": {
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "NewImage": {
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "OldImage": {
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "SizeBytes": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      }
+    },
+    "eventSource": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  }
+}

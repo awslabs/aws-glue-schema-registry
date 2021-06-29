@@ -42,10 +42,10 @@ import org.apache.avro.io.Decoder;
 import org.apache.avro.io.DecoderFactory;
 import org.apache.avro.io.Encoder;
 import org.apache.avro.io.EncoderFactory;
+import org.apache.commons.cli.BasicParser;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.Options;
-import org.apache.commons.cli.BasicParser;
 import org.joda.time.DateTime;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
@@ -71,7 +71,7 @@ import java.util.logging.Logger;
 public class PutRecordGetRecordExample {
     private static final String AVRO_USER_SCHEMA_FILE = "src/main/resources/user.avsc";
     private static AmazonKinesis kinesisClient;
-    private static final Logger logger = Logger.getLogger(PutRecordGetRecordExample.class.getSimpleName());
+    private static final Logger LOGGER = Logger.getLogger(PutRecordGetRecordExample.class.getSimpleName());
     private static AwsCredentialsProvider awsCredentialsProvider =
         DefaultCredentialsProvider
         .builder()
@@ -112,10 +112,10 @@ public class PutRecordGetRecordExample {
 
         //Define the Glue Schema Registry schema object that will be used to encode data.
         Schema gsrSchema =
-            new com.amazonaws.services.schemaregistry.common.Schema(getAvroSchema().toString(), DataFormat.AVRO.name(),
-                schemaName);
-        
-        logger.info("Client initialization complete.");
+                new com.amazonaws.services.schemaregistry.common.Schema(getAvroSchema().toString(),
+                                                                        DataFormat.AVRO.name(), schemaName);
+
+        LOGGER.info("Client initialization complete.");
 
         Date timestamp = DateTime.now().toDate();
 
@@ -162,7 +162,7 @@ public class PutRecordGetRecordExample {
         for (Record record : result.getRecords()) {
             ByteBuffer recordAsByteBuffer = record.getData();
             GenericRecord decodedRecord = decodeRecord(recordAsByteBuffer);
-            logger.info("Decoded Record: " + decodedRecord);
+            LOGGER.info("Decoded Record: " + decodedRecord);
         }
     }
 
@@ -173,13 +173,14 @@ public class PutRecordGetRecordExample {
 
         List<PutRecordsRequestEntry> recordsRequestEntries = new ArrayList<>();
 
-        logger.info("Putting " + numOfRecords + " into " + streamName + " with schema" + gsrSchema);
-        for (int i = 0 ; i < numOfRecords ; i ++) {
+        LOGGER.info("Putting " + numOfRecords + " into " + streamName + " with schema" + gsrSchema);
+        for (int i = 0; i < numOfRecords; i++) {
             GenericRecord record = (GenericRecord) getTestRecord(i);
             byte[] recordWithSchema = encodeRecord(record, streamName, gsrSchema);
             PutRecordsRequestEntry entry = new PutRecordsRequestEntry();
             entry.setData(ByteBuffer.wrap(recordWithSchema));
-            entry.setPartitionKey(String.valueOf(timestamp.toInstant().toEpochMilli()));
+            entry.setPartitionKey(String.valueOf(timestamp.toInstant()
+                                                         .toEpochMilli()));
 
             recordsRequestEntries.add(entry);
         }
@@ -188,7 +189,7 @@ public class PutRecordGetRecordExample {
 
         PutRecordsResult putRecordResult = kinesisClient.putRecords(putRecordsRequest);
 
-        logger.info("Successfully put records: " + putRecordResult);
+        LOGGER.info("Successfully put records: " + putRecordResult);
     }
 
     private static byte[] encodeRecord(GenericRecord record, String streamName, com.amazonaws.services.schemaregistry.common.Schema gsrSchema) {
@@ -227,7 +228,7 @@ public class PutRecordGetRecordExample {
         try {
             avroSchema = new org.apache.avro.Schema.Parser().parse(new File(AVRO_USER_SCHEMA_FILE));
         } catch (IOException e) {
-            logger.warning("Error parsing Avro schema from file" + e.getMessage());
+            LOGGER.warning("Error parsing Avro schema from file" + e.getMessage());
             throw new UncheckedIOException(e);
         }
         return avroSchema;
@@ -242,7 +243,7 @@ public class PutRecordGetRecordExample {
             datumWriter.write(record, encoder);
             encoder.flush();
         } catch (IOException e) {
-            logger.warning("Failed to convert record to Bytes" + e.getMessage());
+            LOGGER.warning("Failed to convert record to Bytes" + e.getMessage());
             throw new UncheckedIOException(e);
         }
         return recordAsBytes.toByteArray();
@@ -256,7 +257,7 @@ public class PutRecordGetRecordExample {
         try {
             genericRecord = datumReader.read(null, decoder);
         } catch (IOException e) {
-            logger.warning("Failed to convert bytes to record" + e.getMessage());
+            LOGGER.warning("Failed to convert bytes to record" + e.getMessage());
             throw new UncheckedIOException(e);
         }
         return genericRecord;

@@ -1,6 +1,6 @@
 {
      "type": "record",
-     "namespace": "com.amazon.aws.kinesis.schemaregistry.kafka.serdes",
+     "namespace": "com.amazonaws.services.schemaregistry.integrationtests.generators",
      "name": "Person",
      "fields": [
        { "name": "firstName", "type": "string", "doc": "First Name" },

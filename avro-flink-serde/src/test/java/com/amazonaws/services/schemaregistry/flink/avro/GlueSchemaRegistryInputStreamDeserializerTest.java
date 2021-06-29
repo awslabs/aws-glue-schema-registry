@@ -15,9 +15,9 @@
 
 package com.amazonaws.services.schemaregistry.flink.avro;
 
-import com.amazonaws.services.schemaregistry.common.AWSCompressionHandler;
-import com.amazonaws.services.schemaregistry.common.AWSSchemaRegistryDefaultCompression;
-import com.amazonaws.services.schemaregistry.deserializers.AWSDeserializer;
+import com.amazonaws.services.schemaregistry.common.GlueSchemaRegistryCompressionHandler;
+import com.amazonaws.services.schemaregistry.common.GlueSchemaRegistryDefaultCompression;
+import com.amazonaws.services.schemaregistry.deserializers.GlueSchemaRegistryDeserializationFacade;
 import com.amazonaws.services.schemaregistry.exception.AWSSchemaRegistryException;
 import com.amazonaws.services.schemaregistry.utils.AWSSchemaRegistryConstants;
 import org.apache.avro.Schema;
@@ -54,7 +54,7 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 public class GlueSchemaRegistryInputStreamDeserializerTest {
     @Mock
-    private AWSDeserializer mockDeserializer;
+    private GlueSchemaRegistryDeserializationFacade mockDeserializer;
 
     private static byte compressionByte;
     private static Schema userSchema;
@@ -62,7 +62,7 @@ public class GlueSchemaRegistryInputStreamDeserializerTest {
     private static User userDefinedPojo;
     private static Map<String, Object> configs = new HashMap<>();
     private static Map<String, String> metadata = new HashMap<>();
-    private static AWSCompressionHandler awsCompressionHandler;
+    private static GlueSchemaRegistryCompressionHandler glueSchemaRegistryCompressionHandler;
 
     private static final String testTopic = "Test-Topic";
     private static final UUID USER_SCHEMA_VERSION_ID = UUID.randomUUID();
@@ -113,7 +113,7 @@ public class GlueSchemaRegistryInputStreamDeserializerTest {
         compressionByte = compressionType.name().equals("NONE")
                 ? AWSSchemaRegistryConstants.COMPRESSION_DEFAULT_BYTE
                 : AWSSchemaRegistryConstants.COMPRESSION_BYTE;
-        awsCompressionHandler = new AWSSchemaRegistryDefaultCompression();
+        glueSchemaRegistryCompressionHandler = new GlueSchemaRegistryDefaultCompression();
 
         ByteArrayOutputStream byteArrayOutputStream =
                 buildByteArrayOutputStream(AWSSchemaRegistryConstants.HEADER_VERSION_BYTE, compressionByte);
@@ -193,6 +193,6 @@ public class GlueSchemaRegistryInputStreamDeserializerTest {
     }
 
     private byte[] compressData(byte[] actualDataBytes) throws IOException {
-        return awsCompressionHandler.compress(actualDataBytes);
+        return glueSchemaRegistryCompressionHandler.compress(actualDataBytes);
     }
 }

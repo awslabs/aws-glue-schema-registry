@@ -19,25 +19,21 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>software.amazon.glue</groupId>
+    <groupId>${parent.groupId}</groupId>
     <artifactId>schema-registry-examples</artifactId>
-    <version>1.0.2</version>
+    <version>${parent.version}</version>
     <name>AWS Glue Schema Registry examples</name>
     <description>The AWS Glue Schema examples has sample code for using Schema Registry with different applications.
     </description>
     <packaging>jar</packaging>
     <url>https://aws.amazon.com/glue</url>
 
-    <developers>
-        <developer>
-            <id>amazonwebservices</id>
-            <organization>Amazon Web Services</organization>
-            <organizationUrl>https://aws.amazon.com</organizationUrl>
-            <roles>
-                <role>developer</role>
-            </roles>
-        </developer>
-    </developers>
+    <parent>
+        <groupId>software.amazon.glue</groupId>
+        <artifactId>schema-registry-parent</artifactId>
+        <version>1.1.0</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
 
     <distributionManagement>
         <snapshotRepository>
@@ -67,94 +63,29 @@
         <dependency>
             <groupId>com.amazonaws</groupId>
             <artifactId>aws-java-sdk-kinesis</artifactId>
-            <version>1.11.603</version>
         </dependency>
-
         <dependency>
             <groupId>com.fasterxml.jackson.dataformat</groupId>
             <artifactId>jackson-dataformat-cbor</artifactId>
-            <version>2.11.3</version>
         </dependency>
-
         <dependency>
-            <groupId>software.amazon.glue</groupId>
+            <groupId>${parent.groupId}</groupId>
             <artifactId>schema-registry-serde</artifactId>
-            <version>1.0.2</version>
+            <version>${parent.version}</version>
         </dependency>
-
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <version>1.18.2</version>
         </dependency>
-
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok-utils</artifactId>
-            <version>1.18.12</version>
         </dependency>
         <dependency>
             <groupId>commons-cli</groupId>
             <artifactId>commons-cli</artifactId>
-            <version>1.2</version>
-        </dependency>
-        <dependency>
-            <groupId>commons-cli</groupId>
-            <artifactId>commons-cli</artifactId>
-            <version>1.2</version>
-            <scope>compile</scope>
         </dependency>
     </dependencies>
-
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <configuration>
-                    <runOrder>alphabetical</runOrder>
-                </configuration>
-                <version>2.22.1</version>
-            </plugin>
-
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-source-plugin</artifactId>
-                <version>3.0.1</version>
-                <executions>
-                    <execution>
-                        <id>attach-sources</id>
-                        <goals>
-                            <goal>jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-javadoc-plugin</artifactId>
-                <configuration>
-                    <source>8</source>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>attach-javadocs</id>
-                        <goals>
-                            <goal>jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
-    </build>
 
     <profiles>
         <profile>

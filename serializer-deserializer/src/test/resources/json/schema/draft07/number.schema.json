@@ -1,0 +1,7 @@
+{
+  "$id": "https://example.com/number.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "number schema",
+  "type": "number",
+  "additionalProperties": false
+}

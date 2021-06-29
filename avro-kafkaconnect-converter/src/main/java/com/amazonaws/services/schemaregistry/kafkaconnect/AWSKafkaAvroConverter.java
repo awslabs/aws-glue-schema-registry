@@ -116,7 +116,7 @@ public class AWSKafkaAvroConverter implements Converter {
         }
 
         org.apache.avro.Schema.Parser parser = new org.apache.avro.Schema.Parser();
-        org.apache.avro.Schema avroSchema = parser.parse(deserializer.getAwsDeserializer().getSchemaDefinition(value));
+        org.apache.avro.Schema avroSchema = parser.parse(deserializer.getGlueSchemaRegistryDeserializationFacade().getSchemaDefinition(value));
 
         return avroData.toConnectData(avroSchema, deserialized);
     }

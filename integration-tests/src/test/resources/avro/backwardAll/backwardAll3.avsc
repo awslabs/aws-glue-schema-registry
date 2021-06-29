@@ -1,5 +1,5 @@
 {
-    "namespace": "com.amazon.aws.kinesis.schemaregistry.kafka.serdes",
+    "namespace": "com.amazonaws.services.schemaregistry.integrationtests.generators",
     "type": "record",
     "name": "backwardAll3",
     "fields": [

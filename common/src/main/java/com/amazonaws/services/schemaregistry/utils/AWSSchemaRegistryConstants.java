@@ -73,6 +73,10 @@ public final class AWSSchemaRegistryConstants {
      */
     public static final String DEFAULT_SCHEMA_STRATEGY = "AWSSchemaNamingStrategyDefaultImpl";
     /**
+     * Data format.
+     */
+    public static final String DATA_FORMAT = "dataFormat";
+    /**
      * Cache time to live.
      */
     public static final String CACHE_TIME_TO_LIVE_MILLIS = "timeToLiveMillis";
@@ -143,10 +147,24 @@ public final class AWSSchemaRegistryConstants {
      * Default transport name metadata key.
      */
     public static final String TRANSPORT_METADATA_KEY = "x-amz-meta-transport";
+
+    /**
+     * Jackson serialization features.
+     */
+    public static final String JACKSON_SERIALIZATION_FEATURES = "jacksonSerializationFeatures";
+
+    /**
+     * Jackson deserialization features.
+     */
+    public static final String JACKSON_DESERIALIZATION_FEATURES = "jacksonDeserializationFeatures";
+
     /**
      * Private constructor to avoid initialization of the class.
      */
 
+    /**
+     * Private constructor to avoid initialization of the class.
+     */
     private AWSSchemaRegistryConstants() {
 
     }

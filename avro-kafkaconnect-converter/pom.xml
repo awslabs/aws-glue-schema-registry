@@ -19,9 +19,9 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>software.amazon.glue</groupId>
+    <groupId>${parent.groupId}</groupId>
     <artifactId>schema-registry-kafkaconnect-converter</artifactId>
-    <version>1.0.2</version>
+    <version>${parent.version}</version>
     <name>AWS Glue Schema Registry Kafka Connect AVRO Converter</name>
     <description>The AWS Glue Schema Registry Kafka Connect Converter enables Java developers to easily integrate
         their Kafka Connect applications with AWS Glue Schema Registry
@@ -29,16 +29,13 @@
     <url>https://aws.amazon.com/glue</url>
     <packaging>jar</packaging>
 
-    <developers>
-        <developer>
-            <id>amazonwebservices</id>
-            <organization>Amazon Web Services</organization>
-            <organizationUrl>https://aws.amazon.com</organizationUrl>
-            <roles>
-                <role>developer</role>
-            </roles>
-        </developer>
-    </developers>
+    <parent>
+        <groupId>software.amazon.glue</groupId>
+        <artifactId>schema-registry-parent</artifactId>
+        <version>1.1.0</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
     <licenses>
         <license>
             <name>Apache License, Version 2.0</name>
@@ -64,80 +61,48 @@
 
     <dependencies>
         <dependency>
-            <groupId>software.amazon.glue</groupId>
+            <groupId>${parent.groupId}</groupId>
             <artifactId>schema-registry-serde</artifactId>
-            <version>1.0.2</version>
+            <version>${parent.version}</version>
         </dependency>
-
-        <!-- https://mvnrepository.com/artifact/org.apache.kafka/connect-api -->
         <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>connect-api</artifactId>
-            <version>2.5.0</version>
         </dependency>
-
-        <!-- https://mvnrepository.com/artifact/org.mockito/mockito-junit-jupiter -->
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
-            <version>3.3.3</version>
-            <scope>test</scope>
         </dependency>
-
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-junit-jupiter</artifactId>
-            <version>3.3.3</version>
-            <scope>test</scope>
         </dependency>
-
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
-            <version>5.6.2</version>
-            <scope>test</scope>
         </dependency>
-
-        <!-- https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-params -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-params</artifactId>
-            <version>5.6.2</version>
-            <scope>test</scope>
         </dependency>
-
-        <!-- https://mvnrepository.com/artifact/org.junit.platform/junit-platform-console -->
         <dependency>
             <groupId>org.junit.platform</groupId>
             <artifactId>junit-platform-commons</artifactId>
-            <version>1.6.2</version>
-            <scope>test</scope>
         </dependency>
-
-        <!-- https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-api -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
-            <version>5.6.2</version>
-            <scope>test</scope>
         </dependency>
-
-        <!-- https://mvnrepository.com/artifact/junit/junit -->
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.13.1</version>
-            <scope>test</scope>
         </dependency>
-
-        <!-- https://mvnrepository.com/artifact/org.powermock/powermock-reflect -->
         <dependency>
             <groupId>org.powermock</groupId>
             <artifactId>powermock-reflect</artifactId>
             <version>2.0.7</version>
             <scope>test</scope>
         </dependency>
-
         <dependency>
             <groupId>uk.co.jemos.podam</groupId>
             <artifactId>podam</artifactId>
@@ -149,33 +114,6 @@
     <build>
         <plugins>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.22.1</version>
-            </plugin>
-
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-source-plugin</artifactId>
-                <version>3.0.1</version>
-                <executions>
-                    <execution>
-                        <id>attach-sources</id>
-                        <goals>
-                            <goal>jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
                 <artifactId>maven-shade-plugin</artifactId>
                 <version>3.2.1</version>
                 <configuration>
@@ -185,25 +123,6 @@
                         <phase>package</phase>
                         <goals>
                             <goal>shade</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-javadoc-plugin</artifactId>
-                <configuration>
-                    <show>public</show>
-                    <bottom><![CDATA[Copyright &#169; 2019 Amazon Web Services, Inc. All Rights Reserved.]]></bottom>
-                    <excludePackageNames>*.avrodata</excludePackageNames>
-                    <maxmemory>1024m</maxmemory>
-                    <source>8</source>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>attach-javadocs</id>
-                        <goals>
-                            <goal>jar</goal>
                         </goals>
                     </execution>
                 </executions>
@@ -231,50 +150,6 @@
                     <detail>true</detail>
                     <stringType>String</stringType>
                 </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.jacoco</groupId>
-                <artifactId>jacoco-maven-plugin</artifactId>
-                <version>0.8.5</version>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>prepare-agent</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>report</id>
-                        <phase>prepare-package</phase>
-                        <goals>
-                            <goal>report</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>jacoco-check</id>
-                        <goals>
-                            <goal>check</goal>
-                        </goals>
-                        <configuration>
-                            <rules>
-                                <rule>
-                                    <element>PACKAGE</element>
-                                    <limits>
-                                        <limit>
-                                            <counter>INSTRUCTION</counter>
-                                            <value>COVEREDRATIO</value>
-                                            <minimum>0.9</minimum>
-                                        </limit>
-                                    </limits>
-                                    <excludes>
-                                        <exclude>com.amazonaws.services.schemaregistry.kafkaconnect.avrodata</exclude>
-                                        <exclude>com.amazonaws.services.schemaregistry.kafkaconnect.AWSKafkaAvroConverterConfig</exclude>
-                                        <exclude>org.apache.avro</exclude>
-                                    </excludes>
-                                </rule>
-                            </rules>
-                        </configuration>
-                    </execution>
-                </executions>
             </plugin>
         </plugins>
     </build>
