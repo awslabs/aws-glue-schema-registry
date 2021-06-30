@@ -20,7 +20,7 @@ Registry](https://docs.aws.amazon.com/glue/latest/dg/schema-registry-gs.html) in
 
 1. Messages/records are serialized on producer front and deserialized on the consumer front by using 
 schema-registry-serde.
-1. Support for AVRO and JSON Data formats (with [JSON Schema](https://json-schema.org/) Draft04, Draft07).
+1. Support for AVRO and JSON Data formats (with [JSON Schema](https://json-schema.org/) Draft04, Draft06, Draft07).
 1. Kafka Streams support for AWS Glue Schema Registry.
 1. Records can be compressed to reduce message size.
 1. An inbuilt local in-memory cache to save calls to AWS Glue Schema Registry. The schema version id for a schema 
