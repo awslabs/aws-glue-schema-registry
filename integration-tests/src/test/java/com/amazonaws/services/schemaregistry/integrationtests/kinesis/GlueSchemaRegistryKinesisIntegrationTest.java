@@ -104,7 +104,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith(LocalstackDockerExtension.class)
 @LocalstackDockerProperties(services = {ServiceName.KINESIS, ServiceName.DYNAMO, ServiceName.CLOUDWATCH}, imageName =
-        "localstack/localstack", imageTag = "0.12.10")
+        "public.ecr.aws/d4c7g6k3/localstack", imageTag = "0.12.10")
 public class GlueSchemaRegistryKinesisIntegrationTest {
     private static final Logger LOGGER = LogManager.getLogger(GlueSchemaRegistryKinesisIntegrationTest.class);
     private static final DynamoDbAsyncClient dynamoClient = TestUtils.getClientDyanamoAsyncV2();
