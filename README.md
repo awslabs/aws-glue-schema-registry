@@ -1,7 +1,7 @@
 
 # AWS Glue Schema Registry Library
 ![Build Status](https://github.com/awslabs/aws-glue-schema-registry/workflows/MavenCI/badge.svg?branch=master&event=push)
-[[CI Status](https://codebuild.us-east-1.amazonaws.com/badges?uuid=eyJlbmNyeXB0ZWREYXRhIjoiTmg0MCtCOU15WnJCRG5vZnM3dFUrWmFTRDFVTEdFYUlLT1hsQnBwTWF2VkVvVzgxckZ5NXV5SDRoUkNRMkNYdmNKa0UzWGhHTENWTDZxTHlyZm5rSTlVPSIsIml2UGFyYW1ldGVyU3BlYyI6Imt3TE5ndnE4M2RtVDcvQzkiLCJtYXRlcmlhbFNldFNlcmlhbCI6MX0%3D&branch=main)]
+![CI Status](https://codebuild.us-east-1.amazonaws.com/badges?uuid=eyJlbmNyeXB0ZWREYXRhIjoiTmg0MCtCOU15WnJCRG5vZnM3dFUrWmFTRDFVTEdFYUlLT1hsQnBwTWF2VkVvVzgxckZ5NXV5SDRoUkNRMkNYdmNKa0UzWGhHTENWTDZxTHlyZm5rSTlVPSIsIml2UGFyYW1ldGVyU3BlYyI6Imt3TE5ndnE4M2RtVDcvQzkiLCJtYXRlcmlhbFNldFNlcmlhbCI6MX0%3D&branch=main)
 [![Apache 2 License](https://img.shields.io/github/license/awslabs/s2n.svg)](http://aws.amazon.com/apache-2-0/)
 ![Java](https://img.shields.io/badge/language-java-blue.svg)
 
