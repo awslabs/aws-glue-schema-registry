@@ -115,7 +115,7 @@ cleanUpDockerResources || true
 docker-compose up &
 sleep 10
 ## Run mvn tests for Kafka and Kinesis Platforms
-mvn verify -Psurefire -X
+cd .. && mvn --file integration-tests/pom.xml verify -Psurefire -X && cd integration-tests
 cleanUpDockerResources
 
 ## Use ECR Public with anonymous login
