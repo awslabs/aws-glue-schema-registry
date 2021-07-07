@@ -62,13 +62,6 @@
         </repository>
     </distributionManagement>
 
-    <repositories>
-        <repository>
-            <id>jitpack.io</id>
-            <url>https://jitpack.io</url>
-        </repository>
-    </repositories>
-
     <modules>
         <module>build-tools</module>
         <module>common</module>
@@ -239,8 +232,8 @@
                 <version>${mbknor.jsonschema.converter.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.github.everit-org.json-schema</groupId>
-                <artifactId>org.everit.json.schema</artifactId>
+                <groupId>com.github.erosb</groupId>
+                <artifactId>everit-json-schema</artifactId>
                 <version>${everit.json.schema.version}</version>
             </dependency>
             <dependency>
