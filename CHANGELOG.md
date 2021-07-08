@@ -18,3 +18,8 @@ GlueSchemaRegistryKafkaSerializer/GlueSchemaRegistryKafkaDeserializer.
 * Using better convention for poms and maven inheritance.
 * Added JSON Kafka Converter.
 * Improved integration tests to run with local dockerized streaming systems.
+
+## Release 1.1.1
+* Fixed checkstyle errors with maven build in integration-tests folder.
+* Reduced number of Canaries tests.
+* Removed jitpack as a repo for everit and using maven central to pull everit.
