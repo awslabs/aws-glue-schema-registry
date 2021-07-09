@@ -87,6 +87,12 @@
         <commons.compress.version>1.21</commons.compress.version>
         <commons.lang.version>3.8.1</commons.lang.version>
         <jackson.version>2.12.2</jackson.version>
+        <!-- Protobuf -->
+        <proto-plugin.version>0.6.1</proto-plugin.version>
+        <protobuf.version>3.17.0</protobuf.version>
+        <square-wireschema.version>3.7.0</square-wireschema.version>
+        <apicurio-registry.version>2.1.0-SNAPSHOT</apicurio-registry.version>
+
         <slf4j.version>1.7.30</slf4j.version>
         <log4j.version>2.17.1</log4j.version>
         <jupiter.version>5.6.2</jupiter.version>
