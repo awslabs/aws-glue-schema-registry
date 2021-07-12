@@ -179,9 +179,12 @@ public class GlueSchemaRegistryKafkaIntegrationTest {
                 TestDataGeneratorType.valueOf(dataFormat, recordType, compatibility));
         List<?> records = testDataGenerator.createRecords();
 
+        String schemaName = String.format("%s-%s-%s", topic, dataFormat.name(), compatibility);
+        schemasToCleanUp.add(schemaName);
+
         ProducerProperties producerProperties = ProducerProperties.builder()
                 .topicName(topic)
-                .schemaName(String.format("%s-%s-%s", topic, dataFormat.name(), compatibility))
+                .schemaName(schemaName)
                 .dataFormat(dataFormat.name())
                 .compatibilityType(compatibility.name())
                 .compressionType(compression.name())
@@ -217,9 +220,12 @@ public class GlueSchemaRegistryKafkaIntegrationTest {
                 TestDataGeneratorType.valueOf(dataFormat, recordType, compatibility));
         List<?> records = testDataGenerator.createRecords();
 
+        String schemaName = String.format("%s-%s-%s", topic, dataFormat.name(), compatibility);
+        schemasToCleanUp.add(schemaName);
+
         ProducerProperties producerProperties = ProducerProperties.builder()
                 .topicName(topic)
-                .schemaName(String.format("%s-%s-%s", topic, dataFormat.name(), compatibility))
+                .schemaName(schemaName)
                 .dataFormat(dataFormat.name())
                 .compatibilityType(compatibility.name())
                 .compressionType(compression.name())
@@ -258,9 +264,12 @@ public class GlueSchemaRegistryKafkaIntegrationTest {
                     TestDataGeneratorType.valueOf(dataFormat, recordType, compatibility));
             List<?> records = testDataGenerator.createRecords();
 
+            String schemaName = String.format("%s-%s-%s", topic, dataFormat.name(), compatibility);
+            schemasToCleanUp.add(schemaName);
+
             ProducerProperties producerProperties = ProducerProperties.builder()
                     .topicName(topic)
-                    .schemaName(String.format("%s-%s-%s", topic, dataFormat.name(), compatibility))
+                    .schemaName(schemaName)
                     .dataFormat(dataFormat.name())
                     .compatibilityType(compatibility.name())
                     .compressionType(compression.name())
@@ -299,9 +308,12 @@ public class GlueSchemaRegistryKafkaIntegrationTest {
                 TestDataGeneratorType.valueOf(dataFormat, recordType, compatibility));
         List<?> records = testDataGenerator.createRecords();
 
+        String schemaName = String.format("%s-%s-%s", topic, dataFormat.name(), compatibility);
+        schemasToCleanUp.add(schemaName);
+
         ProducerProperties producerProperties = ProducerProperties.builder()
                 .topicName(topic)
-                .schemaName(String.format("%s-%s-%s", topic, dataFormat.name(), compatibility.toString()))
+                .schemaName(schemaName)
                 .dataFormat(dataFormat.name())
                 .compatibilityType(compatibility.toString())
                 .compressionType(compression.name())
@@ -340,11 +352,14 @@ public class GlueSchemaRegistryKafkaIntegrationTest {
                 createAndGetKafkaHelper(OUTPUT_TOPIC_NAME_PREFIX_FOR_STREAMS);
         String outputTopic = kafkaHelperOutputTopicPair.getKey();
 
+        String schemaName = String.format("%s-%s-%s", inputTopic, dataFormat.name(), compatibility);
+        schemasToCleanUp.add(schemaName);
+
         ProducerProperties producerProperties = ProducerProperties.builder()
                 .topicName(inputTopic)
                 .inputTopic(inputTopic)
                 .outputTopic(outputTopic)
-                .schemaName(String.format("%s-%s-%s", inputTopic, dataFormat.name(), compatibility.name()))
+                .schemaName(schemaName)
                 .dataFormat(dataFormat.name())
                 .recordType(recordType.name())
                 .compatibilityType(compatibility.name())
