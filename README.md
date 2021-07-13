@@ -378,6 +378,8 @@ mvn dependency:copy-dependencies
 
 * Configure Kafka Connectors with following properties
 
+When configuring Kafka Connect workers or connectors, use the value of the string constant properties in the [AWSSchemaRegistryConstants](https://github.com/awslabs/aws-glue-schema-registry/blob/master/common/src/main/java/com/amazonaws/services/schemaregistry/utils/AWSSchemaRegistryConstants.java#L20) class to configure the AWSKafkaAvroConverter.
+
 ```java
     key.converter=com.amazonaws.services.schemaregistry.kafkaconnect.AWSKafkaAvroConverter
     value.converter=com.amazonaws.services.schemaregistry.kafkaconnect.AWSKafkaAvroConverter
@@ -388,6 +390,14 @@ mvn dependency:copy-dependencies
     key.converter.avroRecordType=GENERIC_RECORD
     value.converter.avroRecordType=GENERIC_RECORD
 ```
+
+As Glue Schema Registry is a fully managed service by AWS, there is no notion of schema registry URLs. Name of the registry (within the same AWS account) can be optionally configured using following options. If not specified, default-registry is used.
+
+```java
+    key.converter.registry.name=my-registry
+    value.converter.registry.name=my-registry
+```
+
 * Add command below to *Launch mode* section under *kafka-run-class.sh*
 
 ``` 
