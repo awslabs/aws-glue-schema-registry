@@ -26,7 +26,7 @@ setUpMongoDBLocal() {
     sleep 5
 
     ## Populate data in mongo
-    docker exec -it mongo1 mongo --eval "
+    docker exec mongo1 mongo --eval "
     rs.initiate(
       {
         _id : 'repl-set',
@@ -41,7 +41,7 @@ setUpMongoDBLocal() {
     echo "Waiting for replica set to propagate.."
     echo "Populating data in mongoDB.."
     sleep 30
-    docker exec -it mongo1 mongo --eval '
+    docker exec mongo1 mongo --eval '
         db.createCollection("fruits")
         db.fruits.insertMany([ {name: "banana", origin: "mexico", price: 1} ])
         db.fruits.insertMany([ {name: "apple", origin: "canada", price: 2} ])
@@ -77,7 +77,7 @@ startKafkaConnectTasks() {
 
     ### Get inside the kafka_connect container and run source and sink connector tasks
     docker pull public.ecr.aws/d4c7g6k3/1ambda/kafka-connect:latest
-    docker run -e CONNECT_BOOTSTRAP_SERVERS="kafka:9092" -d -it -v "$(pwd)":/integration-tests \
+    docker run -e CONNECT_BOOTSTRAP_SERVERS="kafka:9092" -d -v "$(pwd)":/integration-tests \
     -v $HOME/.aws/credentials:/root/.aws/credentials:ro \
     --net=host public.ecr.aws/d4c7g6k3/1ambda/kafka-connect:latest bash \
     -c "unset JMX_PORT;\\
