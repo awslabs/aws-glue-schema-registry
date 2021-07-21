@@ -74,7 +74,7 @@ public class AWSKafkaAvroSerializer implements Serializer<Object> {
     @Override
     public void configure(@NonNull Map<String, ?> configs,
                           boolean isKey) {
-        log.info("Configuring Amazon Schema Registry Service using these properties: {}", configs);
+        log.info("Configuring Amazon Glue Schema Registry Service using these properties: {}", configs);
         schemaName = GlueSchemaRegistryUtils.getInstance()
                 .getSchemaName(configs);
         this.isKey = isKey;
@@ -101,7 +101,7 @@ public class AWSKafkaAvroSerializer implements Serializer<Object> {
 
         UUID schemaVersionIdFromRegistry = null;
         if (this.schemaVersionId == null) {
-            log.info("Schema Version Id is null. Trying to register the schema.");
+            log.debug("Schema Version Id is null. Trying to register the schema.");
             schemaVersionIdFromRegistry =
                     glueSchemaRegistrySerializationFacade.getOrRegisterSchemaVersion(prepareInput(data, topic, isKey));
         } else {
@@ -109,7 +109,7 @@ public class AWSKafkaAvroSerializer implements Serializer<Object> {
         }
 
         if (schemaVersionIdFromRegistry != null) {
-            log.info("Schema Version Id received from the from schema registry: {}", schemaVersionIdFromRegistry);
+            log.debug("Schema Version Id received from the from schema registry: {}", schemaVersionIdFromRegistry);
             result =
                     glueSchemaRegistrySerializationFacade.serialize(DATA_FORMAT, data, schemaVersionIdFromRegistry);
         }
