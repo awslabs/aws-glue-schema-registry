@@ -363,6 +363,10 @@ public class KafkaHelper {
         if(consumerProperties.getAvroRecordType() != null) {
             properties.put(AWSSchemaRegistryConstants.AVRO_RECORD_TYPE, consumerProperties.getAvroRecordType());
         }
+        if(consumerProperties.getProtobufMessageType() != null) {
+            properties.put(AWSSchemaRegistryConstants.PROTOBUF_MESSAGE_TYPE,
+                    consumerProperties.getProtobufMessageType());
+        }
         return properties;
     }
 
@@ -375,6 +379,7 @@ public class KafkaHelper {
         properties.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, GlueSchemaRegistryKafkaStreamsSerde.class);
         properties.put(AWSSchemaRegistryConstants.DATA_FORMAT, producerProperties.getDataFormat());
         properties.put(AWSSchemaRegistryConstants.AVRO_RECORD_TYPE, producerProperties.getRecordType());
+        properties.put(AWSSchemaRegistryConstants.PROTOBUF_MESSAGE_TYPE, producerProperties.getRecordType());
         properties.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
         return properties;
     }

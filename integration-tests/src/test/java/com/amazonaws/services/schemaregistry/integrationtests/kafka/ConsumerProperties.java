@@ -23,5 +23,6 @@ import lombok.Getter;
 public class ConsumerProperties implements GlueSchemaRegistryConnectionProperties {
     private String topicName;
     private String avroRecordType;
+    private String protobufMessageType;
 }
 
