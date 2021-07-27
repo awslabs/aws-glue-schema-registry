@@ -98,7 +98,7 @@ public class GlueSchemaRegistryKafkaSerializer implements Serializer<Object> {
 
         UUID schemaVersionIdFromRegistry = null;
         if (this.schemaVersionId == null) {
-            log.info("Schema Version Id is null. Trying to register the schema.");
+            log.debug("Schema Version Id is null. Trying to register the schema.");
             schemaVersionIdFromRegistry =
                     glueSchemaRegistrySerializationFacade.getOrRegisterSchemaVersion(prepareInput(data, topic, isKey));
         } else {
@@ -106,7 +106,7 @@ public class GlueSchemaRegistryKafkaSerializer implements Serializer<Object> {
         }
 
         if (schemaVersionIdFromRegistry != null) {
-            log.info("Schema Version Id received from the from schema registry: {}", schemaVersionIdFromRegistry);
+            log.debug("Schema Version Id received from the from schema registry: {}", schemaVersionIdFromRegistry);
             result = glueSchemaRegistrySerializationFacade.serialize(DataFormat.fromValue(dataFormat), data,
                                                                      schemaVersionIdFromRegistry);
         }
