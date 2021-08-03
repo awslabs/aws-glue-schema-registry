@@ -32,17 +32,18 @@ public class ProtobufWireFormatDecoder {
     public Object decode(@NonNull byte[] data, @NonNull Descriptors.FileDescriptor descriptor,
                          ProtobufMessageType messageType) throws IOException {
         final CodedInputStream codedInputStream = CodedInputStream.newInstance(data);
-        int messageIndex;
         Descriptors.Descriptor messageDescriptor;
+        int messageIndex;
         try {
             messageIndex = codedInputStream.readUInt32();
-            if (messageIndex < 0) {
-                throw new IllegalStateException("Message index cannot be negative: " + messageIndex);
-            }
-            messageDescriptor = messageIndexFinder.getByIndex(descriptor, messageIndex);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+
+        if (messageIndex < 0) {
+            throw new IllegalStateException("Message index cannot be negative: " + messageIndex);
+        }
+        messageDescriptor = messageIndexFinder.getByIndex(descriptor, messageIndex);
 
         switch (messageType) {
             case POJO:
