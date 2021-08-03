@@ -34,13 +34,11 @@ import java.nio.ByteBuffer;
 public class ProtobufDeserializer implements GlueSchemaRegistryDataFormatDeserializer {
     private static final GlueSchemaRegistryDeserializerDataParser DESERIALIZER_DATA_PARSER =
             GlueSchemaRegistryDeserializerDataParser.getInstance();
-    private final GlueSchemaRegistryConfiguration schemaRegistrySerDeConfigs;
     private final ProtobufWireFormatDecoder protoDecoder;
     private final ProtobufMessageType protobufMessageType;
 
     @Builder
     public ProtobufDeserializer(GlueSchemaRegistryConfiguration configs) {
-        this.schemaRegistrySerDeConfigs = configs;
         this.protoDecoder = new ProtobufWireFormatDecoder(new MessageIndexFinder());
         this.protobufMessageType = configs.getProtobufMessageType();
     }

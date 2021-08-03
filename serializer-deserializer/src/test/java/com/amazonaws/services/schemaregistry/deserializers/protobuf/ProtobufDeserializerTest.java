@@ -24,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 public class ProtobufDeserializerTest {
     private static GlueSchemaRegistryConfiguration dynamicMessageConfigs = new GlueSchemaRegistryConfiguration(new HashMap<String, String>() {{
@@ -39,6 +40,15 @@ public class ProtobufDeserializerTest {
             }});
     private ProtobufDeserializer protobufUnknownMessageTypeDeserializer =
             new ProtobufDeserializer(unknownMessageConfigs);
+
+    private static GlueSchemaRegistryConfiguration pojoMessageConfigs = new GlueSchemaRegistryConfiguration(new HashMap<String, String>() {
+        {
+            put(AWSSchemaRegistryConstants.AWS_REGION, "us-west-2");
+            put(AWSSchemaRegistryConstants.PROTOBUF_MESSAGE_TYPE, "POJO");
+        }});
+    private ProtobufDeserializer protobufPojoMessageTypeDeserializer =
+            new ProtobufDeserializer(pojoMessageConfigs);
+
     private static ProtobufSerializer protobufSerializer = new ProtobufSerializer(dynamicMessageConfigs);
     private static final SerializationDataEncoder encoder = new SerializationDataEncoder(dynamicMessageConfigs);
     private static final UUID SCHEMA_VERSION_ID_FOR_TESTING = UUID.fromString("b7b4a7f0-9c96-4e4a-a687-fb5de9ef0c63");
@@ -76,10 +86,12 @@ public class ProtobufDeserializerTest {
         assertNotNull(deserializer);
     }
 
-    @ParameterizedTest
-    @MethodSource("testDynamicMessageProviderWithMessageIndex0")
-    public void testDeserialize_NullArgs_ThrowsException(DynamicMessage dynamicMessage,
-                                                         ByteBuffer buffer, String schema) {
+    @Test
+    public void testDeserialize_NullArgs_ThrowsException() {
+        DynamicMessage dynamicMessage = ProtobufGenerator.createDynamicProtobufRecord();
+        ByteBuffer buffer = ByteBuffer.wrap(encoder.write(protobufSerializer.serialize(dynamicMessage),
+                SCHEMA_VERSION_ID_FOR_TESTING));
+        String schema = ProtobufTestCaseReader.getTestCaseByName("Basic.proto").getRawSchema();
         Exception ex = assertThrows(IllegalArgumentException.class,
                 () -> protobufDynamicMessageDeserializer.deserialize(null, schema));
         assertEquals("buffer is marked non-null but is null", ex.getMessage());
@@ -139,7 +151,6 @@ public class ProtobufDeserializerTest {
     public void testDeserialize_POJO(DynamicMessage dynamicMessage, ByteBuffer buffer, String schema) {
         //Placeholder to fix code coverage so it builds successfully
         //Will be used when testing POJO deserialization
-//        .getSchemaRegistrySerDeConfigs().setProtobufMessageType(ProtobufMessageType.POJO);
-//        assertNull(protobufDeserializer.deserialize(buffer, schema));
+        assertNull(protobufPojoMessageTypeDeserializer.deserialize(buffer, schema));
     }
 }
