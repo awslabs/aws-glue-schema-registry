@@ -63,7 +63,8 @@
     <dependencies>
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
-            <artifactId>glue</artifactId>
+            <artifactId>AwsJavaSdk-Glue</artifactId>
+            <version>2.16.92</version>
         </dependency>
         <dependency>
             <groupId>${parent.groupId}</groupId>
