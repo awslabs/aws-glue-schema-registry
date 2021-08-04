@@ -663,7 +663,7 @@ public class AvroDeserializerTest {
                      () -> deserialize(avroDeserializer, serializedData.array(), schema.toString()));
         Throwable rootCause = ex.getCause().getCause();
         assertTrue(rootCause instanceof UnsupportedOperationException);
-        assertEquals("Data Format in configuration is not supported, Data Format: UNKNOWN ", rootCause.getMessage());
+        assertEquals("Unsupported AvroRecordType: UNKNOWN", rootCause.getMessage());
     }
 
     /**

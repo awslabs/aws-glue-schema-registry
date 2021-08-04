@@ -50,7 +50,7 @@ public class DatumReaderInstance {
                 return new GenericDatumReader<>(writerSchema);
 
             default:
-                String message = String.format("Data Format in configuration is not supported, Data Format: %s ",
+                String message = String.format("Unsupported AvroRecordType: %s",
                     avroRecordType.getName());
                 throw new UnsupportedOperationException(message);
         }
