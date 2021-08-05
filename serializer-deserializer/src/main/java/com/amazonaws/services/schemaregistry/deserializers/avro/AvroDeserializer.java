@@ -17,24 +17,21 @@ package com.amazonaws.services.schemaregistry.deserializers.avro;
 import com.amazonaws.services.schemaregistry.common.GlueSchemaRegistryDataFormatDeserializer;
 import com.amazonaws.services.schemaregistry.common.configs.GlueSchemaRegistryConfiguration;
 import com.amazonaws.services.schemaregistry.deserializers.GlueSchemaRegistryDeserializerDataParser;
-import com.amazonaws.services.schemaregistry.utils.AVROUtils;
-import com.amazonaws.services.schemaregistry.utils.AvroRecordType;
 import com.amazonaws.services.schemaregistry.exception.AWSSchemaRegistryException;
+import com.amazonaws.services.schemaregistry.utils.AvroRecordType;
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.avro.Schema;
-import org.apache.avro.generic.GenericDatumReader;
 import org.apache.avro.io.BinaryDecoder;
 import org.apache.avro.io.DatumReader;
 import org.apache.avro.io.DecoderFactory;
-import org.apache.avro.specific.SpecificData;
-import org.apache.avro.specific.SpecificDatumReader;
-import org.apache.avro.specific.SpecificRecord;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
 
 /**
@@ -44,14 +41,20 @@ import java.nio.ByteBuffer;
 @Slf4j
 public class AvroDeserializer implements GlueSchemaRegistryDataFormatDeserializer {
     private static final GlueSchemaRegistryDeserializerDataParser DESERIALIZER_DATA_PARSER =
-            GlueSchemaRegistryDeserializerDataParser.getInstance();
-    private static final AVROUtils AVRO_UTILS = AVROUtils.getInstance();
+        GlueSchemaRegistryDeserializerDataParser.getInstance();
+    //TODO: Make this configurable if requested by customers.
+    private static final long MAX_DATUM_READER_CACHE_SIZE = 100;
 
     @Getter
     @Setter
     private GlueSchemaRegistryConfiguration schemaRegistrySerDeConfigs;
     @Setter
     private AvroRecordType avroRecordType;
+
+    @NonNull
+    @Getter
+    @VisibleForTesting
+    protected final LoadingCache<String, DatumReader<Object>> datumReaderCache;
 
     /**
      * Constructor accepting various dependencies.
@@ -62,6 +65,11 @@ public class AvroDeserializer implements GlueSchemaRegistryDataFormatDeserialize
     public AvroDeserializer(GlueSchemaRegistryConfiguration configs) {
         this.schemaRegistrySerDeConfigs = configs;
         this.avroRecordType = configs.getAvroRecordType();
+        this.datumReaderCache =
+            CacheBuilder
+                .newBuilder()
+                .maximumSize(MAX_DATUM_READER_CACHE_SIZE)
+                .build(new DatumReaderCache());
     }
 
     /**
@@ -80,16 +88,16 @@ public class AvroDeserializer implements GlueSchemaRegistryDataFormatDeserialize
 
             log.debug("Length of actual message: {}", data.length);
 
-            Schema schemaDefinition = AVRO_UTILS.parseSchema(schema);
-            DatumReader<Object> datumReader = createDatumReader(schemaDefinition);
+            DatumReader<Object> datumReader = datumReaderCache.get(schema);
+
             BinaryDecoder binaryDecoder = getBinaryDecoder(data, 0, data.length);
             Object result = datumReader.read(null, binaryDecoder);
 
             log.debug("Finished de-serializing Avro message");
 
             return result;
-        } catch (IOException | InstantiationException | IllegalAccessException e) {
-            String message = String.format("Exception occurred while de-serializing Avro message");
+        } catch (Exception e) {
+            String message = "Exception occurred while de-serializing Avro message";
             throw new AWSSchemaRegistryException(message, e);
         }
     }
@@ -98,41 +106,10 @@ public class AvroDeserializer implements GlueSchemaRegistryDataFormatDeserialize
         return DecoderFactory.get().binaryDecoder(data, start, end, null);
     }
 
-    /**
-     * This method is used to create Avro datum reader for deserialization. By
-     * default, it is GenericDatumReader; SpecificDatumReader will only be created
-     * if the user specifies. In this case, the program will check if the user have
-     * those specific code-generated schema class locally. ReaderSchema will be
-     * supplied if the user wants to use a specific schema to deserialize the
-     * message. (Compatibility check will be invoked)
-     *
-     * @param writerSchema schema that writes the Avro message
-     * @return Avro datum reader for de-serialization
-     * @throws InstantiationException can be thrown for readerClass.newInstance()
-     *                                from java.lang.Class implementation
-     * @throws IllegalAccessException can be thrown readerClass.newInstance() from
-     *                                java.lang.Class implementation
-     */
-    public DatumReader<Object> createDatumReader(Schema writerSchema)
-            throws InstantiationException, IllegalAccessException {
-
-        switch (this.avroRecordType) {
-            case SPECIFIC_RECORD:
-                @SuppressWarnings("unchecked")
-                Class<SpecificRecord> readerClass = SpecificData.get().getClass(writerSchema);
-
-                Schema readerSchema = readerClass.newInstance().getSchema();
-                log.debug("Using SpecificDatumReader for de-serializing Avro message, schema: {})", readerSchema.toString());
-                return new SpecificDatumReader<>(writerSchema, readerSchema);
-
-            case GENERIC_RECORD:
-                log.debug("Using GenericDatumReader for de-serializing Avro message, schema: {})", writerSchema.toString());
-                return new GenericDatumReader<>(writerSchema);
-
-            default:
-                String message = String.format("Data Format in configuration is not supported, Data Format: %s ",
-                        this.avroRecordType.getName());
-                throw new UnsupportedOperationException(message);
+    private class DatumReaderCache extends CacheLoader<String, DatumReader<Object>> {
+        @Override
+        public DatumReader<Object> load(String schema) throws Exception {
+            return DatumReaderInstance.from(schema, avroRecordType);
         }
     }
 }

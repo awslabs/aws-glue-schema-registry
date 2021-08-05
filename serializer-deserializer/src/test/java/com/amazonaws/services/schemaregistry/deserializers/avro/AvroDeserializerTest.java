@@ -38,7 +38,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
@@ -58,9 +57,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * Unit tests for testing Avro related serialization and de-serialization.
@@ -247,7 +244,10 @@ public class AvroDeserializerTest {
 
         Schema schema = SchemaLoader.loadAvroSchema(AVRO_USER_SCHEMA_FILE);
         AvroDeserializer avroDeserializer = createAvroDeserializer(AvroRecordType.SPECIFIC_RECORD);
-        assertThrows(GlueSchemaRegistryIncompatibleDataException.class, () -> avroDeserializer.deserialize(ByteBuffer.wrap(serializedData), schema.toString()));
+        Exception ex = assertThrows(AWSSchemaRegistryException.class, () -> avroDeserializer.deserialize(ByteBuffer.wrap(serializedData), schema.toString()));
+        Throwable rootCause = ex.getCause();
+        assertTrue(rootCause instanceof GlueSchemaRegistryIncompatibleDataException);
+        assertEquals("Data is not compatible with schema registry size: 2", rootCause.getMessage());
     }
 
     /**
@@ -261,7 +261,10 @@ public class AvroDeserializerTest {
 
         Schema schema = SchemaLoader.loadAvroSchema(AVRO_USER_SCHEMA_FILE);
         AvroDeserializer avroDeserializer = createAvroDeserializer(AvroRecordType.SPECIFIC_RECORD);
-        assertThrows(GlueSchemaRegistryIncompatibleDataException.class, () -> avroDeserializer.deserialize(serializedData, schema.toString()));
+        Exception ex = assertThrows(AWSSchemaRegistryException.class, () -> avroDeserializer.deserialize(serializedData, schema.toString()));
+        Throwable rootCause = ex.getCause();
+        assertTrue(rootCause instanceof GlueSchemaRegistryIncompatibleDataException);
+        assertEquals("Invalid schema registry header version byte in data", rootCause.getMessage());
     }
 
     /**
@@ -275,7 +278,10 @@ public class AvroDeserializerTest {
 
         Schema schema = SchemaLoader.loadAvroSchema(AVRO_USER_SCHEMA_FILE);
         AvroDeserializer avroDeserializer = createAvroDeserializer(AvroRecordType.SPECIFIC_RECORD);
-        assertThrows(GlueSchemaRegistryIncompatibleDataException.class, () -> avroDeserializer.deserialize(serializedData, schema.toString()));
+        Exception ex = assertThrows(AWSSchemaRegistryException.class, () -> avroDeserializer.deserialize(serializedData, schema.toString()));
+        Throwable rootCause = ex.getCause();
+        assertTrue(rootCause instanceof GlueSchemaRegistryIncompatibleDataException);
+        assertEquals("Invalid schema registry compression byte in data", rootCause.getMessage());
     }
 
     /**
@@ -294,6 +300,8 @@ public class AvroDeserializerTest {
         Object deserializedObject = avroDeserializer.deserialize( serializedData,
                                                                  schema.toString());
         assertGenericRecord(genericRecord, deserializedObject);
+        //Assert the instance is getting cached.
+        assertEquals(1, avroDeserializer.getDatumReaderCache().size());
     }
 
     public void assertGenericRecord(GenericRecord genericRecord, Object deserializedObject) {
@@ -318,6 +326,8 @@ public class AvroDeserializerTest {
         Object deserializedObject = avroDeserializer.deserialize(serializedData,
                                                                  schema.toString());
 
+        //Assert the instance is getting cached.
+        assertEquals(1, avroDeserializer.getDatumReaderCache().size());
         assertGenericRecordWithSpecificRecordMode(genericRecord, deserializedObject);
     }
 
@@ -649,65 +659,11 @@ public class AvroDeserializerTest {
         Schema schema = SchemaLoader.loadAvroSchema(AVRO_USER_SCHEMA_FILE);
         AvroDeserializer avroDeserializer = createAvroDeserializer(AvroRecordType.UNKNOWN);
 
-        assertThrows(UnsupportedOperationException.class,
+        Exception ex = assertThrows(AWSSchemaRegistryException.class,
                      () -> deserialize(avroDeserializer, serializedData.array(), schema.toString()));
-    }
-
-    /**
-     * Tests the de-serialization for createDatumReader IllegalAccessException which
-     * will be wrapper under AWSSchemaRegistryException.
-     */
-    @Test
-    public void testDeserialize_datumReaderIllegalAccess_throwsException() {
-        GenericRecord genericRecord = RecordGenerator.createGenericAvroRecord();
-        ByteBuffer serializedData =
-                createBasicSerializedData(genericRecord, AWSSchemaRegistryConstants.COMPRESSION.NONE.name(),
-                                          DataFormat.AVRO);
-
-        Schema schema = SchemaLoader.loadAvroSchema(AVRO_USER_SCHEMA_FILE);
-        AvroDeserializer avroDeserializerMock = mock(AvroDeserializer.class);
-        when(avroDeserializerMock.deserialize(Mockito.any(ByteBuffer.class),
-                                              Mockito.anyString())).thenCallRealMethod();
-
-        GlueSchemaRegistryConfiguration config = mock(GlueSchemaRegistryConfiguration.class);
-        avroDeserializerMock.setSchemaRegistrySerDeConfigs(config);
-
-        try {
-            when(avroDeserializerMock.createDatumReader(Mockito.any(Schema.class))).thenThrow(new IllegalAccessException("Illegal access!"));
-        } catch (Exception e) {
-            fail("Test failed with exception", e);
-        }
-
-        assertThrows(AWSSchemaRegistryException.class, () -> avroDeserializerMock.deserialize(
-                                                                                              serializedData, schema.toString()));
-    }
-
-    /**
-     * Tests the de-serialization for createDatumReader InstantiationException which
-     * will be wrapper under AWSSchemaRegistryException.
-     */
-    @Test
-    public void testDeserialize_datumReaderInstantiationFails_throwsException() {
-        GenericRecord genericRecord = RecordGenerator.createGenericAvroRecord();
-        ByteBuffer serializedData = createBasicSerializedData(genericRecord,
-                AWSSchemaRegistryConstants.COMPRESSION.NONE.name(), DataFormat.AVRO);
-
-        Schema schema = SchemaLoader.loadAvroSchema(AVRO_USER_SCHEMA_FILE);
-        AvroDeserializer avroDeserializerMock = mock(AvroDeserializer.class);
-        when(avroDeserializerMock.deserialize(Mockito.any(ByteBuffer.class),
-                                              Mockito.anyString())).thenCallRealMethod();
-
-        GlueSchemaRegistryConfiguration config = mock(GlueSchemaRegistryConfiguration.class);
-        when(config.getCompressionType()).thenReturn(AWSSchemaRegistryConstants.COMPRESSION.NONE);
-        avroDeserializerMock.setSchemaRegistrySerDeConfigs(config);
-
-        try {
-            when(avroDeserializerMock.createDatumReader(Mockito.any(Schema.class))).thenThrow(new InstantiationException("Instantiation errors!"));
-        } catch (Exception e) {
-            fail("Test failed with exception", e);
-        }
-
-        assertThrows(AWSSchemaRegistryException.class, () -> avroDeserializerMock.deserialize(serializedData, schema.toString()));
+        Throwable rootCause = ex.getCause().getCause();
+        assertTrue(rootCause instanceof UnsupportedOperationException);
+        assertEquals("Unsupported AvroRecordType: UNKNOWN", rootCause.getMessage());
     }
 
     /**
