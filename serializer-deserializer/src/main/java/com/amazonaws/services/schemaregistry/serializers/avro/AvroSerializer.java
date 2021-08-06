@@ -17,15 +17,23 @@ package com.amazonaws.services.schemaregistry.serializers.avro;
 import com.amazonaws.services.schemaregistry.common.GlueSchemaRegistryDataFormatSerializer;
 import com.amazonaws.services.schemaregistry.exception.AWSSchemaRegistryException;
 import com.amazonaws.services.schemaregistry.utils.AVROUtils;
+import com.amazonaws.services.schemaregistry.utils.AvroRecordType;
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
+import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.NonNull;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericData;
-import org.apache.avro.generic.GenericDatumWriter;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.io.BinaryEncoder;
 import org.apache.avro.io.DatumWriter;
 import org.apache.avro.io.EncoderFactory;
-import org.apache.avro.specific.SpecificDatumWriter;
 import org.apache.avro.specific.SpecificRecord;
 
 import java.io.ByteArrayOutputStream;
@@ -36,6 +44,19 @@ import java.io.ByteArrayOutputStream;
 @Slf4j
 public class AvroSerializer implements GlueSchemaRegistryDataFormatSerializer {
     private AVROUtils avroUtils = AVROUtils.getInstance();
+    private static final long MAX_DATUM_WRITER_CACHE_SIZE = 100;
+
+    @NonNull
+    @VisibleForTesting
+    protected final LoadingCache<DatumWriterCacheKey, DatumWriter<Object>> datumWriterCache;
+
+    public AvroSerializer() {
+        this.datumWriterCache =
+            CacheBuilder
+                .newBuilder()
+                .maximumSize(MAX_DATUM_WRITER_CACHE_SIZE)
+                .build(new DatumWriterCache());
+    }
 
     @Override
     public byte[] serialize(Object data) {
@@ -57,20 +78,32 @@ public class AvroSerializer implements GlueSchemaRegistryDataFormatSerializer {
         org.apache.avro.Schema schema = AVROUtils.getInstance()
                 .getSchema(object);
         if (object instanceof SpecificRecord) {
-            return new SpecificDatumWriter<>(schema);
+            return getSpecificDatumWriter(schema);
         } else if (object instanceof GenericRecord) {
-            return new GenericDatumWriter<>(schema);
+            return getGenericDatumWriter(schema);
         } else if (object instanceof GenericData.EnumSymbol) {
-            return new GenericDatumWriter<>(schema);
+            return getGenericDatumWriter(schema);
         } else if (object instanceof GenericData.Array) {
-            return new GenericDatumWriter<>(schema);
+            return getGenericDatumWriter(schema);
         } else if (object instanceof GenericData.Fixed) {
-            return new GenericDatumWriter<>(schema);
+            return getGenericDatumWriter(schema);
         } else {
             String message =
                 String.format("Unsupported type passed for serialization: %s", object);
             throw new AWSSchemaRegistryException(message);
         }
+    }
+
+    @SneakyThrows
+    private DatumWriter<Object> getSpecificDatumWriter(Schema schema) {
+        DatumWriterCacheKey datumWriterCacheKey = new DatumWriterCacheKey(schema, AvroRecordType.SPECIFIC_RECORD);
+        return datumWriterCache.get(datumWriterCacheKey);
+    }
+
+    @SneakyThrows
+    private DatumWriter<Object> getGenericDatumWriter(Schema schema) {
+        DatumWriterCacheKey datumWriterCacheKey = new DatumWriterCacheKey(schema, AvroRecordType.GENERIC_RECORD);
+        return datumWriterCache.get(datumWriterCacheKey);
     }
 
     /**
@@ -117,5 +150,24 @@ public class AvroSerializer implements GlueSchemaRegistryDataFormatSerializer {
     public void validate(String schemaDefinition, byte[] data) {
         //No-op
         //We cannot determine accurately if the data bytes match the schema as Avro bytes don't contain the field names.
+    }
+
+    @AllArgsConstructor
+    @Getter
+    @EqualsAndHashCode
+    private static class DatumWriterCacheKey {
+        @NonNull
+        private final Schema schema;
+        @NonNull
+        private final AvroRecordType avroRecordType;
+    }
+
+    private static class DatumWriterCache extends CacheLoader<DatumWriterCacheKey, DatumWriter<Object>> {
+        @Override
+        public DatumWriter<Object> load(DatumWriterCacheKey datumWriterCacheKey) {
+            Schema schema = datumWriterCacheKey.getSchema();
+            AvroRecordType avroRecordType = datumWriterCacheKey.getAvroRecordType();
+            return DatumWriterInstance.get(schema, avroRecordType);
+        }
     }
 }
