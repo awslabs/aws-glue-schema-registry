@@ -23,3 +23,10 @@ GlueSchemaRegistryKafkaSerializer/GlueSchemaRegistryKafkaDeserializer.
 * Fixed checkstyle errors with maven build in integration-tests folder.
 * Reduced number of Canaries tests.
 * Removed jitpack as a repo for everit and using maven central to pull everit.
+
+## Release 1.1.2
+* Introduce cache to improve serialization performance
+* Add DatumReader Cache to improve de-serialization performance
+* Reduce logging
+* Add additional examples of configuring Kafka Connect and clarification on what property names are expected
+* Fix resource clean up in Kafka integration test
