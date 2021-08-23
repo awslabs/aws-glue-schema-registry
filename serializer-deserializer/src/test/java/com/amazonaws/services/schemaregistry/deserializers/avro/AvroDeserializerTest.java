@@ -28,7 +28,6 @@ import com.amazonaws.services.schemaregistry.utils.RecordGenerator;
 import com.amazonaws.services.schemaregistry.utils.SchemaLoader;
 import com.amazonaws.services.schemaregistry.utils.SerializedByteArrayGenerator;
 import lombok.NonNull;
-import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.util.Utf8;
@@ -144,14 +143,14 @@ public class AvroDeserializerTest {
      * @param serializedData serialized data
      * @return de-serialized object
      */
-    private Object createDeserializedObjectForGenericRecord(Schema schema, byte[] serializedData) {
+    private Object createDeserializedObjectForGenericRecord(com.amazonaws.services.schemaregistry.common.Schema schema, byte[] serializedData) {
         AvroDeserializer avroDeserializer = AvroDeserializer
                 .builder()
                 .configs(this.schemaRegistrySerDeConfigs)
                 .build();
         avroDeserializer.setAvroRecordType(AvroRecordType.GENERIC_RECORD);
 
-        return avroDeserializer.deserialize(ByteBuffer.wrap(serializedData), schema.toString());
+        return avroDeserializer.deserialize(ByteBuffer.wrap(serializedData), schema);
     }
 
     /**
@@ -163,7 +162,7 @@ public class AvroDeserializerTest {
      */
     private Object deserialize(GlueSchemaRegistryDataFormatDeserializer deserializer,
                                @NonNull byte[] data,
-                               String schema) {
+                               com.amazonaws.services.schemaregistry.common.Schema schema) {
         return deserializer.deserialize(ByteBuffer.wrap(data), schema);
     }
 
@@ -176,7 +175,7 @@ public class AvroDeserializerTest {
      */
     private Object deserialize(GlueSchemaRegistryDataFormatDeserializer deserializer,
                                @NonNull ByteBuffer buffer,
-                               String schema) {
+                               com.amazonaws.services.schemaregistry.common.Schema schema) {
         return deserializer.deserialize(buffer, schema);
     }
 
@@ -187,7 +186,8 @@ public class AvroDeserializerTest {
      * @param serializedObject serialized object for comparison
      * @param serializedData   serialized data bye array
      */
-    private void deserializeAndAssertGenericRecord(Schema schema, Object serializedObject, byte[] serializedData) {
+    private void deserializeAndAssertGenericRecord(com.amazonaws.services.schemaregistry.common.Schema schema,
+                                                   Object serializedObject, byte[] serializedData) {
         Object deserializedObject = createDeserializedObjectForGenericRecord(schema, serializedData);
         assertTrue(serializedObject.equals(deserializedObject));
     }
@@ -242,9 +242,11 @@ public class AvroDeserializerTest {
         byte[] serializedData = new byte[]{AWSSchemaRegistryConstants.HEADER_VERSION_BYTE,
                 AWSSchemaRegistryConstants.COMPRESSION_BYTE};
 
-        Schema schema = SchemaLoader.loadAvroSchema(AVRO_USER_SCHEMA_FILE);
+        org.apache.avro.Schema schema = SchemaLoader.loadAvroSchema(AVRO_USER_SCHEMA_FILE);
         AvroDeserializer avroDeserializer = createAvroDeserializer(AvroRecordType.SPECIFIC_RECORD);
-        Exception ex = assertThrows(AWSSchemaRegistryException.class, () -> avroDeserializer.deserialize(ByteBuffer.wrap(serializedData), schema.toString()));
+        com.amazonaws.services.schemaregistry.common.Schema schemaObject = new com.amazonaws.services.schemaregistry.common.Schema(
+                schema.toString(), DataFormat.AVRO.name(), "testAvroSchema");
+        Exception ex = assertThrows(AWSSchemaRegistryException.class, () -> avroDeserializer.deserialize(ByteBuffer.wrap(serializedData), schemaObject));
         Throwable rootCause = ex.getCause();
         assertTrue(rootCause instanceof GlueSchemaRegistryIncompatibleDataException);
         assertEquals("Data is not compatible with schema registry size: 2", rootCause.getMessage());
@@ -259,9 +261,11 @@ public class AvroDeserializerTest {
         ByteBuffer serializedData = SerializedByteArrayGenerator.constructBasicSerializedByteBuffer((byte) 99,
                 AWSSchemaRegistryConstants.COMPRESSION_BYTE, UUID.randomUUID());
 
-        Schema schema = SchemaLoader.loadAvroSchema(AVRO_USER_SCHEMA_FILE);
+        org.apache.avro.Schema schema = SchemaLoader.loadAvroSchema(AVRO_USER_SCHEMA_FILE);
+        com.amazonaws.services.schemaregistry.common.Schema schemaObject = new com.amazonaws.services.schemaregistry.common.Schema(
+            schema.toString(), DataFormat.AVRO.name(), "testAvroSchema");
         AvroDeserializer avroDeserializer = createAvroDeserializer(AvroRecordType.SPECIFIC_RECORD);
-        Exception ex = assertThrows(AWSSchemaRegistryException.class, () -> avroDeserializer.deserialize(serializedData, schema.toString()));
+        Exception ex = assertThrows(AWSSchemaRegistryException.class, () -> avroDeserializer.deserialize(serializedData, schemaObject));
         Throwable rootCause = ex.getCause();
         assertTrue(rootCause instanceof GlueSchemaRegistryIncompatibleDataException);
         assertEquals("Invalid schema registry header version byte in data", rootCause.getMessage());
@@ -276,9 +280,12 @@ public class AvroDeserializerTest {
         ByteBuffer serializedData =
                 SerializedByteArrayGenerator.constructBasicSerializedByteBuffer(AWSSchemaRegistryConstants.HEADER_VERSION_BYTE, (byte) 99, UUID.randomUUID());
 
-        Schema schema = SchemaLoader.loadAvroSchema(AVRO_USER_SCHEMA_FILE);
+        org.apache.avro.Schema schema = SchemaLoader.loadAvroSchema(AVRO_USER_SCHEMA_FILE);
+        com.amazonaws.services.schemaregistry.common.Schema schemaObject = new com.amazonaws.services.schemaregistry.common.Schema(
+            schema.toString(), DataFormat.AVRO.name(), "testAvroSchema");
         AvroDeserializer avroDeserializer = createAvroDeserializer(AvroRecordType.SPECIFIC_RECORD);
-        Exception ex = assertThrows(AWSSchemaRegistryException.class, () -> avroDeserializer.deserialize(serializedData, schema.toString()));
+
+        Exception ex = assertThrows(AWSSchemaRegistryException.class, () -> avroDeserializer.deserialize(serializedData, schemaObject));
         Throwable rootCause = ex.getCause();
         assertTrue(rootCause instanceof GlueSchemaRegistryIncompatibleDataException);
         assertEquals("Invalid schema registry compression byte in data", rootCause.getMessage());
@@ -294,11 +301,13 @@ public class AvroDeserializerTest {
         GenericRecord genericRecord = RecordGenerator.createGenericAvroRecord();
 
         ByteBuffer serializedData = createBasicSerializedData(genericRecord, compressionType.name(), DataFormat.AVRO);
-        Schema schema = SchemaLoader.loadAvroSchema(AVRO_USER_SCHEMA_FILE);
+        org.apache.avro.Schema schema = SchemaLoader.loadAvroSchema(AVRO_USER_SCHEMA_FILE);
         AvroDeserializer avroDeserializer = createAvroDeserializer(AvroRecordType.GENERIC_RECORD);
 
-        Object deserializedObject = avroDeserializer.deserialize( serializedData,
-                                                                 schema.toString());
+        com.amazonaws.services.schemaregistry.common.Schema schemaObject = new com.amazonaws.services.schemaregistry.common.Schema(
+                schema.toString(), DataFormat.AVRO.name(), "testAvroSchema");
+
+        Object deserializedObject = avroDeserializer.deserialize(serializedData, schemaObject);
         assertGenericRecord(genericRecord, deserializedObject);
         //Assert the instance is getting cached.
         assertEquals(1, avroDeserializer.getDatumReaderCache().size());
@@ -320,11 +329,13 @@ public class AvroDeserializerTest {
         GenericRecord genericRecord = RecordGenerator.createGenericAvroRecord();
 
         ByteBuffer serializedData = createBasicSerializedData(genericRecord, compressionType.name(), DataFormat.AVRO);
-        Schema schema = SchemaLoader.loadAvroSchema(AVRO_USER_SCHEMA_FILE);
+        org.apache.avro.Schema schema = SchemaLoader.loadAvroSchema(AVRO_USER_SCHEMA_FILE);
         AvroDeserializer avroDeserializer = createAvroDeserializer(AvroRecordType.SPECIFIC_RECORD);
 
-        Object deserializedObject = avroDeserializer.deserialize(serializedData,
-                                                                 schema.toString());
+
+        com.amazonaws.services.schemaregistry.common.Schema schemaObject = new com.amazonaws.services.schemaregistry.common.Schema(
+                schema.toString(), DataFormat.AVRO.name(), "testAvroSchema");
+        Object deserializedObject = avroDeserializer.deserialize(serializedData, schemaObject);
 
         //Assert the instance is getting cached.
         assertEquals(1, avroDeserializer.getDatumReaderCache().size());
@@ -352,10 +363,14 @@ public class AvroDeserializerTest {
         User userDefinedObject = RecordGenerator.createSpecificAvroRecord();
         ByteBuffer serializedData = createBasicSerializedData(userDefinedObject, compressionType.name(), DataFormat.AVRO);
 
-        Schema schema = SchemaLoader.loadAvroSchema(AVRO_USER_SCHEMA_FILE);
+        org.apache.avro.Schema schema = SchemaLoader.loadAvroSchema(AVRO_USER_SCHEMA_FILE);
         AvroDeserializer avroDeserializer = createAvroDeserializer(AvroRecordType.SPECIFIC_RECORD);
 
-        Object deserializedObject = avroDeserializer.deserialize( serializedData, schema.toString());
+
+        com.amazonaws.services.schemaregistry.common.Schema schemaObject = new com.amazonaws.services.schemaregistry.common.Schema(
+                schema.toString(), DataFormat.AVRO.name(), "testAvroSchema");
+
+        Object deserializedObject = avroDeserializer.deserialize(serializedData, schemaObject);
         assertAll("De-serialized object is User type and equals the serialized object",
                 () -> assertTrue(deserializedObject instanceof User),
                 () -> assertTrue(deserializedObject.equals(userDefinedObject)));
@@ -371,9 +386,12 @@ public class AvroDeserializerTest {
         GenericRecord genericRecord = RecordGenerator.createGenericAvroRecord();
         ByteBuffer serializedData = createBasicSerializedData(genericRecord, compressionType.name(), DataFormat.AVRO);
 
-        Schema schema = SchemaLoader.loadAvroSchema(AVRO_USER_SCHEMA_FILE);
+        org.apache.avro.Schema schema = SchemaLoader.loadAvroSchema(AVRO_USER_SCHEMA_FILE);
         AvroDeserializer avroDeserializer = createAvroDeserializer(AvroRecordType.GENERIC_RECORD);
-        Object deserializedObject = deserialize(avroDeserializer, serializedData, schema.toString());
+
+        com.amazonaws.services.schemaregistry.common.Schema schemaObject = new com.amazonaws.services.schemaregistry.common.Schema(
+                schema.toString(), DataFormat.AVRO.name(), "testAvroSchema");
+        Object deserializedObject = deserialize(avroDeserializer, serializedData, schemaObject);
 
         assertGenericRecord(genericRecord, deserializedObject);
     }
@@ -388,9 +406,13 @@ public class AvroDeserializerTest {
         GenericRecord genericRecord = RecordGenerator.createGenericAvroRecord();
         ByteBuffer serializedData = createBasicSerializedData(genericRecord, compressionType.name(), DataFormat.AVRO);
 
-        Schema schema = SchemaLoader.loadAvroSchema(AVRO_USER_SCHEMA_FILE);
+        org.apache.avro.Schema schema = SchemaLoader.loadAvroSchema(AVRO_USER_SCHEMA_FILE);
         AvroDeserializer avroDeserializer = createAvroDeserializer(AvroRecordType.GENERIC_RECORD);
-        Object deserializedObject = deserialize(avroDeserializer, serializedData.array(), schema.toString());
+
+        com.amazonaws.services.schemaregistry.common.Schema schemaObject = new com.amazonaws.services.schemaregistry.common.Schema(
+                schema.toString(), DataFormat.AVRO.name(), "testAvroSchema");
+
+        Object deserializedObject = deserialize(avroDeserializer, serializedData.array(), schemaObject);
 
         assertGenericRecord(genericRecord, deserializedObject);
     }
@@ -406,9 +428,13 @@ public class AvroDeserializerTest {
         User userDefinedObject = RecordGenerator.createSpecificAvroRecord();
         ByteBuffer serializedData = createBasicSerializedData(userDefinedObject, compressionType.name(), DataFormat.AVRO);
 
-        Schema schema = SchemaLoader.loadAvroSchema(AVRO_USER_SCHEMA_FILE);
+        org.apache.avro.Schema schema = SchemaLoader.loadAvroSchema(AVRO_USER_SCHEMA_FILE);
         AvroDeserializer avroDeserializer = createAvroDeserializer(AvroRecordType.GENERIC_RECORD);
-        Object deserializedObject = avroDeserializer.deserialize(serializedData, schema.toString());
+
+        com.amazonaws.services.schemaregistry.common.Schema schemaObject = new com.amazonaws.services.schemaregistry.common.Schema(
+                schema.toString(), DataFormat.AVRO.name(), "testAvroSchema");
+
+        Object deserializedObject = avroDeserializer.deserialize(serializedData, schemaObject);
 
         assertSpecificRecordInGenericRecordMode(userDefinedObject, deserializedObject);
     }
@@ -429,15 +455,16 @@ public class AvroDeserializerTest {
     @ParameterizedTest
     @EnumSource(AWSSchemaRegistryConstants.COMPRESSION.class)
     public void testDeserialize_enumSchema_equalsOriginal(AWSSchemaRegistryConstants.COMPRESSION compressionType) {
-        Schema schemaForEnum = SchemaLoader.loadAvroSchema(AVRO_USER_ENUM_SCHEMA_FILE);
+        org.apache.avro.Schema schemaForEnum = SchemaLoader.loadAvroSchema(AVRO_USER_ENUM_SCHEMA_FILE);
         GenericData.EnumSymbol enumSymbol = new GenericData.EnumSymbol(schemaForEnum, "ONE");
 
         GlueSchemaRegistrySerializationFacade glueSchemaRegistrySerializationFacade =
                 createGlueSchemaRegistryFacade(compressionType.name());
         byte[] serializedData =
                 glueSchemaRegistrySerializationFacade.serialize(DataFormat.AVRO, enumSymbol, UUID.randomUUID());
-
-        deserializeAndAssertGenericRecord(schemaForEnum, enumSymbol, serializedData);
+        com.amazonaws.services.schemaregistry.common.Schema schemaObject = new com.amazonaws.services.schemaregistry.common.Schema(
+                schemaForEnum.toString(), DataFormat.AVRO.name(), "testAvroSchema");
+        deserializeAndAssertGenericRecord(schemaObject, enumSymbol, serializedData);
     }
 
     /**
@@ -446,7 +473,7 @@ public class AvroDeserializerTest {
     @ParameterizedTest
     @EnumSource(AWSSchemaRegistryConstants.COMPRESSION.class)
     public void testDeserialize_integerArrays_equalsOriginal(AWSSchemaRegistryConstants.COMPRESSION compressionType) {
-        Schema schemaForArray = SchemaLoader.loadAvroSchema(AVRO_USER_ARRAY_SCHEMA_FILE);
+        org.apache.avro.Schema schemaForArray = SchemaLoader.loadAvroSchema(AVRO_USER_ARRAY_SCHEMA_FILE);
         GenericData.Array<Integer> array = new GenericData.Array<>(1, schemaForArray);
         array.add(1);
 
@@ -455,7 +482,10 @@ public class AvroDeserializerTest {
         byte[] serializedData =
                 glueSchemaRegistrySerializationFacade.serialize(DataFormat.AVRO, array, UUID.randomUUID());
 
-        deserializeAndAssertGenericRecord(schemaForArray, array, serializedData);
+
+        com.amazonaws.services.schemaregistry.common.Schema schemaObject = new com.amazonaws.services.schemaregistry.common.Schema(
+                schemaForArray.toString(), DataFormat.AVRO.name(), "testAvroSchema");
+        deserializeAndAssertGenericRecord(schemaObject, array, serializedData);
     }
 
     /**
@@ -464,7 +494,7 @@ public class AvroDeserializerTest {
     @ParameterizedTest
     @EnumSource(AWSSchemaRegistryConstants.COMPRESSION.class)
     public void testDeserialize_objectArrays_equalsOriginal(AWSSchemaRegistryConstants.COMPRESSION compressionType) {
-        Schema schemaForArray = SchemaLoader.loadAvroSchema(AVRO_USER_ARRAY_SCHEMA_FILE);
+        org.apache.avro.Schema schemaForArray = SchemaLoader.loadAvroSchema(AVRO_USER_ARRAY_SCHEMA_FILE);
         GenericData.Array<Object> array = new GenericData.Array<>(1, schemaForArray);
         array.add(1);
 
@@ -472,7 +502,10 @@ public class AvroDeserializerTest {
                 createGlueSchemaRegistryFacade(compressionType.name());
         byte[] serializedData = glueSchemaRegistrySerializationFacade.serialize(DataFormat.AVRO, array, UUID.randomUUID());
 
-        deserializeAndAssertGenericRecord(schemaForArray, array, serializedData);
+        com.amazonaws.services.schemaregistry.common.Schema schemaObject = new com.amazonaws.services.schemaregistry.common.Schema(
+                schemaForArray.toString(), DataFormat.AVRO.name(), "testAvroSchema");
+
+        deserializeAndAssertGenericRecord(schemaObject, array, serializedData);
     }
 
     /**
@@ -481,7 +514,7 @@ public class AvroDeserializerTest {
     @ParameterizedTest
     @EnumSource(AWSSchemaRegistryConstants.COMPRESSION.class)
     public void testDeserialize_unions_equalsOriginal(AWSSchemaRegistryConstants.COMPRESSION compressionType) {
-        Schema schemaForUnion = SchemaLoader.loadAvroSchema(AVRO_USER_UNION_SCHEMA_FILE);
+        org.apache.avro.Schema schemaForUnion = SchemaLoader.loadAvroSchema(AVRO_USER_UNION_SCHEMA_FILE);
         GenericData.Record unionRecord = new GenericData.Record(schemaForUnion);
         unionRecord.put("experience", 1);
         unionRecord.put("age", 30);
@@ -491,7 +524,10 @@ public class AvroDeserializerTest {
         byte[] serializedData =
                 glueSchemaRegistrySerializationFacade.serialize(DataFormat.AVRO, unionRecord, UUID.randomUUID());
 
-        deserializeAndAssertGenericRecord(schemaForUnion, unionRecord, serializedData);
+        com.amazonaws.services.schemaregistry.common.Schema schemaObject = new com.amazonaws.services.schemaregistry.common.Schema(
+                schemaForUnion.toString(), DataFormat.AVRO.name(), "testAvroSchema");
+
+        deserializeAndAssertGenericRecord(schemaObject, unionRecord, serializedData);
     }
 
     /**
@@ -501,7 +537,7 @@ public class AvroDeserializerTest {
     @ParameterizedTest
     @EnumSource(AWSSchemaRegistryConstants.COMPRESSION.class)
     public void testDeserialize_unionsWithNull_equalsOriginal(AWSSchemaRegistryConstants.COMPRESSION compressionType) {
-        Schema schemaForUnion = SchemaLoader.loadAvroSchema(AVRO_USER_UNION_SCHEMA_FILE);
+        org.apache.avro.Schema schemaForUnion = SchemaLoader.loadAvroSchema(AVRO_USER_UNION_SCHEMA_FILE);
         GenericData.Record unionRecord = new GenericData.Record(schemaForUnion);
         unionRecord.put("experience", null);
         unionRecord.put("age", 30);
@@ -510,7 +546,11 @@ public class AvroDeserializerTest {
                 createGlueSchemaRegistryFacade(compressionType.name());
         byte[] serializedData =
                 glueSchemaRegistrySerializationFacade.serialize(DataFormat.AVRO, unionRecord, UUID.randomUUID());
-        deserializeAndAssertGenericRecord(schemaForUnion, unionRecord, serializedData);
+
+        com.amazonaws.services.schemaregistry.common.Schema schemaObject = new com.amazonaws.services.schemaregistry.common.Schema(
+                schemaForUnion.toString(), DataFormat.AVRO.name(), "testAvroSchema");
+
+        deserializeAndAssertGenericRecord(schemaObject, unionRecord, serializedData);
     }
 
     /**
@@ -519,7 +559,7 @@ public class AvroDeserializerTest {
     @ParameterizedTest
     @EnumSource(AWSSchemaRegistryConstants.COMPRESSION.class)
     public void testDeserialize_fixedArray_equalsOriginal(AWSSchemaRegistryConstants.COMPRESSION compressionType) {
-        Schema schemaForFixedByteArray = SchemaLoader.loadAvroSchema(AVRO_USER_FIXED_SCHEMA_FILE);
+        org.apache.avro.Schema schemaForFixedByteArray = SchemaLoader.loadAvroSchema(AVRO_USER_FIXED_SCHEMA_FILE);
         GenericData.Fixed fixedRecord = new GenericData.Fixed(schemaForFixedByteArray);
         byte[] bytes = "byte array".getBytes();
         fixedRecord.bytes(bytes);
@@ -529,7 +569,10 @@ public class AvroDeserializerTest {
         byte[] serializedData =
                 glueSchemaRegistrySerializationFacade.serialize(DataFormat.AVRO, fixedRecord, UUID.randomUUID());
 
-        deserializeAndAssertGenericRecord(schemaForFixedByteArray, fixedRecord, serializedData);
+        com.amazonaws.services.schemaregistry.common.Schema schemaObject = new com.amazonaws.services.schemaregistry.common.Schema(
+                schemaForFixedByteArray.toString(), DataFormat.AVRO.name(), "testAvroSchema");
+
+        deserializeAndAssertGenericRecord(schemaObject, fixedRecord, serializedData);
     }
 
     /**
@@ -538,7 +581,7 @@ public class AvroDeserializerTest {
     @ParameterizedTest
     @EnumSource(AWSSchemaRegistryConstants.COMPRESSION.class)
     public void testDeserialize_stringArrays_equalsOriginal(AWSSchemaRegistryConstants.COMPRESSION compressionType) {
-        Schema schemaForArray = SchemaLoader.loadAvroSchema(AVRO_USER_ARRAY_STRING_SCHEMA_FILE);
+        org.apache.avro.Schema schemaForArray = SchemaLoader.loadAvroSchema(AVRO_USER_ARRAY_STRING_SCHEMA_FILE);
         GenericData.Array<String> array = new GenericData.Array<>(1, schemaForArray);
         array.add("TestValue");
 
@@ -547,7 +590,10 @@ public class AvroDeserializerTest {
         byte[] serializedData =
                 glueSchemaRegistrySerializationFacade.serialize(DataFormat.AVRO, array, UUID.randomUUID());
 
-        Object deserializedObject = createDeserializedObjectForGenericRecord(schemaForArray, serializedData);
+        com.amazonaws.services.schemaregistry.common.Schema schemaObject = new com.amazonaws.services.schemaregistry.common.Schema(
+                schemaForArray.toString(), DataFormat.AVRO.name(), "testAvroSchema");
+
+        Object deserializedObject = createDeserializedObjectForGenericRecord(schemaObject, serializedData);
         validateStringRecords(array, deserializedObject);
     }
 
@@ -566,7 +612,7 @@ public class AvroDeserializerTest {
     public void testDeserialize_maps_equalsOriginal(AWSSchemaRegistryConstants.COMPRESSION compressionType) {
         final String avroRecordMapName = "meta";
         final String keyName = "testKey";
-        Schema schemaForMap = SchemaLoader.loadAvroSchema(AVRO_USER_MAP_SCHEMA_FILE);
+        org.apache.avro.Schema schemaForMap = SchemaLoader.loadAvroSchema(AVRO_USER_MAP_SCHEMA_FILE);
         GenericData.Record mapRecord = new GenericData.Record(schemaForMap);
         Map<String, Long> map = new HashMap<>();
         map.put(keyName, 1L);
@@ -577,7 +623,10 @@ public class AvroDeserializerTest {
         byte[] serializedData =
                 glueSchemaRegistrySerializationFacade.serialize(DataFormat.AVRO, mapRecord, UUID.randomUUID());
 
-        Object deserializedObject = createDeserializedObjectForGenericRecord(schemaForMap, serializedData);
+        com.amazonaws.services.schemaregistry.common.Schema schemaObject = new com.amazonaws.services.schemaregistry.common.Schema(
+                schemaForMap.toString(), DataFormat.AVRO.name(), "testAvroSchema");
+
+        Object deserializedObject = createDeserializedObjectForGenericRecord(schemaObject, serializedData);
         validateEnumRecord(avroRecordMapName, keyName, map, deserializedObject);
     }
 
@@ -602,7 +651,7 @@ public class AvroDeserializerTest {
     @ParameterizedTest
     @EnumSource(AWSSchemaRegistryConstants.COMPRESSION.class)
     public void testDeserialize_allTypes_equalsOriginal(AWSSchemaRegistryConstants.COMPRESSION compressionType) {
-        Schema schema = SchemaLoader.loadAvroSchema(AVRO_USER_MIXED_TYPE_SCHEMA_FILE);
+        org.apache.avro.Schema schema = SchemaLoader.loadAvroSchema(AVRO_USER_MIXED_TYPE_SCHEMA_FILE);
         final String avroRecordMapName = "meta";
         final String keyName = "testKey";
 
@@ -625,7 +674,10 @@ public class AvroDeserializerTest {
                 glueSchemaRegistrySerializationFacade.serialize(DataFormat.AVRO, genericRecordWithAllTypes,
                                                                 UUID.randomUUID());
 
-        Object deserializedObject = createDeserializedObjectForGenericRecord(schema, serializedData);
+        com.amazonaws.services.schemaregistry.common.Schema schemaObject = new com.amazonaws.services.schemaregistry.common.Schema(
+                schema.toString(), DataFormat.AVRO.name(), "testAvroSchema");
+
+        Object deserializedObject = createDeserializedObjectForGenericRecord(schemaObject, serializedData);
 
         validateRecord(avroRecordMapName, keyName, enumSymbol, integerArrayList, map, deserializedObject);
     }
@@ -656,11 +708,13 @@ public class AvroDeserializerTest {
         GenericRecord genericRecord = RecordGenerator.createGenericAvroRecord();
         ByteBuffer serializedData = createBasicSerializedData(genericRecord, compressionType.name(), DataFormat.AVRO);
 
-        Schema schema = SchemaLoader.loadAvroSchema(AVRO_USER_SCHEMA_FILE);
+        org.apache.avro.Schema schema = SchemaLoader.loadAvroSchema(AVRO_USER_SCHEMA_FILE);
         AvroDeserializer avroDeserializer = createAvroDeserializer(AvroRecordType.UNKNOWN);
 
+        com.amazonaws.services.schemaregistry.common.Schema schemaObject = new com.amazonaws.services.schemaregistry.common.Schema(
+            schema.toString(), DataFormat.AVRO.name(), "testAvroSchema");
         Exception ex = assertThrows(AWSSchemaRegistryException.class,
-                     () -> deserialize(avroDeserializer, serializedData.array(), schema.toString()));
+                     () -> deserialize(avroDeserializer, serializedData.array(), schemaObject));
         Throwable rootCause = ex.getCause().getCause();
         assertTrue(rootCause instanceof UnsupportedOperationException);
         assertEquals("Unsupported AvroRecordType: UNKNOWN", rootCause.getMessage());
@@ -680,7 +734,7 @@ public class AvroDeserializerTest {
         AvroDeserializer avroDeserializer = createAvroDeserializer(AvroRecordType.GENERIC_RECORD);
 
         assertThrows(AWSSchemaRegistryException.class, () -> avroDeserializer.deserialize(serializedData,
-                                                                                          "InvalidSchema"));
+                new com.amazonaws.services.schemaregistry.common.Schema("Invalid", DataFormat.AVRO.name(), "invalidName")));
     }
 
     /**
@@ -689,8 +743,9 @@ public class AvroDeserializerTest {
     @Test
     public void testDeserialize_nullData_throwsException() {
         AvroDeserializer avroDeserializer = createAvroDeserializer(AvroRecordType.GENERIC_RECORD);
-        assertThrows((IllegalArgumentException.class), () -> deserialize(avroDeserializer, (byte[]) null,
-                                                                         "test-schema-name"));
+        com.amazonaws.services.schemaregistry.common.Schema schemaObject = new com.amazonaws.services.schemaregistry.common.Schema(
+                "Test", DataFormat.AVRO.name(), "testAvroSchema");
+        assertThrows((IllegalArgumentException.class), () -> deserialize(avroDeserializer, (byte[]) null, schemaObject));
     }
 
     /**
@@ -699,7 +754,9 @@ public class AvroDeserializerTest {
     @Test
     public void testDeserialize_nullByteBuffer_throwsException() {
         AvroDeserializer avroDeserializer = createAvroDeserializer(AvroRecordType.GENERIC_RECORD);
-        assertThrows((IllegalArgumentException.class), () -> deserialize(avroDeserializer, (ByteBuffer) null, "test-schema"));
+        com.amazonaws.services.schemaregistry.common.Schema schemaObject = new com.amazonaws.services.schemaregistry.common.Schema(
+                "Test", DataFormat.AVRO.name(), "testAvroSchema");
+        assertThrows((IllegalArgumentException.class), () -> deserialize(avroDeserializer, (ByteBuffer) null, schemaObject));
     }
 
     /**
@@ -730,7 +787,8 @@ public class AvroDeserializerTest {
     @Test
     public void testDeserialize_withSchemaVersionIdWithNullBufferWithSchema_throwsException() {
         AvroDeserializer avroDeserializer = createAvroDeserializer(AvroRecordType.GENERIC_RECORD);
-        assertThrows((IllegalArgumentException.class), () -> avroDeserializer.deserialize(null, "test-schema"));
+        assertThrows((IllegalArgumentException.class), () -> avroDeserializer.deserialize(null,
+                new com.amazonaws.services.schemaregistry.common.Schema("Test", DataFormat.AVRO.name(), "test")));
     }
 
     /**

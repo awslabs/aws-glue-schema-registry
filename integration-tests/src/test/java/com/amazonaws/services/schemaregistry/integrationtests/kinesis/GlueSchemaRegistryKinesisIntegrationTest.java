@@ -411,7 +411,7 @@ public class GlueSchemaRegistryKinesisIntegrationTest {
             Schema gsrSchema = glueSchemaRegistryDeserializer.getSchema(consumedBytes);
             LOGGER.info("Consumed Schema from GSR : {}", gsrSchema.getSchemaDefinition());
             Object decodedRecord = gsrDataFormatDeserializer.deserialize(ByteBuffer.wrap(consumedBytes),
-                                                                         gsrSchema.getSchemaDefinition());
+                                                                         gsrSchema);
             consumerRecords.add(decodedRecord);
         }
 

@@ -19,7 +19,6 @@ import com.amazonaws.services.schemaregistry.common.AWSDeserializerInput;
 import com.amazonaws.services.schemaregistry.common.AWSSchemaRegistryClient;
 import com.amazonaws.services.schemaregistry.common.AWSSerializerInput;
 import com.amazonaws.services.schemaregistry.common.GlueSchemaRegistryDataFormatDeserializer;
-import com.amazonaws.services.schemaregistry.common.Schema;
 import com.amazonaws.services.schemaregistry.common.configs.GlueSchemaRegistryConfiguration;
 import com.amazonaws.services.schemaregistry.exception.AWSSchemaRegistryException;
 import com.amazonaws.services.schemaregistry.exception.GlueSchemaRegistryIncompatibleDataException;
@@ -35,7 +34,6 @@ import com.amazonaws.services.schemaregistry.utils.RecordGenerator;
 import com.amazonaws.services.schemaregistry.utils.SchemaLoader;
 import com.amazonaws.services.schemaregistry.utils.SerializedByteArrayGenerator;
 import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericDatumWriter;
 import org.apache.avro.generic.GenericRecord;
@@ -61,8 +59,6 @@ import software.amazon.awssdk.services.glue.model.GetSchemaVersionResponse;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -102,7 +98,7 @@ public class GlueSchemaRegistryDeserializationFacadeTest {
     private static final String EMPLOYEE_SCHEMA_NAME = "Employee";
     private static final UUID EMPLOYEE_SCHEMA_VERSION_ID = UUID.randomUUID();
     private static final String EMPLOYEE_SCHEMA_ARN =
-            "arn:aws:glue:ca-central-1:111111111111:schema/registry_name" + "/user_schema";
+            "arn:aws:glue:ca-central-1:111111111111:schema/registry_name" + "/employee_schema";
 
     private static final AVROUtils AVRO_UTILS = AVROUtils.getInstance();
     private static final GenericRecord genericAvroRecord = RecordGenerator.createGenericAvroRecord();
@@ -288,10 +284,12 @@ public class GlueSchemaRegistryDeserializationFacadeTest {
                 Mockito.eq(EMPLOYEE_SCHEMA_VERSION_ID.toString()))).thenReturn(employeeSchemaVersionResponse);
 
         when(mockDataFormatDeserializer.deserialize(Mockito.any(ByteBuffer.class),
-                                                    Mockito.eq(employeeAvroSchema.toString()))).thenReturn(
+                                                    Mockito.eq(new com.amazonaws.services.schemaregistry.common.Schema(
+                                                            employeeAvroSchema.toString(), DataFormat.AVRO.name(), "employee_schema")))).thenReturn(
                 genericEmployeeAvroRecord);
         when(mockDataFormatDeserializer.deserialize(Mockito.any(ByteBuffer.class),
-                                                    Mockito.eq(userAvroSchema.toString()))).thenReturn(
+                                                    Mockito.eq(new com.amazonaws.services.schemaregistry.common.Schema(
+                                                            userAvroSchema.toString(), DataFormat.AVRO.name(), "user_schema")))).thenReturn(
                 genericUserAvroRecord);
 
         when(mockDeserializerFactory.getInstance(Mockito.any(DataFormat.class),
@@ -311,7 +309,7 @@ public class GlueSchemaRegistryDeserializationFacadeTest {
     }
 
     /**
-     * Tests the GlueSchemaRegistryDeserializationFacade instantiation when an no configuration is provided.
+     * Tests the GlueSchemaRegistryemployeeDeserializationFacade instantiation when an no configuration is provided.
      */
     @Test
     public void testBuildDeserializer_withNoArguments_throwsException() {
@@ -671,7 +669,7 @@ public class GlueSchemaRegistryDeserializationFacadeTest {
         Object deserializedEmployeeObject =
                 glueSchemaRegistryDeserializationFacade.deserialize(prepareDeserializerInput(serializedEmployeeData));
 
-        assertEquals(deserializedUserObject, deserializedUserObject);
+        assertEquals(genericUserAvroRecord, deserializedUserObject);
         assertEquals(genericEmployeeAvroRecord, deserializedEmployeeObject);
     }
 
