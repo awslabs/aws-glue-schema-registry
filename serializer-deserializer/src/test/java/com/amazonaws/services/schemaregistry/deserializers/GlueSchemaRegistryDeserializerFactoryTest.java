@@ -56,7 +56,7 @@ public class GlueSchemaRegistryDeserializerFactoryTest {
      * Test for Avro de-serializer instance creation with combinations of configurations.
      */
     @ParameterizedTest
-    @EnumSource(value = DataFormat.class, mode = EnumSource.Mode.EXCLUDE, names = {"UNKNOWN_TO_SDK_VERSION"})
+    @EnumSource(value = DataFormat.class, mode = EnumSource.Mode.EXCLUDE, names = {"UNKNOWN_TO_SDK_VERSION", "JSON", "PROTOBUF"})
     public void testGetInstance_createObject_succeeds(DataFormat dataFormat) {
         Map<String, Object> configMap = getTestConfigMap();
 

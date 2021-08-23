@@ -659,7 +659,7 @@ public class GlueSchemaRegistryDeserializationFacadeTest {
      * Tests the de-serialization of multiple records of different schemas.
      */
     @ParameterizedTest
-    @EnumSource(value = DataFormat.class, mode = EnumSource.Mode.EXCLUDE, names = {"UNKNOWN_TO_SDK_VERSION", "JSON"})
+    @EnumSource(value = DataFormat.class, mode = EnumSource.Mode.EXCLUDE, names = {"UNKNOWN_TO_SDK_VERSION", "JSON", "PROTOBUF"})
     public void testDeserialize_withMultipleRecords_recordsMatch(DataFormat dataFormat) {
         byte[] serializedUserData = createSerializedUserData(genericUserAvroRecord, dataFormat);
         byte[] serializedEmployeeData = createSerializedEmployeeData(genericEmployeeAvroRecord, dataFormat);
@@ -778,7 +778,7 @@ public class GlueSchemaRegistryDeserializationFacadeTest {
     }
 
     @ParameterizedTest
-    @EnumSource(value = DataFormat.class, mode = EnumSource.Mode.EXCLUDE, names = {"UNKNOWN_TO_SDK_VERSION", "JSON"})
+    @EnumSource(value = DataFormat.class, mode = EnumSource.Mode.EXCLUDE, names = {"UNKNOWN_TO_SDK_VERSION", "JSON", "PROTOBUF"})
     public void testCanDeserialize_WhenValidBytesArePassed_ReturnsTrue(DataFormat dataFormat) {
         byte[] validSchemaRegistryBytes = createSerializedCompressedEmployeeData(genericEmployeeAvroRecord, dataFormat);
         assertTrue(createGSRDeserializationFacade().canDeserialize(validSchemaRegistryBytes));
