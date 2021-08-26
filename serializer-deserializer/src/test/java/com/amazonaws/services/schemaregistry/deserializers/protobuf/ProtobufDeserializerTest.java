@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import software.amazon.awssdk.services.glue.model.DataFormat;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -24,7 +25,6 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 
 public class ProtobufDeserializerTest {
     private static GlueSchemaRegistryConfiguration dynamicMessageConfigs = new GlueSchemaRegistryConfiguration(new HashMap<String, String>() {{
@@ -92,8 +92,12 @@ public class ProtobufDeserializerTest {
         ByteBuffer buffer = ByteBuffer.wrap(encoder.write(protobufSerializer.serialize(dynamicMessage),
                 SCHEMA_VERSION_ID_FOR_TESTING));
         String schema = ProtobufTestCaseReader.getTestCaseByName("Basic.proto").getRawSchema();
+
+        com.amazonaws.services.schemaregistry.common.Schema schemaObject = new com.amazonaws.services.schemaregistry.common.Schema(
+                schema, DataFormat.PROTOBUF.name(), "Basic");
+
         Exception ex = assertThrows(IllegalArgumentException.class,
-                () -> protobufDynamicMessageDeserializer.deserialize(null, schema));
+                () -> protobufDynamicMessageDeserializer.deserialize(null, schemaObject));
         assertEquals("buffer is marked non-null but is null", ex.getMessage());
 
         ex = assertThrows(IllegalArgumentException.class,
@@ -104,7 +108,10 @@ public class ProtobufDeserializerTest {
     @ParameterizedTest
     @MethodSource("testDynamicMessageProviderWithMessageIndex0")
     public void testDeserialize_DynamicMessage_Succeeds(DynamicMessage dynamicMessage, ByteBuffer buffer, String schema) {
-        Object deserializedObject = protobufDynamicMessageDeserializer.deserialize(buffer, schema);
+        com.amazonaws.services.schemaregistry.common.Schema schemaObject = new com.amazonaws.services.schemaregistry.common.Schema(
+                schema, DataFormat.PROTOBUF.name(), "Basic");
+
+        Object deserializedObject = protobufDynamicMessageDeserializer.deserialize(buffer, schemaObject);
 
         assertArrayEquals(protobufSerializer.serialize(dynamicMessage),
                 protobufSerializer.serialize(deserializedObject));
@@ -114,7 +121,9 @@ public class ProtobufDeserializerTest {
     @ParameterizedTest
     @MethodSource("testDynamicMessageProviderWithNonZeroMessageIndex")
     public void testDeserialize_DynamicMessageN_Succeeds(DynamicMessage dynamicMessage, ByteBuffer buffer, String schema) {
-        Object deserializedObject = protobufDynamicMessageDeserializer.deserialize(buffer, schema);
+        com.amazonaws.services.schemaregistry.common.Schema schemaObject = new com.amazonaws.services.schemaregistry.common.Schema(
+                schema, DataFormat.PROTOBUF.name(), "Basic");
+        Object deserializedObject = protobufDynamicMessageDeserializer.deserialize(buffer, schemaObject);
         assertArrayEquals(protobufSerializer.serialize(dynamicMessage),
                 protobufSerializer.serialize(deserializedObject));
         //TODO: could not assert equals do to varied descriptor addresses for the two objects
@@ -124,18 +133,21 @@ public class ProtobufDeserializerTest {
     @MethodSource("testDynamicMessageProviderWithMessageIndex0")
     public void testDeserialize_DynamicMessage_ThrowsExceptionInvalidSchema(
             DynamicMessage dynamicMessage, ByteBuffer buffer, String schema) {
-        Exception ex = assertThrows(AWSSchemaRegistryException.class, () -> protobufDynamicMessageDeserializer.deserialize(buffer, ""));
-        assertEquals("Exception occurred while de-serializing Protobuf message", ex.getMessage());
+        Exception ex = assertThrows(IllegalArgumentException.class, () -> protobufDynamicMessageDeserializer.deserialize(buffer, null));
+        assertEquals("schema is marked non-null but is null", ex.getMessage());
     }
 
     @ParameterizedTest
     @MethodSource("testDynamicMessageProviderWithMessageIndex0")
     public void testDeserialize_DynamicMessage_ThrowsExceptionInvalidBytes(
             DynamicMessage dynamicMessage, ByteBuffer buffer, String schema) {
+        com.amazonaws.services.schemaregistry.common.Schema schemaObject = new com.amazonaws.services.schemaregistry.common.Schema(
+                schema, DataFormat.PROTOBUF.name(), "Basic");
+
         String random = "invalid bytes";
         ByteBuffer invalidBytes = ByteBuffer.wrap(random.getBytes(StandardCharsets.UTF_8));
         Exception ex = assertThrows(AWSSchemaRegistryException.class,
-                () -> protobufDynamicMessageDeserializer.deserialize(invalidBytes, schema));
+                () -> protobufDynamicMessageDeserializer.deserialize(invalidBytes, schemaObject));
         assertEquals("Exception occurred while de-serializing Protobuf message", ex.getMessage());
     }
 
@@ -143,14 +155,25 @@ public class ProtobufDeserializerTest {
     @MethodSource("testDynamicMessageProviderWithMessageIndex0")
     public void testDeserialize_DynamicMessage_UnknownMessageType_Succeeds(
             DynamicMessage dynamicMessage, ByteBuffer buffer, String schema) {
+        com.amazonaws.services.schemaregistry.common.Schema schemaObject = new com.amazonaws.services.schemaregistry.common.Schema(
+                schema, DataFormat.PROTOBUF.name(), "Basic");
 
+        Object deserializedObject = protobufUnknownMessageTypeDeserializer.deserialize(buffer, schemaObject);
+
+        assertArrayEquals(protobufSerializer.serialize(dynamicMessage),
+                protobufSerializer.serialize(deserializedObject));
     }
 
     @ParameterizedTest
     @MethodSource("testDynamicMessageProviderWithMessageIndex0")
     public void testDeserialize_POJO(DynamicMessage dynamicMessage, ByteBuffer buffer, String schema) {
-        //Placeholder to fix code coverage so it builds successfully
-        //Will be used when testing POJO deserialization
-        assertNull(protobufPojoMessageTypeDeserializer.deserialize(buffer, schema));
+        com.amazonaws.services.schemaregistry.common.Schema schemaObject = new com.amazonaws.services.schemaregistry.common.Schema(
+                schema, DataFormat.PROTOBUF.name(), "Basic");
+        Object deserializedObject = protobufPojoMessageTypeDeserializer.deserialize(buffer, schemaObject);
+
+        assertArrayEquals(protobufSerializer.serialize(dynamicMessage),
+                protobufSerializer.serialize(deserializedObject));
     }
+
+
 }
