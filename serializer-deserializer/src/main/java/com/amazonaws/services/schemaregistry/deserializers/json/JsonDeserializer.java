@@ -19,6 +19,7 @@ import com.amazonaws.services.schemaregistry.common.configs.GlueSchemaRegistryCo
 import com.amazonaws.services.schemaregistry.deserializers.GlueSchemaRegistryDeserializerDataParser;
 import com.amazonaws.services.schemaregistry.exception.AWSSchemaRegistryException;
 import com.amazonaws.services.schemaregistry.serializers.json.JsonDataWithSchema;
+import com.amazonaws.services.schemaregistry.common.Schema;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
@@ -75,14 +76,15 @@ public class JsonDeserializer implements GlueSchemaRegistryDataFormatDeserialize
      * from the schema registry.
      *
      * @param buffer data to be de-serialized
-     * @param schema JSONSchema
+     * @param schemaObject JSONSchema
      * @return de-serialized object
      * @throws AWSSchemaRegistryException Exception during de-serialization
      */
     @Override
     public Object deserialize(@NonNull ByteBuffer buffer,
-                              @NonNull String schema) {
+                              @NonNull Schema schemaObject) {
         try {
+            String schema = schemaObject.getSchemaDefinition();
             byte[] data = DESERIALIZER_DATA_PARSER.getPlainData(buffer);
 
             log.debug("Length of actual message: {}", data.length);

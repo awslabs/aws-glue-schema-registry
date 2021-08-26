@@ -18,6 +18,9 @@ import org.junit.jupiter.api.Test;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import com.amazonaws.services.schemaregistry.common.Schema;
+import software.amazon.awssdk.services.glue.model.DataFormat;
+
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -37,8 +40,9 @@ public class JsonDeserializerTest {
         String jsonData = "{\"latitude\":48.858093,\"longitude\":2.294694}";
         byte[] testBytes = jsonData.getBytes(StandardCharsets.UTF_8);
 
-        assertThrows(IllegalArgumentException.class, () -> jsonDeserializer.deserialize(null,
-                                                                                        testSchemaDefinition));
+        Schema testSchema = new Schema(testSchemaDefinition, DataFormat.JSON.name(), "testJson");
+
+        assertThrows(IllegalArgumentException.class, () -> jsonDeserializer.deserialize(null, testSchema));
         assertThrows(IllegalArgumentException.class, () -> jsonDeserializer.deserialize(ByteBuffer.wrap(testBytes),
                                                                                         null));
     }

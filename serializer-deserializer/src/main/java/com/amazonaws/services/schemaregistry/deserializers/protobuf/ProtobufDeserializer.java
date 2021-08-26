@@ -15,6 +15,7 @@
 package com.amazonaws.services.schemaregistry.deserializers.protobuf;
 
 import com.amazonaws.services.schemaregistry.common.GlueSchemaRegistryDataFormatDeserializer;
+import com.amazonaws.services.schemaregistry.common.Schema;
 import com.amazonaws.services.schemaregistry.common.configs.GlueSchemaRegistryConfiguration;
 import com.amazonaws.services.schemaregistry.deserializers.GlueSchemaRegistryDeserializerDataParser;
 import com.amazonaws.services.schemaregistry.exception.AWSSchemaRegistryException;
@@ -44,14 +45,16 @@ public class ProtobufDeserializer implements GlueSchemaRegistryDataFormatDeseria
     }
 
     @Override
-    public Object deserialize(@NonNull ByteBuffer buffer, @NonNull String schema) {
+    public Object deserialize(@NonNull ByteBuffer buffer, @NonNull Schema schema) {
         try {
-            ProtoFileElement fileElement = ProtoParser.Companion.parse(FileDescriptorUtils.DEFAULT_LOCATION, schema);
+            String schemaString = schema.getSchemaDefinition();
+            String schemaName = schema.getSchemaName();
+            ProtoFileElement fileElement = ProtoParser.Companion.parse(FileDescriptorUtils.DEFAULT_LOCATION, schemaString);
             Descriptors.FileDescriptor fileDescriptor = FileDescriptorUtils.protoFileToFileDescriptor(fileElement);
 
             byte[] data = DESERIALIZER_DATA_PARSER.getPlainData(buffer);
 
-            return protoDecoder.decode(data, fileDescriptor, protobufMessageType);
+            return protoDecoder.decode(data, fileDescriptor, protobufMessageType, schemaName);
         } catch (Exception e) {
             throw new AWSSchemaRegistryException("Exception occurred while de-serializing Protobuf message", e);
         }
