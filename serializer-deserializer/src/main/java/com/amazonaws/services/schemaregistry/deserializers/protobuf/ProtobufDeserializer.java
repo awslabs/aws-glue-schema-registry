@@ -22,9 +22,6 @@ import com.amazonaws.services.schemaregistry.exception.AWSSchemaRegistryExceptio
 import com.amazonaws.services.schemaregistry.serializers.protobuf.MessageIndexFinder;
 import com.amazonaws.services.schemaregistry.utils.ProtobufMessageType;
 import com.google.protobuf.Descriptors;
-import com.squareup.wire.schema.internal.parser.ProtoFileElement;
-import com.squareup.wire.schema.internal.parser.ProtoParser;
-import io.apicurio.registry.utils.protobuf.schema.FileDescriptorUtils;
 import lombok.Builder;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -47,16 +44,47 @@ public class ProtobufDeserializer implements GlueSchemaRegistryDataFormatDeseria
     @Override
     public Object deserialize(@NonNull ByteBuffer buffer, @NonNull Schema schema) {
         try {
-            String schemaString = schema.getSchemaDefinition();
-            String schemaName = schema.getSchemaName();
-            ProtoFileElement fileElement = ProtoParser.Companion.parse(FileDescriptorUtils.DEFAULT_LOCATION, schemaString);
-            Descriptors.FileDescriptor fileDescriptor = FileDescriptorUtils.protoFileToFileDescriptor(fileElement);
+            final byte[] data = DESERIALIZER_DATA_PARSER.getPlainData(buffer);
 
-            byte[] data = DESERIALIZER_DATA_PARSER.getPlainData(buffer);
+            final String schemaDefinition = schema.getSchemaDefinition();
+            final String schemaName = schema.getSchemaName();
+            final String protoFileName = getProtoFileName(schemaName);
 
-            return protoDecoder.decode(data, fileDescriptor, protobufMessageType, schemaName);
+            final Descriptors.FileDescriptor fileDescriptor =
+                ProtobufSchemaParser.parse(schemaDefinition, protoFileName);
+
+            return protoDecoder.decode(data, fileDescriptor, protobufMessageType);
         } catch (Exception e) {
             throw new AWSSchemaRegistryException("Exception occurred while de-serializing Protobuf message", e);
         }
+    }
+
+    /**
+     * We use schemaName as protoFileName. During creation of schema, users are expected to define the schemaName same as
+     * proto file name. They can optionally provide ".proto".
+     * @param schemaName SchemaName registered with Glue Schema Registry service.
+     * @return ProtoFileName string.
+     */
+    private String getProtoFileName(String schemaName) {
+        final String protoExtension = ".proto";
+
+        //If the schema name already contains ".proto" suffix, don't append the extension to protoFileName.
+        final int extensionIndex = schemaName.lastIndexOf(protoExtension);
+
+        //If extension is not present, append it.
+        //Ex: Basic -> Basic.proto
+        if (extensionIndex == -1) {
+            return schemaName + protoExtension;
+        }
+
+        //If extension is at the end, return name as it is.
+        //Ex: basic.proto -> basic.proto
+        if (extensionIndex + protoExtension.length() == schemaName.length()) {
+            return schemaName;
+        }
+
+        //If extension is not to the end, append it.
+        //Ex: basic.protofoo.schema -> basic.protofoo.schema.proto
+        return schemaName + protoExtension;
     }
 }
