@@ -23,7 +23,7 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
+import java.lang.reflect.Method;
 
 @RequiredArgsConstructor
 public class ProtobufWireFormatDecoder {
@@ -32,37 +32,50 @@ public class ProtobufWireFormatDecoder {
     public Object decode(@NonNull byte[] data, @NonNull Descriptors.FileDescriptor descriptor,
                          ProtobufMessageType messageType) throws IOException {
         final CodedInputStream codedInputStream = CodedInputStream.newInstance(data);
-        Descriptors.Descriptor messageDescriptor;
-        int messageIndex;
-        try {
-            messageIndex = codedInputStream.readUInt32();
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+        final int messageIndex = codedInputStream.readUInt32();
 
-        if (messageIndex < 0) {
-            throw new IllegalStateException("Message index cannot be negative: " + messageIndex);
-        }
-        messageDescriptor = messageIndexFinder.getByIndex(descriptor, messageIndex);
+        final Descriptors.Descriptor messageDescriptor = messageIndexFinder.getByIndex(descriptor, messageIndex);
 
         switch (messageType) {
             case POJO:
-                return null;
+                return deserializeToPojo(messageDescriptor, codedInputStream);
             case DYNAMIC_MESSAGE:
             default:
-                return decodeDynamicMessage(messageDescriptor, codedInputStream);
+                return deserializeToDynamicMessage(messageDescriptor, codedInputStream);
         }
     }
 
     /**
-     * Deserialization method for DynamicMessage and Unknown ProtobufMessageTypes
-     * @param descriptor
-     * @param data
+     * Deserialization method for DynamicMessage ProtobufMessageType
+     *
+     * @param descriptor       Descriptor associated with the message.
+     * @param codedInputStream codedInputStream to read the data from.
      * @return DynamicMessage created from the parameters
-     * @throws IOException
      */
-    private DynamicMessage decodeDynamicMessage(Descriptors.Descriptor descriptor, CodedInputStream data)
-            throws IOException {
-        return DynamicMessage.parseFrom(descriptor, data);
+    private DynamicMessage deserializeToDynamicMessage(final Descriptors.Descriptor descriptor,
+        final CodedInputStream codedInputStream)
+        throws IOException {
+        return DynamicMessage.parseFrom(descriptor, codedInputStream);
+    }
+
+    /**
+     * Deserialization method for POJO ProtobufMessageType.
+     * Derives the class name from message descriptor and reflectively invokes it
+     * to deserialize the bytes into POJO.
+     *
+     * @param descriptor Descriptor associated with the message.
+     * @param codedInputStream codedInputStream to read data from.
+     * @return deserialized POJO
+     */
+    private Object deserializeToPojo(final Descriptors.Descriptor descriptor, final CodedInputStream codedInputStream) {
+        final String className = ProtobufClassName.from(descriptor);
+        try {
+            final Class<?> classType = Class.forName(className);
+            final Method parseMethod = classType.getMethod("parseFrom", CodedInputStream.class);
+            return parseMethod.invoke(classType, codedInputStream);
+        } catch (Exception e) {
+            final String errorMsg = String.format("Error de-serializing data into Message class: %s", className);
+            throw new RuntimeException(errorMsg, e);
+        }
     }
 }
