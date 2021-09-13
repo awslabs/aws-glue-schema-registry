@@ -15,6 +15,7 @@
 
 package com.amazonaws.services.schemaregistry.kafkaconnect;
 
+import com.amazonaws.services.schemaregistry.common.configs.UserAgents;
 import com.amazonaws.services.schemaregistry.deserializers.avro.AWSKafkaAvroDeserializer;
 import com.amazonaws.services.schemaregistry.exception.AWSSchemaRegistryException;
 import com.amazonaws.services.schemaregistry.kafkaconnect.avrodata.AvroData;
@@ -50,7 +51,10 @@ public class AWSKafkaAvroConverter implements Converter {
      */
     public AWSKafkaAvroConverter() {
         serializer = new AWSKafkaAvroSerializer();
+        serializer.setUserAgentApp(UserAgents.KAFKACONNECT);
+
         deserializer = new AWSKafkaAvroDeserializer();
+        deserializer.setUserAgentApp(UserAgents.KAFKACONNECT);
     }
 
     public AWSKafkaAvroConverter(

@@ -16,6 +16,7 @@
 package com.amazonaws.services.schemaregistry.flink.avro;
 
 import com.amazonaws.services.schemaregistry.common.configs.GlueSchemaRegistryConfiguration;
+import com.amazonaws.services.schemaregistry.common.configs.UserAgents;
 import com.amazonaws.services.schemaregistry.serializers.GlueSchemaRegistrySerializationFacade;
 import com.amazonaws.services.schemaregistry.utils.GlueSchemaRegistryUtils;
 import org.apache.avro.Schema;
@@ -43,6 +44,8 @@ public class GlueSchemaRegistryOutputStreamSerializer {
         GlueSchemaRegistrySerializationFacade glueSchemaRegistrySerializationFacade) {
         this.transportName = transportName;
         this.configs = configs;
+        GlueSchemaRegistryConfiguration glueSchemaRegistryConfiguration = new GlueSchemaRegistryConfiguration(configs);
+        glueSchemaRegistryConfiguration.setUserAgentApp(UserAgents.FLINK);
         this.glueSchemaRegistrySerializationFacade = glueSchemaRegistrySerializationFacade != null
             ? glueSchemaRegistrySerializationFacade
             : GlueSchemaRegistrySerializationFacade

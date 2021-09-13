@@ -15,6 +15,7 @@
 
 package com.amazonaws.services.schemaregistry.kafkastreams;
 
+import com.amazonaws.services.schemaregistry.common.configs.UserAgents;
 import com.amazonaws.services.schemaregistry.deserializers.GlueSchemaRegistryKafkaDeserializer;
 import com.amazonaws.services.schemaregistry.serializers.GlueSchemaRegistryKafkaSerializer;
 import org.apache.kafka.common.serialization.Deserializer;
@@ -35,7 +36,13 @@ public class GlueSchemaRegistryKafkaStreamsSerde implements Serde<Object> {
      * Constructor used by Kafka Streams user.
      */
     public GlueSchemaRegistryKafkaStreamsSerde() {
-        inner = Serdes.serdeFrom(new GlueSchemaRegistryKafkaSerializer(), new GlueSchemaRegistryKafkaDeserializer());
+        GlueSchemaRegistryKafkaSerializer glueSchemaRegistryKafkaSerializer = new GlueSchemaRegistryKafkaSerializer();
+        glueSchemaRegistryKafkaSerializer.setUserAgentApp(UserAgents.KAFKASTREAMS);
+
+        GlueSchemaRegistryKafkaDeserializer glueSchemaRegistryKafkaDeserializer = new GlueSchemaRegistryKafkaDeserializer();
+        glueSchemaRegistryKafkaDeserializer.setUserAgentApp(UserAgents.KAFKASTREAMS);
+
+        inner = Serdes.serdeFrom(glueSchemaRegistryKafkaSerializer, glueSchemaRegistryKafkaDeserializer);
     }
 
     public GlueSchemaRegistryKafkaStreamsSerde(GlueSchemaRegistryKafkaSerializer glueSchemaRegistryKafkaSerializer,

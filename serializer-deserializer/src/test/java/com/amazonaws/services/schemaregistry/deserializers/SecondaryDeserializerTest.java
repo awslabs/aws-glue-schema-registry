@@ -15,9 +15,6 @@
 package com.amazonaws.services.schemaregistry.deserializers;
 
 import com.amazonaws.services.schemaregistry.common.configs.GlueSchemaRegistryConfiguration;
-import com.amazonaws.services.schemaregistry.deserializers.GlueSchemaRegistryDeserializationFacade;
-import com.amazonaws.services.schemaregistry.deserializers.GlueSchemaRegistryKafkaDeserializer;
-import com.amazonaws.services.schemaregistry.deserializers.SecondaryDeserializer;
 import com.amazonaws.services.schemaregistry.exception.AWSSchemaRegistryException;
 import com.amazonaws.services.schemaregistry.utils.AWSSchemaRegistryConstants;
 import org.apache.kafka.common.serialization.IntegerDeserializer;
@@ -53,6 +50,7 @@ public class SecondaryDeserializerTest {
     private static final String NON_KAFKA_SECONDARY_DESERIALIZER_EXCEPTION_MSG =
             "The secondary deserializer is not from Kafka";
     private static final String EMPTY_SECONDARY_DESERIALIZER_EXCEPTION_MSG = "Can't find the class or instantiate it.";
+    private static final String NULL_SECONDARY_DESERIALIZER_EXCEPTION_MSG = "Invalid secondary de-serializer configuration";
     private static final String TEST_TOPIC = "TestTopic";
 
     @Mock
@@ -178,7 +176,7 @@ public class SecondaryDeserializerTest {
         Exception exception = assertThrows(AWSSchemaRegistryException.class,
                 () -> glueSchemaRegistryKafkaDeserializer.configure(configs, true));
 
-        assertEquals(EMPTY_SECONDARY_DESERIALIZER_EXCEPTION_MSG, exception.getMessage());
+        assertEquals(NULL_SECONDARY_DESERIALIZER_EXCEPTION_MSG, exception.getMessage());
     }
 
     private Map<String, Object> getConfigsWithSecondaryDeserializer(String className) {

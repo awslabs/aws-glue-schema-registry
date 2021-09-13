@@ -15,6 +15,8 @@
 package com.amazonaws.services.schemaregistry.deserializers;
 
 import com.amazonaws.services.schemaregistry.common.AWSDeserializerInput;
+import com.amazonaws.services.schemaregistry.common.configs.GlueSchemaRegistryConfiguration;
+import com.amazonaws.services.schemaregistry.common.configs.UserAgents;
 import com.amazonaws.services.schemaregistry.exception.AWSSchemaRegistryException;
 import com.amazonaws.services.schemaregistry.utils.AWSSchemaRegistryConstants;
 import lombok.Getter;
@@ -41,6 +43,9 @@ public class GlueSchemaRegistryKafkaDeserializer implements Deserializer<Object>
     private GlueSchemaRegistryDeserializationFacade glueSchemaRegistryDeserializationFacade;
 
     private SecondaryDeserializer secondaryDeserializer = SecondaryDeserializer.newInstance();
+
+    @Setter
+    private String userAgentApp;
 
     /**
      * Constructor used by Kafka consumer.
@@ -77,12 +82,14 @@ public class GlueSchemaRegistryKafkaDeserializer implements Deserializer<Object>
     @Override
     public void configure(@NonNull Map<String, ?> configs,
                           boolean isKey) {
+        if (this.userAgentApp == null) {
+            this.userAgentApp = UserAgents.KAFKA;
+        }
         log.info("Configuring Amazon Glue Schema Registry Service using these properties: {}", configs.toString());
         if (this.glueSchemaRegistryDeserializationFacade == null) {
-            this.glueSchemaRegistryDeserializationFacade = GlueSchemaRegistryDeserializationFacade.builder()
-                    .credentialProvider(this.credentialProvider)
-                    .configs(configs)
-                    .build();
+            GlueSchemaRegistryConfiguration glueSchemaRegistryConfiguration = new GlueSchemaRegistryConfiguration(configs);
+            glueSchemaRegistryConfiguration.setUserAgentApp(this.userAgentApp);
+            this.glueSchemaRegistryDeserializationFacade = new GlueSchemaRegistryDeserializationFacade(glueSchemaRegistryConfiguration, this.credentialProvider);
         }
 
         if (configs.containsKey(AWSSchemaRegistryConstants.SECONDARY_DESERIALIZER)) {
