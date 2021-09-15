@@ -17,11 +17,14 @@ package com.amazonaws.services.schemaregistry.serializers.avro;
 
 import com.amazonaws.services.schemaregistry.common.AWSSchemaNamingStrategy;
 import com.amazonaws.services.schemaregistry.common.AWSSerializerInput;
+import com.amazonaws.services.schemaregistry.common.configs.GlueSchemaRegistryConfiguration;
+import com.amazonaws.services.schemaregistry.common.configs.UserAgents;
 import com.amazonaws.services.schemaregistry.serializers.GlueSchemaRegistrySerializationFacade;
 import com.amazonaws.services.schemaregistry.utils.AVROUtils;
 import com.amazonaws.services.schemaregistry.utils.GlueSchemaRegistryUtils;
 import lombok.Data;
 import lombok.NonNull;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.common.serialization.Serializer;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
@@ -41,6 +44,8 @@ public class AWSKafkaAvroSerializer implements Serializer<Object> {
     private String schemaName;
     private AWSSchemaNamingStrategy schemaNamingStrategy;
     private boolean isKey;
+    @Setter
+    private String userAgentApp;
 
     /**
      * Constructor used by Kafka producer when passing as the property.
@@ -83,9 +88,14 @@ public class AWSKafkaAvroSerializer implements Serializer<Object> {
             schemaNamingStrategy = GlueSchemaRegistryUtils.getInstance()
                     .configureSchemaNamingStrategy(configs);
         }
-
+        GlueSchemaRegistryConfiguration glueSchemaRegistryConfiguration = new GlueSchemaRegistryConfiguration(configs);
+        if (this.userAgentApp == null) {
+            //Set it to kafka if not set by upstream serializers / deserializers
+            this.userAgentApp = UserAgents.KAFKA;
+        }
+        glueSchemaRegistryConfiguration.setUserAgentApp(this.userAgentApp);
         glueSchemaRegistrySerializationFacade = GlueSchemaRegistrySerializationFacade.builder()
-                .configs(configs)
+            .glueSchemaRegistryConfiguration(glueSchemaRegistryConfiguration)
                 .credentialProvider(credentialProvider)
                 .build();
     }

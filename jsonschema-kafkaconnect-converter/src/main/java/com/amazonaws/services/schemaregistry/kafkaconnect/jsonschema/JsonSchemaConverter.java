@@ -15,6 +15,7 @@
 
 package com.amazonaws.services.schemaregistry.kafkaconnect.jsonschema;
 
+import com.amazonaws.services.schemaregistry.common.configs.UserAgents;
 import com.amazonaws.services.schemaregistry.deserializers.GlueSchemaRegistryKafkaDeserializer;
 import com.amazonaws.services.schemaregistry.exception.AWSSchemaRegistryException;
 import com.amazonaws.services.schemaregistry.serializers.GlueSchemaRegistryKafkaSerializer;
@@ -68,7 +69,10 @@ public class JsonSchemaConverter implements Converter {
      */
     public JsonSchemaConverter() {
         this.serializer = new GlueSchemaRegistryKafkaSerializer();
+        this.serializer.setUserAgentApp(UserAgents.KAFKACONNECT);
+
         this.deserializer = new GlueSchemaRegistryKafkaDeserializer();
+        this.deserializer.setUserAgentApp(UserAgents.KAFKACONNECT);
     }
 
     public JsonSchemaConverter(GlueSchemaRegistryKafkaSerializer glueSchemaRegistryKafkaSerializer,
