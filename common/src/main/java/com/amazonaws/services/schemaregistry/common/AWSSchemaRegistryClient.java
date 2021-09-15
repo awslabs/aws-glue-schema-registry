@@ -18,10 +18,18 @@ package com.amazonaws.services.schemaregistry.common;
 import com.amazonaws.services.schemaregistry.common.configs.GlueSchemaRegistryConfiguration;
 import com.amazonaws.services.schemaregistry.exception.AWSSchemaRegistryException;
 import com.amazonaws.services.schemaregistry.utils.AWSSchemaRegistryConstants;
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableMap;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
+import software.amazon.awssdk.awscore.AwsRequestOverrideConfiguration;
+import software.amazon.awssdk.core.ApiName;
+import software.amazon.awssdk.core.SdkRequest;
 import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
+import software.amazon.awssdk.core.interceptor.Context;
+import software.amazon.awssdk.core.interceptor.ExecutionAttributes;
+import software.amazon.awssdk.core.interceptor.ExecutionInterceptor;
 import software.amazon.awssdk.core.retry.RetryPolicy;
 import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
 import software.amazon.awssdk.regions.Region;
@@ -37,6 +45,7 @@ import software.amazon.awssdk.services.glue.model.GetSchemaVersionRequest;
 import software.amazon.awssdk.services.glue.model.GetSchemaVersionResponse;
 import software.amazon.awssdk.services.glue.model.GetTagsRequest;
 import software.amazon.awssdk.services.glue.model.GetTagsResponse;
+import software.amazon.awssdk.services.glue.model.GlueRequest;
 import software.amazon.awssdk.services.glue.model.MetadataKeyValuePair;
 import software.amazon.awssdk.services.glue.model.PutSchemaVersionMetadataRequest;
 import software.amazon.awssdk.services.glue.model.PutSchemaVersionMetadataResponse;
@@ -50,6 +59,7 @@ import software.amazon.awssdk.services.glue.model.SchemaId;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Map;
+import java.util.StringJoiner;
 import java.util.UUID;
 
 /**
@@ -74,11 +84,11 @@ public class AWSSchemaRegistryClient {
     public AWSSchemaRegistryClient(@NonNull AwsCredentialsProvider credentialsProvider,
                                    @NonNull GlueSchemaRegistryConfiguration glueSchemaRegistryConfiguration,
                                    @NonNull RetryPolicy retryPolicy) {
+        this.glueSchemaRegistryConfiguration = glueSchemaRegistryConfiguration;
         ClientOverrideConfiguration overrideConfiguration = ClientOverrideConfiguration.builder()
                 .retryPolicy(retryPolicy)
+                .addExecutionInterceptor(new UserAgentRequestInterceptor())
                 .build();
-
-        this.glueSchemaRegistryConfiguration = glueSchemaRegistryConfiguration;
 
         GlueClientBuilder glueClientBuilder = GlueClient
                 .builder()
@@ -553,5 +563,59 @@ public class AWSSchemaRegistryClient {
             throw new AWSSchemaRegistryException(errorMessage, e);
         }
         return getTagsResponse;
+    }
+
+    /**
+     * AWS SDK Request interceptor that adds additional data to the UserAgent of Glue API requests.
+     */
+    @VisibleForTesting
+    protected class UserAgentRequestInterceptor implements ExecutionInterceptor {
+        private static final String ONE = "1";
+        private static final String ZERO = "0";
+
+        @Override
+        public SdkRequest modifyRequest(Context.ModifyRequest context, ExecutionAttributes executionAttributes) {
+            if (!(context.request() instanceof GlueRequest)) {
+                //Only applies to Glue requests.
+                return context.request();
+            }
+
+            GlueRequest request = (GlueRequest) context.request();
+            AwsRequestOverrideConfiguration overrideConfiguration =
+                request.overrideConfiguration().map(config ->
+                    config
+                        .toBuilder()
+                        .addApiName(getApiName())
+                        .build())
+                    .orElse((AwsRequestOverrideConfiguration.builder()
+                        .addApiName(getApiName())
+                        .build()));
+
+            return request.toBuilder().overrideConfiguration(overrideConfiguration).build();
+        }
+
+        private ApiName getApiName() {
+            return ApiName.builder()
+                .version(com.amazonaws.services.schemaregistry.common.MavenPackaging.VERSION)
+                .name(buildUserAgentSuffix())
+                .build();
+        }
+
+        private String buildUserAgentSuffix() {
+            Map<String, String> userAgentSuffixItems = ImmutableMap.of(
+                "autoreg", glueSchemaRegistryConfiguration.isSchemaAutoRegistrationEnabled() ? ONE : ZERO,
+                "compress", glueSchemaRegistryConfiguration.getCompressionType().equals(
+                    AWSSchemaRegistryConstants.COMPRESSION.ZLIB) ? ONE : ZERO,
+                "secdeser", glueSchemaRegistryConfiguration.getSecondaryDeserializer() != null ? ONE : ZERO,
+                "app", glueSchemaRegistryConfiguration.getUserAgentApp()
+            );
+
+            StringJoiner userAgentSuffix = new StringJoiner(":");
+
+            userAgentSuffixItems
+                .forEach((key, value) -> userAgentSuffix.add(key + "/" + value));
+
+            return userAgentSuffix.toString();
+        }
     }
 }

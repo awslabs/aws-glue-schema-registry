@@ -15,6 +15,8 @@
 
 package com.amazonaws.services.schemaregistry.flink.avro;
 
+import com.amazonaws.services.schemaregistry.common.configs.GlueSchemaRegistryConfiguration;
+import com.amazonaws.services.schemaregistry.common.configs.UserAgents;
 import com.amazonaws.services.schemaregistry.deserializers.GlueSchemaRegistryDeserializationFacade;
 import com.amazonaws.services.schemaregistry.exception.AWSSchemaRegistryException;
 import org.apache.avro.Schema;
@@ -40,11 +42,10 @@ public class GlueSchemaRegistryInputStreamDeserializer {
      * @param configs configuration map
      */
     public GlueSchemaRegistryInputStreamDeserializer(Map<String, Object> configs) {
-        glueSchemaRegistryDeserializationFacade = GlueSchemaRegistryDeserializationFacade
-                .builder()
-                .credentialProvider(DefaultCredentialsProvider.builder().build())
-                .configs(configs)
-                .build();
+        GlueSchemaRegistryConfiguration glueSchemaRegistryConfiguration = new GlueSchemaRegistryConfiguration(configs);
+        glueSchemaRegistryConfiguration.setUserAgentApp(UserAgents.FLINK);
+        glueSchemaRegistryDeserializationFacade =
+            new GlueSchemaRegistryDeserializationFacade(glueSchemaRegistryConfiguration, DefaultCredentialsProvider.builder().build());
     }
 
     public GlueSchemaRegistryInputStreamDeserializer(GlueSchemaRegistryDeserializationFacade glueSchemaRegistryDeserializationFacade) {

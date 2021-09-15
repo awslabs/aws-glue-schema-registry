@@ -45,5 +45,12 @@ public interface GlueSchemaRegistryDeserializer {
      * @return true if deserializer can decode the message, false otherwise.
      */
     boolean canDeserialize(byte[] data);
+
+    /**
+     * Overrides the UserAgentApp name attribute at runtime. This can be used to set the `app` attribute in User-Agent of the de-serializer.
+     * This method overrides the User-Agent `app` attribute set using GlueSchemaRegistryConfiguration.
+     * @param name AppName
+     */
+    void overrideUserAgentApp(String name);
 }
 

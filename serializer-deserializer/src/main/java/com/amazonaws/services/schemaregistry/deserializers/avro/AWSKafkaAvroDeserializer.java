@@ -15,6 +15,8 @@
 package com.amazonaws.services.schemaregistry.deserializers.avro;
 
 import com.amazonaws.services.schemaregistry.common.AWSDeserializerInput;
+import com.amazonaws.services.schemaregistry.common.configs.GlueSchemaRegistryConfiguration;
+import com.amazonaws.services.schemaregistry.common.configs.UserAgents;
 import com.amazonaws.services.schemaregistry.deserializers.GlueSchemaRegistryDeserializationFacade;
 import com.amazonaws.services.schemaregistry.deserializers.GlueSchemaRegistryDeserializerDataParser;
 import com.amazonaws.services.schemaregistry.deserializers.SecondaryDeserializer;
@@ -43,6 +45,9 @@ public class AWSKafkaAvroDeserializer implements Deserializer<Object> {
     @Getter
     @Setter
     private GlueSchemaRegistryDeserializationFacade glueSchemaRegistryDeserializationFacade;
+
+    @Setter
+    private String userAgentApp;
 
     private SecondaryDeserializer secondaryDeserializer = SecondaryDeserializer.newInstance();
 
@@ -78,8 +83,13 @@ public class AWSKafkaAvroDeserializer implements Deserializer<Object> {
     @Override
     public void configure(@NonNull Map<String, ?> configs, boolean isKey) {
         log.info("Configuring Amazon Glue Schema Registry Service using these properties: {}", configs.toString());
-        this.glueSchemaRegistryDeserializationFacade = GlueSchemaRegistryDeserializationFacade.builder().credentialProvider(this.credentialProvider).configs(configs)
-                .build();
+        if (this.userAgentApp == null) {
+            this.userAgentApp = UserAgents.KAFKA;
+        }
+        GlueSchemaRegistryConfiguration glueSchemaRegistryConfiguration = new GlueSchemaRegistryConfiguration(configs);
+        glueSchemaRegistryConfiguration.setUserAgentApp(this.userAgentApp);
+        this.glueSchemaRegistryDeserializationFacade =
+            new GlueSchemaRegistryDeserializationFacade(glueSchemaRegistryConfiguration, this.credentialProvider);
 
         if (configs.containsKey(AWSSchemaRegistryConstants.SECONDARY_DESERIALIZER)) {
             configureSecondaryDeser(configs, isKey);
