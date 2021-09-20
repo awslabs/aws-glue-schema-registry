@@ -389,6 +389,8 @@ When configuring Kafka Connect workers or connectors, use the value of the strin
     value.converter.schemaAutoRegistrationEnabled=true
     key.converter.avroRecordType=GENERIC_RECORD
     value.converter.avroRecordType=GENERIC_RECORD
+    key.converter.schemaName=KeySchema
+    value.converter.schemaName=ValueSchema
 ```
 
 As Glue Schema Registry is a fully managed service by AWS, there is no notion of schema registry URLs. Name of the registry (within the same AWS account) can be optionally configured using following options. If not specified, default-registry is used.
