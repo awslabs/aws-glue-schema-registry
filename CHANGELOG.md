@@ -34,3 +34,6 @@ GlueSchemaRegistryKafkaSerializer/GlueSchemaRegistryKafkaDeserializer.
 ## Release 1.1.3
 * Modify UserAgent to emit usage metrics
 * Add tests to include key and value schemas both 
+
+## Release 1.1.4
+* Upgrade Apache Kafka version to 2.8.1
