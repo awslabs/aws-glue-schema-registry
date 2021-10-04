@@ -141,6 +141,7 @@ public class ProtobufWireFormatDecoderTest {
             Arguments.of(BASIC_REFERENCING_DYNAMIC_MESSAGE, ProtobufMessageType.DYNAMIC_MESSAGE),
             Arguments.of(createDynamicNRecord(), ProtobufMessageType.DYNAMIC_MESSAGE),
             Arguments.of(createDynamicProtobufRecord(), ProtobufMessageType.DYNAMIC_MESSAGE),
+            Arguments.of(createDynamicProtobufRecord(), null),
             Arguments.of(createDynamicProtobufRecord(), ProtobufMessageType.UNKNOWN)
         );
     }

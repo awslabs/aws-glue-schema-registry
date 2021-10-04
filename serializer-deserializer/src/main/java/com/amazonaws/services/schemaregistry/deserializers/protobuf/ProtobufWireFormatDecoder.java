@@ -36,12 +36,11 @@ public class ProtobufWireFormatDecoder {
 
         final Descriptors.Descriptor messageDescriptor = messageIndexFinder.getByIndex(descriptor, messageIndex);
 
-        switch (messageType) {
-            case POJO:
-                return deserializeToPojo(messageDescriptor, codedInputStream);
-            case DYNAMIC_MESSAGE:
-            default:
-                return deserializeToDynamicMessage(messageDescriptor, codedInputStream);
+        if (ProtobufMessageType.POJO.equals(messageType)) {
+            return deserializeToPojo(messageDescriptor, codedInputStream);
+        } else {
+            //Defaults to DynamicMessage if not set or set explicitly to DYNAMIC_MESSAGE.
+            return deserializeToDynamicMessage(messageDescriptor, codedInputStream);
         }
     }
 
