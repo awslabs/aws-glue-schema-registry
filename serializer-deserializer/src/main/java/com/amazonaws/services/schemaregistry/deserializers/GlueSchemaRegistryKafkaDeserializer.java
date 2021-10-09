@@ -85,7 +85,6 @@ public class GlueSchemaRegistryKafkaDeserializer implements Deserializer<Object>
         if (this.userAgentApp == null) {
             this.userAgentApp = UserAgents.KAFKA;
         }
-        log.info("Configuring Amazon Glue Schema Registry Service using these properties: {}", configs.toString());
         if (this.glueSchemaRegistryDeserializationFacade == null) {
             GlueSchemaRegistryConfiguration glueSchemaRegistryConfiguration = new GlueSchemaRegistryConfiguration(configs);
             glueSchemaRegistryConfiguration.setUserAgentApp(this.userAgentApp);

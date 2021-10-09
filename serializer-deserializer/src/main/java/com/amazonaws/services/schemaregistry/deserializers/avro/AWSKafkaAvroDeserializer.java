@@ -82,7 +82,6 @@ public class AWSKafkaAvroDeserializer implements Deserializer<Object> {
      */
     @Override
     public void configure(@NonNull Map<String, ?> configs, boolean isKey) {
-        log.info("Configuring Amazon Glue Schema Registry Service using these properties: {}", configs.toString());
         if (this.userAgentApp == null) {
             this.userAgentApp = UserAgents.KAFKA;
         }
