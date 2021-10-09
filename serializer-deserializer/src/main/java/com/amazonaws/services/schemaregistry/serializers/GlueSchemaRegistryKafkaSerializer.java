@@ -71,7 +71,6 @@ public class GlueSchemaRegistryKafkaSerializer implements Serializer<Object> {
     @Override
     public void configure(@NonNull Map<String, ?> configs,
                           boolean isKey) {
-        log.info("Configuring Glue Schema Registry Client using these properties: {}", configs);
         schemaName = GlueSchemaRegistryUtils.getInstance()
                 .getSchemaName(configs);
         this.isKey = isKey;
