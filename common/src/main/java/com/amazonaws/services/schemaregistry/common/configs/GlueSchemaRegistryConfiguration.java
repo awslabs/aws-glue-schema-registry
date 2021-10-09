@@ -292,7 +292,7 @@ public class GlueSchemaRegistryConfiguration {
                               String key) {
         if (!GlueSchemaRegistryUtils.getInstance()
                 .checkIfPresentInMap(configs, key)) {
-            log.info("{} key is not present in the configs {}", key, configs);
+            log.info("{} key is not present in the configs", key);
             return false;
         }
         return true;

@@ -79,7 +79,6 @@ public class AWSKafkaAvroSerializer implements Serializer<Object> {
     @Override
     public void configure(@NonNull Map<String, ?> configs,
                           boolean isKey) {
-        log.info("Configuring Amazon Glue Schema Registry Service using these properties: {}", configs);
         schemaName = GlueSchemaRegistryUtils.getInstance()
                 .getSchemaName(configs);
         this.isKey = isKey;
