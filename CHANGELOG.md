@@ -37,3 +37,7 @@ GlueSchemaRegistryKafkaSerializer/GlueSchemaRegistryKafkaDeserializer.
 
 ## Release 1.1.4
 * Upgrade Apache Kafka version to 2.8.1
+
+## Release 1.1.5
+* Fix security vulnerability in transitive dependencies
+* Remove configuration logging information
