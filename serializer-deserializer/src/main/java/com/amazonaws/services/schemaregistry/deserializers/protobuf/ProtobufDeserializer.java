@@ -21,8 +21,15 @@ import com.amazonaws.services.schemaregistry.deserializers.GlueSchemaRegistryDes
 import com.amazonaws.services.schemaregistry.exception.AWSSchemaRegistryException;
 import com.amazonaws.services.schemaregistry.serializers.protobuf.MessageIndexFinder;
 import com.amazonaws.services.schemaregistry.utils.ProtobufMessageType;
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.google.protobuf.Descriptors;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
@@ -32,13 +39,25 @@ import java.nio.ByteBuffer;
 public class ProtobufDeserializer implements GlueSchemaRegistryDataFormatDeserializer {
     private static final GlueSchemaRegistryDeserializerDataParser DESERIALIZER_DATA_PARSER =
             GlueSchemaRegistryDeserializerDataParser.getInstance();
+    //Make this configurable if required.
+    private static final long MAX_PROTOBUF_SCHEMA_PARSER_CACHE_SIZE = 100;
     private final ProtobufWireFormatDecoder protoDecoder;
     private final ProtobufMessageType protobufMessageType;
+
+    @NonNull
+    @VisibleForTesting
+    protected final LoadingCache<ProtobufSchemaParserCacheKey, Descriptors.FileDescriptor> schemaParserCache;
 
     @Builder
     public ProtobufDeserializer(GlueSchemaRegistryConfiguration configs) {
         this.protoDecoder = new ProtobufWireFormatDecoder(new MessageIndexFinder());
         this.protobufMessageType = configs.getProtobufMessageType();
+        this.schemaParserCache =
+            CacheBuilder
+                .newBuilder()
+                .maximumSize(MAX_PROTOBUF_SCHEMA_PARSER_CACHE_SIZE)
+                .build(new ProtobufSchemaParserCache());
+
     }
 
     @Override
@@ -51,7 +70,7 @@ public class ProtobufDeserializer implements GlueSchemaRegistryDataFormatDeseria
             final String protoFileName = getProtoFileName(schemaName);
 
             final Descriptors.FileDescriptor fileDescriptor =
-                ProtobufSchemaParser.parse(schemaDefinition, protoFileName);
+                schemaParserCache.get(new ProtobufSchemaParserCacheKey(schemaDefinition, protoFileName));
 
             return protoDecoder.decode(data, fileDescriptor, protobufMessageType);
         } catch (Exception e) {
@@ -86,5 +105,23 @@ public class ProtobufDeserializer implements GlueSchemaRegistryDataFormatDeseria
         //If extension is not to the end, append it.
         //Ex: basic.protofoo.schema -> basic.protofoo.schema.proto
         return schemaName + protoExtension;
+    }
+
+    @EqualsAndHashCode
+    @Getter
+    @AllArgsConstructor
+    private static class ProtobufSchemaParserCacheKey {
+        @NonNull
+        private final String schemaDefinition;
+        @NonNull
+        private final String protoFileName;
+    }
+
+    private static class ProtobufSchemaParserCache
+        extends CacheLoader<ProtobufSchemaParserCacheKey, Descriptors.FileDescriptor> {
+        @Override
+        public Descriptors.FileDescriptor load(ProtobufSchemaParserCacheKey cacheKey) throws Exception {
+            return ProtobufSchemaParser.parse(cacheKey.getSchemaDefinition(), cacheKey.getProtoFileName());
+        }
     }
 }
