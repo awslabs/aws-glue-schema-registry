@@ -2,9 +2,12 @@ package com.amazonaws.services.schemaregistry.serializers;
 
 import com.amazonaws.services.schemaregistry.common.AWSSchemaNamingStrategy;
 import com.amazonaws.services.schemaregistry.common.AWSSerializerInput;
+import com.amazonaws.services.schemaregistry.common.configs.GlueSchemaRegistryConfiguration;
+import com.amazonaws.services.schemaregistry.common.configs.UserAgents;
 import com.amazonaws.services.schemaregistry.utils.GlueSchemaRegistryUtils;
 import lombok.Data;
 import lombok.NonNull;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.common.serialization.Serializer;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
@@ -27,6 +30,8 @@ public class GlueSchemaRegistryKafkaSerializer implements Serializer<Object> {
     private String schemaName;
     private AWSSchemaNamingStrategy schemaNamingStrategy;
     private boolean isKey;
+    @Setter
+    private String userAgentApp;
 
     /**
      * Constructor used by Kafka producer when passing as the property.
@@ -66,7 +71,6 @@ public class GlueSchemaRegistryKafkaSerializer implements Serializer<Object> {
     @Override
     public void configure(@NonNull Map<String, ?> configs,
                           boolean isKey) {
-        log.info("Configuring Glue Schema Registry Client using these properties: {}", configs);
         schemaName = GlueSchemaRegistryUtils.getInstance()
                 .getSchemaName(configs);
         this.isKey = isKey;
@@ -80,8 +84,14 @@ public class GlueSchemaRegistryKafkaSerializer implements Serializer<Object> {
         }
 
         if (glueSchemaRegistrySerializationFacade == null) {
+            GlueSchemaRegistryConfiguration glueSchemaRegistryConfiguration = new GlueSchemaRegistryConfiguration(configs);
+            if (this.userAgentApp == null) {
+                //Set it to kafka if not set by upstream serializers / deserializers
+                this.userAgentApp = UserAgents.KAFKA;
+            }
+            glueSchemaRegistryConfiguration.setUserAgentApp(this.userAgentApp);
             glueSchemaRegistrySerializationFacade = GlueSchemaRegistrySerializationFacade.builder()
-                    .configs(configs)
+                    .glueSchemaRegistryConfiguration(glueSchemaRegistryConfiguration)
                     .credentialProvider(credentialProvider)
                     .build();
         }

@@ -98,6 +98,15 @@ public class GlueSchemaRegistryDeserializationFacade implements Closeable {
     }
 
     /**
+     * Method to override user-agent app name for the de-serializer.
+     * This overrides the previously set value in GlueSchemaRegistryConfiguration.
+     * @param name AppName
+     */
+    public void overrideUserAgentApp(String name) {
+        this.glueSchemaRegistryConfiguration.setUserAgentApp(name);
+    }
+
+    /**
      * Fetches the schema definition for the serialized data.
      *
      * @param buffer data for which schema definition is needed as ByteBuffer

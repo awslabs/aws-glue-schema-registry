@@ -30,3 +30,14 @@ GlueSchemaRegistryKafkaSerializer/GlueSchemaRegistryKafkaDeserializer.
 * Reduce logging
 * Add additional examples of configuring Kafka Connect and clarification on what property names are expected
 * Fix resource clean up in Kafka integration test
+
+## Release 1.1.3
+* Modify UserAgent to emit usage metrics
+* Add tests to include key and value schemas both 
+
+## Release 1.1.4
+* Upgrade Apache Kafka version to 2.8.1
+
+## Release 1.1.5
+* Fix security vulnerability in transitive dependencies
+* Remove configuration logging information

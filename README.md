@@ -60,7 +60,7 @@ The recommended way to use the AWS Glue Schema Registry Library for Java is to c
   <dependency>
       <groupId>software.amazon.glue</groupId>
       <artifactId>schema-registry-serde</artifactId>
-      <version>1.1.2</version>
+      <version>1.1.5</version>
   </dependency>
   ```
 ### Code Example
@@ -389,6 +389,8 @@ When configuring Kafka Connect workers or connectors, use the value of the strin
     value.converter.schemaAutoRegistrationEnabled=true
     key.converter.avroRecordType=GENERIC_RECORD
     value.converter.avroRecordType=GENERIC_RECORD
+    key.converter.schemaName=KeySchema
+    value.converter.schemaName=ValueSchema
 ```
 
 As Glue Schema Registry is a fully managed service by AWS, there is no notion of schema registry URLs. Name of the registry (within the same AWS account) can be optionally configured using following options. If not specified, default-registry is used.
@@ -418,7 +420,7 @@ It should look like this
 * If using bash, run the below commands to set-up your CLASSPATH in your bash_profile. (For any other shell, update the environment accordingly.)
   ```bash
       echo 'export GSR_LIB_BASE_DIR=<>' >>~/.bash_profile
-      echo 'export GSR_LIB_VERSION=1.1.2' >>~/.bash_profile
+      echo 'export GSR_LIB_VERSION=1.1.5' >>~/.bash_profile
       echo 'export KAFKA_HOME=<your kafka installation directory>' >>~/.bash_profile
       echo 'export CLASSPATH=$CLASSPATH:$GSR_LIB_BASE_DIR/avro-kafkaconnect-converter/target/schema-registry-kafkaconnect-converter-$GSR_LIB_VERSION.jar:$GSR_LIB_BASE_DIR/common/target/schema-registry-common-$GSR_LIB_VERSION.jar:$GSR_LIB_BASE_DIR/avro-serializer-deserializer/target/schema-registry-serde-$GSR_LIB_VERSION.jar' >>~/.bash_profile
       source ~/.bash_profile
@@ -477,7 +479,7 @@ It should look like this
   <dependency>
         <groupId>software.amazon.glue</groupId>
         <artifactId>schema-registry-kafkastreams-serde</artifactId>
-        <version>1.1.2</version>
+        <version>1.1.5</version>
   </dependency>
   ```
 

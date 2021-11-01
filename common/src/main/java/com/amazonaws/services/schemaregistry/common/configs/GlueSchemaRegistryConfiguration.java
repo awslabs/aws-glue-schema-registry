@@ -53,6 +53,13 @@ public class GlueSchemaRegistryConfiguration {
     private boolean schemaAutoRegistrationEnabled = false;
     private Map<String, String> tags = new HashMap<>();
     private Map<String, String> metadata;
+    private String secondaryDeserializer;
+
+    /**
+     * Name of the application using the serializer/deserializer.
+     * Ex: Kafka, KafkaConnect, KPL etc.
+     */
+    private String userAgentApp = "default";
 
     private List<SerializationFeature> jacksonSerializationFeatures;
     private List<DeserializationFeature> jacksonDeserializationFeatures;
@@ -90,11 +97,32 @@ public class GlueSchemaRegistryConfiguration {
         validateAndSetJacksonDeserializationFeatures(configs);
         validateAndSetTags(configs);
         validateAndSetMetadata(configs);
+        validateAndSetUserAgent(configs);
+        validateAndSetSecondaryDeserializer(configs);
+    }
+
+    private void validateAndSetSecondaryDeserializer(Map<String, ?> configs) {
+        if (isPresent(configs, AWSSchemaRegistryConstants.SECONDARY_DESERIALIZER)) {
+            Object secondaryDeserializer = configs.get(AWSSchemaRegistryConstants.SECONDARY_DESERIALIZER);
+            if (secondaryDeserializer instanceof String) {
+                this.secondaryDeserializer = (String) secondaryDeserializer;
+            } else if (secondaryDeserializer instanceof Class) {
+                this.secondaryDeserializer = ((Class) secondaryDeserializer).getName();
+            } else {
+                throw new AWSSchemaRegistryException("Invalid secondary de-serializer configuration");
+            }
+        }
     }
 
     private void buildCacheConfigs(Map<String, ?> configs) {
         validateAndSetCacheSize(configs);
         validateAndSetCacheTTL(configs);
+    }
+
+    private void validateAndSetUserAgent(Map<String, ?> configs) {
+        if (isPresent(configs, AWSSchemaRegistryConstants.USER_AGENT_APP)) {
+            this.userAgentApp = (String) configs.get(AWSSchemaRegistryConstants.USER_AGENT_APP);
+        }
     }
 
     private void validateAndSetCompressionType(Map<String, ?> configs) {
@@ -274,7 +302,7 @@ public class GlueSchemaRegistryConfiguration {
                               String key) {
         if (!GlueSchemaRegistryUtils.getInstance()
                 .checkIfPresentInMap(configs, key)) {
-            log.info("{} key is not present in the configs {}", key, configs);
+            log.info("{} key is not present in the configs", key);
             return false;
         }
         return true;

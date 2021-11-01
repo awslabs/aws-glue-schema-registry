@@ -163,6 +163,12 @@ public final class AWSSchemaRegistryConstants {
     public static final String JACKSON_DESERIALIZATION_FEATURES = "jacksonDeserializationFeatures";
 
     /**
+     * Name of the UserAgent application using the serializer/de-serializer library.
+     * Ex: KPL, Kafka, KafkaConnect etc.
+     */
+    public static final String USER_AGENT_APP = "userAgentApp";
+
+    /**
      * Private constructor to avoid initialization of the class.
      */
 

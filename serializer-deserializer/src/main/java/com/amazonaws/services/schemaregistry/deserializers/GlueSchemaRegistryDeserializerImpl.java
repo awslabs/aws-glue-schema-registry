@@ -37,6 +37,11 @@ public class GlueSchemaRegistryDeserializerImpl implements GlueSchemaRegistryDes
         this.glueSchemaRegistryDeserializationFacade = new GlueSchemaRegistryDeserializationFacade(configuration, awsCredentialsProvider);
     }
 
+    @Override
+    public void overrideUserAgentApp(String name) {
+        this.glueSchemaRegistryDeserializationFacade.overrideUserAgentApp(name);
+    }
+
     @VisibleForTesting
     protected GlueSchemaRegistryDeserializerImpl(final GlueSchemaRegistryDeserializationFacade glueSchemaRegistryDeserializationFacade) {
         this.glueSchemaRegistryDeserializationFacade = glueSchemaRegistryDeserializationFacade;
