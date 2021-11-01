@@ -17,7 +17,9 @@ import software.amazon.awssdk.services.glue.model.DataFormat;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.amazonaws.services.schemaregistry.serializers.protobuf.ProtobufGenerator.BASIC_REFERENCING_DYNAMIC_MESSAGE;
@@ -91,6 +93,29 @@ public class ProtobufDeserializerTest {
                 DOLLAR_SYNTAX_3_MESSAGE, getTestCaseByName("foo$$$1.proto").getRawSchema(), "foo$$$1.proto"
             )
         );
+    }
+
+    private static List<Arguments> testDeserializeCacheMessageProvider() {
+        return Stream.of(
+            Arguments.of(
+                NESTING_MESSAGE_PROTO2, getTestCaseByName("ComplexNestingSyntax2.proto").getRawSchema(), "ComplexNestingSyntax2.proto"
+            ),
+            Arguments.of(
+                NESTING_MESSAGE_PROTO2, getTestCaseByName("ComplexNestingSyntax2.proto").getRawSchema(), "ComplexNestingSyntax2.proto"
+            ),
+            Arguments.of(
+                NESTING_MESSAGE_PROTO3, getTestCaseByName("ComplexNestingSyntax3.proto").getRawSchema(), "ComplexNestingSyntax3.proto"
+            ),
+            Arguments.of(
+                SPECIAL_CHARS_MESSAGE, getTestCaseByName("*&()^#!`~;:\"'{[}}<,>>.special?.proto").getRawSchema(), "*&()^#!`~;:\"'{[}}<,>>.special?"
+            ),
+            Arguments.of(
+                NESTING_MESSAGE_PROTO3, getTestCaseByName("ComplexNestingSyntax3.proto").getRawSchema(), "ComplexNestingSyntax3.proto"
+            ),
+            Arguments.of(
+                NESTING_MESSAGE_PROTO3, getTestCaseByName("ComplexNestingSyntax3.proto").getRawSchema(), "ComplexNestingSyntax3.proto"
+            )
+        ).collect(Collectors.toList());
     }
 
     @Test
@@ -167,5 +192,26 @@ public class ProtobufDeserializerTest {
         Exception ex = assertThrows(AWSSchemaRegistryException.class,
             () -> protobufDynamicMessageDeserializer.deserialize(invalidBytes, ANY_SCHEMA));
         assertEquals("Exception occurred while de-serializing Protobuf message", ex.getMessage());
+    }
+
+    @Test
+    public void testDeserialize_WhenDeserializeIsCalled_ReturnsCachedInstance() {
+        //Test cases consist of same messages present twice in mixed order.
+        List<Arguments> testCases = testDeserializeCacheMessageProvider();
+
+        for (Arguments testCase : testCases) {
+            Object[] arguments = testCase.get();
+            byte[] serializedData = protobufSerializer.serialize(arguments[0]);
+            com.amazonaws.services.schemaregistry.common.Schema schemaObject =
+                new com.amazonaws.services.schemaregistry.common.Schema(
+                    (String) arguments[1], DataFormat.PROTOBUF.name(), (String) arguments[2]);
+            ByteBuffer byteBuffer =
+                ByteBuffer.wrap(SERIALIZATION_DATA_ENCODER.write(serializedData, SCHEMA_VERSION_ID_FOR_TESTING));
+
+            //Call de-serialize repeatedly.
+            protobufDynamicMessageDeserializer.deserialize(byteBuffer, schemaObject);
+        }
+
+        assertEquals(3, protobufDynamicMessageDeserializer.schemaParserCache.size());
     }
 }
