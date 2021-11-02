@@ -30,7 +30,11 @@ public enum TestDataGeneratorType {
     AVRO_SPECIFIC_NONE(DataFormat.AVRO, AvroRecordType.SPECIFIC_RECORD, Compatibility.NONE),
     JSON_GENERIC_NONE(DataFormat.JSON, AvroRecordType.GENERIC_RECORD, Compatibility.NONE),
     JSON_GENERIC_BACKWARD(DataFormat.JSON, AvroRecordType.GENERIC_RECORD, Compatibility.BACKWARD),
-    JSON_SPECIFIC_NONE(DataFormat.JSON, AvroRecordType.SPECIFIC_RECORD, Compatibility.NONE);
+    JSON_SPECIFIC_NONE(DataFormat.JSON, AvroRecordType.SPECIFIC_RECORD, Compatibility.NONE),
+    PROTOBUF_SPECIFIC_NONE(DataFormat.PROTOBUF, AvroRecordType.SPECIFIC_RECORD, Compatibility.NONE),
+    PROTOBUF_GENERIC_NONE(DataFormat.PROTOBUF, AvroRecordType.GENERIC_RECORD, Compatibility.NONE);
+    //TODO: Generate Protobuf BACKWARD records.
+//    PROTOBUF_GENERIC_BACKWARD(DataFormat.PROTOBUF, AvroRecordType.GENERIC_RECORD, Compatibility.BACKWARD),
 
     private final DataFormat dataFormat;
     private final AvroRecordType recordType;

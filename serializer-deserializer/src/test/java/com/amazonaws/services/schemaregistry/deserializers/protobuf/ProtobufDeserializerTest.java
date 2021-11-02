@@ -22,6 +22,8 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.amazonaws.services.schemaregistry.serializers.protobuf.ProtobufGenerator.ALL_TYPES_MESSAGE_SYNTAX2;
+import static com.amazonaws.services.schemaregistry.serializers.protobuf.ProtobufGenerator.ALL_TYPES_MESSAGE_SYNTAX3;
 import static com.amazonaws.services.schemaregistry.serializers.protobuf.ProtobufGenerator.BASIC_REFERENCING_DYNAMIC_MESSAGE;
 import static com.amazonaws.services.schemaregistry.serializers.protobuf.ProtobufGenerator.BASIC_SYNTAX2_MESSAGE;
 import static com.amazonaws.services.schemaregistry.serializers.protobuf.ProtobufGenerator.BASIC_SYNTAX3_MESSAGE;
@@ -91,6 +93,12 @@ public class ProtobufDeserializerTest {
             ),
             Arguments.of(
                 DOLLAR_SYNTAX_3_MESSAGE, getTestCaseByName("foo$$$1.proto").getRawSchema(), "foo$$$1.proto"
+            ),
+            Arguments.of(
+                ALL_TYPES_MESSAGE_SYNTAX3, getTestCaseByName("AllTypesSyntax3.proto").getRawSchema(), "AllTypesSyntax3"
+            ),
+            Arguments.of(
+                ALL_TYPES_MESSAGE_SYNTAX2, getTestCaseByName("AllTypesSyntax2.proto").getRawSchema(), "allTypesSyntax2"
             )
         );
     }
