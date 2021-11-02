@@ -63,6 +63,9 @@ public class TestDataGeneratorFactory {
             case PROTOBUF_GENERIC_NONE:
                 this.dataGeneratorMap.computeIfAbsent(testDataGeneratorType, key -> new ProtobufGenericNoneCompatDataGenerator());
                 return dataGeneratorMap.get(testDataGeneratorType);
+            case PROTOBUF_GENERIC_BACKWARD:
+                this.dataGeneratorMap.computeIfAbsent(testDataGeneratorType, key -> new ProtobufGenericBackwardDataGenerator());
+                return dataGeneratorMap.get(testDataGeneratorType);
             default:
                 String message = String.format("Unsupported data generator type: %s", testDataGeneratorType);
                 throw new AWSSchemaRegistryException(message);
