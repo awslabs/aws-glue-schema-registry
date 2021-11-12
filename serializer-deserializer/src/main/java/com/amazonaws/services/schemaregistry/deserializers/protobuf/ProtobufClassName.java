@@ -57,10 +57,7 @@ public class ProtobufClassName {
             return fileOptions.getJavaOuterClassname();
         }
 
-        final String fileDescriptorName =
-            stripExtension(fileDescriptor.getFullName());
-
-        final String className = normalize(fileDescriptorName);
+        final String className = normalize(fileDescriptor.getFullName());
 
         //If className is same as descriptor name, `OuterClass` is suffixed by Protobuf compiler.
         if (className.equals(descriptor.getName())) {
@@ -83,8 +80,9 @@ public class ProtobufClassName {
      * camel cases it to generate the class name.
      * Reference: https://github.com/protocolbuffers/protobuf/blob/4e0a1119c0c5cdfe89b54b9d66cb76223f17861a/src/google/protobuf/compiler/java/java_helpers.cc#L159
      */
-    private static String normalize(final String fileDescriptorName) {
-        final String[] parts = fileDescriptorName.split("[^a-zA-Z0-9]");
+    public static String normalize(final String fileDescriptorName) {
+        String strippedFileDescriptorName = stripExtension(fileDescriptorName);
+        final String[] parts = strippedFileDescriptorName.split("[^a-zA-Z0-9]");
         final StringBuilder camelCaseName = new StringBuilder();
         for (String part : parts) {
             if (StringUtils.isBlank(part)) {
@@ -97,7 +95,7 @@ public class ProtobufClassName {
             final String fixedCase = part.substring(0, 1).toUpperCase() + part.substring(1);
             camelCaseName.append(fixedCase);
         }
-        if (fileDescriptorName.lastIndexOf('#') == fileDescriptorName.length() - 1) {
+        if (strippedFileDescriptorName.lastIndexOf('#') == strippedFileDescriptorName.length() - 1) {
             camelCaseName.append("_");
         }
         return camelCaseName.toString();
