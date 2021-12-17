@@ -13,9 +13,10 @@
  * limitations under the License.
  */
 package com.amazonaws.services.schemaregistry.integrationtests.properties;
+import com.amazonaws.regions.Regions;
 
 public interface GlueSchemaRegistryConnectionProperties {
     // Glue Service Endpoint
-    public static final String ENDPOINT = "https://glue.us-east-2.amazonaws.com";
-    public static final String REGION = "us-east-2";
+    String REGION = Regions.getCurrentRegion() == null ? "us-east-2" : Regions.getCurrentRegion().getName().toLowerCase();
+    String ENDPOINT = String.format("https://glue.%s.amazonaws.com", REGION);
 }
