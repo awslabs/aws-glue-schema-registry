@@ -88,6 +88,7 @@ import java.nio.ByteBuffer;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -211,6 +212,10 @@ public class GlueSchemaRegistryKinesisIntegrationTest {
         }
 
         LOGGER.info("Finished Cleaning up {} schemas created with GSR.", schemasToCleanUp.size());
+    }
+
+    private static Stream<Arguments> testSingleKCLKPLDataProvider() {
+        return DataFormat.knownValues().stream().map(Arguments::of);
     }
 
     @BeforeEach
@@ -341,6 +346,34 @@ public class GlueSchemaRegistryKinesisIntegrationTest {
 
         LOGGER.info("Finished test for producing/consuming messages on Kinesis Producer Library with Glue Schema "
                     + "Registry");
+    }
+
+    //Used for Canary tests.
+    @ParameterizedTest
+    @MethodSource("testSingleKCLKPLDataProvider")
+    public void testProduceConsumeSingleRecordWithKPLAndKCL(DataFormat dataFormat) throws Exception {
+        Compatibility compatibility = Compatibility.NONE;
+        AvroRecordType recordType = AvroRecordType.GENERIC_RECORD;
+        AWSSchemaRegistryConstants.COMPRESSION compression = AWSSchemaRegistryConstants.COMPRESSION.NONE;
+
+        TestDataGenerator testDataGenerator = testDataGeneratorFactory.getInstance(
+            TestDataGeneratorType.valueOf(dataFormat, recordType, compatibility));
+        List<?> producerRecords = Collections.singletonList(testDataGenerator.createRecords().get(0));
+
+        GlueSchemaRegistryConfiguration gsrConfig =
+            getSchemaRegistryConfiguration(compatibility, compression, recordType, dataFormat);
+
+        RecordProcessor recordProcessor = new RecordProcessor();
+        Scheduler scheduler = startConsumingWithKCL(gsrConfig, recordProcessor);
+
+        produceRecordsWithKPL(streamName, producerRecords, dataFormat, compatibility, gsrConfig);
+
+        TimeUnit.SECONDS.sleep(KCL_SCHEDULER_SHUT_DOWN_WAIT_TIME_SECONDS);
+        scheduler.shutdown();
+
+        assertTrue(recordProcessor.creationSuccess);
+        assertTrue(recordProcessor.consumptionSuccess);
+        assertEquals(producerRecords.size(), recordProcessor.consumedRecords.size());
     }
 
     private String produceRecordsWithKinesisSDK(String streamName,
