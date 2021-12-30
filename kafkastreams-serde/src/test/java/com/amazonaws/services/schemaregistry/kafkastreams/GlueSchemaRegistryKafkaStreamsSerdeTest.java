@@ -16,7 +16,7 @@
 package com.amazonaws.services.schemaregistry.kafkastreams;
 
 import com.amazonaws.services.schemaregistry.common.AWSDeserializerInput;
-import com.amazonaws.services.schemaregistry.common.AWSSchemaRegistryClient;
+import com.amazonaws.services.schemaregistry.common.SchemaByDefinitionFetcher;
 import com.amazonaws.services.schemaregistry.common.configs.GlueSchemaRegistryConfiguration;
 import com.amazonaws.services.schemaregistry.deserializers.GlueSchemaRegistryDeserializationFacade;
 import com.amazonaws.services.schemaregistry.deserializers.GlueSchemaRegistryKafkaDeserializer;
@@ -89,7 +89,7 @@ public class GlueSchemaRegistryKafkaStreamsSerdeTest {
                     , 56, 48, 46, 51, 93, 125};
 
     @Mock
-    private AWSSchemaRegistryClient mockClient;
+    private SchemaByDefinitionFetcher mockSchemaByDefinitionFetcher;
     @Mock
     private AwsCredentialsProvider mockCredProvider;
     private GlueSchemaRegistryKafkaStreamsSerde glueSchemaRegistryKafkaStreamsSerde;
@@ -287,10 +287,10 @@ public class GlueSchemaRegistryKafkaStreamsSerdeTest {
                 GlueSchemaRegistrySerializationFacade.builder()
                         .configs(configs)
                         .credentialProvider(mockCredProvider)
-                        .schemaRegistryClient(mockClient)
+                        .schemaByDefinitionFetcher(mockSchemaByDefinitionFetcher)
                         .build();
 
-        when(mockClient.getORRegisterSchemaVersionId(eq(schemaDefinition), eq(schemaName), eq(dataFormat.name()),
+        when(mockSchemaByDefinitionFetcher.getORRegisterSchemaVersionId(eq(schemaDefinition), eq(schemaName), eq(dataFormat.name()),
                                                      anyMap())).thenReturn(schemaVersionId);
         GlueSchemaRegistryKafkaSerializer glueSchemaRegistryKafkaSerializer =
                 new GlueSchemaRegistryKafkaSerializer(mockCredProvider, null);

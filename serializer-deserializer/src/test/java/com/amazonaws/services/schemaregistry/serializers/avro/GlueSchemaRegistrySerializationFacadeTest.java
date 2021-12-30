@@ -15,10 +15,10 @@
 
 package com.amazonaws.services.schemaregistry.serializers.avro;
 
-import com.amazonaws.services.schemaregistry.caching.GlueSchemaRegistrySerializerCache;
 import com.amazonaws.services.schemaregistry.common.AWSSchemaRegistryClient;
 import com.amazonaws.services.schemaregistry.common.AWSSerializerInput;
 import com.amazonaws.services.schemaregistry.common.GlueSchemaRegistryDataFormatSerializer;
+import com.amazonaws.services.schemaregistry.common.SchemaByDefinitionFetcher;
 import com.amazonaws.services.schemaregistry.common.configs.GlueSchemaRegistryConfiguration;
 import com.amazonaws.services.schemaregistry.exception.AWSSchemaRegistryException;
 import com.amazonaws.services.schemaregistry.serializers.GlueSchemaRegistryKafkaSerializer;
@@ -62,10 +62,8 @@ import java.util.Properties;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -119,12 +117,13 @@ public class GlueSchemaRegistrySerializationFacadeTest extends GlueSchemaRegistr
     private static GlueSchemaRegistrySerializerFactory glueSchemaRegistrySerializerFactory =
             new GlueSchemaRegistrySerializerFactory();
     private final Map<String, Object> configs = new HashMap<>();
-    @Mock
-    private AWSSchemaRegistryClient mockClient;
     private Schema schema = null;
     private Customer customer;
     @Mock
     private AwsCredentialsProvider cred;
+
+    @Mock
+    private SchemaByDefinitionFetcher mockSchemaByDefinitionFetcher;
 
     private static List<Arguments> testDataAndSchemaProvider() {
         List<Object> avroRecords =
@@ -191,7 +190,7 @@ public class GlueSchemaRegistrySerializationFacadeTest extends GlueSchemaRegistr
 
     @BeforeEach
     public void setup() {
-        mockClient = mock(AWSSchemaRegistryClient.class);
+        mockSchemaByDefinitionFetcher = mock(SchemaByDefinitionFetcher.class);
         cred = mock(AwsCredentialsProvider.class);
         MockitoAnnotations.initMocks(this);
         customer = new Customer();
@@ -214,30 +213,14 @@ public class GlueSchemaRegistrySerializationFacadeTest extends GlueSchemaRegistr
         configs.put(AWSSchemaRegistryConstants.TAGS, testTags);
     }
 
-    /**
-     * Helper method to construct and return GlueSchemaRegistrySerializerCache instance.
-     *
-     * @return GlueSchemaRegistrySerializerCache instance with fresh cache
-     */
-    private GlueSchemaRegistrySerializerCache createSerializerCache() {
-        GlueSchemaRegistryConfiguration mockConfig = mock(GlueSchemaRegistryConfiguration.class);
-        GlueSchemaRegistrySerializerCache serializerCache = GlueSchemaRegistrySerializerCache.getInstance(mockConfig);
-        serializerCache.flushCache();
-
-        return serializerCache;
-    }
-
     private GlueSchemaRegistrySerializationFacade createGlueSerializationFacade(Map<String, Object> configs,
-                                                                                AWSSchemaRegistryClient awsSchemaRegistryClient) {
+                                                                                SchemaByDefinitionFetcher schemaByDefinitionFetcher) {
         GlueSchemaRegistrySerializationFacade glueSchemaRegistrySerializationFacade =
                 GlueSchemaRegistrySerializationFacade.builder()
                         .glueSchemaRegistryConfiguration(new GlueSchemaRegistryConfiguration(configs))
                         .credentialProvider(cred)
-                        .schemaRegistryClient(awsSchemaRegistryClient)
+                        .schemaByDefinitionFetcher(schemaByDefinitionFetcher)
                         .build();
-
-        GlueSchemaRegistrySerializerCache glueSchemaRegistrySerializerCache = createSerializerCache();
-        glueSchemaRegistrySerializationFacade.setCache(glueSchemaRegistrySerializerCache);
 
         return glueSchemaRegistrySerializationFacade;
     }
@@ -251,11 +234,11 @@ public class GlueSchemaRegistrySerializationFacadeTest extends GlueSchemaRegistr
                                                      Object record) {
         configs.put(AWSSchemaRegistryConstants.DATA_FORMAT, dataFormat.name());
         GlueSchemaRegistrySerializationFacade glueSchemaRegistrySerializationFacade =
-                createGlueSerializationFacade(configs, mockClient);
+                createGlueSerializationFacade(configs, mockSchemaByDefinitionFetcher);
 
         String schemaDefinition = glueSchemaRegistrySerializationFacade.getSchemaDefinition(dataFormat, record);
 
-        when(mockClient.getORRegisterSchemaVersionId(eq(schemaDefinition), eq(USER_SCHEMA), eq(dataFormat.name()),
+        when(mockSchemaByDefinitionFetcher.getORRegisterSchemaVersionId(eq(schemaDefinition), eq(USER_SCHEMA), eq(dataFormat.name()),
                                                      anyMap())).thenReturn(SCHEMA_VERSION_ID_FOR_TESTING);
         UUID schemaVersionId = glueSchemaRegistrySerializationFacade.getOrRegisterSchemaVersion(
                 prepareInput(schemaDefinition, USER_SCHEMA, dataFormat.name()));
@@ -267,7 +250,7 @@ public class GlueSchemaRegistrySerializationFacadeTest extends GlueSchemaRegistr
     @Test
     public void testSerialize_InvalidDataFormat_ThrowsException() {
         GlueSchemaRegistrySerializationFacade glueSchemaRegistrySerializationFacade =
-                createGlueSerializationFacade(configs, mockClient);
+                createGlueSerializationFacade(configs, mockSchemaByDefinitionFetcher);
         Exception exception = assertThrows(AWSSchemaRegistryException.class,
                                            () -> glueSchemaRegistrySerializationFacade.serialize(
                                                    DataFormat.UNKNOWN_TO_SDK_VERSION, genericAvroRecord,
@@ -282,7 +265,7 @@ public class GlueSchemaRegistrySerializationFacadeTest extends GlueSchemaRegistr
                                                                   Object record) {
         configs.put(AWSSchemaRegistryConstants.DATA_FORMAT, dataFormat.name());
         GlueSchemaRegistrySerializationFacade glueSchemaRegistrySerializationFacade =
-                createGlueSerializationFacade(configs, mockClient);
+                createGlueSerializationFacade(configs, mockSchemaByDefinitionFetcher);
         assertThrows(IllegalArgumentException.class,
                      () -> glueSchemaRegistrySerializationFacade.serialize(dataFormat, record, null));
         configs.remove(AWSSchemaRegistryConstants.DATA_FORMAT, dataFormat.name());
@@ -292,7 +275,7 @@ public class GlueSchemaRegistrySerializationFacadeTest extends GlueSchemaRegistr
     @EnumSource(value = DataFormat.class, mode = EnumSource.Mode.EXCLUDE, names = {"UNKNOWN_TO_SDK_VERSION"})
     public void testSerialize_NullData_ThrowsException(DataFormat dataFormat) {
         GlueSchemaRegistrySerializationFacade glueSchemaRegistrySerializationFacade =
-                createGlueSerializationFacade(configs, mockClient);
+                createGlueSerializationFacade(configs, mockSchemaByDefinitionFetcher);
         assertThrows(IllegalArgumentException.class,
                      () -> glueSchemaRegistrySerializationFacade.serialize(dataFormat, null,
                                                                            SCHEMA_VERSION_ID_FOR_TESTING));
@@ -307,7 +290,7 @@ public class GlueSchemaRegistrySerializationFacadeTest extends GlueSchemaRegistr
         Assertions.assertThrows(AWSSchemaRegistryException.class, () -> GlueSchemaRegistrySerializationFacade.builder()
                 .configs(null)
                 .credentialProvider(cred)
-                .schemaRegistryClient(mockClient)
+                .schemaByDefinitionFetcher(mockSchemaByDefinitionFetcher)
                 .build());
     }
 
@@ -353,7 +336,7 @@ public class GlueSchemaRegistrySerializationFacadeTest extends GlueSchemaRegistr
         Assertions.assertThrows(AWSSchemaRegistryException.class, () -> GlueSchemaRegistrySerializationFacade.builder()
                 .configs(configs)
                 .credentialProvider(cred)
-                .schemaRegistryClient(mockClient)
+                .schemaByDefinitionFetcher(mockSchemaByDefinitionFetcher)
                 .build());
     }
 
@@ -365,16 +348,16 @@ public class GlueSchemaRegistrySerializationFacadeTest extends GlueSchemaRegistr
     public void testBuildGSRSerializationFacade_withCompression_succeeds(AWSSchemaRegistryConstants.COMPRESSION compressionType) {
         configs.put(AWSSchemaRegistryConstants.COMPRESSION_TYPE, compressionType.name());
         GlueSchemaRegistrySerializationFacade glueSchemaRegistrySerializationFacade =
-                createGlueSerializationFacade(configs, mockClient);
+                createGlueSerializationFacade(configs, mockSchemaByDefinitionFetcher);
 
-        assertNotNull(glueSchemaRegistrySerializationFacade.getCache());
+        assertNotNull(glueSchemaRegistrySerializationFacade);
         configs.remove(AWSSchemaRegistryConstants.COMPRESSION_TYPE);
     }
 
     @Test
     public void testInitialize_nullCredentials_ThrowsException() {
         assertThrows(IllegalArgumentException.class, () -> GlueSchemaRegistrySerializationFacade.builder()
-                .schemaRegistryClient(mockClient)
+                .schemaByDefinitionFetcher(mockSchemaByDefinitionFetcher)
                 .glueSchemaRegistryConfiguration(new GlueSchemaRegistryConfiguration(configs))
                 .build());
     }
@@ -396,7 +379,7 @@ public class GlueSchemaRegistrySerializationFacadeTest extends GlueSchemaRegistr
                 .getSchemaDefinition(record);
 
         GlueSchemaRegistryKafkaSerializer glueSchemaRegistryKafkaSerializer =
-                initializeGSRKafkaSerializer(configs, schemaDefinition, mockClient, SCHEMA_VERSION_ID_FOR_TESTING);
+                initializeGSRKafkaSerializer(configs, schemaDefinition, mockSchemaByDefinitionFetcher, SCHEMA_VERSION_ID_FOR_TESTING);
 
         String nullTopic = null;
         byte[] serializedData = glueSchemaRegistryKafkaSerializer.serialize(nullTopic, record);
@@ -421,7 +404,7 @@ public class GlueSchemaRegistrySerializationFacadeTest extends GlueSchemaRegistr
                                                                                           configs))
                 .getSchemaDefinition(record);
         GlueSchemaRegistryKafkaSerializer glueSchemaRegistryKafkaSerializer =
-                initializeGSRKafkaSerializer(configs, schemaDefinition, mockClient, SCHEMA_VERSION_ID_FOR_TESTING);
+                initializeGSRKafkaSerializer(configs, schemaDefinition, mockSchemaByDefinitionFetcher, SCHEMA_VERSION_ID_FOR_TESTING);
 
         byte[] serializedData = glueSchemaRegistryKafkaSerializer.serialize(TEST_TOPIC, record);
         testForSerializedData(serializedData, SCHEMA_VERSION_ID_FOR_TESTING, compressionType);
@@ -445,7 +428,7 @@ public class GlueSchemaRegistrySerializationFacadeTest extends GlueSchemaRegistr
                                                                                           configs))
                 .getSchemaDefinition(record);
         GlueSchemaRegistryKafkaSerializer glueSchemaRegistryKafkaSerializer =
-                initializeGSRKafkaSerializer(configs, schemaDefinition, mockClient, SCHEMA_VERSION_ID_FOR_TESTING);
+                initializeGSRKafkaSerializer(configs, schemaDefinition, mockSchemaByDefinitionFetcher, SCHEMA_VERSION_ID_FOR_TESTING);
 
         Assertions.assertThrows(AWSSchemaRegistryException.class,
                                 () -> glueSchemaRegistryKafkaSerializer.serialize(TEST_TOPIC, record));
@@ -462,7 +445,7 @@ public class GlueSchemaRegistrySerializationFacadeTest extends GlueSchemaRegistr
         JsonDataWithSchema record = RecordGenerator.createRecordWithMalformedJsonSchema();
 
         GlueSchemaRegistryKafkaSerializer glueSchemaRegistryKafkaSerializer =
-                initializeGSRKafkaSerializer(configs, "fakeSchemaDef", mockClient, SCHEMA_VERSION_ID_FOR_TESTING);
+                initializeGSRKafkaSerializer(configs, "fakeSchemaDef", mockSchemaByDefinitionFetcher, SCHEMA_VERSION_ID_FOR_TESTING);
 
         Assertions.assertThrows(AWSSchemaRegistryException.class,
                                 () -> glueSchemaRegistryKafkaSerializer.serialize(TEST_TOPIC, record));
@@ -483,7 +466,7 @@ public class GlueSchemaRegistrySerializationFacadeTest extends GlueSchemaRegistr
                 .getSchemaDefinition(record);
 
         GlueSchemaRegistryKafkaSerializer glueSchemaRegistryKafkaSerializer =
-                initializeGSRKafkaSerializer(configs, schemaDefinition, mockClient, SCHEMA_VERSION_ID_FOR_TESTING);
+                initializeGSRKafkaSerializer(configs, schemaDefinition, mockSchemaByDefinitionFetcher, SCHEMA_VERSION_ID_FOR_TESTING);
 
         Assertions.assertThrows(AWSSchemaRegistryException.class,
                                 () -> glueSchemaRegistryKafkaSerializer.serialize(TEST_TOPIC, record));
@@ -501,7 +484,7 @@ public class GlueSchemaRegistrySerializationFacadeTest extends GlueSchemaRegistr
         unSupportedFormatArray.add(1);
 
         GlueSchemaRegistryKafkaSerializer glueSchemaRegistryKafkaSerializer =
-                initializeGSRKafkaSerializer(configs, null, mockClient, null);
+                initializeGSRKafkaSerializer(configs, null, mockSchemaByDefinitionFetcher, null);
 
         Assertions.assertThrows(AWSSchemaRegistryException.class,
                                 () -> glueSchemaRegistryKafkaSerializer.serialize(TEST_TOPIC, unSupportedFormatArray));
@@ -548,10 +531,10 @@ public class GlueSchemaRegistrySerializationFacadeTest extends GlueSchemaRegistr
         configsWithCompressionEnabled.put(AWSSchemaRegistryConstants.COMPRESSION_TYPE, compressionType.name());
 
         GlueSchemaRegistryKafkaSerializer gsrKafkaSerializerWithoutCompression =
-                initializeGSRKafkaSerializer(configs, schemaDefinition, mockClient, SCHEMA_VERSION_ID_FOR_TESTING);
+                initializeGSRKafkaSerializer(configs, schemaDefinition, mockSchemaByDefinitionFetcher, SCHEMA_VERSION_ID_FOR_TESTING);
         GlueSchemaRegistryKafkaSerializer gsrKafkaSerializerWithCompression =
-                initializeGSRKafkaSerializer(configsWithCompressionEnabled, schemaDefinition, mockClient,
-                                             SCHEMA_VERSION_ID_FOR_TESTING);
+                initializeGSRKafkaSerializer(configsWithCompressionEnabled, schemaDefinition,
+                    mockSchemaByDefinitionFetcher, SCHEMA_VERSION_ID_FOR_TESTING);
         byte[] serializedData = gsrKafkaSerializerWithoutCompression.serialize(TEST_TOPIC, array);
         byte[] compressedAndSerializedData = gsrKafkaSerializerWithCompression.serialize(TEST_TOPIC, array);
 
@@ -559,36 +542,7 @@ public class GlueSchemaRegistrySerializationFacadeTest extends GlueSchemaRegistr
         configs.remove(AWSSchemaRegistryConstants.DATA_FORMAT);
     }
 
-    /**
-     * Tests the serialization case where retrieved schema data is stored in cache
-     */
-    @ParameterizedTest
-    @MethodSource("testInvalidDataAndSchemaProvider")
-    public void testSerializer_retrieveSchemaVersionId_schemaVersionIdIsCached(DataFormat dataFormat,
-                                                                               Object record) {
-        GlueSchemaRegistrySerializationFacade glueSerializationFacade =
-                createGlueSerializationFacade(configs, mockClient);
 
-        String schemaDefinition = glueSerializationFacade.getSchemaDefinition(dataFormat, record);
-        when(mockClient.getORRegisterSchemaVersionId(eq(schemaDefinition), eq(USER_SCHEMA), eq(dataFormat.name()),
-                                                     anyMap())).thenReturn(SCHEMA_VERSION_ID_FOR_TESTING);
-        com.amazonaws.services.schemaregistry.common.Schema key =
-                new com.amazonaws.services.schemaregistry.common.Schema(schemaDefinition, dataFormat.name(),
-                                                                        USER_SCHEMA);
-
-        GlueSchemaRegistrySerializerCache serializerCache =
-                GlueSchemaRegistrySerializerCache.getInstance(new GlueSchemaRegistryConfiguration(configs));
-        assertNull(serializerCache.get(key));
-
-        glueSerializationFacade.getOrRegisterSchemaVersion(
-                prepareInput(schemaDefinition, USER_SCHEMA, dataFormat.name()));
-        assertNotNull(serializerCache.get(key));
-
-        when(mockClient.getORRegisterSchemaVersionId(eq(schemaDefinition), eq(USER_SCHEMA), eq(dataFormat.name()),
-                                                     anyMap())).thenReturn(null);
-        assertDoesNotThrow(() -> glueSerializationFacade.getOrRegisterSchemaVersion(
-                prepareInput(schemaDefinition, USER_SCHEMA, dataFormat.name())));
-    }
 
     /**
      * Tests registerSchemaVersion method of Serializer with metadata configuration
@@ -598,12 +552,12 @@ public class GlueSchemaRegistrySerializationFacadeTest extends GlueSchemaRegistr
     public void testSerializer_registerSchemaVersion_withMetadataConfig_succeeds(DataFormat dataFormat,
                                                                                  Object record) {
         GlueSchemaRegistrySerializationFacade glueSerializationFacade =
-                createGlueSerializationFacade(configs, mockClient);
+                createGlueSerializationFacade(configs, mockSchemaByDefinitionFetcher);
         String schemaDefinition = glueSerializationFacade.getSchemaDefinition(dataFormat, record);
         Map<String, String> metadata = getMetadata();
         metadata.put(AWSSchemaRegistryConstants.TRANSPORT_METADATA_KEY, TRANSPORT_NAME);
 
-        when(mockClient.getORRegisterSchemaVersionId(schemaDefinition, USER_SCHEMA, dataFormat.name(),
+        when(mockSchemaByDefinitionFetcher.getORRegisterSchemaVersionId(schemaDefinition, USER_SCHEMA, dataFormat.name(),
                                                      metadata)).thenReturn(SCHEMA_VERSION_ID_FOR_TESTING);
 
         UUID schemaVersionId = glueSerializationFacade.getOrRegisterSchemaVersion(
@@ -620,12 +574,12 @@ public class GlueSchemaRegistrySerializationFacadeTest extends GlueSchemaRegistr
                                                                                     Object record) {
         configs.remove(AWSSchemaRegistryConstants.METADATA);
         GlueSchemaRegistrySerializationFacade glueSchemaRegistrySerializationFacade =
-                createGlueSerializationFacade(configs, mockClient);
+                createGlueSerializationFacade(configs, mockSchemaByDefinitionFetcher);
         Map<String, String> metadata = new HashMap<>();
         metadata.put(AWSSchemaRegistryConstants.TRANSPORT_METADATA_KEY, TRANSPORT_NAME);
 
         String schemaDefinition = glueSchemaRegistrySerializationFacade.getSchemaDefinition(dataFormat, record);
-        when(mockClient.getORRegisterSchemaVersionId(schemaDefinition, USER_SCHEMA, dataFormat.name(),
+        when(mockSchemaByDefinitionFetcher.getORRegisterSchemaVersionId(schemaDefinition, USER_SCHEMA, dataFormat.name(),
                                                      metadata)).thenReturn(SCHEMA_VERSION_ID_FOR_TESTING);
 
         UUID schemaVersionId = glueSchemaRegistrySerializationFacade.getOrRegisterSchemaVersion(
@@ -644,8 +598,10 @@ public class GlueSchemaRegistrySerializationFacadeTest extends GlueSchemaRegistr
         AWSSchemaRegistryClient awsSchemaRegistryClient =
                 new AWSSchemaRegistryClient(cred, glueSchemaRegistryConfiguration);
         AWSSchemaRegistryClient spyClient = spy(awsSchemaRegistryClient);
+        SchemaByDefinitionFetcher schemaByDefinitionFetcher = new SchemaByDefinitionFetcher(spyClient, glueSchemaRegistryConfiguration);
+
         GlueSchemaRegistrySerializationFacade glueSchemaRegistrySerializationFacade =
-                createGlueSerializationFacade(configs, spyClient);
+                createGlueSerializationFacade(configs, schemaByDefinitionFetcher);
 
         String schemaDefinition = glueSchemaRegistrySerializationFacade.getSchemaDefinition(dataFormat, record);
 
@@ -701,7 +657,7 @@ public class GlueSchemaRegistrySerializationFacadeTest extends GlueSchemaRegistr
                                                                                           configs))
                 .getSchemaDefinition(record);
         GlueSchemaRegistryKafkaSerializer glueSchemaRegistryKafkaSerializer =
-                initializeGSRKafkaSerializer(configs, schemaDefinition, mockClient, SCHEMA_VERSION_ID_FOR_TESTING);
+                initializeGSRKafkaSerializer(configs, schemaDefinition, mockSchemaByDefinitionFetcher, SCHEMA_VERSION_ID_FOR_TESTING);
 
         byte[] serializedData = glueSchemaRegistryKafkaSerializer.serialize(TEST_TOPIC, record);
         testForSerializedData(serializedData, SCHEMA_VERSION_ID_FOR_TESTING, compressionType);
@@ -730,11 +686,11 @@ public class GlueSchemaRegistrySerializationFacadeTest extends GlueSchemaRegistr
 
         Map<String, String> metadata = getMetadata();
         metadata.put(AWSSchemaRegistryConstants.TRANSPORT_METADATA_KEY, TRANSPORT_NAME);
-        when(mockClient.getORRegisterSchemaVersionId(schemaDefinition, TEST_SCHEMA, dataFormat.name(),
+        when(mockSchemaByDefinitionFetcher.getORRegisterSchemaVersionId(schemaDefinition, TEST_SCHEMA, dataFormat.name(),
                                                      metadata)).thenReturn(SCHEMA_VERSION_ID_FOR_TESTING);
 
         GlueSchemaRegistrySerializationFacade glueSchemaRegistrySerializationFacade =
-                createGlueSerializationFacade(configs, mockClient);
+                createGlueSerializationFacade(configs, mockSchemaByDefinitionFetcher);
 
         //Test subject
         byte[] serializedData =
@@ -756,7 +712,7 @@ public class GlueSchemaRegistrySerializationFacadeTest extends GlueSchemaRegistr
             new com.amazonaws.services.schemaregistry.common.Schema(schemaDefinition, dataFormat.name(), TEST_SCHEMA);
 
         GlueSchemaRegistrySerializationFacade glueSchemaRegistrySerializationFacade =
-            createGlueSerializationFacade(configs, mockClient);
+            createGlueSerializationFacade(configs, mockSchemaByDefinitionFetcher);
 
         //Test subject
         Exception ex = assertThrows(AWSSchemaRegistryException.class,
@@ -777,7 +733,7 @@ public class GlueSchemaRegistrySerializationFacadeTest extends GlueSchemaRegistr
     @Test
     public void testRegisterSchema_nullSerializerInput_throwsException() {
         GlueSchemaRegistrySerializationFacade glueSerializationFacade =
-                createGlueSerializationFacade(configs, mockClient);
+                createGlueSerializationFacade(configs, mockSchemaByDefinitionFetcher);
         Assertions.assertThrows(IllegalArgumentException.class,
                                 () -> glueSerializationFacade.getOrRegisterSchemaVersion(null));
     }

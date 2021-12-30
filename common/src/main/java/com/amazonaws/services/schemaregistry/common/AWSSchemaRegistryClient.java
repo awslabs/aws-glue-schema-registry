@@ -150,62 +150,6 @@ public class AWSSchemaRegistryClient {
     }
 
     /**
-     * Get Schema Version ID by following below steps :
-     * <p>
-     * 1) If schema version id exists in registry then get it from registry
-     * 2) If schema version id does not exist in registry
-     *      then if auto registration is enabled
-     *          then if schema exists but version doesn't exist
-     *              then
-     *              2.1) Register schema version
-     *              else if schema does not exist
-     *              then
-     *              2.2) create schema and register schema version
-     *
-     * @param schemaDefinition Schema Definition
-     * @param schemaName       Schema Name
-     * @param dataFormat       Data Format
-     * @param metadata         metadata for schema version
-     * @return Schema Version ID
-     * @throws AWSSchemaRegistryException on any error while fetching the schema version ID
-     */
-    public UUID getORRegisterSchemaVersionId(@NonNull String schemaDefinition,
-                                             @NonNull String schemaName,
-                                             @NonNull String dataFormat,
-                                             @NonNull Map<String, String> metadata) throws AWSSchemaRegistryException {
-        UUID schemaVersionId = null;
-
-        try {
-            schemaVersionId = getSchemaVersionIdByDefinition(schemaDefinition, schemaName, dataFormat);
-        } catch (AWSSchemaRegistryException e) {
-            String exceptionCauseMessage = e.getCause().getMessage();
-
-            if (exceptionCauseMessage.contains(AWSSchemaRegistryConstants.SCHEMA_VERSION_NOT_FOUND_MSG)) {
-                log.debug(exceptionCauseMessage);
-
-                if (!this.glueSchemaRegistryConfiguration.isSchemaAutoRegistrationEnabled()) {
-                    throw new AWSSchemaRegistryException(AWSSchemaRegistryConstants.AUTO_REGISTRATION_IS_DISABLED_MSG, e);
-                }
-                schemaVersionId = registerSchemaVersion(schemaDefinition, schemaName, dataFormat, metadata);
-            } else if (exceptionCauseMessage.contains(AWSSchemaRegistryConstants.SCHEMA_NOT_FOUND_MSG)) {
-                log.debug(exceptionCauseMessage);
-
-                if (!this.glueSchemaRegistryConfiguration.isSchemaAutoRegistrationEnabled()) {
-                    throw new AWSSchemaRegistryException(AWSSchemaRegistryConstants.AUTO_REGISTRATION_IS_DISABLED_MSG, e);
-                }
-
-                schemaVersionId = createSchema(schemaName, dataFormat, schemaDefinition, metadata);
-            } else {
-                String msg =
-                        String.format("Exception occurred while fetching or registering schema definition = %s, schema name = %s ",
-                                      schemaDefinition, schemaName);
-                throw new AWSSchemaRegistryException(msg, e);
-            }
-        }
-        return schemaVersionId;
-    }
-
-    /**
      * Get the schema definition by passing the schema id.
      *
      * @param schemaVersionId schema version id

@@ -15,8 +15,8 @@
 
 package com.amazonaws.services.schemaregistry.serializers.avro;
 
-import com.amazonaws.services.schemaregistry.common.AWSSchemaRegistryClient;
 import com.amazonaws.services.schemaregistry.common.AWSSerializerInput;
+import com.amazonaws.services.schemaregistry.common.SchemaByDefinitionFetcher;
 import com.amazonaws.services.schemaregistry.exception.AWSSchemaRegistryException;
 import com.amazonaws.services.schemaregistry.serializers.GlueSchemaRegistrySerializationFacade;
 import com.amazonaws.services.schemaregistry.utils.AVROUtils;
@@ -53,7 +53,7 @@ import static org.mockito.Mockito.when;
 
 public class AWSKafkaAvroSerializerTest extends GlueSchemaRegistryValidationUtil {
 
-    private AWSSchemaRegistryClient mockClient;
+    private SchemaByDefinitionFetcher mockSchemaByDefinitionFetcher;
     private final Map<String, Object> configs = new HashMap<>();
     private static final UUID USER_SCHEMA_VERSION_ID = UUID.fromString("b7b4a7f0-9c96-4e4a-a687-fb5de9ef0c63");
     private static final UUID EMPLOYEE_SCHEMA_VERSION_ID = UUID.fromString("2f8e6498-29af-4722-b4ae-80f2be386bee");
@@ -71,7 +71,7 @@ public class AWSKafkaAvroSerializerTest extends GlueSchemaRegistryValidationUtil
 
     @BeforeEach
     public void setup() {
-        mockClient = mock(AWSSchemaRegistryClient.class);
+        mockSchemaByDefinitionFetcher = mock(SchemaByDefinitionFetcher.class);
 
         userDefinedPojo = User.newBuilder().setName("test_avros_schema").setFavoriteColor("violet")
                 .setFavoriteNumber(10).build();
@@ -199,12 +199,13 @@ public class AWSKafkaAvroSerializerTest extends GlueSchemaRegistryValidationUtil
         genericRecordWithAllTypes.put("integerEnum", k);
 
         String schemaDefinition = AVROUtils.getInstance().getSchemaDefinition(genericRecordWithAllTypes);
-        AWSKafkaAvroSerializer awsKafkaAvroSerializer = initializeAWSKafkaAvroSerializer(configs, schemaDefinition, mockClient, USER_SCHEMA_VERSION_ID);
+        AWSKafkaAvroSerializer awsKafkaAvroSerializer = initializeAWSKafkaAvroSerializer(configs, schemaDefinition,
+            mockSchemaByDefinitionFetcher, USER_SCHEMA_VERSION_ID);
 
         String schemaName =
                 new CustomerProvidedSchemaNamingStrategy().getSchemaName("User-Topic", genericRecordWithAllTypes, true);
 
-        when(mockClient.getORRegisterSchemaVersionId(eq(schemaDefinition), eq(schemaName),
+        when(mockSchemaByDefinitionFetcher.getORRegisterSchemaVersionId(eq(schemaDefinition), eq(schemaName),
                                                      eq(DataFormat.AVRO.name()), anyMap())).thenReturn(USER_SCHEMA_VERSION_ID);
 
         byte[] serialize = awsKafkaAvroSerializer.serialize("User-Topic", genericRecordWithAllTypes);
@@ -248,7 +249,8 @@ public class AWSKafkaAvroSerializerTest extends GlueSchemaRegistryValidationUtil
     public void testSerialize_customPojos_succeeds(AWSSchemaRegistryConstants.COMPRESSION compressionType) {
         configs.put(AWSSchemaRegistryConstants.COMPRESSION_TYPE, compressionType.name());
 
-        AWSKafkaAvroSerializer awsKafkaAvroSerializer = initializeAWSKafkaAvroSerializer(configs, userSchemaDefinition, mockClient, USER_SCHEMA_VERSION_ID);
+        AWSKafkaAvroSerializer awsKafkaAvroSerializer = initializeAWSKafkaAvroSerializer(configs, userSchemaDefinition,
+            mockSchemaByDefinitionFetcher, USER_SCHEMA_VERSION_ID);
         byte[] serialize = awsKafkaAvroSerializer.serialize("test-topic", userDefinedPojo);
 
         testForSerializedData(serialize, USER_SCHEMA_VERSION_ID, compressionType);
@@ -279,7 +281,8 @@ public class AWSKafkaAvroSerializerTest extends GlueSchemaRegistryValidationUtil
     public void testSerialize_parseSchema_succeeds(AWSSchemaRegistryConstants.COMPRESSION compressionType) {
         configs.put(AWSSchemaRegistryConstants.COMPRESSION_TYPE, compressionType.name());
 
-        AWSKafkaAvroSerializer awsKafkaAvroSerializer = initializeAWSKafkaAvroSerializer(configs, userSchemaDefinition, mockClient, USER_SCHEMA_VERSION_ID);
+        AWSKafkaAvroSerializer awsKafkaAvroSerializer = initializeAWSKafkaAvroSerializer(configs, userSchemaDefinition,
+            mockSchemaByDefinitionFetcher, USER_SCHEMA_VERSION_ID);
         byte[] serialize = awsKafkaAvroSerializer.serialize("test-topic", genericUserAvroRecord);
         testForSerializedData(serialize, USER_SCHEMA_VERSION_ID, compressionType);
     }
@@ -289,7 +292,8 @@ public class AWSKafkaAvroSerializerTest extends GlueSchemaRegistryValidationUtil
     public void testSerialize_multipleRecords_succeeds(AWSSchemaRegistryConstants.COMPRESSION compressionType) {
         configs.put(AWSSchemaRegistryConstants.COMPRESSION_TYPE, compressionType.name());
 
-        AWSKafkaAvroSerializer awsKafkaAvroSerializer = initializeAWSKafkaAvroSerializer(configs, mockClient, schemaDefinitionToSchemaVersionIdMap);
+        AWSKafkaAvroSerializer awsKafkaAvroSerializer = initializeAWSKafkaAvroSerializer(configs,
+            mockSchemaByDefinitionFetcher, schemaDefinitionToSchemaVersionIdMap);
         byte[] userSerializedData = awsKafkaAvroSerializer.serialize("test-topic", genericUserAvroRecord);
         testForSerializedData(userSerializedData, USER_SCHEMA_VERSION_ID, compressionType);
 
@@ -336,12 +340,12 @@ public class AWSKafkaAvroSerializerTest extends GlueSchemaRegistryValidationUtil
         array1.add("2");
 
         String schemaDefinition = AVROUtils.getInstance().getSchemaDefinition(array1);
-        AWSKafkaAvroSerializer awsKafkaAvroSerializer = initializeAWSKafkaAvroSerializer(configs, schemaDefinition, mockClient,
+        AWSKafkaAvroSerializer awsKafkaAvroSerializer = initializeAWSKafkaAvroSerializer(configs, schemaDefinition, mockSchemaByDefinitionFetcher,
                                                                                          null);
         EntityNotFoundException.Builder builder = EntityNotFoundException.builder().message(AWSSchemaRegistryConstants.SCHEMA_VERSION_NOT_FOUND_MSG);
         EntityNotFoundException entityNotFoundException = builder.build();
         AWSSchemaRegistryException awsSchemaRegistryException = new AWSSchemaRegistryException(entityNotFoundException);
-        when(mockClient.getORRegisterSchemaVersionId(eq(schemaDefinition), eq("User-Topic"), eq(DataFormat.AVRO.name()), anyMap()))
+        when(mockSchemaByDefinitionFetcher.getORRegisterSchemaVersionId(eq(schemaDefinition), eq("User-Topic"), eq(DataFormat.AVRO.name()), anyMap()))
                 .thenThrow(awsSchemaRegistryException);
 
         assertThrows(AWSSchemaRegistryException.class, () -> awsKafkaAvroSerializer.serialize("test-topic", array1));

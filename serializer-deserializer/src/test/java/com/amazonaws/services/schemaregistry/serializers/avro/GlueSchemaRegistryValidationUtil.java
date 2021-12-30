@@ -15,7 +15,7 @@
 
 package com.amazonaws.services.schemaregistry.serializers.avro;
 
-import com.amazonaws.services.schemaregistry.common.AWSSchemaRegistryClient;
+import com.amazonaws.services.schemaregistry.common.SchemaByDefinitionFetcher;
 import com.amazonaws.services.schemaregistry.serializers.GlueSchemaRegistryKafkaSerializer;
 import com.amazonaws.services.schemaregistry.serializers.GlueSchemaRegistrySerializationFacade;
 import com.amazonaws.services.schemaregistry.utils.AWSSchemaRegistryConstants;
@@ -56,13 +56,13 @@ public class GlueSchemaRegistryValidationUtil {
      *
      * @param configs configs to initialize AWSKafkaAvroSerializer with
      * @param schemaDefinition schema definition will be used by mock client
-     * @param mockClient fake schema registry client
+     * @param mockSchemaByDefinitionFetcher fake schema by definition fetcher.
      * @param testGenericSchemaVersionId test schema version id will be used by mock client
      * @return
      */
     protected AWSKafkaAvroSerializer initializeAWSKafkaAvroSerializer(Map<String, Object> configs,
                                                                       String schemaDefinition,
-                                                                      AWSSchemaRegistryClient mockClient,
+                                                                      SchemaByDefinitionFetcher mockSchemaByDefinitionFetcher,
                                                                       UUID testGenericSchemaVersionId) {
         AwsCredentialsProvider cred = mock(AwsCredentialsProvider.class);
 
@@ -70,10 +70,10 @@ public class GlueSchemaRegistryValidationUtil {
                 GlueSchemaRegistrySerializationFacade.builder()
                         .configs(configs)
                         .credentialProvider(cred)
-                        .schemaRegistryClient(mockClient)
+                        .schemaByDefinitionFetcher(mockSchemaByDefinitionFetcher)
                         .build();
 
-        when(mockClient.getORRegisterSchemaVersionId(eq(schemaDefinition), eq("User-Topic"),
+        when(mockSchemaByDefinitionFetcher.getORRegisterSchemaVersionId(eq(schemaDefinition), eq("User-Topic"),
                                                      eq(DataFormat.AVRO.name()), anyMap())).thenReturn(testGenericSchemaVersionId);
         AWSKafkaAvroSerializer awsKafkaAvroSerializer = new AWSKafkaAvroSerializer(cred, null);
         awsKafkaAvroSerializer.configure(configs, true);
@@ -86,11 +86,11 @@ public class GlueSchemaRegistryValidationUtil {
      * Test helper method to mock build serializer with mocked client
      *
      * @param configs configs to initialize AWSKafkaAvroSerializer with
-     * @param mockClient fake schema registry client
+     * @param mockSchemaByDefinitionFetcher fake schema by definition fetcher.
      * @param schemaDefinitionToSchemaVersionIdMap map of test schema definitions to schema version ids for mock client
      * @return
      */
-    protected AWSKafkaAvroSerializer initializeAWSKafkaAvroSerializer(Map<String, Object> configs, AWSSchemaRegistryClient mockClient,
+    protected AWSKafkaAvroSerializer initializeAWSKafkaAvroSerializer(Map<String, Object> configs, SchemaByDefinitionFetcher mockSchemaByDefinitionFetcher,
                                                                       Map<String, UUID> schemaDefinitionToSchemaVersionIdMap) {
         AwsCredentialsProvider cred = mock(AwsCredentialsProvider.class);
 
@@ -99,11 +99,11 @@ public class GlueSchemaRegistryValidationUtil {
                 .builder()
                 .configs(configs)
                 .credentialProvider(cred)
-                .schemaRegistryClient(mockClient)
+                .schemaByDefinitionFetcher(mockSchemaByDefinitionFetcher)
                 .build();
 
         for (Map.Entry<String, UUID> entry : schemaDefinitionToSchemaVersionIdMap.entrySet()) {
-            when(mockClient.getORRegisterSchemaVersionId(eq(entry.getKey()), eq("User-Topic"),
+            when(mockSchemaByDefinitionFetcher.getORRegisterSchemaVersionId(eq(entry.getKey()), eq("User-Topic"),
                                                          eq(DataFormat.AVRO.name()), anyMap())).thenReturn(entry.getValue());
         }
         AWSKafkaAvroSerializer awsKafkaAvroSerializer = new AWSKafkaAvroSerializer(cred, null);
@@ -123,12 +123,12 @@ public class GlueSchemaRegistryValidationUtil {
     protected AWSKafkaAvroSerializer initializeAWSKafkaAvroSerializer(Map<String, Object> configs,
                                                                       UUID testGenericSchemaVersionId) {
         AwsCredentialsProvider cred = mock(AwsCredentialsProvider.class);
-        AWSSchemaRegistryClient mockClient = mock(AWSSchemaRegistryClient.class);
+        SchemaByDefinitionFetcher mockSchemaByDefinitionFetcher = mock(SchemaByDefinitionFetcher.class);
         GlueSchemaRegistrySerializationFacade glueSchemaRegistrySerializationFacade =
                 GlueSchemaRegistrySerializationFacade.builder()
                         .configs(configs)
                         .credentialProvider(cred)
-                        .schemaRegistryClient(mockClient)
+                        .schemaByDefinitionFetcher(mockSchemaByDefinitionFetcher)
                         .build();
         AWSKafkaAvroSerializer awsKafkaAvroSerializer = new AWSKafkaAvroSerializer(configs, testGenericSchemaVersionId);
         awsKafkaAvroSerializer.configure(configs, true);
@@ -142,13 +142,13 @@ public class GlueSchemaRegistryValidationUtil {
      *
      * @param configs configs to initialize GlueSchemaRegistryKafkaSerializer with
      * @param schemaDefinition schema definition will be used by mock client
-     * @param mockClient fake schema registry client
+     * @param schemaByDefinitionFetcher fake schema by definition fetcher.
      * @param testGenericSchemaVersionId test schema version id will be used by mock client
      * @return
      */
     protected GlueSchemaRegistryKafkaSerializer initializeGSRKafkaSerializer(Map<String, Object> configs,
                                                                              String schemaDefinition,
-                                                                             AWSSchemaRegistryClient mockClient,
+                                                                             SchemaByDefinitionFetcher schemaByDefinitionFetcher,
                                                                              UUID testGenericSchemaVersionId) {
         AwsCredentialsProvider cred = mock(AwsCredentialsProvider.class);
 
@@ -156,10 +156,10 @@ public class GlueSchemaRegistryValidationUtil {
                 GlueSchemaRegistrySerializationFacade.builder()
                         .configs(configs)
                         .credentialProvider(cred)
-                        .schemaRegistryClient(mockClient)
+                        .schemaByDefinitionFetcher(schemaByDefinitionFetcher)
                         .build();
 
-        when(mockClient.getORRegisterSchemaVersionId(eq(schemaDefinition), eq("User-Topic"),
+        when(schemaByDefinitionFetcher.getORRegisterSchemaVersionId(eq(schemaDefinition), eq("User-Topic"),
                                                      eq(GlueSchemaRegistryUtils.getInstance().getDataFormat(configs)),
                                                      anyMap())).thenReturn(testGenericSchemaVersionId);
         GlueSchemaRegistryKafkaSerializer glueSchemaRegistryKafkaSerializer =
@@ -174,12 +174,12 @@ public class GlueSchemaRegistryValidationUtil {
      * Test helper method to mock build serializer with mocked client
      *
      * @param configs configs to initialize GlueSchemaRegistryKafkaSerializer with
-     * @param mockClient fake schema registry client
+     * @param schemaByDefinitionFetcher fake schema by definition fetcher.
      * @param schemaDefinitionToSchemaVersionIdMap map of test schema definitions to schema version ids for mock client
      * @return
      */
     protected GlueSchemaRegistryKafkaSerializer initializeGSRKafkaSerializer(Map<String, Object> configs,
-                                                                             AWSSchemaRegistryClient mockClient,
+                                                                             SchemaByDefinitionFetcher schemaByDefinitionFetcher,
                                                                              Map<String, UUID> schemaDefinitionToSchemaVersionIdMap) {
         AwsCredentialsProvider cred = mock(AwsCredentialsProvider.class);
 
@@ -187,11 +187,11 @@ public class GlueSchemaRegistryValidationUtil {
                 GlueSchemaRegistrySerializationFacade.builder()
                         .configs(configs)
                         .credentialProvider(cred)
-                        .schemaRegistryClient(mockClient)
+                        .schemaByDefinitionFetcher(schemaByDefinitionFetcher)
                         .build();
 
         for (Map.Entry<String, UUID> entry : schemaDefinitionToSchemaVersionIdMap.entrySet()) {
-            when(mockClient.getORRegisterSchemaVersionId(eq(entry.getKey()), eq("User-Topic"),
+            when(schemaByDefinitionFetcher.getORRegisterSchemaVersionId(eq(entry.getKey()), eq("User-Topic"),
                                                          eq(GlueSchemaRegistryUtils.getInstance().getDataFormat(configs)),
                                                          anyMap())).thenReturn(entry.getValue());
         }
@@ -213,12 +213,12 @@ public class GlueSchemaRegistryValidationUtil {
     protected GlueSchemaRegistryKafkaSerializer initializeGSRKafkaSerializer(Map<String, Object> configs,
                                                                              UUID testGenericSchemaVersionId) {
         AwsCredentialsProvider cred = mock(AwsCredentialsProvider.class);
-        AWSSchemaRegistryClient mockClient = mock(AWSSchemaRegistryClient.class);
+        SchemaByDefinitionFetcher schemaByDefinitionFetcher = mock(SchemaByDefinitionFetcher.class);
         GlueSchemaRegistrySerializationFacade glueSchemaRegistrySerializationFacade =
                 GlueSchemaRegistrySerializationFacade.builder()
                         .configs(configs)
                         .credentialProvider(cred)
-                        .schemaRegistryClient(mockClient)
+                        .schemaByDefinitionFetcher(schemaByDefinitionFetcher)
                         .build();
         GlueSchemaRegistryKafkaSerializer glueSchemaRegistryKafkaSerializer = new GlueSchemaRegistryKafkaSerializer(configs, testGenericSchemaVersionId);
         glueSchemaRegistryKafkaSerializer.configure(configs, true);
