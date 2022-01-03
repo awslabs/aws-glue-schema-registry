@@ -14,7 +14,6 @@
  */
 package com.amazonaws.services.schemaregistry.deserializers.avro;
 
-import com.amazonaws.services.schemaregistry.caching.GlueSchemaRegistryDeserializerCache;
 import com.amazonaws.services.schemaregistry.common.GlueSchemaRegistryDataFormatDeserializer;
 import com.amazonaws.services.schemaregistry.common.SchemaByDefinitionFetcher;
 import com.amazonaws.services.schemaregistry.common.configs.GlueSchemaRegistryConfiguration;
@@ -92,7 +91,6 @@ public class AvroDeserializerTest {
         this.schemaRegistrySerDeConfigs = new GlueSchemaRegistryConfiguration(this.configs);
 
         MockitoAnnotations.initMocks(this);
-        invalidateAndGetCache();
     }
 
     /**
@@ -206,19 +204,6 @@ public class AvroDeserializerTest {
                 .build();
         avroDeserializer.setAvroRecordType(recordType);
         return avroDeserializer;
-    }
-
-    /**
-     * Helper method to construct and return GlueSchemaRegistryDeserializerCache instance.
-     *
-     * @return GlueSchemaRegistryDeserializerCache instance with fresh cache
-     */
-    private GlueSchemaRegistryDeserializerCache invalidateAndGetCache() {
-        GlueSchemaRegistryConfiguration mockConfig = mock(GlueSchemaRegistryConfiguration.class);
-        GlueSchemaRegistryDeserializerCache deserializerCache =
-                GlueSchemaRegistryDeserializerCache.getInstance(mockConfig);
-        deserializerCache.flushCache();
-        return deserializerCache;
     }
 
     /**
