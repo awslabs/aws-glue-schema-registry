@@ -275,7 +275,7 @@ public class GlueSchemaRegistryKafkaIntegrationTest {
             log.info("Starting the test for producing {} messages via Kafka ...", dataFormat.name());
             TestDataGenerator testDataGenerator = testDataGeneratorFactory.getInstance(
                     TestDataGeneratorType.valueOf(dataFormat, recordType, compatibility));
-            List<?> records = testDataGenerator.createRecords();
+            List<?> records = Collections.singletonList(testDataGenerator.createRecords().get(0));
 
             String schemaName = String.format("%s-%s-%s", topic, dataFormat.name(), compatibility);
             schemasToCleanUp.add(schemaName);
@@ -289,7 +289,7 @@ public class GlueSchemaRegistryKafkaIntegrationTest {
                     .autoRegistrationEnabled("true")
                     .build();
 
-            producerRecords.addAll(kafkaHelper.doProduceRecordsMultithreaded(producerProperties, records));
+            producerRecords.addAll(kafkaHelper.doProduceRecords(producerProperties, records));
         }
 
         ConsumerProperties consumerProperties = ConsumerProperties.builder()
