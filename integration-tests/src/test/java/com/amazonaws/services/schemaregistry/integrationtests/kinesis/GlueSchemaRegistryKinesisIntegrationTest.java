@@ -361,7 +361,7 @@ public class GlueSchemaRegistryKinesisIntegrationTest {
         List<?> producerRecords = Collections.singletonList(testDataGenerator.createRecords().get(0));
 
         GlueSchemaRegistryConfiguration gsrConfig =
-            getSchemaRegistryConfiguration(compatibility, compression, recordType);
+            getSchemaRegistryConfiguration(compatibility, compression, recordType, dataFormat);
 
         RecordProcessor recordProcessor = new RecordProcessor();
         Scheduler scheduler = startConsumingWithKCL(gsrConfig, recordProcessor);
