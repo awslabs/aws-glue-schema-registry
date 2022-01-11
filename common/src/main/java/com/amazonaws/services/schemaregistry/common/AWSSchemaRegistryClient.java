@@ -31,7 +31,6 @@ import software.amazon.awssdk.core.interceptor.Context;
 import software.amazon.awssdk.core.interceptor.ExecutionAttributes;
 import software.amazon.awssdk.core.interceptor.ExecutionInterceptor;
 import software.amazon.awssdk.core.retry.RetryPolicy;
-import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.glue.GlueClient;
 import software.amazon.awssdk.services.glue.GlueClientBuilder;
@@ -94,7 +93,6 @@ public class AWSSchemaRegistryClient {
                 .builder()
                 .credentialsProvider(credentialsProvider)
                 .overrideConfiguration(overrideConfiguration)
-                .httpClient(UrlConnectionHttpClient.builder().build())
                 .region(Region.of(glueSchemaRegistryConfiguration.getRegion()));
 
         if (glueSchemaRegistryConfiguration.getEndPoint() != null) {

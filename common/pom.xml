@@ -75,10 +75,6 @@
             <artifactId>aws-json-protocol</artifactId>
         </dependency>
         <dependency>
-            <groupId>software.amazon.awssdk</groupId>
-            <artifactId>url-connection-client</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.apache.avro</groupId>
             <artifactId>avro</artifactId>
             <!-- Temporarily excluding old version of transitive dependency to fix security bug in underlying library. Remove when dependency is upgraded. -->
