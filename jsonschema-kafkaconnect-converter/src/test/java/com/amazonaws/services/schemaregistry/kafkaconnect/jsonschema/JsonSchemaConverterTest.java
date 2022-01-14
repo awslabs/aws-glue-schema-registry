@@ -16,6 +16,7 @@
 package com.amazonaws.services.schemaregistry.kafkaconnect.jsonschema;
 
 import com.amazonaws.services.schemaregistry.common.AWSSchemaRegistryClient;
+import com.amazonaws.services.schemaregistry.common.SchemaByDefinitionFetcher;
 import com.amazonaws.services.schemaregistry.deserializers.GlueSchemaRegistryDeserializationFacade;
 import com.amazonaws.services.schemaregistry.deserializers.GlueSchemaRegistryKafkaDeserializer;
 import com.amazonaws.services.schemaregistry.exception.AWSSchemaRegistryException;
@@ -72,6 +73,9 @@ public class JsonSchemaConverterTest {
     GlueSchemaRegistryKafkaDeserializer mockGsrKafkaDeserializer;
     @Mock
     private AWSSchemaRegistryClient mockClient;
+    @Mock
+    private SchemaByDefinitionFetcher mockSchemaByDefinitionFetcher;
+
     @Mock
     private AwsCredentialsProvider mockCredProvider;
     private JsonSchemaConverter converter;
@@ -198,10 +202,10 @@ public class JsonSchemaConverterTest {
                 GlueSchemaRegistrySerializationFacade.builder()
                         .configs(configs)
                         .credentialProvider(mockCredProvider)
-                        .schemaRegistryClient(mockClient)
+                        .schemaByDefinitionFetcher(mockSchemaByDefinitionFetcher)
                         .build();
 
-        Mockito.when(mockClient.getORRegisterSchemaVersionId(eq(schemaDefinition), eq(TEST_TOPIC),
+        Mockito.when(mockSchemaByDefinitionFetcher.getORRegisterSchemaVersionId(eq(schemaDefinition), eq(TEST_TOPIC),
                                                              eq(DataFormat.JSON.name()), anyMap()))
                 .thenReturn(schemaVersionId);
         GlueSchemaRegistryKafkaSerializer gsKafkaSerializer =
