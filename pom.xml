@@ -76,7 +76,7 @@
 
     <properties>
         <glue.schema.registry.groupId>software.amazon.glue</glue.schema.registry.groupId>
-        <aws.sdk.v2.version>2.17.52</aws.sdk.v2.version>
+        <aws.sdk.v2.version>2.17.113</aws.sdk.v2.version>
         <aws.sdk.v1.version>1.11.642</aws.sdk.v1.version>
         <kafka.scala.version>2.12</kafka.scala.version>
         <kafka.version>2.8.1</kafka.version>
