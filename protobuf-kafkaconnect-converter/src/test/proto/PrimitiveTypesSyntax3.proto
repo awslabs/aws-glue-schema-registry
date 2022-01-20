@@ -1,0 +1,91 @@
+syntax = "proto3";
+
+package com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax3;
+
+message PrimitiveTypes {
+  int32 i8 = 1;
+
+  int32 i8WithParam = 2000;
+
+  optional int32 i8Optional = 2;
+
+  int32 i8WithDefault = 3;
+
+  int32 i16 = 4;
+
+  int32 i16WithParam = 4123;
+
+  int32 i16WithDefault = 5;
+
+  optional int32 i16Optional = 6;
+
+  int32 i32 = 7;
+
+  int32 i32WithParam = 8123;
+
+  int32 i32WithSameTypeMetadata = 8;
+
+  sint32 i32WithMetadata = 9;
+
+  sfixed32 i32WithAnotherMetadata = 10;
+
+  int32 i32WithDefault = 11;
+
+  optional int32 i32Optional = 12;
+
+  int64 i64 = 13;
+
+  int64 i64WithParam = 9123;
+
+  int64 i64WithDefault = 14;
+
+  int64 i64WithSameTypeMetadata = 15;
+
+  sint64 i64WithMetadata = 16;
+
+  fixed64 i64WithAnotherMetadata = 17;
+
+  uint32 i64WithYetAnotherMetadata = 18;
+
+  optional int64 i64Optional = 19;
+
+  float f32 = 20;
+
+  float f32WithParam = 10923;
+
+  optional float f32Optional = 21;
+
+  float f32WithDefault = 22;
+
+  double f64 = 23;
+
+  double f64WithParam = 1112;
+
+  optional double f64Optional = 24;
+
+  double f64WithDefault = 25;
+
+  bool bool = 26;
+
+  bool boolWithParam = 12123;
+
+  optional bool boolOptional = 27;
+
+  bool boolWithDefault = 28;
+
+  bytes bytes = 29;
+
+  bytes bytesWithParam = 18924;
+
+  optional bytes bytesOptional = 30;
+
+  bytes bytesWithDefault = 31;
+
+  string str = 32;
+
+  string strWithParam = 13912;
+
+  optional string strOptional = 33;
+
+  string strWithDefault = 34;
+}

@@ -1,4 +1,4 @@
-package com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.schematypeconverter;
+package com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -17,4 +17,10 @@ public class ProtobufSchemaConverterConstants {
      * Ex: int32 can be mapped to sint32, uint32 etc. It will be default to int32 if not specified.
      */
     public static final String PROTOBUF_TYPE = "protobuf.type";
+
+    /**
+     * Specifies the package name of Protobuf schema definition.
+     * This will be available in the parent level connect schema parameters.
+     */
+    public static final String PROTOBUF_PACKAGE = "protobuf.package";
 }

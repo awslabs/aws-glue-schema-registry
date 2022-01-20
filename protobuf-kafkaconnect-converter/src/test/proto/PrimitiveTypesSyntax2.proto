@@ -1,0 +1,89 @@
+package com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax2;
+
+message PrimitiveTypes {
+  required int32 i8 = 1;
+
+  required int32 i8WithParam = 2000;
+
+  optional int32 i8Optional = 2;
+
+  required int32 i8WithDefault = 3;
+
+  required int32 i16 = 4;
+
+  required int32 i16WithParam = 4123;
+
+  required int32 i16WithDefault = 5;
+
+  optional int32 i16Optional = 6;
+
+  required int32 i32 = 7;
+
+  required int32 i32WithParam = 8123;
+
+  required int32 i32WithSameTypeMetadata = 8;
+
+  required sint32 i32WithMetadata = 9;
+
+  required sfixed32 i32WithAnotherMetadata = 10;
+
+  required int32 i32WithDefault = 11;
+
+  optional int32 i32Optional = 12;
+
+  required int64 i64 = 13;
+
+  required int64 i64WithParam = 9123;
+
+  required int64 i64WithDefault = 14;
+
+  required int64 i64WithSameTypeMetadata = 15;
+
+  required sint64 i64WithMetadata = 16;
+
+  required fixed64 i64WithAnotherMetadata = 17;
+
+  required uint32 i64WithYetAnotherMetadata = 18;
+
+  optional int64 i64Optional = 19;
+
+  required float f32 = 20;
+
+  required float f32WithParam = 10923;
+
+  optional float f32Optional = 21;
+
+  required float f32WithDefault = 22;
+
+  required double f64 = 23;
+
+  required double f64WithParam = 1112;
+
+  optional double f64Optional = 24;
+
+  required double f64WithDefault = 25;
+
+  required bool bool = 26;
+
+  required bool boolWithParam = 12123;
+
+  optional bool boolOptional = 27;
+
+  required bool boolWithDefault = 28;
+
+  required bytes bytes = 29;
+
+  required bytes bytesWithParam = 18924;
+
+  optional bytes bytesOptional = 30;
+
+  required bytes bytesWithDefault = 31;
+
+  required string str = 32;
+
+  required string strWithParam = 13912;
+
+  optional string strOptional = 33;
+
+  required string strWithDefault = 34;
+}
