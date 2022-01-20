@@ -28,6 +28,9 @@ import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromco
 
 public class ToConnectTestDataGenerator {
 
+    private static final String PROTOBUF_TAG = "protobuf.tag";
+    private static final String PROTOBUF_TYPE = "protobuf.type";
+
     public static List<Message> getPrimitiveProtobufMessages() {
         return Arrays.asList(
             PrimitiveTypesSyntax3.PrimitiveTypes.newBuilder()
