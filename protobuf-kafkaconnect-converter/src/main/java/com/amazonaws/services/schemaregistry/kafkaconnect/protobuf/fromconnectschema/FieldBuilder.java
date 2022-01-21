@@ -1,14 +1,12 @@
-package com.amazonaws.services.schemaregistry.kafkaconnect.protobuf;
+package com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema;
 
-import com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.schematypeconverter.ConnectToProtobufTypeConverterFactory;
-import com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.schematypeconverter.ProtobufSchemaConverterConstants;
-import com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.schematypeconverter.SchemaTypeConverter;
 import com.google.protobuf.DescriptorProtos;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
+import org.apache.kafka.connect.errors.DataException;
 
 import java.util.Map;
 import java.util.Optional;
@@ -63,7 +61,7 @@ public class FieldBuilder {
         try {
             return Optional.of(Integer.parseInt(tag));
         } catch (Exception e) {
-            throw new IllegalArgumentException("Cannot parse invalid Protobuf tag number metadata: " + tag);
+            throw new DataException("Cannot parse invalid Protobuf tag number metadata: " + tag);
         }
     }
 

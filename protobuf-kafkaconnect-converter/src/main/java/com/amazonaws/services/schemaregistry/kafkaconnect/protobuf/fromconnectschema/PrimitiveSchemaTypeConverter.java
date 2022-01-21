@@ -1,14 +1,15 @@
-package com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.schematypeconverter;
+package com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.DescriptorProtos;
 import org.apache.kafka.connect.data.Schema;
+import org.apache.kafka.connect.errors.DataException;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.schematypeconverter.ProtobufSchemaConverterConstants.PROTOBUF_TYPE;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_TYPE;
 import static com.google.protobuf.DescriptorProtos.FieldDescriptorProto.Type.TYPE_BOOL;
 import static com.google.protobuf.DescriptorProtos.FieldDescriptorProto.Type.TYPE_BYTES;
 import static com.google.protobuf.DescriptorProtos.FieldDescriptorProto.Type.TYPE_DOUBLE;
@@ -70,7 +71,7 @@ public class PrimitiveSchemaTypeConverter implements SchemaTypeConverter {
             DescriptorProtos.FieldDescriptorProto.Type.valueOf("TYPE_" + schemaParams.get(PROTOBUF_TYPE).toUpperCase());
 
         if (!CONNECT_METADATA_TYPE_CONVERSION_MAP.get(type).contains(specifiedProtobufType)) {
-            throw new IllegalArgumentException(
+            throw new DataException(
                 String.format("Protobuf type for %s is specified to use %s which is not allowed", type,
                     specifiedProtobufType)
             );

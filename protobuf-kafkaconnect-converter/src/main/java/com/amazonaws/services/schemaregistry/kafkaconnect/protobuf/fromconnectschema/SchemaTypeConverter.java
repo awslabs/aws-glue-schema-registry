@@ -1,4 +1,4 @@
-package com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.schematypeconverter;
+package com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema;
 
 import com.google.protobuf.DescriptorProtos;
 import org.apache.kafka.connect.data.Schema;
