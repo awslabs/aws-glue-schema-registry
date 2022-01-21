@@ -1,4 +1,4 @@
-package com.amazonaws.services.schemaregistry.kafkaconnect.protobuf;
+package com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema;
 
 import com.google.protobuf.DescriptorProtos;
 import com.google.protobuf.Descriptors;
