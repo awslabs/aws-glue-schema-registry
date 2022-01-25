@@ -56,6 +56,7 @@ import static com.amazonaws.services.schemaregistry.serializers.protobuf.Protobu
 import static com.amazonaws.services.schemaregistry.serializers.protobuf.ProtobufGenerator.UNICODE_MESSAGE;
 import static com.amazonaws.services.schemaregistry.serializers.protobuf.ProtobufTestCaseReader.getTestCaseByName;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class ProtobufSerializerTest {
@@ -157,6 +158,7 @@ public class ProtobufSerializerTest {
     public void testGetSchemaDefinition_GeneratesValidSchemaDefinition_ForAllTypesOfMessages(Message message, String schemaDefinition, String schemaName)
         throws Descriptors.DescriptorValidationException {
         String parsedSchemaDefinition = protobufSerializer.getSchemaDefinition(message);
+        assertFalse(parsedSchemaDefinition.contains("// Proto schema formatted by Wire, do not edit.\n// Source: \n\n"));
         String packageName = ProtoParser.Companion.parse(Location.get(""), schemaDefinition).getPackageName();
 
         DescriptorProtos.FileDescriptorProto expectedFileDescriptorProto =
