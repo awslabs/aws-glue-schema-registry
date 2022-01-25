@@ -121,7 +121,8 @@ public class ProtobufSerializer implements GlueSchemaRegistryDataFormatSerialize
         @Override
         public String load(@NotNull DescriptorProtos.FileDescriptorProto fileDescriptorProto) {
             final ProtoFileElement schemaElement = FileDescriptorUtils.fileDescriptorToProtoFile(fileDescriptorProto);
-            return schemaElement.toSchema();
+            String rawSchema = schemaElement.toSchema();
+            return rawSchema.replace("// Proto schema formatted by Wire, do not edit.\n// Source: \n\n", "");
         }
     }
 }
