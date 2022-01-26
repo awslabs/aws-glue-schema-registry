@@ -6,6 +6,7 @@ import com.amazonaws.services.schemaregistry.serializers.GlueSchemaRegistryKafka
 import com.amazonaws.services.schemaregistry.utils.AWSSchemaRegistryConstants;
 import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.DynamicMessage;
+import com.google.protobuf.Message;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.junit.jupiter.api.BeforeEach;
@@ -74,6 +75,7 @@ public class ProtobufSchemaConverterTest {
 
     @Test
     public void fromConnectData_convertsConnectDataToGSRSerializedProtobufData() {
+        //TODO: Update this for all types, not just Primitive
         Object connectData = getPrimitiveTypesData();
 
         ArgumentCaptor<DynamicMessage> argumentCaptor = ArgumentCaptor.forClass(DynamicMessage.class);
@@ -86,10 +88,19 @@ public class ProtobufSchemaConverterTest {
 
     @Test
     public void toConnectData_convertsProtobufSerializedDataToConnectData() {
-        final byte[] serializedData = new byte[] {};
+        //TODO: Update this for all types, not just Primitive
+        Message protobufMessage = ToConnectTestDataGenerator.getPrimitiveProtobufMessages().get(0);
+        String packageName = protobufMessage.getDescriptorForType().getFile().getPackage();
+
+        final byte[] serializedData = ToConnectTestDataGenerator.getPrimitiveProtobufMessages().get(0).toByteArray();
+
+        doReturn(protobufMessage).when(deserializer).deserialize(TOPIC_NAME, serializedData);
+
         SchemaAndValue schemaAndValue =
             protobufSchemaConverter.toConnectData(TOPIC_NAME, serializedData);
-        //TBD: Update this test
-        assertNull(schemaAndValue);
+
+        SchemaAndValue expectedSchemaAndValue =
+            new SchemaAndValue(ToConnectTestDataGenerator.getPrimitiveSchema(packageName), ToConnectTestDataGenerator.getPrimitiveTypesData(packageName));
+        assertEquals(expectedSchemaAndValue, schemaAndValue);
     }
 }
