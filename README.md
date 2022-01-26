@@ -21,7 +21,7 @@ Registry](https://docs.aws.amazon.com/glue/latest/dg/schema-registry-gs.html) in
 
 1. Messages/records are serialized on producer front and deserialized on the consumer front by using 
 schema-registry-serde.
-1. Support for AVRO and JSON Data formats (with [JSON Schema](https://json-schema.org/) Draft04, Draft06, Draft07).
+1. Support for three data formats: AVRO, JSON (with [JSON Schema](https://json-schema.org/) Draft04, Draft06, Draft07), and Protocol Buffers as known as Protobuf (with versions proto2 and proto3 without support for [extensions](https://developers.google.com/protocol-buffers/docs/proto#extensions) or [groups](https://developers.google.com/protocol-buffers/docs/proto#groups)).
 1. Kafka Streams support for AWS Glue Schema Registry.
 1. Records can be compressed to reduce message size.
 1. An inbuilt local in-memory cache to save calls to AWS Glue Schema Registry. The schema version id for a schema 
@@ -199,6 +199,75 @@ The recommended way to use the AWS Glue Schema Registry Library for Java is to c
                 }
             }
         }
+
+```
+
+#### Producer for Kafka with PROTOBUF format
+
+```java
+        properties.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+        properties.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, GlueSchemaRegistryKafkaSerializer.class.getName());
+        properties.put(AWSSchemaRegistryConstants.DATA_FORMAT, DataFormat.PROTOBUF.name());
+        properties.put(AWSSchemaRegistryConstants.AWS_REGION, "us-east-1");
+        properties.put(AWSSchemaRegistryConstants.REGISTRY_NAME, "my-registry");
+        properties.put(AWSSchemaRegistryConstants.SCHEMA_NAME, "protobuf-file-name.proto")
+
+        // POJO production
+
+        // CustomerAddress is the generated Protocol Buffers class based on the given Protobuf schema definition
+        CustomerAddress customerAddress = CustomerAddress.newBuilder().build();
+        
+        KafkaProducer<String, CustomerAddress> producer = 
+             new KafkaProducer<String, CustomerAddress>(properties);
+             
+        producer.send(customerAddress);
+        
+        // DynamicMessage production
+
+        DynamicMesssage customerDynamicMessage = 
+             DynamicMessage.newBuilder(CustomerAddress.getDescriptor()).build();
+
+        KafkaProducer<String, DynamicMesssage> producer = 
+             new KafkaProducer<String, DynamicMesssage>(properties);
+        
+        producer.send(customerDynamicMessage);
+
+```
+
+#### Consumer for Kafka with PROTOBUF format
+
+```java
+        properties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+        properties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, GlueSchemaRegistryKafkaDeserializer.class.getName());
+        properties.put(AWSSchemaRegistryConstants.AWS_REGION, "us-east-1");
+
+        // POJO consumption
+        
+        properties.put(AWSSchemaRegistryConstants.PROTOBUF_MESSAGE_TYPE, ProtobufMessageType.POJO.getName());
+        
+        KafkaConsumer<String, CustomerAddress> consumer = 
+             new KafkaConsumer<String, CustomerAddress>(properties)
+        
+        consumer.subscribe(Collections.singletonList(topic));
+        
+        final ConsumerRecords<String, CustomerAddress> records = consumer.poll(10);
+        records
+            .stream()
+            .forEach(record -> processRecord(record))
+            
+        // DynamicMessage consumption
+
+        properties.put(AWSSchemaRegistryConstants.PROTOBUF_MESSAGE_TYPE, ProtobufMessageType.DYNAMIC_MESSAGE.getName());
+        
+        KafkaConsumer<String, DynamicMessage> consumer = 
+             new KafkaConsumer<String, DynamicMesssage>(properties)
+        
+        consumer.subscribe(Collections.singletonList(topic));
+        
+        final ConsumerRecords<String, DynamicMessage> records = consumer.poll(10);
+        records
+            .stream()
+            .forEach(record -> processRecord(record))
 
 ```
 
@@ -470,7 +539,7 @@ It should look like this
   ```
 
 * For more examples for running Kafka Connect with Avro and JSON formats, refer script **run-local-tests.sh** under 
-**integration-tests** module.
+**integration-tests** module. Kafka Connect integration with Protobuf format is still under active development. 
 
 ### Using Kafka Streams with AWS Glue Schema Registry
 
@@ -508,67 +577,6 @@ It should look like this
 ```
 
 ## Using the AWS Glue Schema Registry Flink Connector
-The recommended way to use the AWS Glue Schema Registry Flink Connector for Java is to consume it from Maven.
 
-**Minimum requirements** &mdash; Apache Flink versions supported **Flink 1.11+**
-
-**Working with Kinesis Data Analytics** &mdash; AWS Glue Schema Registry can be setup with [Amazon Kinesis Data 
-Analytics 
-for Apache Flink](https://docs.aws.amazon.com/kinesisanalytics/latest/java/what-is.html).
-
-For using Amazon VPC with Kinesis Data Analytics please see [Configuring Kinesis Data Analytics for Apache Flink 
-inside Amazon VPC.](https://docs.aws.amazon.com/kinesisanalytics/latest/java/vpc.html) 
-
-### Maven Dependency
-  ``` xml
-  <dependency>
-       <groupId>software.amazon.glue</groupId>
-       <artifactId>schema-registry-flink-serde</artifactId>
-       <version>1.0.2</version>
-  </dependency>
-  ```
-### Code Example
-
-#### Flink Kafka Producer with AVRO format
-
-```java
-    String topic = "topic";
-    Properties properties = new Properties();
-    properties.setProperty("bootstrap.servers", "localhost:9092");
-    properties.setProperty("group.id", "test");
-
-    Map<String, Object> configs = new HashMap<>();
-    configs.put(AWSSchemaRegistryConstants.AWS_REGION, "us-east-1");
-    configs.put(AWSSchemaRegistryConstants.SCHEMA_AUTO_REGISTRATION_SETTING, true);
-
-    Schema.Parser parser = new Schema.Parser();
-    Schema schema = parser.parse(new File("path/to/avro/file"));
-
-    FlinkKafkaProducer<GenericRecord> producer = new FlinkKafkaProducer<>(
-            topic,
-            GlueSchemaRegistryAvroSerializationSchema.forGeneric(schema, topic, configs),
-            properties);
-    stream.addSink(producer);
-```
-
-#### Flink Kafka Consumer with AVRO format
-
-```java
-    String topic = "topic";
-    Properties properties = new Properties();
-    properties.setProperty("bootstrap.servers", "localhost:9092");
-    properties.setProperty("group.id", "test");
-
-    Map<String, Object> configs = new HashMap<>();
-    configs.put(AWSSchemaRegistryConstants.AWS_REGION, "us-east-1");
-    configs.put(AWSSchemaRegistryConstants.AVRO_RECORD_TYPE, AvroRecordType.GENERIC_RECORD.getName());
-
-    Schema.Parser parser = new Schema.Parser();
-    Schema schema = parser.parse(new File("path/to/avro/file"));
-
-    FlinkKafkaConsumer<GenericRecord> consumer = new FlinkKafkaConsumer<>(
-            topic,
-            GlueSchemaRegistryAvroDeserializationSchema.forGeneric(schema, configs),
-            properties);
-    DataStream<GenericRecord> stream = env.addSource(consumer);
-```
+AWS Glue Schema Registry Flink Connector for Java in this repository is deprecated. Please check out [Apache Flink](https://github.com/apache/flink) 
+repository for the latest support: [Avro SerializationSchema and DeserializationSchema](https://github.com/apache/flink/tree/master/flink-formats/flink-avro-glue-schema-registry) and [JSON SerializationSchema and DeserializationSchema](https://github.com/apache/flink/tree/master/flink-formats/flink-json-glue-schema-registry). Protobuf integration will be followed up soon.
