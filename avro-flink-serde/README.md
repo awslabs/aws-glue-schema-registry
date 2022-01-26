@@ -1,4 +1,4 @@
-## This module is deprecated
+## This module is not recommended
 Please check out [Apache Flink](https://github.com/apache/flink) 
 repository for the latest support: [Avro SerializationSchema and DeserializationSchema](https://github.com/apache/flink/tree/master/flink-formats/flink-avro-glue-schema-registry) and [JSON SerializationSchema and Deserialization](https://github.com/apache/flink/tree/master/flink-formats/flink-json-glue-schema-registry). Protobuf integration will be followed up soon.
 

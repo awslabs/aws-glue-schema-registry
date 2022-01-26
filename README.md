@@ -21,7 +21,7 @@ Registry](https://docs.aws.amazon.com/glue/latest/dg/schema-registry-gs.html) in
 
 1. Messages/records are serialized on producer front and deserialized on the consumer front by using 
 schema-registry-serde.
-1. Support for three data formats: AVRO, JSON (with [JSON Schema](https://json-schema.org/) Draft04, Draft06, Draft07), and Protocol Buffers as known as Protobuf (with versions proto2 and proto3 without support for [extensions](https://developers.google.com/protocol-buffers/docs/proto#extensions) or [groups](https://developers.google.com/protocol-buffers/docs/proto#groups)).
+1. Support for three data formats: AVRO, JSON (with [JSON Schema](https://json-schema.org/) Draft04, Draft06, Draft07), and Protocol Buffers as known as Protobuf (with syntax proto2 and proto3).
 1. Kafka Streams support for AWS Glue Schema Registry.
 1. Records can be compressed to reduce message size.
 1. An inbuilt local in-memory cache to save calls to AWS Glue Schema Registry. The schema version id for a schema 
@@ -257,6 +257,7 @@ The recommended way to use the AWS Glue Schema Registry Library for Java is to c
             
         // DynamicMessage consumption
 
+        // This is optional. By default AWSSchemaRegistryConstants.PROTOBUF_MESSAGE_TYPE is set as ProtobufMessageType.DYNAMIC_MESSAGE.getName()
         properties.put(AWSSchemaRegistryConstants.PROTOBUF_MESSAGE_TYPE, ProtobufMessageType.DYNAMIC_MESSAGE.getName());
         
         KafkaConsumer<String, DynamicMessage> consumer = 
@@ -578,5 +579,5 @@ It should look like this
 
 ## Using the AWS Glue Schema Registry Flink Connector
 
-AWS Glue Schema Registry Flink Connector for Java in this repository is deprecated. Please check out [Apache Flink](https://github.com/apache/flink) 
+AWS Glue Schema Registry Flink Connector for Java in this repository is not recommended. Please check out [Apache Flink](https://github.com/apache/flink) 
 repository for the latest support: [Avro SerializationSchema and DeserializationSchema](https://github.com/apache/flink/tree/master/flink-formats/flink-avro-glue-schema-registry) and [JSON SerializationSchema and DeserializationSchema](https://github.com/apache/flink/tree/master/flink-formats/flink-json-glue-schema-registry). Protobuf integration will be followed up soon.
