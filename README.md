@@ -21,7 +21,7 @@ Registry](https://docs.aws.amazon.com/glue/latest/dg/schema-registry-gs.html) in
 
 1. Messages/records are serialized on producer front and deserialized on the consumer front by using 
 schema-registry-serde.
-1. Support for three data formats: AVRO, JSON (with [JSON Schema](https://json-schema.org/) Draft04, Draft06, Draft07), and Protocol Buffers as known as Protobuf (with syntax proto2 and proto3).
+1. Support for three data formats: AVRO, JSON (with [JSON Schema](https://json-schema.org/) Draft04, Draft06, Draft07), and and Protocol Buffers (Protobuf syntax versions 2 and 3).
 1. Kafka Streams support for AWS Glue Schema Registry.
 1. Records can be compressed to reduce message size.
 1. An inbuilt local in-memory cache to save calls to AWS Glue Schema Registry. The schema version id for a schema 
