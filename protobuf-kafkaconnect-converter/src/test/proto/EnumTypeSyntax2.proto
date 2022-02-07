@@ -1,0 +1,16 @@
+syntax = "proto2";
+
+package com.amazonaws.services.schemaregistry.kafkaconnect.tests.enumsyntax2;
+
+message EnumTest {
+  enum Corpus {
+    UNIVERSAL = 0;
+    WEB = 1;
+    IMAGES = 2;
+    LOCAL = 3;
+    NEWS = 4;
+    PRODUCTS = 5;
+    VIDEO = 6;
+  }
+  optional Corpus corpus = 4 [default = UNIVERSAL];
+}

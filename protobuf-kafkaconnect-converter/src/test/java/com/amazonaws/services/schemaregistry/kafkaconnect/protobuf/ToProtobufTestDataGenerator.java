@@ -201,4 +201,5 @@ public class ToProtobufTestDataGenerator {
             .put("strWithDefault", new SchemaBuilder(Schema.Type.STRING).defaultValue("foobarxyz").build())
             .build();
     }
+
 }

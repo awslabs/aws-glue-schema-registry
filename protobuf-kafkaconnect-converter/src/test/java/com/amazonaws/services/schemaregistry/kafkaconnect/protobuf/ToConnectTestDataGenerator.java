@@ -1,7 +1,10 @@
 package com.amazonaws.services.schemaregistry.kafkaconnect.protobuf;
 
+
 import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax2.PrimitiveTypesSyntax2;
 import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax3.PrimitiveTypesSyntax3;
+import com.amazonaws.services.schemaregistry.kafkaconnect.tests.enumsyntax2.EnumTypeSyntax2;
+import com.amazonaws.services.schemaregistry.kafkaconnect.tests.enumsyntax3.EnumTypeSyntax3;
 import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Message;
@@ -67,6 +70,7 @@ public class ToConnectTestDataGenerator {
                 .clearStrOptional()
                 .setStrWithDefault("")
                 .build(),
+            EnumTypeSyntax3.EnumTest.newBuilder().setCorpus(EnumTypeSyntax3.EnumTest.Corpus.UNIVERSAL).build(),
             PrimitiveTypesSyntax2.PrimitiveTypes.newBuilder()
                 .setI8(2)
                 .setI8WithParam(0)
@@ -111,7 +115,8 @@ public class ToConnectTestDataGenerator {
                 .setStrWithParam("12351")
                 .clearStrOptional()
                 .setStrWithDefault("")
-                .build()
+                .build(),
+                EnumTypeSyntax2.EnumTest.newBuilder().setCorpus(EnumTypeSyntax2.EnumTest.Corpus.UNIVERSAL).build()
         );
     }
 
@@ -180,7 +185,7 @@ public class ToConnectTestDataGenerator {
             .put("str", "asdsai131")
             .put("strWithParam", "12351")
             .put("strOptional", null)
-            .put("strWithDefault", "");
+            .put("strWithDefault", "").put("corpus", "UNIVERSAL");
         return connectData;
     }
 
@@ -246,6 +251,7 @@ public class ToConnectTestDataGenerator {
             .put("strWithParam", new SchemaBuilder(Schema.Type.STRING).parameter(PROTOBUF_TAG, "13912").build())
             .put("strOptional", new SchemaBuilder(Schema.Type.STRING).parameter(PROTOBUF_TAG, "33").optional().build())
             .put("strWithDefault", new SchemaBuilder(Schema.Type.STRING).parameter(PROTOBUF_TAG, "34").build())
+                .put("corpus", new SchemaBuilder(Schema.Type.STRING).parameter(PROTOBUF_TAG, "35").build())
             .build();
     }
 }

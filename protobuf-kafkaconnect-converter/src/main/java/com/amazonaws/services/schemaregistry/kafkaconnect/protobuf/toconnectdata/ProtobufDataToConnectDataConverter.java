@@ -2,6 +2,7 @@ package com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.toconnectdat
 
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Descriptors;
+import com.google.protobuf.Enum;
 import com.google.protobuf.Message;
 import lombok.NonNull;
 import org.apache.kafka.connect.data.Field;
@@ -9,7 +10,11 @@ import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.errors.DataException;
 
+
 import java.util.List;
+import java.util.Map;
+
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_TYPE;
 
 /**
  * Converts Protobuf data to Connect data corresponding to the translated schema.
@@ -81,8 +86,17 @@ public class ProtobufDataToConnectDataConverter {
                     break;
                 }
                 case STRING: {
-                    String strValue = (String) value;
-                    data.put(connectField, strValue);
+                    if (value instanceof String) {
+                        String strValue = (String) value;
+                        data.put(connectField, strValue);
+                    } else if (value instanceof Enum || value instanceof Descriptors.EnumValueDescriptor) {
+                        String enumValue = value.toString();
+                        data.put(connectField, enumValue);
+                    } else {
+                        throw new DataException("Invalid class for string type, expecting String or "
+                                + "Enum but found " + value.getClass());
+                    }
+
                     break;
                 }
                 case BYTES: {
