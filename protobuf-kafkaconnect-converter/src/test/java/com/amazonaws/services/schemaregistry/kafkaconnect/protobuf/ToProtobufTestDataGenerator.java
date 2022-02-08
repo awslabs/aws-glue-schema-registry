@@ -201,4 +201,39 @@ public class ToProtobufTestDataGenerator {
             .put("strWithDefault", new SchemaBuilder(Schema.Type.STRING).defaultValue("foobarxyz").build())
             .build();
     }
+
+    public static Schema getEnumSchema(String name) {
+        return createConnectSchema(name, getEnumTypes(), ImmutableMap.of());
+    }
+
+    @SneakyThrows
+    public static DynamicMessage getProtobufEnumMessage() {
+        Descriptors.FileDescriptor fileDescriptor = getEnumFileDescriptor();
+        Descriptors.Descriptor descriptor = fileDescriptor.getMessageTypes().get(0);
+        DynamicMessage.Builder dynamicMessageBuilder = DynamicMessage.newBuilder(descriptor);
+        Function<String, Descriptors.FieldDescriptor> field = descriptor::findFieldByName;
+
+        return dynamicMessageBuilder
+                .setField(descriptor.findFieldByName("corpus"), "UNIVERSAL")
+                .build();
+    }
+
+    private static Descriptors.FileDescriptor getEnumFileDescriptor() {
+        return new ConnectSchemaToProtobufSchemaConverter().convert(getEnumSchema("enumProtobufSchema"));
+    }
+
+    public static Struct getEnumTypesData() {
+        Schema connectSchema = createConnectSchema("enumProtobufSchema", getEnumTypes(), ImmutableMap.of());
+        final Struct connectData = new Struct(connectSchema);
+
+        connectData
+                .put("corpus", "UNIVERSAL");
+        return connectData;
+    }
+
+    private static Map<String, Schema> getEnumTypes() {
+        return ImmutableMap.<String, Schema>builder()
+                .put("corpus", new SchemaBuilder(Schema.Type.STRING).build())
+                .build();
+    }
 }

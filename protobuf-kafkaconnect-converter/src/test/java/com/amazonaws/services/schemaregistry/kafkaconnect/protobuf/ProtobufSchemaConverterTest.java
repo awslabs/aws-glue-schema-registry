@@ -21,6 +21,9 @@ import java.util.Map;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToProtobufTestDataGenerator.getPrimitiveSchema;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToProtobufTestDataGenerator.getPrimitiveTypesData;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToProtobufTestDataGenerator.getProtobufPrimitiveMessage;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToProtobufTestDataGenerator.getEnumSchema;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToProtobufTestDataGenerator.getEnumTypesData;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToProtobufTestDataGenerator.getProtobufEnumMessage;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -64,9 +67,10 @@ public class ProtobufSchemaConverterTest {
         );
     }
 
-    private Schema getConnectSchema() {
-        return getPrimitiveSchema("ProtobufConverterTest");
+    private Schema getPrimitiveConnectSchema() {
+        return getPrimitiveSchema("PrimitiveProtobufConverterTest");
     }
+    private Schema getEnumConnectSchema() { return getEnumSchema("EnumProtobufConverterTest");}
 
     @Test
     public void initializesConverter_Successfully() {
@@ -80,10 +84,23 @@ public class ProtobufSchemaConverterTest {
 
         ArgumentCaptor<DynamicMessage> argumentCaptor = ArgumentCaptor.forClass(DynamicMessage.class);
         doReturn(new byte[] {}).when(serializer).serialize(eq(TOPIC_NAME), any());
-        protobufSchemaConverter.fromConnectData(TOPIC_NAME, getConnectSchema(), connectData);
+        protobufSchemaConverter.fromConnectData(TOPIC_NAME, getPrimitiveConnectSchema(), connectData);
         verify(serializer, times(1)).serialize(eq(TOPIC_NAME), argumentCaptor.capture());
 
         assertEquals(getProtobufPrimitiveMessage().toString(), argumentCaptor.getValue().toString());
+    }
+
+    @Test
+    public void fromConnectData_convertsConnectDataToGSRSerializedProtobufDataEnum() {
+        //TODO: Updated for ENUM
+        Object connectData = getEnumTypesData();
+
+        ArgumentCaptor<DynamicMessage> argumentCaptor = ArgumentCaptor.forClass(DynamicMessage.class);
+        doReturn(new byte[] {}).when(serializer).serialize(eq(TOPIC_NAME), any());
+        protobufSchemaConverter.fromConnectData(TOPIC_NAME, getEnumConnectSchema(), connectData);
+        verify(serializer, times(1)).serialize(eq(TOPIC_NAME), argumentCaptor.capture());
+
+        assertEquals(getProtobufEnumMessage().toString(), argumentCaptor.getValue().toString());
     }
 
     @Test
@@ -101,6 +118,24 @@ public class ProtobufSchemaConverterTest {
 
         SchemaAndValue expectedSchemaAndValue =
             new SchemaAndValue(ToConnectTestDataGenerator.getPrimitiveSchema(packageName), ToConnectTestDataGenerator.getPrimitiveTypesData(packageName));
+        assertEquals(expectedSchemaAndValue, schemaAndValue);
+    }
+
+    @Test
+    public void toConnectData_convertsProtobufSerializedDataToConnectDataEnum() {
+        //TODO: Updated for Enum
+        Message protobufMessage = ToConnectTestDataGenerator.getEnumProtobufMessages().get(0);
+        String packageName = protobufMessage.getDescriptorForType().getFile().getPackage();
+
+        final byte[] serializedData = ToConnectTestDataGenerator.getEnumProtobufMessages().get(0).toByteArray();
+
+        doReturn(protobufMessage).when(deserializer).deserialize(TOPIC_NAME, serializedData);
+
+        SchemaAndValue schemaAndValue =
+                protobufSchemaConverter.toConnectData(TOPIC_NAME, serializedData);
+
+        SchemaAndValue expectedSchemaAndValue =
+                new SchemaAndValue(ToConnectTestDataGenerator.getEnumSchema(packageName), ToConnectTestDataGenerator.getEnumTypesData(packageName));
         assertEquals(expectedSchemaAndValue, schemaAndValue);
     }
 }
