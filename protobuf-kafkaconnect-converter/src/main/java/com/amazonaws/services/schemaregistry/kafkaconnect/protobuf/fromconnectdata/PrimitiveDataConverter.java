@@ -13,7 +13,7 @@ import java.util.List;
 import static com.google.protobuf.Descriptors.FieldDescriptor.Type.FIXED32;
 import static com.google.protobuf.Descriptors.FieldDescriptor.Type.UINT32;
 
-public class PrimitiveDataConverter implements DataConverter {
+class PrimitiveDataConverter implements DataConverter {
     private static final List<Descriptors.FieldDescriptor.Type> INT32_METADATA_TYPES = Arrays.asList(UINT32, FIXED32);
 
     @Override
