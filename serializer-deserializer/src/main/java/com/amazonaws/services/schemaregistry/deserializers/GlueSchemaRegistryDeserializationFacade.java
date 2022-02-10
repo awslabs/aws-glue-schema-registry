@@ -107,6 +107,7 @@ public class GlueSchemaRegistryDeserializationFacade implements Closeable {
         this.cache = initializeCache();
     }
 
+
     /**
      * Method to override user-agent app name for the de-serializer.
      * This overrides the previously set value in GlueSchemaRegistryConfiguration.
@@ -169,7 +170,7 @@ public class GlueSchemaRegistryDeserializationFacade implements Closeable {
 
         Object result = deserializerFactory
                 .getInstance(DataFormat.valueOf(schema.getDataFormat()), this.glueSchemaRegistryConfiguration)
-                .deserialize(buffer, schema.getSchemaDefinition());
+                .deserialize(buffer, schema);
 
         return result;
     }

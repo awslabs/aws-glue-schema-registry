@@ -45,7 +45,7 @@ public class JsonDataWithSchema {
      *
      * @param schema  json schema string
      * @param payload json schema data
-     * @return JsonDataWithSchemaBuilder builder objcect
+     * @return JsonDataWithSchemaBuilder builder object
      */
     public static JsonDataWithSchemaBuilder builder(final String schema,
                                                     final String payload) {

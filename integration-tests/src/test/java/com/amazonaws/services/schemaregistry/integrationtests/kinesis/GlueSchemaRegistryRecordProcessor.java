@@ -73,7 +73,7 @@ public class GlueSchemaRegistryRecordProcessor implements ShardRecordProcessor {
                 LOGGER.info("Consumed Schema from GSR : {}", gsrSchema.getSchemaDefinition());
                 Object decodedRecord =
                         glueSchemaRegistryDeserializerFactory.getInstance(DataFormat.valueOf(gsrSchema.getDataFormat()), gsrConfig)
-                                .deserialize(ByteBuffer.wrap(bytes), gsrSchema.getSchemaDefinition());
+                                .deserialize(ByteBuffer.wrap(bytes), gsrSchema);
 
                 this.recordProcessor.consumedRecords.add(decodedRecord);
 

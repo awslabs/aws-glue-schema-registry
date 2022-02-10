@@ -14,6 +14,11 @@
  */
 package com.amazonaws.services.schemaregistry.integrationtests.kafka;
 
+import com.amazonaws.services.schemaregistry.deserializers.protobuf.ProtobufClassName;
+import com.amazonaws.services.schemaregistry.integrationtests.generators.AvroGenericBackwardCompatDataGenerator;
+import com.amazonaws.services.schemaregistry.integrationtests.generators.JsonSchemaGenericBackwardCompatDataGenerator;
+import com.amazonaws.services.schemaregistry.integrationtests.generators.ProtobufGenericBackwardDataGenerator;
+import com.amazonaws.services.schemaregistry.integrationtests.generators.ProtobufSpecificNoneCompatDataGenerator;
 import com.amazonaws.services.schemaregistry.integrationtests.generators.TestDataGenerator;
 import com.amazonaws.services.schemaregistry.integrationtests.generators.TestDataGeneratorFactory;
 import com.amazonaws.services.schemaregistry.integrationtests.generators.TestDataGeneratorType;
@@ -21,6 +26,9 @@ import com.amazonaws.services.schemaregistry.integrationtests.properties.GlueSch
 import com.amazonaws.services.schemaregistry.serializers.json.JsonDataWithSchema;
 import com.amazonaws.services.schemaregistry.utils.AWSSchemaRegistryConstants;
 import com.amazonaws.services.schemaregistry.utils.AvroRecordType;
+import com.amazonaws.services.schemaregistry.utils.ProtobufMessageType;
+import com.google.protobuf.DynamicMessage;
+import com.google.protobuf.Message;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -58,7 +66,7 @@ import java.util.stream.Stream;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -141,6 +149,12 @@ public class GlueSchemaRegistryKafkaIntegrationTest {
         return Pair.of(topic, kafkaHelper);
     }
 
+    private static Stream<Arguments> testProtobufDataProviderForPOJOs() {
+        return new ProtobufSpecificNoneCompatDataGenerator().createRecords()
+            .stream()
+            .map(Arguments::of);
+    }
+
     @Test
     public void testProduceConsumeWithoutGlueSchemaRegistry() throws Exception {
         log.info("Starting the test for producing and consuming messages via Kafka ...");
@@ -168,7 +182,7 @@ public class GlueSchemaRegistryKafkaIntegrationTest {
     @ParameterizedTest
     @MethodSource("testArgumentsProvider")
     public void testProduceConsumeWithSchemaRegistry(final DataFormat dataFormat,
-                                                     final AvroRecordType recordType,
+                                                     final AvroRecordType avroRecordType,
                                                      final Compatibility compatibility,
                                                      final AWSSchemaRegistryConstants.COMPRESSION compression) throws Exception {
         log.info("Starting the test for producing and consuming {} messages via Kafka ...", dataFormat.name());
@@ -177,7 +191,7 @@ public class GlueSchemaRegistryKafkaIntegrationTest {
         KafkaHelper kafkaHelper = kafkaHelperPair.getValue();
 
         TestDataGenerator testDataGenerator = testDataGeneratorFactory.getInstance(
-                TestDataGeneratorType.valueOf(dataFormat, recordType, compatibility));
+                TestDataGeneratorType.valueOf(dataFormat, avroRecordType, compatibility));
         List<?> records = testDataGenerator.createRecords();
 
         String schemaName = String.format("%s-%s-%s", topic, dataFormat.name(), compatibility);
@@ -195,12 +209,11 @@ public class GlueSchemaRegistryKafkaIntegrationTest {
         List<ProducerRecord<String, Object>> producerRecords =
                 kafkaHelper.doProduceRecords(producerProperties, records);
 
-        ConsumerProperties consumerProperties = ConsumerProperties.builder()
-                .topicName(topic)
-                .avroRecordType(recordType.name()) // Only required for the case of AVRO
-                .build();
+        ConsumerProperties.ConsumerPropertiesBuilder consumerPropertiesBuilder = ConsumerProperties.builder().topicName(topic);
+        consumerPropertiesBuilder.protobufMessageType(ProtobufMessageType.DYNAMIC_MESSAGE.getName());
+        consumerPropertiesBuilder.avroRecordType(avroRecordType.getName()); // Only required for the case of AVRO
 
-        List<ConsumerRecord<String, Object>> consumerRecords = kafkaHelper.doConsumeRecords(consumerProperties);
+        List<ConsumerRecord<String, Object>> consumerRecords = kafkaHelper.doConsumeRecords(consumerPropertiesBuilder.build());
 
         assertRecordsEquality(producerRecords, consumerRecords);
         log.info("Finished test for producing/consuming {} messages via Kafka.", dataFormat.name());
@@ -209,7 +222,7 @@ public class GlueSchemaRegistryKafkaIntegrationTest {
     @ParameterizedTest
     @MethodSource("testArgumentsProvider")
     public void testProduceConsumeWithSchemaRegistryMultiThreaded(final DataFormat dataFormat,
-                                                                  final AvroRecordType recordType,
+                                                                  final AvroRecordType avroRecordType,
                                                                   final Compatibility compatibility,
                                                                   final AWSSchemaRegistryConstants.COMPRESSION compression) throws Exception {
         log.info("Starting the test for producing and consuming {} messages via Kafka ...", dataFormat.name());
@@ -218,7 +231,7 @@ public class GlueSchemaRegistryKafkaIntegrationTest {
         KafkaHelper kafkaHelper = kafkaHelperPair.getValue();
 
         TestDataGenerator testDataGenerator = testDataGeneratorFactory.getInstance(
-                TestDataGeneratorType.valueOf(dataFormat, recordType, compatibility));
+                TestDataGeneratorType.valueOf(dataFormat, avroRecordType, compatibility));
         List<?> records = testDataGenerator.createRecords();
 
         String schemaName = String.format("%s-%s-%s", topic, dataFormat.name(), compatibility);
@@ -236,12 +249,11 @@ public class GlueSchemaRegistryKafkaIntegrationTest {
         List<ProducerRecord<String, Object>> producerRecords =
                 kafkaHelper.doProduceRecordsMultithreaded(producerProperties, records);
 
-        ConsumerProperties consumerProperties = ConsumerProperties.builder()
-                .topicName(topic)
-                .avroRecordType(recordType.getName()) // Only required for the case of AVRO
-                .build();
+        ConsumerProperties.ConsumerPropertiesBuilder consumerPropertiesBuilder = ConsumerProperties.builder().topicName(topic);
+        consumerPropertiesBuilder.protobufMessageType(ProtobufMessageType.DYNAMIC_MESSAGE.getName());
+        consumerPropertiesBuilder.avroRecordType(avroRecordType.getName()); // Only required for the case of AVRO
 
-        List<ConsumerRecord<String, Object>> consumerRecords = kafkaHelper.doConsumeRecords(consumerProperties);
+        List<ConsumerRecord<String, Object>> consumerRecords = kafkaHelper.doConsumeRecords(consumerPropertiesBuilder.build());
 
         assertEquals(producerRecords.size(), consumerRecords.size());
         log.info("Finished test for producing/consuming {} messages via Kafka.", dataFormat.name());
@@ -259,7 +271,7 @@ public class GlueSchemaRegistryKafkaIntegrationTest {
 
         List<ProducerRecord<String, Object>> producerRecords = new ArrayList<>();
 
-        for (DataFormat dataFormat : DataFormat.knownValues()) {
+        for (DataFormat dataFormat : Arrays.asList(DataFormat.AVRO, DataFormat.JSON, DataFormat.PROTOBUF)) {
             log.info("Starting the test for producing {} messages via Kafka ...", dataFormat.name());
             TestDataGenerator testDataGenerator = testDataGeneratorFactory.getInstance(
                     TestDataGeneratorType.valueOf(dataFormat, recordType, compatibility));
@@ -362,7 +374,7 @@ public class GlueSchemaRegistryKafkaIntegrationTest {
                 .outputTopic(outputTopic)
                 .schemaName(schemaName)
                 .dataFormat(dataFormat.name())
-                .recordType(recordType.name())
+                .recordType(getRecordType(dataFormat, recordType))
                 .compatibilityType(compatibility.name())
                 .compressionType(AWSSchemaRegistryConstants.COMPRESSION.ZLIB.name())
                 .autoRegistrationEnabled("true")
@@ -388,6 +400,43 @@ public class GlueSchemaRegistryKafkaIntegrationTest {
                  dataFormat.name());
     }
 
+
+    //This test doesn't fit into the existing test framework. We have to refactor it a lot make this test case fit.
+    @ParameterizedTest
+    @MethodSource("testProtobufDataProviderForPOJOs")
+    public void testKafkaDeserializeProtobufForPOJODeserialization(final Message message) throws Exception {
+        final Pair<String, KafkaHelper> kafkaHelperPair = createAndGetKafkaHelper(TOPIC_NAME_PREFIX);
+        String topic = kafkaHelperPair.getKey();
+        KafkaHelper kafkaHelper = kafkaHelperPair.getValue();
+
+        //Schema name needs to be different for every test case.
+        String schemaName = ProtobufClassName.normalize(message.getDescriptorForType().getFile().getFullName());
+        schemasToCleanUp.add(schemaName);
+
+        ProducerProperties producerProperties = ProducerProperties.builder()
+            .topicName(topic)
+            .schemaName(schemaName)
+            .dataFormat(DataFormat.PROTOBUF.toString())
+            .compatibilityType(Compatibility.NONE.name())
+            .compressionType(AWSSchemaRegistryConstants.COMPRESSION.ZLIB.name())
+            .autoRegistrationEnabled("true")
+            .build();
+
+        List<Message> messages = Collections.singletonList(message);
+        List<ProducerRecord<String, Object>> producerRecords =
+            kafkaHelper.doProduceRecords(producerProperties, messages);
+
+        ConsumerProperties consumerProperties = ConsumerProperties.builder()
+            .topicName(topic)
+            .protobufMessageType(ProtobufMessageType.POJO.getName())
+            .build();
+
+        List<ConsumerRecord<String, Object>> consumerRecords = kafkaHelper.doConsumeRecords(consumerProperties);
+
+        assertRecordsEquality(producerRecords, consumerRecords);
+        log.info("Finished test for producing/consuming {} POJO messages via Kafka.", DataFormat.PROTOBUF);
+    }
+
     private <T> void assertRecordsEquality(List<ProducerRecord<String, T>> producerRecords,
                                            List<ConsumerRecord<String, T>> consumerRecords) {
         assertThat(producerRecords.size(), is(equalTo(consumerRecords.size())));
@@ -395,8 +444,12 @@ public class GlueSchemaRegistryKafkaIntegrationTest {
                 .collect(Collectors.toMap(ProducerRecord::key, ProducerRecord::value));
 
         for (ConsumerRecord<String, T> consumerRecord : consumerRecords) {
-            assertThat(producerRecordsMap, hasEntry(consumerRecord.key(), consumerRecord.value()));
-            assertThat(consumerRecord.value(), is(equalTo(producerRecordsMap.get(consumerRecord.key()))));
+            assertThat(producerRecordsMap, hasKey(consumerRecord.key()));
+            if (consumerRecord.value() instanceof DynamicMessage) {
+                assertDynamicRecords(consumerRecord, producerRecordsMap);
+            } else {
+                assertThat(consumerRecord.value(), is(equalTo(producerRecordsMap.get(consumerRecord.key()))));
+            }
         }
     }
 
@@ -407,26 +460,50 @@ public class GlueSchemaRegistryKafkaIntegrationTest {
         switch (dataFormat) {
             case AVRO:
                 producerRecordsMap = producerRecords.stream()
-                        .filter(record -> !"11".equals(record.key()))
-                        .filter(record -> !"covid-19".equals(((GenericRecord) record.value()).get("f1")))
+                        .filter(producerRecord -> AvroGenericBackwardCompatDataGenerator.filterRecords(
+                            (GenericRecord) producerRecord.value()))
                         .collect(Collectors.toMap(ProducerRecord::key, ProducerRecord::value));
                 break;
             case JSON:
                 producerRecordsMap = producerRecords.stream()
-                        .filter(record -> !String.valueOf(((JsonDataWithSchema) record.value()).getPayload())
-                                .contains("Stranger"))
-                        .filter(record -> !String.valueOf(((JsonDataWithSchema) record.value()).getPayload())
-                                .contains("911"))
+                        .filter(record -> JsonSchemaGenericBackwardCompatDataGenerator.filterRecords((JsonDataWithSchema) record.value()))
                         .collect(Collectors.toMap(ProducerRecord::key, ProducerRecord::value));
+                break;
+            case PROTOBUF:
+                producerRecordsMap = producerRecords
+                    .stream()
+                    .filter(producerRecord -> ProtobufGenericBackwardDataGenerator.filterRecords(
+                        (Message) producerRecord.value()))
+                    .collect(Collectors.toMap(ProducerRecord::key, ProducerRecord::value));
                 break;
             default:
                 throw new RuntimeException("Data format is not supported");
         }
 
-        assertThat(producerRecords.size() - 2, is(equalTo(consumerRecords.size())));
+        assertThat(producerRecordsMap.size(), is(equalTo(consumerRecords.size())));
         for (ConsumerRecord<String, T> consumerRecord : consumerRecords) {
-            assertThat(producerRecordsMap, hasEntry(consumerRecord.key(), consumerRecord.value()));
-            assertThat(consumerRecord.value(), is(equalTo(producerRecordsMap.get(consumerRecord.key()))));
+            assertThat(producerRecordsMap, hasKey(consumerRecord.key()));
+            if (consumerRecord.value() instanceof DynamicMessage) {
+                assertDynamicRecords(consumerRecord, producerRecordsMap);
+            } else {
+                assertThat(consumerRecord.value(), is(equalTo(producerRecordsMap.get(consumerRecord.key()))));
+            }
         }
+    }
+
+    private <T> void assertDynamicRecords(ConsumerRecord<String,T> consumerRecord, Map<String,T> producerRecordsMap) {
+        DynamicMessage consumerDynamicMessage = (DynamicMessage) consumerRecord.value();
+        Message producerDynamicMessage = (Message) producerRecordsMap.get(consumerRecord.key());
+        //In case of DynamicMessage de-serialization, we cannot equate them to POJO records,
+        //so we check for their byte equality.
+        assertThat(consumerDynamicMessage.toByteArray(), is(producerDynamicMessage.toByteArray()));
+    }
+
+    private String getRecordType(DataFormat dataFormat, AvroRecordType avroRecordType) {
+        if (dataFormat.equals(DataFormat.PROTOBUF)) {
+            return ProtobufMessageType.DYNAMIC_MESSAGE.getName();
+        }
+
+        return avroRecordType.getName();
     }
 }

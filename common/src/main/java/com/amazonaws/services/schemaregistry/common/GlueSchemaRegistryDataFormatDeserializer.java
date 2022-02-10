@@ -30,5 +30,5 @@ public interface GlueSchemaRegistryDataFormatDeserializer {
      * @param schema   schema for the data
      * @return de-serialized object
      */
-    Object deserialize(@NonNull ByteBuffer data, @NonNull String schema);
+    Object deserialize(@NonNull ByteBuffer data, @NonNull Schema schema);
 }

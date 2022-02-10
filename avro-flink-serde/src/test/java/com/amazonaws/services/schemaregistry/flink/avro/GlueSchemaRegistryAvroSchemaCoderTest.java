@@ -15,8 +15,8 @@
 
 package com.amazonaws.services.schemaregistry.flink.avro;
 
-import com.amazonaws.services.schemaregistry.caching.GlueSchemaRegistrySerializerCache;
 import com.amazonaws.services.schemaregistry.common.AWSSchemaRegistryClient;
+import com.amazonaws.services.schemaregistry.common.SchemaByDefinitionFetcher;
 import com.amazonaws.services.schemaregistry.common.configs.GlueSchemaRegistryConfiguration;
 import com.amazonaws.services.schemaregistry.exception.AWSSchemaRegistryException;
 import com.amazonaws.services.schemaregistry.serializers.GlueSchemaRegistrySerializationFacade;
@@ -62,10 +62,9 @@ public class GlueSchemaRegistryAvroSchemaCoderTest {
     @Mock
     private AwsCredentialsProvider mockCred;
     @Mock
-    private GlueSchemaRegistryConfiguration mockConfigs;
-    @Mock
     private GlueSchemaRegistryInputStreamDeserializer mockInputStreamDeserializer;
 
+    private GlueSchemaRegistryConfiguration glueSchemaRegistryConfiguration;
     private static Schema userSchema;
     private static User userDefinedPojo;
     private static Map<String, Object> configs = new HashMap<>();
@@ -89,6 +88,7 @@ public class GlueSchemaRegistryAvroSchemaCoderTest {
         configs.put(AWSSchemaRegistryConstants.SCHEMA_AUTO_REGISTRATION_SETTING, true);
         configs.put(AWSSchemaRegistryConstants.SCHEMA_NAME, schemaName);
         configs.put(AWSSchemaRegistryConstants.METADATA, metadata);
+        glueSchemaRegistryConfiguration = new GlueSchemaRegistryConfiguration(configs);
 
         Schema.Parser parser = new Schema.Parser();
         userSchema = parser.parse(new File(AVRO_USER_SCHEMA_FILE));
@@ -127,14 +127,13 @@ public class GlueSchemaRegistryAvroSchemaCoderTest {
     public void testWriteSchema_withValidParams_succeeds(AWSSchemaRegistryConstants.COMPRESSION compressionType) throws IOException {
         configs.put(AWSSchemaRegistryConstants.COMPRESSION_TYPE, compressionType.name());
 
-        when(mockClient.getORRegisterSchemaVersionId(anyString(), anyString(), anyString(), anyMap())).thenReturn(USER_SCHEMA_VERSION_ID);
+        when(mockClient.getSchemaVersionIdByDefinition(anyString(), anyString(), anyString())).thenReturn(USER_SCHEMA_VERSION_ID);
         GlueSchemaRegistrySerializationFacade glueSchemaRegistrySerializationFacade = GlueSchemaRegistrySerializationFacade
                 .builder()
-                .schemaRegistryClient(mockClient)
+                .schemaByDefinitionFetcher(new SchemaByDefinitionFetcher(mockClient, glueSchemaRegistryConfiguration))
                 .credentialProvider(mockCred)
                 .glueSchemaRegistryConfiguration(new GlueSchemaRegistryConfiguration(configs))
                 .build();
-        glueSchemaRegistrySerializationFacade.setCache(invalidateAndGetCache());
         GlueSchemaRegistrySerializationFacade spySerializationFacade = spy(glueSchemaRegistrySerializationFacade);
         doCallRealMethod().when(spySerializationFacade).encode(anyString(), any(com.amazonaws.services.schemaregistry.common.Schema.class), any());
         GlueSchemaRegistryOutputStreamSerializer glueSchemaRegistryOutputStreamSerializer =
@@ -165,17 +164,17 @@ public class GlueSchemaRegistryAvroSchemaCoderTest {
                 .message(AWSSchemaRegistryConstants.SCHEMA_NOT_FOUND_MSG)
                 .build();
         AWSSchemaRegistryException awsSchemaRegistryException = new AWSSchemaRegistryException(entityNotFoundException);
-        when(mockClient.getORRegisterSchemaVersionId(anyString(),anyString(), anyString(), anyMap())).thenCallRealMethod();
+        //Override config to remove auto-registration
+        glueSchemaRegistryConfiguration.setSchemaAutoRegistrationEnabled(false);
         when(mockClient.getSchemaVersionIdByDefinition(anyString(), anyString(), anyString())).thenThrow(awsSchemaRegistryException);
         configureAWSSchemaRegistryClientWithSerdeConfig(mockClient, new GlueSchemaRegistryConfiguration(configs));
 
         GlueSchemaRegistrySerializationFacade glueSchemaRegistrySerializationFacade = GlueSchemaRegistrySerializationFacade
                 .builder()
-                .schemaRegistryClient(mockClient)
+                .schemaByDefinitionFetcher(new SchemaByDefinitionFetcher(mockClient, glueSchemaRegistryConfiguration))
                 .credentialProvider(mockCred)
                 .glueSchemaRegistryConfiguration(new GlueSchemaRegistryConfiguration(configs))
                 .build();
-        glueSchemaRegistrySerializationFacade.setCache(invalidateAndGetCache());
 
         GlueSchemaRegistryOutputStreamSerializer glueSchemaRegistryOutputStreamSerializer =
                 new GlueSchemaRegistryOutputStreamSerializer(testTopic, configs, glueSchemaRegistrySerializationFacade);
@@ -231,11 +230,5 @@ public class GlueSchemaRegistryAvroSchemaCoderTest {
         long leastSigBits = buffer.getLong();
         return new UUID(mostSigBits, leastSigBits);
     }
-
-    private GlueSchemaRegistrySerializerCache invalidateAndGetCache() {
-        GlueSchemaRegistrySerializerCache serializerCache =
-                GlueSchemaRegistrySerializerCache.getInstance(mockConfigs);
-        serializerCache.flushCache();
-        return serializerCache;
-    }
 }
+

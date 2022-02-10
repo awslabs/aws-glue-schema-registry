@@ -39,6 +39,8 @@ import com.amazonaws.services.schemaregistry.serializers.GlueSchemaRegistrySeria
 import com.amazonaws.services.schemaregistry.serializers.GlueSchemaRegistrySerializerImpl;
 import com.amazonaws.services.schemaregistry.utils.AWSSchemaRegistryConstants;
 import com.amazonaws.services.schemaregistry.utils.AvroRecordType;
+import com.amazonaws.services.schemaregistry.utils.ProtobufMessageType;
+import com.google.protobuf.Message;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
@@ -94,6 +96,7 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -170,12 +173,16 @@ public class GlueSchemaRegistryKinesisIntegrationTest {
 
     private static GlueSchemaRegistryConfiguration getSchemaRegistryConfiguration(Compatibility compatibility,
                                                                                   AWSSchemaRegistryConstants.COMPRESSION compression,
-                                                                                  AvroRecordType avroRecordType) {
+                                                                                  AvroRecordType avroRecordType, DataFormat dataFormat) {
         GlueSchemaRegistryConfiguration configs = new GlueSchemaRegistryConfiguration(REGION);
         configs.setEndPoint(SCHEMA_REGISTRY_ENDPOINT_OVERRIDE);
         configs.setSchemaAutoRegistrationEnabled(true);
         configs.setMetadata(getMetadata());
-        configs.setAvroRecordType(avroRecordType);
+        if (dataFormat.equals(DataFormat.PROTOBUF)) {
+            configs.setProtobufMessageType(ProtobufMessageType.DYNAMIC_MESSAGE);
+        } else {
+            configs.setAvroRecordType(avroRecordType);
+        }
         configs.setCompatibilitySetting(compatibility);
         configs.setCompressionType(compression);
         return configs;
@@ -295,7 +302,7 @@ public class GlueSchemaRegistryKinesisIntegrationTest {
         List<?> producerRecords = testDataGenerator.createRecords();
 
         GlueSchemaRegistryConfiguration gsrConfig =
-                getSchemaRegistryConfiguration(compatibility, compression, recordType);
+                getSchemaRegistryConfiguration(compatibility, compression, recordType, dataFormat);
 
         String shardId =
                 produceRecordsWithKinesisSDK(streamName, producerRecords, dataFormat, compatibility, gsrConfig);
@@ -304,7 +311,7 @@ public class GlueSchemaRegistryKinesisIntegrationTest {
 
         assertNotEquals(0, consumerRecords.size());
         assertEquals(producerRecords.size(), consumerRecords.size());
-        assertArrayEquals(producerRecords.toArray(), consumerRecords.toArray());
+        assertKinesisRecords(dataFormat, producerRecords.toArray(), consumerRecords.toArray());
 
         LOGGER.info("Finished test for producing/consuming messages on Kinesis with Glue Schema Registry");
     }
@@ -323,7 +330,7 @@ public class GlueSchemaRegistryKinesisIntegrationTest {
         List<?> producerRecords = testDataGenerator.createRecords();
 
         GlueSchemaRegistryConfiguration gsrConfig =
-                getSchemaRegistryConfiguration(compatibility, compression, recordType);
+                getSchemaRegistryConfiguration(compatibility, compression, recordType, dataFormat);
 
         RecordProcessor recordProcessor = new RecordProcessor();
         Scheduler scheduler = startConsumingWithKCL(gsrConfig, recordProcessor);
@@ -335,7 +342,7 @@ public class GlueSchemaRegistryKinesisIntegrationTest {
 
         assertTrue(recordProcessor.creationSuccess);
         assertTrue(recordProcessor.consumptionSuccess);
-        assertEquals(producerRecords.size(), recordProcessor.consumedRecords.size());
+        assertKinesisRecords(dataFormat, producerRecords.toArray(), recordProcessor.consumedRecords.toArray());
 
         LOGGER.info("Finished test for producing/consuming messages on Kinesis Producer Library with Glue Schema "
                     + "Registry");
@@ -354,7 +361,7 @@ public class GlueSchemaRegistryKinesisIntegrationTest {
         List<?> producerRecords = Collections.singletonList(testDataGenerator.createRecords().get(0));
 
         GlueSchemaRegistryConfiguration gsrConfig =
-            getSchemaRegistryConfiguration(compatibility, compression, recordType);
+            getSchemaRegistryConfiguration(compatibility, compression, recordType, dataFormat);
 
         RecordProcessor recordProcessor = new RecordProcessor();
         Scheduler scheduler = startConsumingWithKCL(gsrConfig, recordProcessor);
@@ -444,7 +451,7 @@ public class GlueSchemaRegistryKinesisIntegrationTest {
             Schema gsrSchema = glueSchemaRegistryDeserializer.getSchema(consumedBytes);
             LOGGER.info("Consumed Schema from GSR : {}", gsrSchema.getSchemaDefinition());
             Object decodedRecord = gsrDataFormatDeserializer.deserialize(ByteBuffer.wrap(consumedBytes),
-                                                                         gsrSchema.getSchemaDefinition());
+                                                                         gsrSchema);
             consumerRecords.add(decodedRecord);
         }
 
@@ -528,5 +535,19 @@ public class GlueSchemaRegistryKinesisIntegrationTest {
         TimeUnit.SECONDS.sleep(KCL_SCHEDULER_START_UP_WAIT_TIME_SECONDS);
 
         return scheduler;
+    }
+
+    private void assertKinesisRecords(DataFormat dataFormat, Object[] expected, Object[] actual) {
+        assertEquals(expected.length, actual.length);
+
+        if (dataFormat.equals(DataFormat.PROTOBUF)) {
+            Function<Object, byte[]> messageToBytes = object -> ((Message) object).toByteArray();
+            Object [] expectedByteArray = Arrays.stream(expected).map(messageToBytes).toArray();
+            Object [] actualBytesArray = Arrays.stream(actual).map(messageToBytes).toArray();
+
+            assertArrayEquals(expectedByteArray, actualBytesArray);
+        } else {
+            assertArrayEquals(expected, actual);
+        }
     }
 }

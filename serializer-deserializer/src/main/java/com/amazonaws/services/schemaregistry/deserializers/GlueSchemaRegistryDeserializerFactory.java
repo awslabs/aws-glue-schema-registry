@@ -18,6 +18,7 @@ import com.amazonaws.services.schemaregistry.common.GlueSchemaRegistryDataFormat
 import com.amazonaws.services.schemaregistry.common.configs.GlueSchemaRegistryConfiguration;
 import com.amazonaws.services.schemaregistry.deserializers.avro.AvroDeserializer;
 import com.amazonaws.services.schemaregistry.deserializers.json.JsonDeserializer;
+import com.amazonaws.services.schemaregistry.deserializers.protobuf.ProtobufDeserializer;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.services.glue.model.DataFormat;
@@ -59,6 +60,12 @@ public class GlueSchemaRegistryDeserializerFactory {
                         .configs(configs)
                         .build());
                 log.debug("Returning JSON de-serializer instance from GlueSchemaRegistryDeserializerFactory");
+                return this.deserializerMap.get(dataFormat);
+            case PROTOBUF:
+                this.deserializerMap.computeIfAbsent(dataFormat, key -> ProtobufDeserializer.builder()
+                        .configs(configs)
+                        .build());
+                log.debug("Returning Protobuf de-serializer instance from GlueSchemaRegistryDeserializerFactory");
                 return this.deserializerMap.get(dataFormat);
             default:
                 String message = String.format("Data Format is not supported %s", dataFormat);

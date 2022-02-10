@@ -76,4 +76,8 @@ public class AvroGenericBackwardCompatDataGenerator implements TestDataGenerator
 
         return data;
     }
+
+    public static boolean filterRecords(GenericRecord genericRecord) {
+        return !"11".equals(genericRecord.get("id")) || !"covid-19".equals(genericRecord.get("f1"));
+    }
 }

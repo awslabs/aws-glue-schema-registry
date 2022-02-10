@@ -89,6 +89,10 @@ public final class AWSSchemaRegistryConstants {
      */
     public static final String AVRO_RECORD_TYPE = "avroRecordType";
     /**
+     * Protobuf Message type.
+     */
+    public static final String PROTOBUF_MESSAGE_TYPE = "protobufMessageType";
+    /**
      * Registry Name.
      */
     public static final String REGISTRY_NAME = "registry.name";
