@@ -31,7 +31,7 @@ import static com.amazonaws.services.schemaregistry.serializers.protobuf.Protobu
 import static com.amazonaws.services.schemaregistry.serializers.protobuf.ProtobufGenerator.DOUBLE_PROTO_WITH_TRAILING_HASH_MESSAGE;
 import static com.amazonaws.services.schemaregistry.serializers.protobuf.ProtobufGenerator.NESTING_MESSAGE_PROTO2;
 import static com.amazonaws.services.schemaregistry.serializers.protobuf.ProtobufGenerator.NESTING_MESSAGE_PROTO3;
-import static com.amazonaws.services.schemaregistry.serializers.protobuf.ProtobufGenerator.SPECIAL_CHARS_MESSAGE;
+import static com.amazonaws.services.schemaregistry.serializers.protobuf.ProtobufGenerator.SNAKE_CASE_MESSAGE;
 import static com.amazonaws.services.schemaregistry.serializers.protobuf.ProtobufGenerator.UNICODE_MESSAGE;
 import static com.amazonaws.services.schemaregistry.serializers.protobuf.ProtobufGenerator.createDynamicProtobufRecord;
 import static com.amazonaws.services.schemaregistry.serializers.protobuf.ProtobufTestCaseReader.getTestCaseByName;
@@ -83,13 +83,10 @@ public class ProtobufDeserializerTest {
                 BASIC_SYNTAX2_MESSAGE, getTestCaseByName("basicSyntax2.proto").getRawSchema(), "basicSyntax2"
             ),
             Arguments.of(
-                DOUBLE_PROTO_WITH_TRAILING_HASH_MESSAGE, getTestCaseByName(".protodevelasl.proto.proto.protodevel#$---$#$#.bar.3#.proto").getRawSchema(), ".protodevelasl.proto.proto.protodevel#$---$#$#.bar.3#"
+                DOUBLE_PROTO_WITH_TRAILING_HASH_MESSAGE, getTestCaseByName(".protodevelasl.proto.proto.protodevel$---$$.bar.3.proto").getRawSchema(), ".protodevelasl.proto.proto.protodevel$---$$.bar.3"
             ),
             Arguments.of(
                 UNICODE_MESSAGE, getTestCaseByName("◉◉◉unicode⏩.proto").getRawSchema(), "◉◉◉unicode⏩.proto"
-            ),
-            Arguments.of(
-                SPECIAL_CHARS_MESSAGE, getTestCaseByName("*&()^#!`~;:\"'{[}}<,>>.special?.proto").getRawSchema(), "*&()^#!`~;:\"'{[}}<,>>.special?"
             ),
             Arguments.of(
                 DOLLAR_SYNTAX_3_MESSAGE, getTestCaseByName("foo$$$1.proto").getRawSchema(), "foo$$$1.proto"
@@ -115,7 +112,7 @@ public class ProtobufDeserializerTest {
                 NESTING_MESSAGE_PROTO3, getTestCaseByName("ComplexNestingSyntax3.proto").getRawSchema(), "ComplexNestingSyntax3.proto"
             ),
             Arguments.of(
-                SPECIAL_CHARS_MESSAGE, getTestCaseByName("*&()^#!`~;:\"'{[}}<,>>.special?.proto").getRawSchema(), "*&()^#!`~;:\"'{[}}<,>>.special?"
+                SNAKE_CASE_MESSAGE, getTestCaseByName("snake_case_file.proto").getRawSchema(), "snake_case_file.proto"
             ),
             Arguments.of(
                 NESTING_MESSAGE_PROTO3, getTestCaseByName("ComplexNestingSyntax3.proto").getRawSchema(), "ComplexNestingSyntax3.proto"

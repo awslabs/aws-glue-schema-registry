@@ -6,6 +6,7 @@ import com.amazonaws.services.schemaregistry.tests.protobuf.syntax2.Basic;
 import com.amazonaws.services.schemaregistry.tests.protobuf.syntax2.ComplexNestingSyntax2;
 import com.amazonaws.services.schemaregistry.tests.protobuf.syntax2.alltypes.AllTypesSyntax2;
 import com.amazonaws.services.schemaregistry.tests.protobuf.syntax2.basic.BasicSyntax2;
+import com.amazonaws.services.schemaregistry.tests.protobuf.syntax2.basic.ProtodevelaslProtoProtoProtodevelBar3;
 import com.amazonaws.services.schemaregistry.tests.protobuf.syntax2.snake_case.SnakeCaseFile;
 import com.amazonaws.services.schemaregistry.tests.protobuf.syntax3.ComplexNestingSyntax3;
 import com.amazonaws.services.schemaregistry.tests.protobuf.syntax3.alltypes.AllTypes;
@@ -13,11 +14,9 @@ import com.amazonaws.services.schemaregistry.tests.protobuf.syntax3.alltypes.AnE
 import com.amazonaws.services.schemaregistry.tests.protobuf.syntax3.alltypes.AnotherTopLevelMessage;
 import com.amazonaws.services.schemaregistry.tests.protobuf.syntax3.basic.ConflictingNameOuterClass;
 import com.amazonaws.services.schemaregistry.tests.protobuf.syntax3.basic.NestedConflictingClassNameOuterClass;
-import com.amazonaws.services.schemaregistry.tests.protobuf.syntax2.basic.ProtodevelaslProtoProtoProtodevelBar3_;
 import com.amazonaws.services.schemaregistry.tests.protobuf.syntax3.basic.Basicsyntax3;
 import com.amazonaws.services.schemaregistry.tests.protobuf.syntax3.basic.Foo1;
 import com.amazonaws.services.schemaregistry.tests.protobuf.syntax3.basic.HyphenAtedProtoFile;
-import com.amazonaws.services.schemaregistry.tests.protobuf.syntax3.basic.Special;
 import com.amazonaws.services.schemaregistry.tests.protobuf.syntax3.basic.Unicode;
 import com.amazonaws.services.schemaregistry.tests.protobuf.syntax3.multiplefiles.A;
 import com.amazonaws.services.schemaregistry.tests.protobuf.syntax3.snake_case.AnotherSnakeCaseProtoFile;
@@ -157,11 +156,8 @@ public class ProtobufGenerator {
     public static final HyphenAtedProtoFile.hyphenated HYPHEN_ATED_PROTO_FILE_MESSAGE =
         HyphenAtedProtoFile.hyphenated.newBuilder().build();
 
-    public static final ProtodevelaslProtoProtoProtodevelBar3_.bar DOUBLE_PROTO_WITH_TRAILING_HASH_MESSAGE =
-        ProtodevelaslProtoProtoProtodevelBar3_.bar.newBuilder().build();
-
-    public static final Special.specialChars SPECIAL_CHARS_MESSAGE =
-        Special.specialChars.newBuilder().build();
+    public static final ProtodevelaslProtoProtoProtodevelBar3.bar DOUBLE_PROTO_WITH_TRAILING_HASH_MESSAGE =
+        ProtodevelaslProtoProtoProtodevelBar3.bar.newBuilder().build();
 
     public static final Unicode.uni UNICODE_MESSAGE =
         Unicode.uni.newBuilder().build();

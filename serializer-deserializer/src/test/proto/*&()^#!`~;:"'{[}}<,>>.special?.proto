@@ -1,7 +1,0 @@
-syntax = "proto3";
-
-package com.amazonaws.services.schemaregistry.tests.protobuf.syntax3.basic;
-
-message specialChars {
-  int32 specialChar = 1;
-}

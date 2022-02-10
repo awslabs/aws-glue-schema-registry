@@ -30,10 +30,7 @@
       "fileName": "Another_snakeCase_ProtoFile.proto"
     },
     {
-      "fileName": ".protodevelasl.proto.proto.protodevel#$---$#$#.bar.3#.proto"
-    },
-    {
-      "fileName": "*&()^#!`~;:\"'{[}}<,>>.special?.proto"
+      "fileName": ".protodevelasl.proto.proto.protodevel$---$$.bar.3.proto"
     },
     {
     "fileName": "ConflictingName.proto"
@@ -45,7 +42,7 @@
     "fileName": "hyphen-ated-proto_file-.proto"
     },
     {
-    "fileName": "NestedConflicting&#$ClassName.proto"
+    "fileName": "NestedConflicting#ClassName.proto"
     },
     {
     "fileName": "◉◉◉unicode⏩.proto"

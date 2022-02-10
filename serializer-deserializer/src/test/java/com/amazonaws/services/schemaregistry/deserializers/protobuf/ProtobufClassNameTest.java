@@ -4,6 +4,7 @@ import Foo.Contact;
 import com.amazonaws.services.schemaregistry.tests.protobuf.syntax2.Basic;
 import com.amazonaws.services.schemaregistry.tests.protobuf.syntax2.ComplexNestingSyntax2;
 import com.amazonaws.services.schemaregistry.tests.protobuf.syntax2.basic.BasicSyntax2;
+import com.amazonaws.services.schemaregistry.tests.protobuf.syntax2.basic.ProtodevelaslProtoProtoProtodevelBar3;
 import com.amazonaws.services.schemaregistry.tests.protobuf.syntax2.snake_case.SnakeCaseFile;
 import com.amazonaws.services.schemaregistry.tests.protobuf.syntax3.ComplexNestingSyntax3;
 import com.amazonaws.services.schemaregistry.tests.protobuf.syntax3.basic.Basicsyntax3;
@@ -11,8 +12,6 @@ import com.amazonaws.services.schemaregistry.tests.protobuf.syntax3.basic.Confli
 import com.amazonaws.services.schemaregistry.tests.protobuf.syntax3.basic.Foo1;
 import com.amazonaws.services.schemaregistry.tests.protobuf.syntax3.basic.HyphenAtedProtoFile;
 import com.amazonaws.services.schemaregistry.tests.protobuf.syntax3.basic.NestedConflictingClassNameOuterClass;
-import com.amazonaws.services.schemaregistry.tests.protobuf.syntax2.basic.ProtodevelaslProtoProtoProtodevelBar3_;
-import com.amazonaws.services.schemaregistry.tests.protobuf.syntax3.basic.Special;
 import com.amazonaws.services.schemaregistry.tests.protobuf.syntax3.basic.Unicode;
 import com.amazonaws.services.schemaregistry.tests.protobuf.syntax3.snake_case.AnotherSnakeCaseProtoFile;
 import com.google.protobuf.Descriptors;
@@ -40,7 +39,6 @@ import static com.amazonaws.services.schemaregistry.serializers.protobuf.Protobu
 import static com.amazonaws.services.schemaregistry.serializers.protobuf.ProtobufGenerator.NESTING_MESSAGE_PROTO3;
 import static com.amazonaws.services.schemaregistry.serializers.protobuf.ProtobufGenerator.NESTING_MESSAGE_PROTO3_MULTIPLE_FILES;
 import static com.amazonaws.services.schemaregistry.serializers.protobuf.ProtobufGenerator.SNAKE_CASE_MESSAGE;
-import static com.amazonaws.services.schemaregistry.serializers.protobuf.ProtobufGenerator.SPECIAL_CHARS_MESSAGE;
 import static com.amazonaws.services.schemaregistry.serializers.protobuf.ProtobufGenerator.UNICODE_MESSAGE;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -78,8 +76,7 @@ public class ProtobufClassNameTest {
             Arguments.of(ANOTHER_SNAKE_CASE_MESSAGE, AnotherSnakeCaseProtoFile.another_SnakeCase_.class),
             Arguments.of(DOLLAR_SYNTAX_3_MESSAGE, Foo1.Dollar.class),
             Arguments.of(HYPHEN_ATED_PROTO_FILE_MESSAGE, HyphenAtedProtoFile.hyphenated.class),
-            Arguments.of(DOUBLE_PROTO_WITH_TRAILING_HASH_MESSAGE, ProtodevelaslProtoProtoProtodevelBar3_.bar.class),
-            Arguments.of(SPECIAL_CHARS_MESSAGE, Special.specialChars.class),
+            Arguments.of(DOUBLE_PROTO_WITH_TRAILING_HASH_MESSAGE, ProtodevelaslProtoProtoProtodevelBar3.bar.class),
             Arguments.of(UNICODE_MESSAGE, Unicode.uni.class),
             Arguments.of(CONFLICTING_NAME_MESSAGE, ConflictingNameOuterClass.ConflictingName.class),
             Arguments.of(NESTED_CONFLICTING_NAME_MESSAGE,

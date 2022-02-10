@@ -280,9 +280,6 @@ public class GlueSchemaRegistryKafkaIntegrationTest {
             String schemaName = String.format("%s-%s-%s", topic, dataFormat.name(), compatibility);
             schemasToCleanUp.add(schemaName);
 
-            String schemaName = String.format("%s-%s-%s", topic, dataFormat.name(), compatibility);
-            schemasToCleanUp.add(schemaName);
-
             ProducerProperties producerProperties = ProducerProperties.builder()
                     .topicName(topic)
                     .schemaName(schemaName)
