@@ -169,7 +169,7 @@ public class GlueSchemaRegistryDeserializationFacade implements Closeable {
 
         Object result = deserializerFactory
                 .getInstance(DataFormat.valueOf(schema.getDataFormat()), this.glueSchemaRegistryConfiguration)
-                .deserialize(buffer, schema.getSchemaDefinition());
+                .deserialize(buffer, schema);
 
         return result;
     }

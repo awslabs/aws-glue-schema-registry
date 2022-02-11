@@ -30,6 +30,6 @@ public class ProducerProperties implements GlueSchemaRegistryConnectionPropertie
     // Streaming properties
     private String inputTopic;
     private String outputTopic;
-    private String recordType; // required only for AVRO case
+    private String recordType; // required only for AVRO or Protobuf case
 }
 

@@ -17,6 +17,8 @@ package com.amazonaws.services.schemaregistry.integrationtests.generators;
 
 import com.amazonaws.services.schemaregistry.serializers.json.JsonDataWithSchema;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.SneakyThrows;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -45,5 +47,14 @@ public class JsonSchemaGenericBackwardCompatDataGenerator implements TestDataGen
             }
         }
         return genericJsonRecords;
+    }
+
+    @SneakyThrows
+    public static boolean filterRecords(JsonDataWithSchema jsonDataWithSchema) {
+        String payload = jsonDataWithSchema.getPayload();
+        JsonNode jsonNode = new ObjectMapper().readTree(payload);
+
+        return !String.valueOf(jsonNode.get("f1")).contains("Stranger") || Integer.parseInt(
+            String.valueOf(jsonNode.get("f2"))) != 911;
     }
 }

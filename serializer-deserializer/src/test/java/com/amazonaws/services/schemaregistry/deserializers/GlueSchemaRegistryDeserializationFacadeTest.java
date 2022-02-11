@@ -99,7 +99,7 @@ public class GlueSchemaRegistryDeserializationFacadeTest {
     private static final String EMPLOYEE_SCHEMA_NAME = "Employee";
     private static final UUID EMPLOYEE_SCHEMA_VERSION_ID = UUID.randomUUID();
     private static final String EMPLOYEE_SCHEMA_ARN =
-            "arn:aws:glue:ca-central-1:111111111111:schema/registry_name" + "/user_schema";
+            "arn:aws:glue:ca-central-1:111111111111:schema/registry_name" + "/employee_schema";
 
     private static final AVROUtils AVRO_UTILS = AVROUtils.getInstance();
     private static final GenericRecord genericAvroRecord = RecordGenerator.createGenericAvroRecord();
@@ -288,10 +288,12 @@ public class GlueSchemaRegistryDeserializationFacadeTest {
                 Mockito.eq(EMPLOYEE_SCHEMA_VERSION_ID.toString()))).thenReturn(employeeSchemaVersionResponse);
 
         when(mockDataFormatDeserializer.deserialize(Mockito.any(ByteBuffer.class),
-                                                    Mockito.eq(employeeAvroSchema.toString()))).thenReturn(
+                                                    Mockito.eq(new com.amazonaws.services.schemaregistry.common.Schema(
+                                                            employeeAvroSchema.toString(), DataFormat.AVRO.name(), "employee_schema")))).thenReturn(
                 genericEmployeeAvroRecord);
         when(mockDataFormatDeserializer.deserialize(Mockito.any(ByteBuffer.class),
-                                                    Mockito.eq(userAvroSchema.toString()))).thenReturn(
+                                                    Mockito.eq(new com.amazonaws.services.schemaregistry.common.Schema(
+                                                            userAvroSchema.toString(), DataFormat.AVRO.name(), "user_schema")))).thenReturn(
                 genericUserAvroRecord);
 
         when(mockDeserializerFactory.getInstance(Mockito.any(DataFormat.class),
@@ -311,7 +313,7 @@ public class GlueSchemaRegistryDeserializationFacadeTest {
     }
 
     /**
-     * Tests the GlueSchemaRegistryDeserializationFacade instantiation when an no configuration is provided.
+     * Tests the GlueSchemaRegistryemployeeDeserializationFacade instantiation when an no configuration is provided.
      */
     @Test
     public void testBuildDeserializer_withNoArguments_throwsException() {
@@ -657,7 +659,7 @@ public class GlueSchemaRegistryDeserializationFacadeTest {
      * Tests the de-serialization of multiple records of different schemas.
      */
     @ParameterizedTest
-    @EnumSource(value = DataFormat.class, mode = EnumSource.Mode.EXCLUDE, names = {"UNKNOWN_TO_SDK_VERSION", "JSON"})
+    @EnumSource(value = DataFormat.class, mode = EnumSource.Mode.EXCLUDE, names = {"UNKNOWN_TO_SDK_VERSION", "JSON", "PROTOBUF"})
     public void testDeserialize_withMultipleRecords_recordsMatch(DataFormat dataFormat) {
         byte[] serializedUserData = createSerializedUserData(genericUserAvroRecord, dataFormat);
         byte[] serializedEmployeeData = createSerializedEmployeeData(genericEmployeeAvroRecord, dataFormat);
@@ -669,7 +671,7 @@ public class GlueSchemaRegistryDeserializationFacadeTest {
         Object deserializedEmployeeObject =
                 glueSchemaRegistryDeserializationFacade.deserialize(prepareDeserializerInput(serializedEmployeeData));
 
-        assertEquals(deserializedUserObject, deserializedUserObject);
+        assertEquals(genericUserAvroRecord, deserializedUserObject);
         assertEquals(genericEmployeeAvroRecord, deserializedEmployeeObject);
     }
 
@@ -801,7 +803,7 @@ public class GlueSchemaRegistryDeserializationFacadeTest {
     }
 
     @ParameterizedTest
-    @EnumSource(value = DataFormat.class, mode = EnumSource.Mode.EXCLUDE, names = {"UNKNOWN_TO_SDK_VERSION", "JSON"})
+    @EnumSource(value = DataFormat.class, mode = EnumSource.Mode.EXCLUDE, names = {"UNKNOWN_TO_SDK_VERSION", "JSON", "PROTOBUF"})
     public void testCanDeserialize_WhenValidBytesArePassed_ReturnsTrue(DataFormat dataFormat) {
         byte[] validSchemaRegistryBytes = createSerializedCompressedEmployeeData(genericEmployeeAvroRecord, dataFormat);
         assertTrue(createGSRDeserializationFacade().canDeserialize(validSchemaRegistryBytes));

@@ -77,13 +77,15 @@ public class AvroDeserializer implements GlueSchemaRegistryDataFormatDeserialize
      * from the schema registry.
      *
      * @param buffer   data to be de-serialized
-     * @param schema   Avro schema
+     * @param schemaObject  Avro schema
      * @return de-serialized object
      * @throws AWSSchemaRegistryException Exception during de-serialization
      */
     @Override
-    public Object deserialize(@NonNull ByteBuffer buffer, @NonNull String schema) {
+    public Object deserialize(@NonNull ByteBuffer buffer,
+        @NonNull com.amazonaws.services.schemaregistry.common.Schema schemaObject) {
         try {
+            String schema = schemaObject.getSchemaDefinition();
             byte[] data = DESERIALIZER_DATA_PARSER.getPlainData(buffer);
 
             log.debug("Length of actual message: {}", data.length);
