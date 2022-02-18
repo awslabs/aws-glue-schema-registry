@@ -71,7 +71,6 @@ public class ToConnectTestDataGenerator {
                         .clearStrOptional()
                         .setStrWithDefault("")
                         .build(),
-                EnumTypeSyntax3.EnumTest.newBuilder().setCorpus(EnumTypeSyntax3.EnumTest.Corpus.UNIVERSAL).build(),
                 PrimitiveTypesSyntax2.PrimitiveTypes.newBuilder()
                         .setI8(2)
                         .setI8WithParam(0)
@@ -116,8 +115,7 @@ public class ToConnectTestDataGenerator {
                         .setStrWithParam("12351")
                         .clearStrOptional()
                         .setStrWithDefault("")
-                        .build(),
-                EnumTypeSyntax2.EnumTest.newBuilder().setCorpus(EnumTypeSyntax2.EnumTest.Corpus.UNIVERSAL).build()
+                        .build()
         );
     }
 
@@ -187,7 +185,6 @@ public class ToConnectTestDataGenerator {
                 .put("strWithParam", "12351")
                 .put("strOptional", null)
                 .put("strWithDefault", "");
-                //.put("corpus", "UNIVERSAL");
         return connectData;
     }
 
@@ -284,13 +281,13 @@ public class ToConnectTestDataGenerator {
     private static Map<String, Schema> getEnumTypes() {
         return ImmutableMap.<String, Schema>builder()
                 .put("corpus", new SchemaBuilder(Schema.Type.STRING).parameter("protobuf.type", "enum")
-                        .parameter("PROTOBUF_SCHEMA_ENUM.com.amazonaws.services.schemaregistry.kafkaconnect.tests.enumsyntax3.EnumTest.Corpus.UNIVERSAL", "0")
-                        .parameter("PROTOBUF_SCHEMA_ENUM.com.amazonaws.services.schemaregistry.kafkaconnect.tests.enumsyntax3.EnumTest.Corpus.WEB", "1")
-                        .parameter("PROTOBUF_SCHEMA_ENUM.com.amazonaws.services.schemaregistry.kafkaconnect.tests.enumsyntax3.EnumTest.Corpus.IMAGES", "2")
-                        .parameter("PROTOBUF_SCHEMA_ENUM.com.amazonaws.services.schemaregistry.kafkaconnect.tests.enumsyntax3.EnumTest.Corpus.LOCAL", "3")
-                        .parameter("PROTOBUF_SCHEMA_ENUM.com.amazonaws.services.schemaregistry.kafkaconnect.tests.enumsyntax3.EnumTest.Corpus.NEWS", "4")
-                        .parameter("PROTOBUF_SCHEMA_ENUM.com.amazonaws.services.schemaregistry.kafkaconnect.tests.enumsyntax3.EnumTest.Corpus.PRODUCTS", "5")
-                        .parameter("PROTOBUF_SCHEMA_ENUM.com.amazonaws.services.schemaregistry.kafkaconnect.tests.enumsyntax3.EnumTest.Corpus.VIDEO", "6")
+                        .parameter("PROTOBUF_SCHEMA_ENUM.UNIVERSAL", "0")
+                        .parameter("PROTOBUF_SCHEMA_ENUM.WEB", "1")
+                        .parameter("PROTOBUF_SCHEMA_ENUM.IMAGES", "2")
+                        .parameter("PROTOBUF_SCHEMA_ENUM.LOCAL", "3")
+                        .parameter("PROTOBUF_SCHEMA_ENUM.NEWS", "4")
+                        .parameter("PROTOBUF_SCHEMA_ENUM.PRODUCTS", "5")
+                        .parameter("PROTOBUF_SCHEMA_ENUM.VIDEO", "6")
                         .parameter("ENUM_NAME", "corpus")
                         .parameter("protobuf.tag", "4")
                         .optional()

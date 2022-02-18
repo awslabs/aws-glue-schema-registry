@@ -12,9 +12,6 @@ import org.apache.kafka.connect.errors.DataException;
 
 
 import java.util.List;
-import java.util.Map;
-
-import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_TYPE;
 
 /**
  * Converts Protobuf data to Connect data corresponding to the translated schema.

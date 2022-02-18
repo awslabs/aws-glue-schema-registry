@@ -20,7 +20,7 @@ public class ConnectToProtobufTypeConverterFactory {
         if (connectType.equals(Schema.Type.STRING)
                 && schemaParams != null
                 && schemaParams.containsKey(PROTOBUF_TYPE)
-                && "PROTOBUF_TYPE_ENUM".equals(schemaParams.get(PROTOBUF_TYPE))) {
+                && "enum".equals(schemaParams.get(PROTOBUF_TYPE))) {
             return new EnumSchemaTypeConverter();
         } else if (connectType.isPrimitive()) {
             return new PrimitiveSchemaTypeConverter();

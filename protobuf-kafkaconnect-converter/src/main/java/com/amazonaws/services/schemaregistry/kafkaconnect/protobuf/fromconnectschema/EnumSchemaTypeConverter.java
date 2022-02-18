@@ -6,7 +6,7 @@ import java.util.Map;
 
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_TYPE; //schema.parameters.get(PROTOBUF_TYPE) should be Enum
 
-public class EnumSchemaTypeConverter implements SchemaTypeConverter{
+public class EnumSchemaTypeConverter implements SchemaTypeConverter {
 
     public DescriptorProtos.FieldDescriptorProto.Builder toProtobufSchema(Schema schema, DescriptorProtos.DescriptorProto.Builder descriptorProto, DescriptorProtos.FileDescriptorProto.Builder fileDescriptorProtoBuilder) {
 
@@ -17,8 +17,9 @@ public class EnumSchemaTypeConverter implements SchemaTypeConverter{
 
         //Defining the Enum in protobuf schema form
         final Map<String, String> schemaParams = schema.parameters();
+        final String enumName = schemaParams.get("ENUM_NAME");
         final DescriptorProtos.EnumDescriptorProto.Builder enumDescriptorProtoBuilder =
-                DescriptorProtos.EnumDescriptorProto.newBuilder().setName(schemaParams.get("ENUM_NAME"));
+                DescriptorProtos.EnumDescriptorProto.newBuilder().setName(enumName);
         for (Map.Entry<String, String> parameter : schemaParams.entrySet()) {
             String parameterKey = parameter.getKey();
             if (parameterKey.startsWith("PROTOBUF_SCHEMA_ENUM.")) {
@@ -33,7 +34,7 @@ public class EnumSchemaTypeConverter implements SchemaTypeConverter{
 
         //Adding the Enum to the protobuf schema file, and defining a field as Enum
         fileDescriptorProtoBuilder.addEnumType(enumDescriptorProtoBuilder);
-        DescriptorProtos.FieldDescriptorProto.Builder enumBuilder = DescriptorProtos.FieldDescriptorProto.newBuilder().setName(schema.name());
+        DescriptorProtos.FieldDescriptorProto.Builder enumBuilder = DescriptorProtos.FieldDescriptorProto.newBuilder().setName(enumName);
         enumBuilder.setType(DescriptorProtos.FieldDescriptorProto.Type.TYPE_ENUM);
         enumBuilder.setTypeName(enumDescriptorProtoBuilder.getName());
 
@@ -46,7 +47,7 @@ public class EnumSchemaTypeConverter implements SchemaTypeConverter{
         return Schema.Type.STRING.equals(schema.type())
                 && schemaParams != null
                 && schemaParams.containsKey(PROTOBUF_TYPE)
-                && "PROTOBUF_TYPE_ENUM".equals(schemaParams.get(PROTOBUF_TYPE));
+                && "enum".equals(schemaParams.get(PROTOBUF_TYPE));
     }
 
 

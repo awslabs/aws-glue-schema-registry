@@ -211,11 +211,10 @@ public class ToProtobufTestDataGenerator {
         Descriptors.FileDescriptor fileDescriptor = getEnumFileDescriptor();
         Descriptors.Descriptor descriptor = fileDescriptor.getMessageTypes().get(0);
         DynamicMessage.Builder dynamicMessageBuilder = DynamicMessage.newBuilder(descriptor);
-        Function<String, Descriptors.FieldDescriptor> field = descriptor::findFieldByName;
 
-        return dynamicMessageBuilder
-                .setField(descriptor.findFieldByName("corpus"), "UNIVERSAL")
-                .build();
+            return dynamicMessageBuilder
+                    .setField(descriptor.findFieldByName("corpus"), fileDescriptor.findEnumTypeByName("corpus").findValueByName("UNIVERSAL"))
+                    .build();
     }
 
     private static Descriptors.FileDescriptor getEnumFileDescriptor() {
@@ -233,7 +232,18 @@ public class ToProtobufTestDataGenerator {
 
     private static Map<String, Schema> getEnumTypes() {
         return ImmutableMap.<String, Schema>builder()
-                .put("corpus", new SchemaBuilder(Schema.Type.STRING).build())
+                .put("corpus", new SchemaBuilder(Schema.Type.STRING)
+                        .parameter("protobuf.type", "enum")
+                        .parameter("PROTOBUF_SCHEMA_ENUM.UNIVERSAL", "0")
+                        .parameter("PROTOBUF_SCHEMA_ENUM.WEB", "1")
+                        .parameter("PROTOBUF_SCHEMA_ENUM.IMAGES", "2")
+                        .parameter("PROTOBUF_SCHEMA_ENUM.LOCAL", "3")
+                        .parameter("PROTOBUF_SCHEMA_ENUM.NEWS", "4")
+                        .parameter("PROTOBUF_SCHEMA_ENUM.PRODUCTS", "5")
+                        .parameter("PROTOBUF_SCHEMA_ENUM.VIDEO", "6")
+                        .parameter("ENUM_NAME", "corpus")
+                        .parameter("protobuf.tag", "4")
+                        .build())
                 .build();
     }
 }

@@ -1,6 +1,7 @@
 package com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectdata;
 
-import com.google.protobuf.*;
+import com.google.protobuf.Descriptors;
+import com.google.protobuf.Message;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.errors.DataException;
 
@@ -13,7 +14,8 @@ public class EnumDataConverter implements DataConverter {
                                   final Descriptors.FieldDescriptor fieldDescriptor,
                                   final Message.Builder messageBuilder) {
         try {
-            messageBuilder.setField(fieldDescriptor, value);
+            final Descriptors.EnumValueDescriptor enumValue = fieldDescriptor.getEnumType().findValueByName((value.toString()));
+            messageBuilder.setField(fieldDescriptor, enumValue);
 
         } catch (ClassCastException e) {
             throw new DataException(

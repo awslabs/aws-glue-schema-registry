@@ -9,14 +9,20 @@ import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.errors.DataException;
 
 import java.util.List;
-import java.util.Locale;
 import java.util.Set;
 
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_PACKAGE;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_TAG;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_TYPE;
-import static com.google.protobuf.Descriptors.FieldDescriptor.Type.*;
-
+import static com.google.protobuf.Descriptors.FieldDescriptor.Type.FIXED32;
+import static com.google.protobuf.Descriptors.FieldDescriptor.Type.FIXED64;
+import static com.google.protobuf.Descriptors.FieldDescriptor.Type.SFIXED32;
+import static com.google.protobuf.Descriptors.FieldDescriptor.Type.SFIXED64;
+import static com.google.protobuf.Descriptors.FieldDescriptor.Type.SINT32;
+import static com.google.protobuf.Descriptors.FieldDescriptor.Type.SINT64;
+import static com.google.protobuf.Descriptors.FieldDescriptor.Type.UINT32;
+import static com.google.protobuf.Descriptors.FieldDescriptor.Type.UINT64;
+import static com.google.protobuf.Descriptors.FieldDescriptor.Type.ENUM;
 /**
  * Converts the Protobuf schema to Connect schemas.
  * Partially inspired from https://github.com/blueapron/kafka-connect-protobuf-converter/blob/master/src/main/java/com/blueapron/connect/protobuf/ProtobufData.java#L135
@@ -100,7 +106,7 @@ public class ProtobufSchemaToConnectSchemaConverter {
             schemaBuilder.parameter(PROTOBUF_TYPE, "enum");
             for (int i = 0; i < fieldDescriptor.getEnumType().getValues().size(); i++) { //iterating through the values of the Enum to store each one
                 Descriptors.EnumValueDescriptor enumValue = fieldDescriptor.getEnumType().getValues().get(i);
-                schemaBuilder.parameter("PROTOBUF_SCHEMA_ENUM." + enumValue.getFullName(), String.valueOf(enumValue.getNumber()));
+                schemaBuilder.parameter("PROTOBUF_SCHEMA_ENUM." + enumValue.getName(), String.valueOf(enumValue.getNumber()));
             }
             schemaBuilder.parameter("ENUM_NAME", fieldDescriptor.getName());
         }
