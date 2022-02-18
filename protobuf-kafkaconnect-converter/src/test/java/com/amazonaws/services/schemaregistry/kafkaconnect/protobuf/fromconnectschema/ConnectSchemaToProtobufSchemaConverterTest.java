@@ -106,5 +106,4 @@ public class ConnectSchemaToProtobufSchemaConverterTest {
     public void fromConnectSchema_onNullSchema_ThrowsException() {
         assertThrows(IllegalArgumentException.class, () -> CONNECT_SCHEMA_TO_PROTOBUF_SCHEMA_CONVERTER.convert(null));
     }
-
 }

@@ -11,7 +11,6 @@ import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromco
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class ConnectDataToProtobufDataConverterFactory {
-
     public static DataConverter get(final Schema connectSchema) {
         final Schema.Type connectType = connectSchema.type();
         final Map<String, String> schemaParams = connectSchema.parameters();
