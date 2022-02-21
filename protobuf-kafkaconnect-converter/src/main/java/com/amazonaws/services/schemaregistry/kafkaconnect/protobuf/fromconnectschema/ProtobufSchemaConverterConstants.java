@@ -23,9 +23,4 @@ public class ProtobufSchemaConverterConstants {
      * This will be available in the parent level connect schema parameters.
      */
     public static final String PROTOBUF_PACKAGE = "protobuf.package";
-
-    /**
-     * details the namespace
-     */
-    public static final String NAMESPACE = "com.amazon.services.schemaregistry.kafkaconnect.protobuf";
 }
