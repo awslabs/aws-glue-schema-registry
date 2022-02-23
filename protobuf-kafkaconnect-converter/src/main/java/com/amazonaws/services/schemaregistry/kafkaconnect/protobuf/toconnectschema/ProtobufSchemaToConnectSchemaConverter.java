@@ -127,7 +127,7 @@ public class ProtobufSchemaToConnectSchemaConverter {
             for (Descriptors.EnumValueDescriptor enumValueDescriptor: fieldDescriptor.getEnumType().getValues()) { //iterating through the values of the Enum to store each one
                 schemaBuilder.parameter(PROTOBUF_ENUM_VALUE + enumValueDescriptor.getName(), String.valueOf(enumValueDescriptor.getNumber()));
             }
-            schemaBuilder.parameter(PROTOBUF_ENUM_NAME, fieldDescriptor.getName());
+            schemaBuilder.parameter("ENUM_NAME", fieldDescriptor.getName());
         }
 
         if (fieldDescriptor.hasOptionalKeyword()) {
