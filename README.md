@@ -155,7 +155,7 @@ The recommended way to use the AWS Glue Schema Registry Library for Java is to c
         String jsonPayload = "{\n" + "        \"employee\": {\n" + "          \"name\": \"John\",\n" + "          \"age\": 30,\n"
                                                  + "          \"city\": \"New York\"\n" + "        }\n" + "      }";
         
-        JsonDataWithSchema jsonSchemaWithData = JsonDataWithSchema.builder(jsonSchema, jsonPayload);
+        JsonDataWithSchema jsonSchemaWithData = JsonDataWithSchema.builder(jsonSchema, jsonPayload).build();
 
         List<JsonDataWithSchema> genericJsonRecords = new ArrayList<>();
         genericJsonRecords.add(jsonSchemaWithData);
