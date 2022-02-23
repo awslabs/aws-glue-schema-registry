@@ -4,28 +4,24 @@ import com.google.protobuf.DescriptorProtos;
 import org.apache.kafka.connect.data.Schema;
 import java.util.Map;
 
-import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_TYPE; //schema.parameters.get(PROTOBUF_TYPE) should be Enum
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_ENUM_NAME;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_ENUM_VALUE;
 
 public class EnumSchemaTypeConverter implements SchemaTypeConverter {
 
     public DescriptorProtos.FieldDescriptorProto.Builder toProtobufSchema(Schema schema, DescriptorProtos.DescriptorProto.Builder descriptorProto, DescriptorProtos.FileDescriptorProto.Builder fileDescriptorProtoBuilder) {
 
-        //Checking to make sure the schema information is for Enum
-        if (!isEnumType(schema)) {
-            throw new IllegalStateException("Enum converter invoked for non-enum type: " + schema.type());
-        }
-
         //Defining the Enum in protobuf schema form
         final Map<String, String> schemaParams = schema.parameters();
-        final String enumName = schemaParams.get("ENUM_NAME");
+        final String enumName = schemaParams.get(PROTOBUF_ENUM_NAME);
         final DescriptorProtos.EnumDescriptorProto.Builder enumDescriptorProtoBuilder =
                 DescriptorProtos.EnumDescriptorProto.newBuilder().setName(enumName);
         for (Map.Entry<String, String> parameter : schemaParams.entrySet()) {
             String parameterKey = parameter.getKey();
-            if (parameterKey.startsWith("PROTOBUF_SCHEMA_ENUM.")) {
+            if (parameterKey.startsWith(PROTOBUF_ENUM_VALUE)) {
                 enumDescriptorProtoBuilder.addValue(
                         DescriptorProtos.EnumValueDescriptorProto.newBuilder()
-                                .setName(parameterKey.replace("PROTOBUF_SCHEMA_ENUM.", ""))
+                                .setName(parameterKey.replace(PROTOBUF_ENUM_VALUE, ""))
                                 .setNumber(Integer.parseInt(parameter.getValue()))
                                 .build()
                 );
@@ -40,15 +36,4 @@ public class EnumSchemaTypeConverter implements SchemaTypeConverter {
 
         return enumBuilder;
     }
-
-    public static boolean isEnumType(Schema schema) {
-        final Map<String, String> schemaParams = schema.parameters();
-
-        return Schema.Type.STRING.equals(schema.type())
-                && schemaParams != null
-                && schemaParams.containsKey(PROTOBUF_TYPE)
-                && "enum".equals(schemaParams.get(PROTOBUF_TYPE));
-    }
-
-
 }

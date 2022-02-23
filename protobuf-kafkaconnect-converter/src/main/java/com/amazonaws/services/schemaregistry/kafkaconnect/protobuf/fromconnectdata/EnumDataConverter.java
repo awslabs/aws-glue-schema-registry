@@ -1,10 +1,8 @@
 package com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectdata;
-
 import com.google.protobuf.Descriptors;
 import com.google.protobuf.Message;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.errors.DataException;
-
 public class EnumDataConverter implements DataConverter {
 
 
