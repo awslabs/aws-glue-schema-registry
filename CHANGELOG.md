@@ -41,3 +41,7 @@ GlueSchemaRegistryKafkaSerializer/GlueSchemaRegistryKafkaDeserializer.
 ## Release 1.1.5
 * Fix security vulnerability in transitive dependencies
 * Remove configuration logging information
+
+## Release 1.1.9
+* Added Support for Protobuf Format
+* Improved the caching mechanism to improve availability of the serializer and deserializer
