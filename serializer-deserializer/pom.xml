@@ -102,13 +102,6 @@
             <version>${square-wireschema.version}</version>
         </dependency>
 
-<!--        TODO: clean up the dependency once Apicurio releases the latest version with the json_name fix -->
-<!--        <dependency>-->
-<!--            <groupId>io.apicurio</groupId>-->
-<!--            <artifactId>apicurio-registry-protobuf-schema-utilities</artifactId>-->
-<!--            <version>${apicurio-registry.version}</version>-->
-<!--        </dependency>-->
-        <!-- https://mvnrepository.com/artifact/com.google.api.grpc/proto-google-common-protos -->
         <dependency>
             <groupId>com.squareup.wire</groupId>
             <artifactId>wire-compiler</artifactId>
@@ -121,6 +114,7 @@
                 </exclusion>
             </exclusions>
         </dependency>
+        <!-- https://mvnrepository.com/artifact/com.google.api.grpc/proto-google-common-protos -->
         <dependency>
             <groupId>com.google.api.grpc</groupId>
             <artifactId>proto-google-common-protos</artifactId>
