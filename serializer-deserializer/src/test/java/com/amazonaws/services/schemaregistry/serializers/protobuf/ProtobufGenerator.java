@@ -20,6 +20,7 @@ import com.amazonaws.services.schemaregistry.tests.protobuf.syntax3.basic.Hyphen
 import com.amazonaws.services.schemaregistry.tests.protobuf.syntax3.basic.Unicode;
 import com.amazonaws.services.schemaregistry.tests.protobuf.syntax3.multiplefiles.A;
 import com.amazonaws.services.schemaregistry.tests.protobuf.syntax3.snake_case.AnotherSnakeCaseProtoFile;
+import com.amazonaws.services.schemaregistry.utils.apicurio.FileDescriptorUtils;
 import com.google.common.collect.ImmutableList;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Descriptors;
@@ -27,7 +28,6 @@ import com.google.protobuf.DynamicMessage;
 import com.google.protobuf.Message;
 import com.google.protobuf.Timestamp;
 import com.google.type.Money;
-import io.apicurio.registry.utils.protobuf.schema.FileDescriptorUtils;
 import lombok.SneakyThrows;
 
 import java.util.List;
@@ -165,8 +165,9 @@ public class ProtobufGenerator {
     public static final ConflictingNameOuterClass.ConflictingName CONFLICTING_NAME_MESSAGE =
         ConflictingNameOuterClass.ConflictingName.newBuilder().build();
 
-    public static final NestedConflictingClassNameOuterClass.Parent.NestedConflictingClassName NESTED_CONFLICTING_NAME_MESSAGE =
-        NestedConflictingClassNameOuterClass.Parent.NestedConflictingClassName.newBuilder().build();
+    public static final NestedConflictingClassNameOuterClass.Parent.NestedConflictingClassName
+            NESTED_CONFLICTING_NAME_MESSAGE = NestedConflictingClassNameOuterClass.Parent.NestedConflictingClassName
+            .newBuilder().build();
 
     public static final AllTypes ALL_TYPES_MESSAGE_SYNTAX3 =
         AllTypes.newBuilder()
@@ -194,7 +195,8 @@ public class ProtobufGenerator {
                 )
             ).build())
             .setAnEnum1(AnEnum.BETA)
-            .putAComplexMap(81, AnotherTopLevelMessage.NestedMessage2.newBuilder().addATimestamp(Timestamp.newBuilder().build()).build())
+            .putAComplexMap(81, AnotherTopLevelMessage.NestedMessage2.newBuilder()
+                    .addATimestamp(Timestamp.newBuilder().build()).build())
             .build();
 
     public static final AllTypesSyntax2.AllTypes ALL_TYPES_MESSAGE_SYNTAX2 =

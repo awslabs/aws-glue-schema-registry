@@ -19,13 +19,13 @@ import com.amazonaws.services.schemaregistry.deserializers.protobuf.ProtobufWire
 import com.amazonaws.services.schemaregistry.exception.AWSSchemaRegistryException;
 import com.amazonaws.services.schemaregistry.utils.AWSSchemaRegistryConstants;
 import com.amazonaws.services.schemaregistry.utils.ProtobufMessageType;
+import com.amazonaws.services.schemaregistry.utils.apicurio.FileDescriptorUtils;
 import com.google.protobuf.DescriptorProtos;
 import com.google.protobuf.Descriptors;
 import com.google.protobuf.DynamicMessage;
 import com.google.protobuf.Message;
 import com.squareup.wire.schema.Location;
 import com.squareup.wire.schema.internal.parser.ProtoParser;
-import io.apicurio.registry.utils.protobuf.schema.FileDescriptorUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
