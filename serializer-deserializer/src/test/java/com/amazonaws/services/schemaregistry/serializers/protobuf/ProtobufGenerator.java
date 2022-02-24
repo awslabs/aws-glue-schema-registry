@@ -20,6 +20,7 @@ import com.amazonaws.services.schemaregistry.tests.protobuf.syntax3.basic.Hyphen
 import com.amazonaws.services.schemaregistry.tests.protobuf.syntax3.basic.Unicode;
 import com.amazonaws.services.schemaregistry.tests.protobuf.syntax3.multiplefiles.A;
 import com.amazonaws.services.schemaregistry.tests.protobuf.syntax3.snake_case.AnotherSnakeCaseProtoFile;
+import com.amazonaws.services.schemaregistry.utils.apicurio.FileDescriptorUtils;
 import com.google.common.collect.ImmutableList;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Descriptors;
@@ -27,7 +28,6 @@ import com.google.protobuf.DynamicMessage;
 import com.google.protobuf.Message;
 import com.google.protobuf.Timestamp;
 import com.google.type.Money;
-import io.apicurio.registry.utils.protobuf.schema.FileDescriptorUtils;
 import lombok.SneakyThrows;
 
 import java.util.List;

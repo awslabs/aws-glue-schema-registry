@@ -1,9 +1,9 @@
 package com.amazonaws.services.schemaregistry.serializers.protobuf;
 
+import com.amazonaws.services.schemaregistry.utils.apicurio.FileDescriptorUtils;
 import com.google.protobuf.Descriptors;
 import com.squareup.wire.schema.internal.parser.ProtoFileElement;
 import com.squareup.wire.schema.internal.parser.ProtoParser;
-import io.apicurio.registry.utils.protobuf.schema.FileDescriptorUtils;
 import lombok.Data;
 
 import java.io.IOException;
