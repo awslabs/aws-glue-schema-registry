@@ -92,7 +92,6 @@ public class ProtobufSchemaConverterTest {
 
     @Test
     public void fromConnectData_convertsConnectDataToGSRSerializedProtobufDataEnum() {
-        //TODO: Updated for ENUM
         Object connectData = getEnumTypesData();
 
         ArgumentCaptor<DynamicMessage> argumentCaptor = ArgumentCaptor.forClass(DynamicMessage.class);
@@ -123,7 +122,6 @@ public class ProtobufSchemaConverterTest {
 
     @Test
     public void toConnectData_convertsProtobufSerializedDataToConnectDataEnum() {
-        //TODO: Updated for Enum
         Message protobufMessage = ToConnectTestDataGenerator.getEnumProtobufMessages().get(0);
         String packageName = protobufMessage.getDescriptorForType().getFile().getPackage();
 

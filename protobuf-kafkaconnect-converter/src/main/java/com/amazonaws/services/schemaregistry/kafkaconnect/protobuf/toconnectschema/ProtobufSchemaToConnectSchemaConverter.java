@@ -11,7 +11,12 @@ import org.apache.kafka.connect.errors.DataException;
 import java.util.List;
 import java.util.Set;
 
-import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.*;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_ENUM_NAME;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_ENUM_VALUE;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_ENUM_TYPE;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_TAG;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_TYPE;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_PACKAGE;
 import static com.google.protobuf.Descriptors.FieldDescriptor.Type.FIXED32;
 import static com.google.protobuf.Descriptors.FieldDescriptor.Type.FIXED64;
 import static com.google.protobuf.Descriptors.FieldDescriptor.Type.SFIXED32;
@@ -102,9 +107,8 @@ public class ProtobufSchemaToConnectSchemaConverter {
             schemaBuilder.parameter(PROTOBUF_TYPE, protobufType.name().toUpperCase());
         } else if (protobufType.equals(ENUM)) { //ENUM case; storing ENUM data as metadata to avoid being lost in translation.
             schemaBuilder.parameter(PROTOBUF_TYPE, PROTOBUF_ENUM_TYPE);
-            for (int i = 0; i < fieldDescriptor.getEnumType().getValues().size(); i++) { //iterating through the values of the Enum to store each one
-                Descriptors.EnumValueDescriptor enumValue = fieldDescriptor.getEnumType().getValues().get(i);
-                schemaBuilder.parameter(PROTOBUF_ENUM_VALUE + enumValue.getName(), String.valueOf(enumValue.getNumber()));
+            for (Descriptors.EnumValueDescriptor  enumValueDescriptor: fieldDescriptor.getEnumType().getValues()) { //iterating through the values of the Enum to store each one
+                schemaBuilder.parameter(PROTOBUF_ENUM_VALUE + enumValueDescriptor.getName(), String.valueOf(enumValueDescriptor.getNumber()));
             }
             schemaBuilder.parameter(PROTOBUF_ENUM_NAME, fieldDescriptor.getName());
         }

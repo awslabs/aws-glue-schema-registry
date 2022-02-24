@@ -85,28 +85,6 @@ public class ConnectSchemaToProtobufSchemaConverterTest {
             () -> CONNECT_SCHEMA_TO_PROTOBUF_SCHEMA_CONVERTER.convert(connectSchema));
     }
 
-    private static Map<String, Schema> getEnumTypesForExceptions() {
-        return ImmutableMap.<String, Schema>builder()
-                .put("nonNumberTag", new SchemaBuilder(Schema.Type.STRING).parameter(PROTOBUF_TAG, "jsf").build())
-                .put("nullNumberTag", new SchemaBuilder(Schema.Type.INT16).parameter(PROTOBUF_TAG, null).build())
-                .put("invalidInt32Metadata", new SchemaBuilder(Schema.Type.INT32).parameter(PROTOBUF_TYPE, "int64").build())
-                .put("invalidInt64Metadata",
-                        new SchemaBuilder(Schema.Type.INT32).parameter(PROTOBUF_TYPE, "string").build())
-                .put("corpus", new SchemaBuilder(Schema.Type.STRING).parameter("protobuf.type", "enum")
-                        .parameter("PROTOBUF_SCHEMA_ENUM.com.amazonaws.services.schemaregistry.kafkaconnect.tests.enumsyntax3.EnumTest.Corpus.UNIVERSAL", "0")
-                        .parameter("PROTOBUF_SCHEMA_ENUM.com.amazonaws.services.schemaregistry.kafkaconnect.tests.enumsyntax3.EnumTest.Corpus.WEB", "1")
-                        .parameter("PROTOBUF_SCHEMA_ENUM.com.amazonaws.services.schemaregistry.kafkaconnect.tests.enumsyntax3.EnumTest.Corpus.IMAGES", "2")
-                        .parameter("PROTOBUF_SCHEMA_ENUM.com.amazonaws.services.schemaregistry.kafkaconnect.tests.enumsyntax3.EnumTest.Corpus.LOCAL", "3")
-                        .parameter("PROTOBUF_SCHEMA_ENUM.com.amazonaws.services.schemaregistry.kafkaconnect.tests.enumsyntax3.EnumTest.Corpus.NEWS", "4")
-                        .parameter("PROTOBUF_SCHEMA_ENUM.com.amazonaws.services.schemaregistry.kafkaconnect.tests.enumsyntax3.EnumTest.Corpus.PRODUCTS", "5")
-                        .parameter("PROTOBUF_SCHEMA_ENUM.com.amazonaws.services.schemaregistry.kafkaconnect.tests.enumsyntax3.EnumTest.Corpus.VIDEO", "6")
-                        .parameter("ENUM_NAME", "corpus")
-                        .parameter("protobuf.tag", "4")
-                        .optional()
-                        .build())
-                .build();
-    }
-
     private static Stream<Arguments> getEnumSchemaTestCases() {
         return Stream.of(
                 Arguments.of(
@@ -115,15 +93,6 @@ public class ConnectSchemaToProtobufSchemaConverterTest {
                         getProtobufSchema("EnumProtobufSchema.filedescproto")
                 )
         );
-    }
-
-    private static Stream<Arguments> getEnumSchemaExceptionTestCases() {
-        return getEnumTypesForExceptions()
-                .entrySet()
-                .stream()
-                .map(entry ->
-                        Arguments.of(entry.getKey(), ImmutableMap.of(entry.getKey(), entry.getValue()))
-                );
     }
 
     @ParameterizedTest(name = "{index} {0}")
@@ -139,6 +108,9 @@ public class ConnectSchemaToProtobufSchemaConverterTest {
         assertEquals(expectedProtobufSchema, actualSchema);
     }
 
-
+    @Test
+    public void fromConnectSchema_onNullSchema_ThrowsException() {
+        assertThrows(IllegalArgumentException.class, () -> CONNECT_SCHEMA_TO_PROTOBUF_SCHEMA_CONVERTER.convert(null));
+    }
 
 }
