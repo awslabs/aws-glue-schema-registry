@@ -450,6 +450,7 @@
                         <exclude>**/AWSSchemaNamingStrategy*</exclude>
                         <exclude>**/JsonSchemaDataConfig*</exclude>
                         <exclude>**/JsonSchemaConverterConstants*</exclude>
+                        <exclude>**/apicurio/**</exclude>
                     </excludes>
                 </configuration>
                 <executions>
