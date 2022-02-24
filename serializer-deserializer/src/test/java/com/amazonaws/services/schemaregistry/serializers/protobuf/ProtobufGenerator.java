@@ -165,9 +165,8 @@ public class ProtobufGenerator {
     public static final ConflictingNameOuterClass.ConflictingName CONFLICTING_NAME_MESSAGE =
         ConflictingNameOuterClass.ConflictingName.newBuilder().build();
 
-    public static final NestedConflictingClassNameOuterClass.Parent.NestedConflictingClassName
-            NESTED_CONFLICTING_NAME_MESSAGE = NestedConflictingClassNameOuterClass.Parent.NestedConflictingClassName
-            .newBuilder().build();
+    public static final NestedConflictingClassNameOuterClass.Parent.NestedConflictingClassName NESTED_CONFLICTING_NAME_MESSAGE =
+        NestedConflictingClassNameOuterClass.Parent.NestedConflictingClassName.newBuilder().build();
 
     public static final AllTypes ALL_TYPES_MESSAGE_SYNTAX3 =
         AllTypes.newBuilder()
@@ -195,8 +194,7 @@ public class ProtobufGenerator {
                 )
             ).build())
             .setAnEnum1(AnEnum.BETA)
-            .putAComplexMap(81, AnotherTopLevelMessage.NestedMessage2.newBuilder()
-                    .addATimestamp(Timestamp.newBuilder().build()).build())
+            .putAComplexMap(81, AnotherTopLevelMessage.NestedMessage2.newBuilder().addATimestamp(Timestamp.newBuilder().build()).build())
             .build();
 
     public static final AllTypesSyntax2.AllTypes ALL_TYPES_MESSAGE_SYNTAX2 =
