@@ -426,7 +426,7 @@
                 <artifactId>maven-javadoc-plugin</artifactId>
                 <version>3.2.0</version>
                 <configuration>
-                    <excludePackageNames>*.avrodata</excludePackageNames>
+                    <excludePackageNames>*.avrodata, *.apicurio</excludePackageNames>
                     <source>8</source>
                 </configuration>
                 <executions>
@@ -450,7 +450,6 @@
                         <exclude>**/AWSSchemaNamingStrategy*</exclude>
                         <exclude>**/JsonSchemaDataConfig*</exclude>
                         <exclude>**/JsonSchemaConverterConstants*</exclude>
-                        <exclude>**/apicurio/**</exclude>
                     </excludes>
                 </configuration>
                 <executions>
