@@ -11,6 +11,8 @@ public class ConnectDataToProtobufDataConverterFactory {
 
         if (connectType.isPrimitive()) {
             return new PrimitiveDataConverter();
+        } else if (connectType.equals(Schema.Type.ARRAY)) {
+            return new ArrayDataConverter();
         }
 
         throw new IllegalArgumentException("Unrecognized connect type: " + connectType);

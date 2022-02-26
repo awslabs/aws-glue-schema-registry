@@ -2,6 +2,7 @@ package com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.toconnectdat
 
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Descriptors;
+import com.google.protobuf.MapEntry;
 import com.google.protobuf.Message;
 import lombok.NonNull;
 import org.apache.kafka.connect.data.Field;
@@ -9,7 +10,10 @@ import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.errors.DataException;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Converts Protobuf data to Connect data corresponding to the translated schema.
@@ -45,59 +49,73 @@ public class ProtobufDataToConnectDataConverter {
         }
 
         try {
-            switch (connectSchema.type()) {
-                //TODO: Add this when metadata is added to Protobuf schemas.
-                //case INT8:
-                //case INT16:
-                case INT32: {
-                    Integer intVal = ((Number) value).intValue();
-                    data.put(connectField, intVal);
-                    break;
-                }
-                case INT64: {
-                    long longVal;
-                    Number number = (Number) value;
-                    if (value instanceof Long) {
-                        longVal = number.longValue();
-                    } else {
-                        longVal = Integer.toUnsignedLong(number.intValue());
-                    }
-                    data.put(connectField, longVal);
-                    break;
-                }
-                case FLOAT32: {
-                    Float floatValue = ((Number) value).floatValue();
-                    data.put(connectField, floatValue);
-                    break;
-                }
-                case FLOAT64: {
-                    Double doubleValue = ((Number) value).doubleValue();
-                    data.put(connectField, doubleValue);
-                    break;
-                }
-                case BOOLEAN: {
-                    Boolean boolValue = (Boolean) value;
-                    data.put(connectField, boolValue);
-                    break;
-                }
-                case STRING: {
-                    String strValue = (String) value;
-                    data.put(connectField, strValue);
-                    break;
-                }
-                case BYTES: {
-                    final byte[] valueBytes = ((ByteString) value).toByteArray();
-                    data.put(connectField, valueBytes);
-                    break;
-                }
-                default:
-                    throw new DataException("Cannot convert unrecognized schema type: " + connectSchema.type());
-            }
+            data.put(connectField, toConnectDataField(connectSchema, value));
         } catch (Exception e) {
             throw new DataException(
-                String.format("Error converting value: \"%s\""
-                        + " (Java Type: %s, Protobuf type: %s) to Connect type: %s", value,
-                    value.getClass(), fieldDescriptor.getType(), connectSchema.type()), e);
+                    String.format("Error converting value: \"%s\""
+                                    + " (Java Type: %s, Protobuf type: %s) to Connect type: %s", value,
+                            value.getClass(), fieldDescriptor.getType(), connectSchema.type()), e);
+        }
+    }
+
+    private Object toConnectDataField(Schema schema, Object value) {
+        switch (schema.type()) {
+            //TODO: Add this when metadata is added to Protobuf schemas.
+            //case INT8:
+            //case INT16:
+            case INT32: {
+                Integer intVal = ((Number) value).intValue();
+                return intVal;
+            }
+            case INT64: {
+                long longVal;
+                Number number = (Number) value;
+                if (value instanceof Long) {
+                    longVal = number.longValue();
+                } else {
+                    longVal = Integer.toUnsignedLong(number.intValue());
+                }
+                return longVal;
+            }
+            case FLOAT32: {
+                Float floatValue = ((Number) value).floatValue();
+                return floatValue;
+            }
+            case FLOAT64: {
+                Double doubleValue = ((Number) value).doubleValue();
+                return doubleValue;
+            }
+            case BOOLEAN: {
+                Boolean boolValue = (Boolean) value;
+                return boolValue;
+            }
+            case STRING: {
+                String strValue = (String) value;
+                return strValue;
+            }
+            case BYTES: {
+                final byte[] valueBytes = ((ByteString) value).toByteArray();
+                return valueBytes;
+            }
+            case ARRAY: {
+                final Schema valueSchema = schema.valueSchema();
+                final Collection<Object> original = (Collection<Object>) value;
+                final List<Object> array = original.stream()
+                        .map(elem -> toConnectDataField(valueSchema, elem))
+                        .collect(Collectors.toList());
+                return array;
+            }
+            case MAP: {
+                final Collection<MapEntry> original = (Collection<MapEntry>) value;
+                final Map<Object, Object> map = original.stream().collect(
+                        Collectors.toMap(
+                                entry -> toConnectDataField(schema.keySchema(), entry.getKey()),
+                                entry -> toConnectDataField(schema.valueSchema(), entry.getValue())
+                ));
+                return map;
+            }
+            default:
+                throw new DataException("Cannot convert unrecognized schema type: " + schema.type());
         }
     }
 

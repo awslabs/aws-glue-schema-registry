@@ -1,6 +1,5 @@
 package com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema;
 
-import com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ConnectSchemaToProtobufSchemaConverter;
 import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.Descriptors;
 import org.apache.kafka.connect.data.Schema;
@@ -14,6 +13,8 @@ import org.junit.jupiter.params.provider.MethodSource;
 import java.util.Map;
 import java.util.stream.Stream;
 
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToProtobufTestDataGenerator.getArraySchema;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToProtobufTestDataGenerator.getMapSchema;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToProtobufTestDataGenerator.getPrimitiveSchema;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToProtobufTestDataGenerator.getProtobufSchema;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_TAG;
@@ -42,6 +43,16 @@ public class ConnectSchemaToProtobufSchemaConverterTest {
                 "PrimitiveTypes",
                 getPrimitiveSchema("PrimitiveTypes"),
                 getProtobufSchema("PrimitiveProtobufSchema.filedescproto")
+            ),
+            Arguments.of(
+                "ArrayType",
+                getArraySchema("ArrayType"),
+                getProtobufSchema("ArrayProtobufSchema.filedescproto")
+            ),
+            Arguments.of(
+                "MapType",
+                getMapSchema("MapType"),
+                getProtobufSchema("MapProtobufSchema.filedescproto")
             )
         );
     }

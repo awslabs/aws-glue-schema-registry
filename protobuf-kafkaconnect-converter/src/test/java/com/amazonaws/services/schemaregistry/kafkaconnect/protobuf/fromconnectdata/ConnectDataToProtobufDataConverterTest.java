@@ -44,6 +44,28 @@ public class ConnectDataToProtobufDataConverterTest {
     }
 
     @Test
+    public void convert_ForArrayType_ConvertsSuccessfully() {
+        final DynamicMessage arrayMessage = ToProtobufTestDataGenerator.getProtobufArrayMessage();
+        final Descriptors.FileDescriptor fileDescriptor = arrayMessage.getDescriptorForType().getFile();
+        final Schema arraySchema = ToProtobufTestDataGenerator.getArraySchema("ArrayDataTest");
+        final Message actualMessage = connectDataToProtobufDataConverter.convert(fileDescriptor, arraySchema,
+                ToProtobufTestDataGenerator.getArrayTypeData());
+
+        assertEquals(arrayMessage, actualMessage);
+    }
+
+    @Test
+    public void convert_ForMapType_ConvertsSuccessfully() {
+        final DynamicMessage mapMessage = ToProtobufTestDataGenerator.getProtobufMapMessage();
+        final Descriptors.FileDescriptor fileDescriptor = mapMessage.getDescriptorForType().getFile();
+        final Schema mapSchema = ToProtobufTestDataGenerator.getMapSchema("MapDataTest");
+        final Message actualMessage = connectDataToProtobufDataConverter.convert(fileDescriptor, mapSchema,
+                ToProtobufTestDataGenerator.getMapTypeData());
+
+        assertEquals(mapMessage, actualMessage);
+    }
+
+    @Test
     public void convert_ForNullValues_ThrowsException() {
         final DynamicMessage primitiveMessage = ToProtobufTestDataGenerator.getProtobufPrimitiveMessage();
         final Schema primitiveSchema = ToProtobufTestDataGenerator.getPrimitiveSchema("PrimitiveDataTest");

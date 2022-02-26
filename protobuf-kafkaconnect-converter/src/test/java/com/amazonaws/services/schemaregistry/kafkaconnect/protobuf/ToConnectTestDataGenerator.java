@@ -1,6 +1,10 @@
 package com.amazonaws.services.schemaregistry.kafkaconnect.protobuf;
 
+import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax2.ArrayTypeSyntax2;
+import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax2.MapTypeSyntax2;
 import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax2.PrimitiveTypesSyntax2;
+import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax3.ArrayTypeSyntax3;
+import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax3.MapTypeSyntax3;
 import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax3.PrimitiveTypesSyntax3;
 import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.ByteString;
@@ -9,16 +13,18 @@ import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.CommonTestHelper.createConnectSchema;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_PACKAGE;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_TAG;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_TYPE;
 
 public class ToConnectTestDataGenerator {
-
-    private static final String PROTOBUF_TAG = "protobuf.tag";
-    private static final String PROTOBUF_TYPE = "protobuf.type";
 
     public static List<Message> getPrimitiveProtobufMessages() {
         return Arrays.asList(
@@ -119,9 +125,7 @@ public class ToConnectTestDataGenerator {
         return createConnectSchema(
             "PrimitiveTypes",
             getPrimitiveTypes(),
-            ImmutableMap.of(
-                "protobuf.package", packageName
-            )
+            ImmutableMap.of(PROTOBUF_PACKAGE, packageName)
         );
     }
 
@@ -246,6 +250,98 @@ public class ToConnectTestDataGenerator {
             .put("strWithParam", new SchemaBuilder(Schema.Type.STRING).parameter(PROTOBUF_TAG, "13912").build())
             .put("strOptional", new SchemaBuilder(Schema.Type.STRING).parameter(PROTOBUF_TAG, "33").optional().build())
             .put("strWithDefault", new SchemaBuilder(Schema.Type.STRING).parameter(PROTOBUF_TAG, "34").build())
+            .build();
+    }
+
+    public static List<Message> getArrayProtobufMessages() {
+        return Arrays.asList(
+            ArrayTypeSyntax3.ArrayType.newBuilder()
+                .addAllStr(Arrays.asList("foo", "bar", "baz"))
+                .addBoolean(true)
+                .addBoolean(false)
+                .build(),
+            ArrayTypeSyntax2.ArrayType.newBuilder()
+                .addAllStr(Arrays.asList("foo", "bar", "baz"))
+                .addBoolean(true)
+                .addBoolean(false)
+                .build()
+        );
+    }
+
+    public static Schema getArraySchema(String packageName) {
+        return createConnectSchema(
+            "ArrayType",
+            getArrayType(),
+            ImmutableMap.of(PROTOBUF_PACKAGE, packageName)
+        );
+    }
+
+    public static Struct getArrayTypeData(String packageName) {
+        final Struct connectData = new Struct(getArraySchema(packageName));
+
+        connectData
+            .put("str", Arrays.asList("foo", "bar", "baz"))
+            .put("boolean", Arrays.asList(true, false))
+            .put("i32", new ArrayList<>());
+        return connectData;
+    }
+
+    private static Map<String, Schema> getArrayType() {
+        return ImmutableMap.<String, Schema>builder()
+            .put("str", SchemaBuilder.array(Schema.STRING_SCHEMA).parameter(PROTOBUF_TAG, "1").optional().build())
+            .put("i32", SchemaBuilder.array(Schema.INT32_SCHEMA).parameter(PROTOBUF_TAG, "2").optional().build())
+            .put("boolean", SchemaBuilder.array(Schema.BOOLEAN_SCHEMA).parameter(PROTOBUF_TAG, "3").optional().build())
+            .build();
+    }
+
+    public static List<Message> getMapProtobufMessages() {
+        Map<String, Boolean> booleanMap = new HashMap<>();
+        booleanMap.put("A", true);
+        booleanMap.put("B", false);
+        return Arrays.asList(
+            MapTypeSyntax3.MapType.newBuilder()
+                .putIntMap(2, 22)
+                .putAllBoolMap(booleanMap)
+                .build(),
+            MapTypeSyntax2.MapType.newBuilder()
+                .putIntMap(2, 22)
+                .putAllBoolMap(booleanMap)
+                .build()
+        );
+    }
+
+    public static Schema getMapSchema(String packageName) {
+        return createConnectSchema(
+            "MapType",
+            getMapType(),
+            ImmutableMap.of(PROTOBUF_PACKAGE, packageName)
+        );
+    }
+
+    public static Struct getMapTypeData(String packageName) {
+        final Struct connectData = new Struct(getMapSchema(packageName));
+
+        connectData
+            .put("intMap", ImmutableMap.of(2, 22))
+            .put("boolMap", ImmutableMap.of("A", true, "B", false))
+            .put("strMap", new HashMap<>());
+        return connectData;
+    }
+
+    private static Map<String, Schema> getMapType() {
+        return ImmutableMap.<String, Schema>builder()
+            .put("intMap", SchemaBuilder.map(
+                new SchemaBuilder(Schema.Type.INT32).parameter(PROTOBUF_TAG, "1").optional().build(),
+                new SchemaBuilder(Schema.Type.INT32).parameter(PROTOBUF_TAG, "2").optional().build())
+                .parameter(PROTOBUF_TAG, "1").build())
+            .put("boolMap", SchemaBuilder.map(
+                new SchemaBuilder(Schema.Type.STRING).parameter(PROTOBUF_TAG, "1").optional().build(),
+                new SchemaBuilder(Schema.Type.BOOLEAN).parameter(PROTOBUF_TAG, "2").optional().build())
+                .parameter(PROTOBUF_TAG, "2").build())
+            .put("strMap", SchemaBuilder.map(
+                new SchemaBuilder(Schema.Type.INT32).parameter(PROTOBUF_TAG, "1").optional().build(),
+                new SchemaBuilder(Schema.Type.STRING).parameter(PROTOBUF_TAG, "2").optional().build())
+                .parameter(PROTOBUF_TAG, "3").build())
             .build();
     }
 }

@@ -12,12 +12,17 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.google.common.base.CaseFormat.LOWER_UNDERSCORE;
+import static com.google.common.base.CaseFormat.UPPER_CAMEL;
+
 /**
  * Builds the fields into given message and fileDescriptorProto.
  */
 @Slf4j
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class FieldBuilder {
+
+    private static final String MAP_ENTRY_SUFFIX = "Entry";
 
     public static void build(
         final Schema schema,
@@ -31,12 +36,15 @@ public class FieldBuilder {
             final String fieldName = field.name();
 
             //Get the corresponding type converter and convert it.
-            final SchemaTypeConverter schemaTypeConverter = ConnectToProtobufTypeConverterFactory.get(fieldSchema);
-            final DescriptorProtos.FieldDescriptorProto.Builder fieldDescriptorProtoBuilder =
-                schemaTypeConverter
-                    .toProtobufSchema(fieldSchema, messageDescriptorProtoBuilder, fileDescriptorProtoBuilder);
+            if (Schema.Type.MAP.equals(fieldSchema.type())) {
+                String mapEntryName = toMapEntryName(fieldName);
+                messageDescriptorProtoBuilder.addNestedType(buildMap(fieldSchema, mapEntryName,
+                    fileDescriptorProtoBuilder, messageDescriptorProtoBuilder));
+            }
 
-            fieldDescriptorProtoBuilder.setName(fieldName);
+            DescriptorProtos.FieldDescriptorProto.Builder fieldDescriptorProtoBuilder =
+                getFieldDescriptorProtoBuilder(fieldSchema, fieldName, fileDescriptorProtoBuilder,
+                    messageDescriptorProtoBuilder);
             fieldDescriptorProtoBuilder.setNumber(
                 tagNumberFromMetadata(fieldSchema.parameters()).orElseGet(tagNumber::getAndIncrement)
             );
@@ -44,7 +52,52 @@ public class FieldBuilder {
             setProto3Optional(fieldSchema, fieldDescriptorProtoBuilder, messageDescriptorProtoBuilder);
 
             messageDescriptorProtoBuilder.addField(fieldDescriptorProtoBuilder);
+
         }
+    }
+
+    private static DescriptorProtos.DescriptorProto buildMap(Schema schema, String name,
+         final DescriptorProtos.FileDescriptorProto.Builder fileDescriptorProtoBuilder,
+         final DescriptorProtos.DescriptorProto.Builder messageDescriptorProtoBuilder) {
+        DescriptorProtos.FieldDescriptorProto.Builder keyFieldBuilder =
+            getFieldDescriptorProtoBuilder(schema.keySchema(), "key", fileDescriptorProtoBuilder,
+                messageDescriptorProtoBuilder);
+        keyFieldBuilder.setNumber(1);
+        DescriptorProtos.FieldDescriptorProto.Builder valueFieldBuilder =
+            getFieldDescriptorProtoBuilder(schema.valueSchema(), "value", fileDescriptorProtoBuilder,
+                messageDescriptorProtoBuilder);
+        valueFieldBuilder.setNumber(2);
+
+        DescriptorProtos.DescriptorProto.Builder mapBuilder =
+            DescriptorProtos.DescriptorProto.newBuilder().setName(name);
+        mapBuilder.addField(keyFieldBuilder.build());
+        mapBuilder.addField(valueFieldBuilder.build());
+
+        DescriptorProtos.MessageOptions.Builder optionsBuilder = DescriptorProtos.MessageOptions.newBuilder()
+                .setMapEntry(true);
+        mapBuilder.mergeOptions(optionsBuilder.build());
+
+        return mapBuilder.build();
+    }
+
+    private static DescriptorProtos.FieldDescriptorProto.Builder getFieldDescriptorProtoBuilder(
+            final Schema fieldSchema, final String fieldName,
+            final DescriptorProtos.FileDescriptorProto.Builder fileDescriptorProtoBuilder,
+            final DescriptorProtos.DescriptorProto.Builder messageDescriptorProtoBuilder) {
+
+        final SchemaTypeConverter schemaTypeConverter = ConnectToProtobufTypeConverterFactory.get(fieldSchema);
+        final DescriptorProtos.FieldDescriptorProto.Builder fieldDescriptorProtoBuilder =
+                schemaTypeConverter
+                        .toProtobufSchema(fieldSchema, messageDescriptorProtoBuilder, fileDescriptorProtoBuilder);
+
+        if (Schema.Type.MAP.equals(fieldSchema.type())) {
+            String typeName = getTypeName(fileDescriptorProtoBuilder.getPackage() + "." + toMapEntryName(fieldName));
+            fieldDescriptorProtoBuilder.setTypeName(typeName);
+        }
+        fieldDescriptorProtoBuilder.setName(fieldName);
+
+        return fieldDescriptorProtoBuilder;
+
     }
 
     /**
@@ -90,5 +143,18 @@ public class FieldBuilder {
 
         fieldBuilder.setProto3Optional(true);
         fieldBuilder.setOneofIndex(descriptorProtoBuilder.getOneofDeclCount() - 1);
+    }
+
+    private static String getTypeName(String typeName) {
+        return typeName.startsWith(".") ? typeName : "." + typeName;
+    }
+
+    private static String toMapEntryName(String s) {
+        if (s.contains("_")) {
+            s = LOWER_UNDERSCORE.to(UPPER_CAMEL, s);
+        }
+        s += MAP_ENTRY_SUFFIX;
+        s = s.substring(0, 1).toUpperCase() + s.substring(1);
+        return s;
     }
 }
