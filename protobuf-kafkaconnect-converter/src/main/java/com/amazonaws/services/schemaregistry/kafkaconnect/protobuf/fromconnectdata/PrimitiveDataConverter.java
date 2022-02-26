@@ -70,16 +70,16 @@ public class PrimitiveDataConverter implements DataConverter {
                 }
                 case BYTES: {
                     final ByteBuffer bytesValue = value instanceof byte[] ? ByteBuffer.wrap((byte[]) value) :
-                            (ByteBuffer) value;
+                        (ByteBuffer) value;
                     return ByteString.copyFrom(bytesValue);
                 }
                 default:
                     throw new DataException(String
-                            .format("Unknown schema type: %s for field %s", schema.type(), fieldDescriptor.getName()));
+                        .format("Unknown schema type: %s for field %s", schema.type(), fieldDescriptor.getName()));
             }
         } catch (ClassCastException e) {
             throw new DataException(
-                    String.format("Invalid schema type %s for value %s", schema.type(), value.getClass()));
+                String.format("Invalid schema type %s for value %s", schema.type(), value.getClass()));
         }
     }
 }

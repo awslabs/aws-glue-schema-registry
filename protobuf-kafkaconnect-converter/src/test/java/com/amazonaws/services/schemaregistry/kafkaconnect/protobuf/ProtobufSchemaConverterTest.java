@@ -102,7 +102,7 @@ public class ProtobufSchemaConverterTest {
     @ParameterizedTest
     @MethodSource("getFromConnectTestCases")
     public void fromConnectData_convertsConnectDataToGSRSerializedProtobufData(
-            Object connectData, Schema connectSchema, DynamicMessage protobufData) {
+        Object connectData, Schema connectSchema, DynamicMessage protobufData) {
 
         ArgumentCaptor<DynamicMessage> argumentCaptor = ArgumentCaptor.forClass(DynamicMessage.class);
         doReturn(new byte[] {}).when(serializer).serialize(eq(TOPIC_NAME), any());
@@ -115,7 +115,7 @@ public class ProtobufSchemaConverterTest {
     @ParameterizedTest
     @MethodSource("getToConnectTestCases")
     public void toConnectData_convertsProtobufSerializedDataToConnectData(
-            Message protobufData, Schema connectSchema, Object connectData) {
+        Message protobufData, Schema connectSchema, Object connectData) {
 
         final byte[] serializedData = protobufData.toByteArray();
 

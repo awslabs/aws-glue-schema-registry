@@ -20,6 +20,8 @@ import static com.google.common.base.CaseFormat.UPPER_CAMEL;
  */
 public class ConnectDataToProtobufDataConverter {
 
+    private static final String MAP_ENTRY_SUFFIX = "Entry";
+
     public Message convert(
         @NonNull final Descriptors.FileDescriptor fileDescriptor,
         @NonNull final Schema schema,
@@ -92,7 +94,7 @@ public class ConnectDataToProtobufDataConverter {
         if (s.contains("_")) {
             s = LOWER_UNDERSCORE.to(UPPER_CAMEL, s);
         }
-        s += "Entry";
+        s += MAP_ENTRY_SUFFIX;
         s = s.substring(0, 1).toUpperCase() + s.substring(1);
         return s;
     }
