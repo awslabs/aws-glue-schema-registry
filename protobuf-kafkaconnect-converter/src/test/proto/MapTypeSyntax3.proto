@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax3;
+
+message MapType {
+  map<int32, int32> intMap = 1;
+  map<string, bool> boolMap = 2;
+  map<int32, string> strMap = 3;
+}

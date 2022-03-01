@@ -22,61 +22,57 @@ public class PrimitiveDataConverter implements DataConverter {
         final Object value,
         final Descriptors.FieldDescriptor fieldDescriptor,
         final Message.Builder messageBuilder) {
-        final Schema.Type schemaType = schema.type();
 
+        messageBuilder.setField(fieldDescriptor, toProtobufData(schema, value, fieldDescriptor));
+    }
+
+    @Override
+    public Object toProtobufData(final Schema schema, final Object value,
+                                 final Descriptors.FieldDescriptor fieldDescriptor) {
+        final Schema.Type schemaType = schema.type();
         try {
             switch (schemaType) {
                 case INT8: {
                     final Integer intValue = (Byte.valueOf((byte) value)).intValue();
-                    messageBuilder.setField(fieldDescriptor, intValue);
-                    return;
+                    return intValue;
                 }
                 case INT16: {
                     final Integer intValue = (Short.valueOf((short) value)).intValue();
-                    messageBuilder.setField(fieldDescriptor, intValue);
-                    return;
+                    return intValue;
                 }
                 case INT32: {
                     final Integer intValue = (Integer) value;
-                    messageBuilder.setField(fieldDescriptor, intValue);
-                    return;
+                    return intValue;
                 }
                 case INT64: {
                     if (INT32_METADATA_TYPES.contains(fieldDescriptor.getType())) {
                         //If type metadata is set to one of the 32-bit types.
                         final int intValue = (int) ((Number) value).longValue();
-                        messageBuilder.setField(fieldDescriptor, intValue);
-                        return;
+                        return intValue;
                     }
                     final Long longValue = (Long) value;
-                    messageBuilder.setField(fieldDescriptor, longValue);
-                    return;
+                    return longValue;
                 }
                 case FLOAT32: {
                     final Float floatValue = (Float) value;
-                    messageBuilder.setField(fieldDescriptor, floatValue);
-                    return;
+                    return floatValue;
                 }
                 case FLOAT64: {
                     final Double doubleValue = (Double) value;
-                    messageBuilder.setField(fieldDescriptor, doubleValue);
-                    return;
+                    return doubleValue;
                 }
                 case BOOLEAN: {
                     final Boolean boolValue = (Boolean) value;
-                    messageBuilder.setField(fieldDescriptor, boolValue);
-                    return;
+                    return boolValue;
                 }
                 case STRING: {
                     final String stringValue = (String) value;
-                    messageBuilder.setField(fieldDescriptor, stringValue);
-                    return;
+                    return stringValue;
                 }
                 case BYTES: {
                     final ByteBuffer bytesValue = value instanceof byte[] ? ByteBuffer.wrap((byte[]) value) :
                         (ByteBuffer) value;
-                    messageBuilder.setField(fieldDescriptor, ByteString.copyFrom(bytesValue));
-                    return;
+                    return ByteString.copyFrom(bytesValue);
                 }
                 default:
                     throw new DataException(String

@@ -54,14 +54,19 @@ public class ProtobufSchemaToConnectSchemaConverter {
     }
 
     private Schema toConnectSchemaForField(final Descriptors.FieldDescriptor fieldDescriptor) {
+        return toConnectSchemaBuilderForField(fieldDescriptor).build();
+    }
+
+    private SchemaBuilder toConnectSchemaBuilderForField(final Descriptors.FieldDescriptor fieldDescriptor) {
         final Descriptors.FieldDescriptor.Type protobufType = fieldDescriptor.getType();
-        final Schema.Type connectType;
+
+        SchemaBuilder schemaBuilder = null;
 
         switch (protobufType) {
             case INT32:
             case SINT32:
             case SFIXED32: {
-                connectType = Schema.Type.INT32;
+                schemaBuilder = SchemaBuilder.int32();
                 break;
             }
             case INT64:
@@ -71,46 +76,63 @@ public class ProtobufSchemaToConnectSchemaConverter {
             case SFIXED64:
             case UINT32:
             case FIXED32: {
-                connectType = Schema.Type.INT64;
+                schemaBuilder = SchemaBuilder.int64();
                 break;
             }
             case FLOAT: {
-                connectType = Schema.Type.FLOAT32;
+                schemaBuilder = SchemaBuilder.float32();
                 break;
             }
             case DOUBLE: {
-                connectType = Schema.Type.FLOAT64;
+                schemaBuilder = SchemaBuilder.float64();
                 break;
             }
             case BOOL: {
-                connectType = Schema.Type.BOOLEAN;
+                schemaBuilder = SchemaBuilder.bool();
                 break;
             }
             case STRING: {
-                connectType = Schema.Type.STRING;
+                schemaBuilder = SchemaBuilder.string();
                 break;
             }
             case BYTES: {
-                connectType = Schema.Type.BYTES;
+                schemaBuilder = SchemaBuilder.bytes();
+                break;
+            }
+            case MESSAGE: {
+                if (fieldDescriptor.isMapField()) {
+                    Descriptors.Descriptor mapDescriptor = fieldDescriptor.getMessageType();
+                    Descriptors.FieldDescriptor keyFieldDescriptor = mapDescriptor.findFieldByName("key");
+                    Descriptors.FieldDescriptor valueFieldDescriptor = mapDescriptor.findFieldByName("value");
+                    schemaBuilder = SchemaBuilder.map(
+                            toConnectSchemaBuilderForField(keyFieldDescriptor).optional().build(),
+                            toConnectSchemaBuilderForField(valueFieldDescriptor).optional().build());
+                }
                 break;
             }
             default:
                 throw new DataException("Invalid Protobuf type passed: " + protobufType);
         }
 
-        final SchemaBuilder schemaBuilder = new SchemaBuilder(connectType);
         //Protobuf provides different types of integers.
         //We add metadata to Connect schema to store the original type used.
         if (TYPES_TO_ADD_METADATA.contains(protobufType)) {
             schemaBuilder.parameter(PROTOBUF_TYPE, protobufType.name().toUpperCase());
         }
 
-        schemaBuilder.parameter(PROTOBUF_TAG, String.valueOf(fieldDescriptor.getNumber()));
-
         if (fieldDescriptor.hasOptionalKeyword()) {
             schemaBuilder.optional();
         }
 
-        return schemaBuilder.build();
+        if (fieldDescriptor.isRepeated() && schemaBuilder.type() != Schema.Type.MAP) {
+            Schema schema = schemaBuilder.build();
+            schemaBuilder = SchemaBuilder.array(schema).optional();
+            schemaBuilder.parameter(PROTOBUF_TAG, String.valueOf(fieldDescriptor.getNumber()));
+            return schemaBuilder;
+        }
+
+        schemaBuilder.parameter(PROTOBUF_TAG, String.valueOf(fieldDescriptor.getNumber()));
+
+        return schemaBuilder;
     }
 }
