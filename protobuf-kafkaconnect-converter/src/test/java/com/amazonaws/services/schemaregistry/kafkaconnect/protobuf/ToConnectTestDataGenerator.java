@@ -280,7 +280,8 @@ public class ToConnectTestDataGenerator {
 
     private static Map<String, Schema> getEnumTypes() {
         return ImmutableMap.<String, Schema>builder()
-                .put("corpus", new SchemaBuilder(Schema.Type.STRING).parameter("protobuf.type", "enum")
+                .put("corpus", new SchemaBuilder(Schema.Type.STRING)
+                        .parameter("protobuf.type", "enum")
                         .parameter("PROTOBUF_ENUM_VALUE.UNIVERSAL", "0")
                         .parameter("PROTOBUF_ENUM_VALUE.WEB", "1")
                         .parameter("PROTOBUF_ENUM_VALUE.IMAGES", "2")
@@ -291,6 +292,15 @@ public class ToConnectTestDataGenerator {
                         .parameter("ENUM_NAME", "corpus")
                         .parameter("protobuf.tag", "4")
                         .optional()
+                        .build())
+                .put("color", new SchemaBuilder(Schema.Type.STRING)
+                        .parameter("protobuf.type", "enum")
+                        .parameter("PROTOBUF_ENUM_VALUE.BLACK", "0")
+                        .parameter("PROTOBUF_ENUM_VALUE.RED", "1")
+                        .parameter("PROTOBUF_ENUM_VALUE.GREEN", "2")
+                        .parameter("PROTOBUF_ENUM_VALUE.BLUE", "3")
+                        .parameter("ENUM_NAME", "color")
+                        .parameter("protobuf.tag", "3")
                         .build())
                 .build();
     }

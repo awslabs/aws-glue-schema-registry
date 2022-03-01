@@ -8,6 +8,12 @@ message_type {
     type: TYPE_ENUM
     type_name: "corpus"
   }
+  field {
+    name: "color"
+    number: 3
+    type: TYPE_ENUM
+    type_name: "color"
+  }
 }
 enum_type {
   name: "corpus"
@@ -38,6 +44,25 @@ enum_type {
   value {
     name: "VIDEO"
     number: 6
+  }
+}
+enum_type {
+  name: "color"
+  value {
+    name: "BLACK"
+    number: 0
+  }
+  value {
+    name: "RED"
+    number: 1
+  }
+  value {
+    name: "GREEN"
+    number: 2
+  }
+  value {
+    name: "BLUE"
+    number: 3
   }
 }
 syntax: "proto3"
