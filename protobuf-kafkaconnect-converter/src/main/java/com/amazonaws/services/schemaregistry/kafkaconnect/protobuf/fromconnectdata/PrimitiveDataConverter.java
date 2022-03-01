@@ -26,6 +26,7 @@ public class PrimitiveDataConverter implements DataConverter {
         messageBuilder.setField(fieldDescriptor, toProtobufData(schema, value, fieldDescriptor));
     }
 
+    @Override
     public Object toProtobufData(final Schema schema, final Object value,
                                  final Descriptors.FieldDescriptor fieldDescriptor) {
         final Schema.Type schemaType = schema.type();

@@ -16,15 +16,21 @@ public class ArrayDataConverter implements DataConverter {
             final Object value,
             final Descriptors.FieldDescriptor fieldDescriptor,
             final Message.Builder messageBuilder) {
+        messageBuilder.setField(fieldDescriptor, toProtobufData(schema, value, fieldDescriptor));
+    }
 
-        PrimitiveDataConverter primitiveDataConverter = new PrimitiveDataConverter();
+    @Override
+    public Object toProtobufData(final Schema schema, final Object value,
+                                 final Descriptors.FieldDescriptor fieldDescriptor) {
+
+       final DataConverter dataConverter = ConnectDataToProtobufDataConverterFactory.get(schema.valueSchema());
 
         Collection original = (Collection) value;
         List<Object> array = new ArrayList<>();
         for (Object elem : original) {
-            Object fieldValue = primitiveDataConverter.toProtobufData(schema.valueSchema(), elem, fieldDescriptor);
+            Object fieldValue = dataConverter.toProtobufData(schema.valueSchema(), elem, fieldDescriptor);
             array.add(fieldValue);
         }
-        messageBuilder.setField(fieldDescriptor, array);
+        return array;
     }
 }

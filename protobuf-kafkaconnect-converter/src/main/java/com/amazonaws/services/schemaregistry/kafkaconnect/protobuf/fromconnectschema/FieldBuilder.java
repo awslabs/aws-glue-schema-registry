@@ -12,17 +12,12 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.google.common.base.CaseFormat.LOWER_UNDERSCORE;
-import static com.google.common.base.CaseFormat.UPPER_CAMEL;
-
 /**
  * Builds the fields into given message and fileDescriptorProto.
  */
 @Slf4j
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class FieldBuilder {
-
-    private static final String MAP_ENTRY_SUFFIX = "Entry";
 
     public static void build(
         final Schema schema,
@@ -37,7 +32,7 @@ public class FieldBuilder {
 
             //Get the corresponding type converter and convert it.
             if (Schema.Type.MAP.equals(fieldSchema.type())) {
-                String mapEntryName = toMapEntryName(fieldName);
+                String mapEntryName = ProtobufSchemaConverterUtils.toMapEntryName(fieldName);
                 messageDescriptorProtoBuilder.addNestedType(buildMap(fieldSchema, mapEntryName,
                     fileDescriptorProtoBuilder, messageDescriptorProtoBuilder));
             }
@@ -91,7 +86,8 @@ public class FieldBuilder {
                         .toProtobufSchema(fieldSchema, messageDescriptorProtoBuilder, fileDescriptorProtoBuilder);
 
         if (Schema.Type.MAP.equals(fieldSchema.type())) {
-            String typeName = getTypeName(fileDescriptorProtoBuilder.getPackage() + "." + toMapEntryName(fieldName));
+            String typeName = getTypeName(fileDescriptorProtoBuilder.getPackage() + "."
+                + ProtobufSchemaConverterUtils.toMapEntryName(fieldName));
             fieldDescriptorProtoBuilder.setTypeName(typeName);
         }
         fieldDescriptorProtoBuilder.setName(fieldName);
@@ -147,14 +143,5 @@ public class FieldBuilder {
 
     private static String getTypeName(String typeName) {
         return typeName.startsWith(".") ? typeName : "." + typeName;
-    }
-
-    private static String toMapEntryName(String s) {
-        if (s.contains("_")) {
-            s = LOWER_UNDERSCORE.to(UPPER_CAMEL, s);
-        }
-        s += MAP_ENTRY_SUFFIX;
-        s = s.substring(0, 1).toUpperCase() + s.substring(1);
-        return s;
     }
 }

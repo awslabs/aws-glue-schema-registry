@@ -10,9 +10,9 @@ public class ArraySchemaTypeConverter implements SchemaTypeConverter {
             final Schema schema, final DescriptorProtos.DescriptorProto.Builder descriptorProto,
             final DescriptorProtos.FileDescriptorProto.Builder fileDescriptorProtoBuilder) {
 
-        final PrimitiveSchemaTypeConverter primitiveSchemaTypeConverter = new PrimitiveSchemaTypeConverter();
+        final SchemaTypeConverter schemaTypeConverter = ConnectToProtobufTypeConverterFactory.get(schema.valueSchema());
 
-        DescriptorProtos.FieldDescriptorProto.Builder fieldBuilder = primitiveSchemaTypeConverter
+        DescriptorProtos.FieldDescriptorProto.Builder fieldBuilder = schemaTypeConverter
                 .toProtobufSchema(schema.valueSchema(), descriptorProto, fileDescriptorProtoBuilder);
         fieldBuilder.setLabel(DescriptorProtos.FieldDescriptorProto.Label.LABEL_REPEATED);
         return fieldBuilder;

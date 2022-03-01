@@ -1,5 +1,6 @@
 package com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectdata;
 
+import com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterUtils;
 import com.google.protobuf.Descriptors;
 import com.google.protobuf.DynamicMessage;
 import com.google.protobuf.Message;
@@ -12,15 +13,10 @@ import org.apache.kafka.connect.errors.DataException;
 import java.util.List;
 import java.util.Map;
 
-import static com.google.common.base.CaseFormat.LOWER_UNDERSCORE;
-import static com.google.common.base.CaseFormat.UPPER_CAMEL;
-
 /**
  * Converts Connect data to Protobuf data according to the Protobuf schema.
  */
 public class ConnectDataToProtobufDataConverter {
-
-    private static final String MAP_ENTRY_SUFFIX = "Entry";
 
     public Message convert(
         @NonNull final Descriptors.FileDescriptor fileDescriptor,
@@ -71,7 +67,7 @@ public class ConnectDataToProtobufDataConverter {
         final String protobufFieldName = field.name();
         final Schema schema = field.schema();
         final Descriptors.Descriptor mapDescriptor = builder.getDescriptorForType().findNestedTypeByName(
-                toMapEntryName(protobufFieldName));
+                ProtobufSchemaConverterUtils.toMapEntryName(protobufFieldName));
 
         DynamicMessage.Builder mapBuilder = DynamicMessage.newBuilder(mapDescriptor);
         final Descriptors.FieldDescriptor keyFieldDescriptor = mapDescriptor.findFieldByName("key");
@@ -88,14 +84,5 @@ public class ConnectDataToProtobufDataConverter {
             builder.addRepeatedField(builder.getDescriptorForType().findFieldByName(field.name()),
                     mapBuilder.build());
         }
-    }
-
-    private String toMapEntryName(String s) {
-        if (s.contains("_")) {
-            s = LOWER_UNDERSCORE.to(UPPER_CAMEL, s);
-        }
-        s += MAP_ENTRY_SUFFIX;
-        s = s.substring(0, 1).toUpperCase() + s.substring(1);
-        return s;
     }
 }

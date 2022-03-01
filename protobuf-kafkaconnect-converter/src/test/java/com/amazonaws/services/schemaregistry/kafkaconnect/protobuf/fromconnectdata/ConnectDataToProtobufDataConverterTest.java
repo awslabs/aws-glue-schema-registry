@@ -45,6 +45,7 @@ public class ConnectDataToProtobufDataConverterTest {
 
     @Test
     public void convert_ForArrayType_ConvertsSuccessfully() {
+        // TODO add test case for repeated Message/Enum and other complex types
         final DynamicMessage arrayMessage = ToProtobufTestDataGenerator.getProtobufArrayMessage();
         final Descriptors.FileDescriptor fileDescriptor = arrayMessage.getDescriptorForType().getFile();
         final Schema arraySchema = ToProtobufTestDataGenerator.getArraySchema("ArrayDataTest");
