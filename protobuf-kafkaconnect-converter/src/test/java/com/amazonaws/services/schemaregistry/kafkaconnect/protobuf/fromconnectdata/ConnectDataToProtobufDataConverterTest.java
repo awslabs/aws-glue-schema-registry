@@ -116,7 +116,7 @@ public class ConnectDataToProtobufDataConverterTest {
         final Descriptors.FileDescriptor fileDescriptor = primitiveMessage.getDescriptorForType().getFile();
         final Struct value = new Struct(nonOptionalSchema).put(nonOptionalField, "some-string");
 
-        assertThrows(DataException.class,
+        assertThrows(NullPointerException.class,
             () -> connectDataToProtobufDataConverter.convert(fileDescriptor, nonOptionalSchema, value));
     }
 

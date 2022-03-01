@@ -234,10 +234,9 @@ public class ToProtobufTestDataGenerator {
 
         connectData
                 .put("corpus", "UNIVERSAL")
-                .put("shapes", "TRIANGLE")
-                .put("color", "BLUE");
-                //.put("fruits", "BANANA"); //Unset to check default value
-
+                .put("shapes", "SQUARE")
+                .put( "color", "BLUE")
+                .put("fruits", "ORANGE");
         return connectData;
     }
 
@@ -247,9 +246,9 @@ public class ToProtobufTestDataGenerator {
                         .parameter("protobuf.type", "enum")
                         .parameter("PROTOBUF_ENUM_VALUE.UNIVERSAL", "0")
                         .parameter("PROTOBUF_ENUM_VALUE.WEB", "1")
-                        .parameter("PROTOBUF_ENUM_VALUE.NEWS", "4")
                         .parameter("PROTOBUF_ENUM_VALUE.IMAGES", "2")
                         .parameter("PROTOBUF_ENUM_VALUE.LOCAL", "3")
+                        .parameter("PROTOBUF_ENUM_VALUE.NEWS", "4")
                         .parameter("PROTOBUF_ENUM_VALUE.PRODUCTS", "5")
                         .parameter("PROTOBUF_ENUM_VALUE.VIDEO", "6")
                         .parameter("ENUM_NAME", "corpus")
@@ -273,17 +272,17 @@ public class ToProtobufTestDataGenerator {
                         .parameter("protobuf.tag", "2")
                         .optional()
                         .build())
-                .put("fruits", new SchemaBuilder(Schema.Type.STRING).defaultValue("BANANA")
+                .put("fruits", new SchemaBuilder(Schema.Type.STRING)
                         .parameter("protobuf.type", "enum")
                         .parameter("PROTOBUF_ENUM_VALUE.APPLE", "0")
                         .parameter("PROTOBUF_ENUM_VALUE.ORANGE", "1")
                         .parameter("PROTOBUF_ENUM_VALUE.BANANA", "2")
                         .parameter("ENUM_NAME", "fruits")
                         .parameter("protobuf.tag", "3")
-                        .optional()
                         .build())
                 .build();
     }
+
 
     public static Schema getArraySchema(String name) {
         return createConnectSchema(name, getArrayType(), ImmutableMap.of());
