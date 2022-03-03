@@ -52,7 +52,7 @@ public class ConnectDataToProtobufDataConverter {
             return;
         }
 
-        final DataConverter dataConverter = ConnectDataToProtobufDataConverterFactory.get(fieldDescriptor);
+        final DataConverter dataConverter = ConnectDataToProtobufDataConverterFactory.get(schema);
 
         dataConverter.toProtobufData(schema, value, fieldDescriptor, builder);
     }

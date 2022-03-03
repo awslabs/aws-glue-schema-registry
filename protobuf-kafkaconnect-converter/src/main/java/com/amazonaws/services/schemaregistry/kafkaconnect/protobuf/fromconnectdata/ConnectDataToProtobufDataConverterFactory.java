@@ -9,6 +9,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_TYPE;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_ENUM_TYPE;
 import static com.google.protobuf.Descriptors.FieldDescriptor.Type.BOOL;
 import static com.google.protobuf.Descriptors.FieldDescriptor.Type.BYTES;
@@ -29,20 +30,38 @@ import static com.google.protobuf.Descriptors.FieldDescriptor.Type.UINT64;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class ConnectDataToProtobufDataConverterFactory {
 
-    private static final List<Descriptors.FieldDescriptor.Type> PROTOBUF_PRIMITIVE_TYPES =
-            Arrays.asList(BOOL, BYTES, DOUBLE, FIXED32, FIXED64, FLOAT, INT32, INT64, SFIXED32, SFIXED64, SINT32, SINT64, STRING, UINT32, UINT64);
+    public static DataConverter get(final Schema connectSchema) {
+        final Schema.Type connectType = connectSchema.type();
+        final Map<String, String> schemaParams = connectSchema.parameters();
 
-    //public static DataConverter get(final Schema connectSchema) {
-    public static DataConverter get(final Descriptors.FieldDescriptor fieldDescriptor) {
-        final Descriptors.FieldDescriptor.Type protobufType = fieldDescriptor.getType();
-
-        if (protobufType.equals(PROTOBUF_ENUM_TYPE)) {
+        if (Schema.Type.STRING.equals(connectType)
+                && schemaParams != null
+                && schemaParams.containsKey(PROTOBUF_TYPE)
+                && "enum".equals(schemaParams.get(PROTOBUF_TYPE))) {
             return new EnumDataConverter();
-        } else if (PROTOBUF_PRIMITIVE_TYPES.contains(protobufType)) { //primitive case
+
+        } else if (connectType.isPrimitive()) {
             return new PrimitiveDataConverter();
+
         }
 
-        throw new IllegalArgumentException("Unrecognized connect type: " + protobufType);
+        throw new IllegalArgumentException("Unrecognized connect type: " + connectType);
     }
+
+//    private static final List<Descriptors.FieldDescriptor.Type> PROTOBUF_PRIMITIVE_TYPES =
+//            Arrays.asList(BOOL, BYTES, DOUBLE, FIXED32, FIXED64, FLOAT, INT32, INT64, SFIXED32, SFIXED64, SINT32, SINT64, STRING, UINT32, UINT64);
+//
+//    //public static DataConverter get(final Schema connectSchema) {
+//    public static DataConverter get(final Descriptors.FieldDescriptor fieldDescriptor) {
+//        final Descriptors.FieldDescriptor.Type protobufType = fieldDescriptor.getType();
+//
+//        if (protobufType.equals(PROTOBUF_ENUM_TYPE)) {
+//            return new EnumDataConverter();
+//        } else if (PROTOBUF_PRIMITIVE_TYPES.contains(protobufType)) { //primitive case
+//            return new PrimitiveDataConverter();
+//        }
+//
+//        throw new IllegalArgumentException("Unrecognized connect type: " + protobufType);
+//    }
 }
 

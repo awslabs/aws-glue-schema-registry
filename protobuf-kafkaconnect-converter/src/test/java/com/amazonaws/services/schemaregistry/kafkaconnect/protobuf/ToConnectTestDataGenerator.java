@@ -3,8 +3,8 @@ package com.amazonaws.services.schemaregistry.kafkaconnect.protobuf;
 
 import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax2.PrimitiveTypesSyntax2;
 import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax3.PrimitiveTypesSyntax3;
-import com.amazonaws.services.schemaregistry.kafkaconnect.tests.enumsyntax2.EnumTypeSyntax2;
-import com.amazonaws.services.schemaregistry.kafkaconnect.tests.enumsyntax3.EnumTypeSyntax3;
+import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax2.EnumTypeSyntax2;
+import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax3.EnumTypeSyntax3;
 import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Message;
@@ -255,8 +255,13 @@ public class ToConnectTestDataGenerator {
 
     public static List<Message> getEnumProtobufMessages() {
         return Arrays.asList(
-                EnumTypeSyntax3.EnumTest.newBuilder().setCorpus(EnumTypeSyntax3.EnumTest.Corpus.UNIVERSAL).build(),
-                EnumTypeSyntax2.EnumTest.newBuilder().setCorpus(EnumTypeSyntax2.EnumTest.Corpus.UNIVERSAL).build()
+                EnumTypeSyntax3.EnumTest.newBuilder()
+                        .setCorpus(EnumTypeSyntax3.EnumTest.Corpus.UNIVERSAL)
+                        .setColor(EnumTypeSyntax3.EnumTest.Colors.BLUE)
+                        .build(),
+                EnumTypeSyntax2.EnumTest.newBuilder().setCorpus(EnumTypeSyntax2.EnumTest.Corpus.UNIVERSAL)
+                        .setColor(EnumTypeSyntax2.EnumTest.Colors.BLUE)
+                        .build()
         );
     }
 
@@ -274,7 +279,8 @@ public class ToConnectTestDataGenerator {
         final Struct connectData = new Struct(getEnumSchema(packageName));
 
         connectData
-                .put("corpus", "UNIVERSAL");
+                .put("corpus", "UNIVERSAL")
+                .put( "color", "BLUE");
         return connectData;
     }
 
@@ -301,6 +307,7 @@ public class ToConnectTestDataGenerator {
                         .parameter("PROTOBUF_ENUM_VALUE.BLUE", "3")
                         .parameter("ENUM_NAME", "color")
                         .parameter("protobuf.tag", "3")
+                        .optional()
                         .build())
                 .build();
     }

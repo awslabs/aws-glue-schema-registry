@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package com.amazonaws.services.schemaregistry.kafkaconnect.tests.enumsyntax3;
+package com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax3;
 
 message EnumTest {
   enum Corpus {

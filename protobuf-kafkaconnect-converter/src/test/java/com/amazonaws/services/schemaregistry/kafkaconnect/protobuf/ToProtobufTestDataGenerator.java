@@ -214,6 +214,7 @@ public class ToProtobufTestDataGenerator {
 
             return dynamicMessageBuilder
                     .setField(descriptor.findFieldByName("corpus"), fileDescriptor.findEnumTypeByName("corpus").findValueByName("UNIVERSAL"))
+                    .setField(descriptor.findFieldByName("color"), fileDescriptor.findEnumTypeByName("color").findValueByName("BLUE"))
                     .build();
     }
 
@@ -226,7 +227,8 @@ public class ToProtobufTestDataGenerator {
         final Struct connectData = new Struct(connectSchema);
 
         connectData
-                .put("corpus", "UNIVERSAL");
+                .put("corpus", "UNIVERSAL")
+                .put("color", "BLUE");
         return connectData;
     }
 
