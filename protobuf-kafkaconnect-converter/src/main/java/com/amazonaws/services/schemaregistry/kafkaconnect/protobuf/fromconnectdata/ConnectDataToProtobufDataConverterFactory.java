@@ -29,3 +29,4 @@ public class ConnectDataToProtobufDataConverterFactory {
         throw new IllegalArgumentException("Unrecognized connect type: " + connectType);
     }
 }
+
