@@ -2,7 +2,6 @@ package com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectd
 import com.google.protobuf.Descriptors;
 import com.google.protobuf.Message;
 import org.apache.kafka.connect.data.Schema;
-import org.apache.kafka.connect.errors.DataException;
 public class EnumDataConverter implements DataConverter {
 
 
@@ -11,13 +10,11 @@ public class EnumDataConverter implements DataConverter {
                                   final Object value,
                                   final Descriptors.FieldDescriptor fieldDescriptor,
                                   final Message.Builder messageBuilder) {
-        try {
-            final Descriptors.EnumValueDescriptor enumValue = fieldDescriptor.getEnumType().findValueByName((value.toString()));
-            messageBuilder.setField(fieldDescriptor, enumValue);
+        messageBuilder.setField(fieldDescriptor, toProtobufData(schema, value, fieldDescriptor));
+    }
 
-        } catch (ClassCastException e) {
-            throw new DataException(
-                    String.format("Invalid schema type %s for value %s", schema.type(), value.getClass()));
-        }
+    @Override
+    public Object toProtobufData(Schema schema, Object value, Descriptors.FieldDescriptor fieldDescriptor) {
+        return fieldDescriptor.getEnumType().findValueByName((value.toString()));
     }
 }

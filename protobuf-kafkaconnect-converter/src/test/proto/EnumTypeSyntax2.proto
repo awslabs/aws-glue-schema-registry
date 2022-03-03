@@ -1,6 +1,6 @@
 syntax = "proto2";
 
-package com.amazonaws.services.schemaregistry.kafkaconnect.tests.enumsyntax2;
+package com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax2;
 
 message EnumTest {
   enum Corpus {
@@ -12,5 +12,13 @@ message EnumTest {
     PRODUCTS = 5;
     VIDEO = 6;
   }
-  optional Corpus corpus = 4 [default = UNIVERSAL];
+  optional Corpus corpus = 4 [default = IMAGES];
+
+  enum Colors {
+    BLACK = 0;
+    RED = 1;
+    GREEN = 2;
+    BLUE = 3;
+  }
+  optional Colors color = 3 [default = RED];
 }

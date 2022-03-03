@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package com.amazonaws.services.schemaregistry.kafkaconnect.tests.enumsyntax3;
+package com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax3;
 
 message EnumTest {
   enum Corpus {
@@ -13,4 +13,12 @@ message EnumTest {
     VIDEO = 6;
   }
   optional Corpus corpus = 4;
+
+  enum Colors {
+    BLACK = 0;
+    RED = 1;
+    GREEN = 2;
+    BLUE = 3;
+  }
+  optional Colors color = 3;
 }
