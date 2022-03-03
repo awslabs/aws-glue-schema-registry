@@ -13,7 +13,18 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.stream.Stream;
 
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getEnumProtobufMessages;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getEnumSchema;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getEnumTypeData;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getArrayProtobufMessages;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getArraySchema;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getArrayTypeData;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getMapProtobufMessages;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getMapSchema;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getMapTypeData;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getPrimitiveProtobufMessages;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getPrimitiveSchema;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getPrimitiveTypesData;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -25,13 +36,58 @@ public class ProtobufDataToConnectDataConverterTest {
         return getPrimitiveProtobufMessages().stream().map(Arguments::of);
     }
 
+    private static Stream<Arguments> getEnumTestCases() {
+        return getEnumProtobufMessages().stream().map(Arguments::of);
+    }
+
+    private static Stream<Arguments> getArrayTestCases() {
+        return getArrayProtobufMessages().stream().map(Arguments::of);
+    }
+
+    private static Stream<Arguments> getMapTestCases() {
+        return getMapProtobufMessages().stream().map(Arguments::of);
+    }
+
     @ParameterizedTest
     @MethodSource("getPrimitiveTestCases")
     public void toConnectData_convertsProtobufMessageToConnect_forPrimitiveTypes(Message primitiveMessage) {
         String packageName = primitiveMessage.getDescriptorForType().getFile().getPackage();
-        final Schema connectSchema = ToConnectTestDataGenerator.getPrimitiveSchema(packageName);
+        final Schema connectSchema = getPrimitiveSchema(packageName);
         Object actualData = PROTOBUF_DATA_TO_CONNECT_DATA_CONVERTER.toConnectData(primitiveMessage, connectSchema);
-        Struct expectedData = ToConnectTestDataGenerator.getPrimitiveTypesData(packageName);
+        Struct expectedData = getPrimitiveTypesData(packageName);
+
+        assertEquals(expectedData, actualData);
+    }
+
+    @ParameterizedTest
+    @MethodSource("getEnumTestCases")
+    public void toConnectData_convertsProtobufMessageToConnect_forEnumType(Message enumMessage) {
+        String packageName = enumMessage.getDescriptorForType().getFile().getPackage();
+        final Schema connectSchema = getEnumSchema(packageName);
+        Object actualData = PROTOBUF_DATA_TO_CONNECT_DATA_CONVERTER.toConnectData(enumMessage, connectSchema);
+        Struct expectedData = getEnumTypeData(packageName);
+
+        assertEquals(expectedData, actualData);
+    }
+
+    @ParameterizedTest
+    @MethodSource("getArrayTestCases")
+    public void toConnectData_convertsProtobufMessageToConnect_forArrayType(Message arrayMessage) {
+        String packageName = arrayMessage.getDescriptorForType().getFile().getPackage();
+        final Schema connectSchema = getArraySchema(packageName);
+        Object actualData = PROTOBUF_DATA_TO_CONNECT_DATA_CONVERTER.toConnectData(arrayMessage, connectSchema);
+        Struct expectedData = getArrayTypeData(packageName);
+
+        assertEquals(expectedData, actualData);
+    }
+
+    @ParameterizedTest
+    @MethodSource("getMapTestCases")
+    public void toConnectData_convertsProtobufMessageToConnect_forMapType(Message mapMessage) {
+        String packageName = mapMessage.getDescriptorForType().getFile().getPackage();
+        final Schema connectSchema = getMapSchema(packageName);
+        Object actualData = PROTOBUF_DATA_TO_CONNECT_DATA_CONVERTER.toConnectData(mapMessage, connectSchema);
+        Struct expectedData = getMapTypeData(packageName);
 
         assertEquals(expectedData, actualData);
     }

@@ -1,6 +1,5 @@
 package com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema;
 
-import com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ConnectSchemaToProtobufSchemaConverter;
 import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.Descriptors;
 import org.apache.kafka.connect.data.Schema;
@@ -14,6 +13,8 @@ import org.junit.jupiter.params.provider.MethodSource;
 import java.util.Map;
 import java.util.stream.Stream;
 
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToProtobufTestDataGenerator.getArraySchema;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToProtobufTestDataGenerator.getMapSchema;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToProtobufTestDataGenerator.getPrimitiveSchema;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToProtobufTestDataGenerator.getEnumSchema;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToProtobufTestDataGenerator.getProtobufSchema;
@@ -43,6 +44,22 @@ public class ConnectSchemaToProtobufSchemaConverterTest {
                 "PrimitiveTypes",
                 getPrimitiveSchema("PrimitiveTypes"),
                 getProtobufSchema("PrimitiveProtobufSchema.filedescproto")
+            ),
+            Arguments.of(
+                "EnumType",
+                getEnumSchema("EnumType"),
+                getProtobufSchema("EnumProtobufSchema.filedescproto")
+            ),
+            // TODO add test case for repeated Message/Enum and other complex types
+            Arguments.of(
+                "ArrayType",
+                getArraySchema("ArrayType"),
+                getProtobufSchema("ArrayProtobufSchema.filedescproto")
+            ),
+            Arguments.of(
+                "MapType",
+                getMapSchema("MapType"),
+                getProtobufSchema("MapProtobufSchema.filedescproto")
             )
         );
     }
@@ -83,29 +100,6 @@ public class ConnectSchemaToProtobufSchemaConverterTest {
 
         assertThrows(DataException.class,
             () -> CONNECT_SCHEMA_TO_PROTOBUF_SCHEMA_CONVERTER.convert(connectSchema));
-    }
-
-    private static Stream<Arguments> getEnumSchemaTestCases() {
-        return Stream.of(
-                Arguments.of(
-                        "EnumTypes",
-                        getEnumSchema("EnumTypes"),
-                        getProtobufSchema("EnumProtobufSchema.filedescproto")
-                )
-        );
-    }
-
-    @ParameterizedTest(name = "{index} {0}")
-    @MethodSource("getEnumSchemaTestCases")
-    public void fromConnectSchema_convertsConnectSchemaToProtobufSchemaEnum(String fileName, Schema connectSchema,
-                                                                        String expectedProtobufSchema) {
-
-        final Descriptors.FileDescriptor protobufSchema =
-                CONNECT_SCHEMA_TO_PROTOBUF_SCHEMA_CONVERTER.convert(connectSchema);
-
-        final String actualSchema = protobufSchema.toProto().toString();
-
-        assertEquals(expectedProtobufSchema, actualSchema);
     }
 
     @Test

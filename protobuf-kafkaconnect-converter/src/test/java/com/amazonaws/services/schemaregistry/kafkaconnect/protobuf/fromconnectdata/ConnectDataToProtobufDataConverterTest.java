@@ -44,6 +44,40 @@ public class ConnectDataToProtobufDataConverterTest {
     }
 
     @Test
+    public void convert_ForEnumTypes_ConvertsSuccessfully() {
+        final DynamicMessage enumMessage = ToProtobufTestDataGenerator.getProtobufEnumMessage();
+        final Descriptors.FileDescriptor fileDescriptor = enumMessage.getDescriptorForType().getFile();
+        final Schema enumSchema = ToProtobufTestDataGenerator.getEnumSchema("EnumDataTest");
+        final Message actualMessage = connectDataToProtobufDataConverter.convert(fileDescriptor, enumSchema,
+            ToProtobufTestDataGenerator.getEnumTypeData());
+
+        assertEquals(enumMessage, actualMessage);
+    }
+
+    @Test
+    public void convert_ForArrayType_ConvertsSuccessfully() {
+        // TODO add test case for repeated Message/Enum and other complex types
+        final DynamicMessage arrayMessage = ToProtobufTestDataGenerator.getProtobufArrayMessage();
+        final Descriptors.FileDescriptor fileDescriptor = arrayMessage.getDescriptorForType().getFile();
+        final Schema arraySchema = ToProtobufTestDataGenerator.getArraySchema("ArrayDataTest");
+        final Message actualMessage = connectDataToProtobufDataConverter.convert(fileDescriptor, arraySchema,
+            ToProtobufTestDataGenerator.getArrayTypeData());
+
+        assertEquals(arrayMessage, actualMessage);
+    }
+
+    @Test
+    public void convert_ForMapType_ConvertsSuccessfully() {
+        final DynamicMessage mapMessage = ToProtobufTestDataGenerator.getProtobufMapMessage();
+        final Descriptors.FileDescriptor fileDescriptor = mapMessage.getDescriptorForType().getFile();
+        final Schema mapSchema = ToProtobufTestDataGenerator.getMapSchema("MapDataTest");
+        final Message actualMessage = connectDataToProtobufDataConverter.convert(fileDescriptor, mapSchema,
+            ToProtobufTestDataGenerator.getMapTypeData());
+
+        assertEquals(mapMessage, actualMessage);
+    }
+
+    @Test
     public void convert_ForNullValues_ThrowsException() {
         final DynamicMessage primitiveMessage = ToProtobufTestDataGenerator.getProtobufPrimitiveMessage();
         final Schema primitiveSchema = ToProtobufTestDataGenerator.getPrimitiveSchema("PrimitiveDataTest");

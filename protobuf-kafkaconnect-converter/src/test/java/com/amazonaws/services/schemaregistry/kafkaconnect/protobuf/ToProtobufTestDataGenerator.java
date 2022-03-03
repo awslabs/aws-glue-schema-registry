@@ -14,6 +14,10 @@ import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -203,7 +207,7 @@ public class ToProtobufTestDataGenerator {
     }
 
     public static Schema getEnumSchema(String name) {
-        return createConnectSchema(name, getEnumTypes(), ImmutableMap.of());
+        return createConnectSchema(name, getEnumType(), ImmutableMap.of());
     }
 
     @SneakyThrows
@@ -222,8 +226,8 @@ public class ToProtobufTestDataGenerator {
         return new ConnectSchemaToProtobufSchemaConverter().convert(getEnumSchema("enumProtobufSchema"));
     }
 
-    public static Struct getEnumTypesData() {
-        Schema connectSchema = createConnectSchema("enumProtobufSchema", getEnumTypes(), ImmutableMap.of());
+    public static Struct getEnumTypeData() {
+        Schema connectSchema = createConnectSchema("enumProtobufSchema", getEnumType(), ImmutableMap.of());
         final Struct connectData = new Struct(connectSchema);
 
         connectData
@@ -232,7 +236,7 @@ public class ToProtobufTestDataGenerator {
         return connectData;
     }
 
-    private static Map<String, Schema> getEnumTypes() {
+    private static Map<String, Schema> getEnumType() {
         return ImmutableMap.<String, Schema>builder()
                 .put("corpus", new SchemaBuilder(Schema.Type.STRING)
                         .parameter("protobuf.type", "enum")
@@ -256,5 +260,99 @@ public class ToProtobufTestDataGenerator {
                         .parameter("protobuf.tag", "3")
                         .build())
                 .build();
+    }
+
+    public static Schema getArraySchema(String name) {
+        return createConnectSchema(name, getArrayType(), ImmutableMap.of());
+    }
+
+    @SneakyThrows
+    public static DynamicMessage getProtobufArrayMessage() {
+        Descriptors.FileDescriptor fileDescriptor = getArrayFileDescriptor();
+        Descriptors.Descriptor descriptor = fileDescriptor.getMessageTypes().get(0);
+        DynamicMessage.Builder dynamicMessageBuilder = DynamicMessage.newBuilder(descriptor);
+        Function<String, Descriptors.FieldDescriptor> field = descriptor::findFieldByName;
+
+        return dynamicMessageBuilder
+            .setField(field.apply("str"), Arrays.asList("foo", "bar", "baz"))
+            .setField(field.apply("boolean"), Arrays.asList(true, false))
+            .setField(field.apply("i32"), new ArrayList<>())
+            .build();
+    }
+
+    private static Descriptors.FileDescriptor getArrayFileDescriptor() {
+        return new ConnectSchemaToProtobufSchemaConverter().convert(getArraySchema("arrayProtobufSchema"));
+    }
+
+    public static Struct getArrayTypeData() {
+        Schema connectSchema = createConnectSchema("arrayProtobufSchema", getArrayType(), ImmutableMap.of());
+        final Struct connectData = new Struct(connectSchema);
+
+        connectData
+            .put("str", Arrays.asList("foo", "bar", "baz"))
+            .put("boolean", Arrays.asList(true, false))
+            .put("i32", new ArrayList<>());
+        return connectData;
+    }
+
+    private static Map<String, Schema> getArrayType() {
+        return ImmutableMap.<String, Schema>builder()
+            .put("str", SchemaBuilder.array(Schema.STRING_SCHEMA).build())
+            .put("i32", SchemaBuilder.array(Schema.INT32_SCHEMA).build())
+            .put("boolean", SchemaBuilder.array(Schema.BOOLEAN_SCHEMA).build())
+            .build();
+    }
+
+    public static Schema getMapSchema(String name) {
+        return createConnectSchema(name, getMapType(), ImmutableMap.of());
+    }
+
+    @SneakyThrows
+    public static DynamicMessage getProtobufMapMessage() {
+        Descriptors.FileDescriptor fileDescriptor = getMapFileDescriptor();
+        Descriptors.Descriptor descriptor = fileDescriptor.getMessageTypes().get(0);
+        DynamicMessage.Builder dynamicMessageBuilder = DynamicMessage.newBuilder(descriptor);
+
+        Descriptors.Descriptor intMapDescriptor = descriptor.findNestedTypeByName("IntMapEntry");
+        DynamicMessage.Builder intMapBuilder = DynamicMessage.newBuilder(intMapDescriptor)
+            .setField(intMapDescriptor.findFieldByName("key"), 2)
+            .setField(intMapDescriptor.findFieldByName("value"), 22);
+
+        Descriptors.Descriptor boolMapDescriptor = descriptor.findNestedTypeByName("BoolMapEntry");
+        DynamicMessage.Builder boolMapBuilder = DynamicMessage.newBuilder(boolMapDescriptor)
+            .setField(boolMapDescriptor.findFieldByName("key"), "A")
+            .setField(boolMapDescriptor.findFieldByName("value"), true);
+        DynamicMessage.Builder boolMapBuilder2 = DynamicMessage.newBuilder(boolMapDescriptor)
+            .setField(boolMapDescriptor.findFieldByName("key"), "B")
+            .setField(boolMapDescriptor.findFieldByName("value"), false);
+
+        return dynamicMessageBuilder
+            .addRepeatedField(descriptor.findFieldByName("intMap"), intMapBuilder.build())
+            .addRepeatedField(descriptor.findFieldByName("boolMap"), boolMapBuilder.build())
+            .addRepeatedField(descriptor.findFieldByName("boolMap"), boolMapBuilder2.build())
+            .build();
+    }
+
+    private static Descriptors.FileDescriptor getMapFileDescriptor() {
+        return new ConnectSchemaToProtobufSchemaConverter().convert(getMapSchema("mapProtobufSchema"));
+    }
+
+    public static Struct getMapTypeData() {
+        Schema connectSchema = createConnectSchema("mapProtobufSchema", getMapType(), ImmutableMap.of());
+        final Struct connectData = new Struct(connectSchema);
+
+        connectData
+            .put("intMap", Collections.singletonMap(2, 22))
+            .put("boolMap", ImmutableMap.of("A", true, "B", false))
+            .put("strMap", new HashMap<>());
+        return connectData;
+    }
+
+    private static Map<String, Schema> getMapType() {
+        return ImmutableMap.<String, Schema>builder()
+            .put("intMap", SchemaBuilder.map(Schema.INT32_SCHEMA, Schema.INT32_SCHEMA).build())
+            .put("boolMap", SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.BOOLEAN_SCHEMA).build())
+            .put("strMap", SchemaBuilder.map(Schema.INT32_SCHEMA, Schema.STRING_SCHEMA).build())
+            .build();
     }
 }

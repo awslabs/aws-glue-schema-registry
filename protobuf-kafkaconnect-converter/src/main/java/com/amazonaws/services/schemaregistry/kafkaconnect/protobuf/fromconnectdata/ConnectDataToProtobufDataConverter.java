@@ -1,5 +1,6 @@
 package com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectdata;
 
+import com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterUtils;
 import com.google.protobuf.Descriptors;
 import com.google.protobuf.DynamicMessage;
 import com.google.protobuf.Message;
@@ -10,6 +11,7 @@ import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.errors.DataException;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Converts Connect data to Protobuf data according to the Protobuf schema.
@@ -30,7 +32,11 @@ public class ConnectDataToProtobufDataConverter {
         for (final Field field : fields) {
             final Object fieldValue = data.get(field);
 
-            addField(dynamicMessageBuilder, field, fieldValue);
+            if (field.schema().type().equals(Schema.Type.MAP)) {
+                addMapField(dynamicMessageBuilder, field, fieldValue);
+            } else {
+                addField(dynamicMessageBuilder, field, fieldValue);
+            }
         }
 
         return dynamicMessageBuilder.build();
@@ -55,5 +61,28 @@ public class ConnectDataToProtobufDataConverter {
         final DataConverter dataConverter = ConnectDataToProtobufDataConverterFactory.get(schema);
 
         dataConverter.toProtobufData(schema, value, fieldDescriptor, builder);
+    }
+
+    private void addMapField(final Message.Builder builder, final Field field, final Object value) {
+        final String protobufFieldName = field.name();
+        final Schema schema = field.schema();
+        final Descriptors.Descriptor mapDescriptor = builder.getDescriptorForType().findNestedTypeByName(
+                ProtobufSchemaConverterUtils.toMapEntryName(protobufFieldName));
+
+        DynamicMessage.Builder mapBuilder = DynamicMessage.newBuilder(mapDescriptor);
+        final Descriptors.FieldDescriptor keyFieldDescriptor = mapDescriptor.findFieldByName("key");
+        final Descriptors.FieldDescriptor valueFieldDescriptor = mapDescriptor.findFieldByName("value");
+        final DataConverter keyDataConverter = ConnectDataToProtobufDataConverterFactory.get(schema.keySchema());
+        final DataConverter valueDataConverter = ConnectDataToProtobufDataConverterFactory.get(schema.valueSchema());
+
+        Map<?, ?> map = (Map<?, ?>) value;
+
+        for (Map.Entry<?, ?> entry : map.entrySet()) {
+            keyDataConverter.toProtobufData(schema.keySchema(), entry.getKey(), keyFieldDescriptor, mapBuilder);
+            valueDataConverter.toProtobufData(schema.valueSchema(), entry.getValue(), valueFieldDescriptor, mapBuilder);
+
+            builder.addRepeatedField(builder.getDescriptorForType().findFieldByName(field.name()),
+                    mapBuilder.build());
+        }
     }
 }

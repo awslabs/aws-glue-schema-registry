@@ -42,6 +42,8 @@ public class ConnectDataToProtobufDataConverterFactory {
 
         } else if (connectType.isPrimitive()) {
             return new PrimitiveDataConverter();
+        } else if (connectType.equals(Schema.Type.ARRAY)) {
+            return new ArrayDataConverter();
 
         }
 
@@ -64,4 +66,3 @@ public class ConnectDataToProtobufDataConverterFactory {
 //        throw new IllegalArgumentException("Unrecognized connect type: " + protobufType);
 //    }
 }
-

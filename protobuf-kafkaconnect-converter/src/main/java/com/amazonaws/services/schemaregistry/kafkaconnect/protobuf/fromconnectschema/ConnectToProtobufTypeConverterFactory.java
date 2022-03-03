@@ -25,6 +25,10 @@ public class ConnectToProtobufTypeConverterFactory {
             return new EnumSchemaTypeConverter();
         } else if (connectType.isPrimitive()) {
             return new PrimitiveSchemaTypeConverter();
+        } else if (connectType.equals(Schema.Type.ARRAY)) {
+            return new ArraySchemaTypeConverter();
+        } else if (connectType.equals(Schema.Type.MAP)) {
+            return new MapSchemaTypeConverter();
         }
 
         throw new IllegalArgumentException("Unrecognized connect type: " + connectType);
