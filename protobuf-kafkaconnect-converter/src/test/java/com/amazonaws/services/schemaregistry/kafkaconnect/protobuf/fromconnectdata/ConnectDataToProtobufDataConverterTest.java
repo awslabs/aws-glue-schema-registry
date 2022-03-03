@@ -44,7 +44,7 @@ public class ConnectDataToProtobufDataConverterTest {
     }
 
     @Test
-    public void convert_ForEnumTypes_ConvertsSuccessfully() {
+    public void convert_ForEnumType_ConvertsSuccessfully() {
         final DynamicMessage enumMessage = ToProtobufTestDataGenerator.getProtobufEnumMessage();
         final Descriptors.FileDescriptor fileDescriptor = enumMessage.getDescriptorForType().getFile();
         final Schema enumSchema = ToProtobufTestDataGenerator.getEnumSchema("EnumDataTest");
