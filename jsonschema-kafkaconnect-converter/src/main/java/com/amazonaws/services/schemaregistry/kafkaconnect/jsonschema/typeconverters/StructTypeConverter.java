@@ -336,6 +336,21 @@ public class StructTypeConverter implements TypeConverter {
             Integer index2 = (Integer) s2.getValue()
                     .getUnprocessedProperties()
                     .get(JsonSchemaConverterConstants.CONNECT_INDEX_PROP);
+
+            // Additional comparison logic in case schemas are not enriched with connect.index property
+            // This case occurs when Schemas are not produced using a Source side converter. i.e. a plain Producer submits data to kafka topic
+            // and registers the schema with Glue Schema Registry.
+            // Producer -> Kafka Topic -> Sink Connector -> Destination
+            //       |                     ^
+            //       v                     |
+            //       AWS Glue Schema Registry
+
+            if (index1 == null && index2 == null) {
+                return 0;
+            }
+            if (index1 == null) return 1;
+            if (index2 == null) return -1;
+
             return index1.compareTo(index2);
         };
 

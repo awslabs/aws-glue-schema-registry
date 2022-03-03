@@ -50,7 +50,12 @@ public class TypeConverterFactory {
         if (jsonSchema instanceof BooleanSchema) {
             typeConverter = get(Schema.Type.BOOLEAN);
         } else if (jsonSchema instanceof NumberSchema) {
-            typeConverter = get(Schema.Type.valueOf(connectType.toUpperCase()));
+            // If no connect type passed then assume that connect schema is for FLOAT64 type data
+            if (connectType == null) {
+                typeConverter = get(Schema.Type.valueOf("FLOAT64"));
+            } else {
+                typeConverter = get(Schema.Type.valueOf(connectType.toUpperCase()));
+            }
         } else if (jsonSchema instanceof StringSchema) {
             typeConverter = "bytes".equals(connectType) ? get(Schema.Type.BYTES) : get(Schema.Type.STRING);
         } else if (jsonSchema instanceof EnumSchema) {
