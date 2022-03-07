@@ -39,7 +39,6 @@ import java.util.Map;
 @Slf4j
 @Data
 public class AWSKafkaAvroConverter implements Converter {
-    private AWSKafkaAvroConverterConfig awsKafkaAvroConverterConfig;
     private AWSKafkaAvroSerializer serializer;
     private AWSKafkaAvroDeserializer deserializer;
     private AvroData avroData;
@@ -74,7 +73,7 @@ public class AWSKafkaAvroConverter implements Converter {
     @Override
     public void configure(Map<String, ?> configs, boolean isKey) {
         this.isKey = isKey;
-        awsKafkaAvroConverterConfig = new AWSKafkaAvroConverterConfig(configs);
+        new AWSKafkaAvroConverterConfig(configs);
 
         serializer.configure(configs, this.isKey);
         deserializer.configure(configs, this.isKey);
