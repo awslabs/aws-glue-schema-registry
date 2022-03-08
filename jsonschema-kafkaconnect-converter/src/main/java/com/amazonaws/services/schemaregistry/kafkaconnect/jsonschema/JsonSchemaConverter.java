@@ -54,7 +54,6 @@ public class JsonSchemaConverter implements Converter {
     private static final Logger LOGGER = LoggerFactory.getLogger(JsonSchemaConverter.class);
     private ObjectMapper objectMapper = new ObjectMapper().setNodeFactory(JsonNodeFactory.withExactBigDecimals(true));
 
-    private JsonSchemaConverterConfig jsonSchemaConverterConfig;
     private GlueSchemaRegistryKafkaSerializer serializer;
     private GlueSchemaRegistryKafkaDeserializer deserializer;
     private ConnectSchemaToJsonSchemaConverter connectSchemaToJsonSchemaConverter;
@@ -91,7 +90,7 @@ public class JsonSchemaConverter implements Converter {
     public void configure(Map<String, ?> configs,
                           boolean isKey) {
         this.isKey = isKey;
-        this.jsonSchemaConverterConfig = new JsonSchemaConverterConfig(configs);
+        new JsonSchemaConverterConfig(configs);
 
         this.serializer.configure(configs, this.isKey);
         this.deserializer.configure(configs, this.isKey);
