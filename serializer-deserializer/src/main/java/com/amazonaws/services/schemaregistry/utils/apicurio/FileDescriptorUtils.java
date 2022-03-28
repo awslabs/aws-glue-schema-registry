@@ -29,6 +29,7 @@ import com.google.protobuf.Descriptors.FieldDescriptor;
 import com.google.protobuf.Descriptors.FileDescriptor;
 import com.google.protobuf.DurationProto;
 import com.google.protobuf.EmptyProto;
+import com.google.protobuf.StructProto;
 import com.google.protobuf.TimestampProto;
 import com.google.protobuf.WrappersProto;
 import com.google.type.CalendarPeriodProto;
@@ -157,6 +158,7 @@ public class FileDescriptorUtils {
         //Support all the Protobuf WellKnownTypes
         //and the protos from Google API, https://github.com/googleapis/googleapis
         return new FileDescriptor[] {
+                StructProto.getDescriptor().getFile(),
                 TimestampProto.getDescriptor().getFile(),
                 WrappersProto.getDescriptor().getFile(),
                 AnyProto.getDescriptor().getFile(),
