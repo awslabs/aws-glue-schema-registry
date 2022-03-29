@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package com.amazonaws.services.schemaregistry.utils.apicurio.syntax3;
 
+import "google/protobuf/struct.proto";
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/wrappers.proto";
 import "google/protobuf/any.proto";
@@ -48,4 +49,5 @@ message WellKnownTypesSyntax3 {
   google.type.Expr f20 = 20;
   string bg = 101;
   google.type.Quaternion f21 = 21;
+  google.protobuf.ListValue f22 = 22;
 }
