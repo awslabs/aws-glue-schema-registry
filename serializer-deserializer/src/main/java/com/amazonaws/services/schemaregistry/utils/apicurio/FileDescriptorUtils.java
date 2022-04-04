@@ -23,14 +23,18 @@ package com.amazonaws.services.schemaregistry.utils.apicurio;
 
 import com.google.common.collect.ImmutableList;
 import com.google.protobuf.AnyProto;
+import com.google.protobuf.ApiProto;
 import com.google.protobuf.DescriptorProtos;
 import com.google.protobuf.Descriptors.DescriptorValidationException;
 import com.google.protobuf.Descriptors.FieldDescriptor;
 import com.google.protobuf.Descriptors.FileDescriptor;
 import com.google.protobuf.DurationProto;
 import com.google.protobuf.EmptyProto;
+import com.google.protobuf.FieldMaskProto;
 import com.google.protobuf.StructProto;
+import com.google.protobuf.SourceContextProto;
 import com.google.protobuf.TimestampProto;
+import com.google.protobuf.TypeProto;
 import com.google.protobuf.WrappersProto;
 import com.google.type.CalendarPeriodProto;
 import com.google.type.ColorProto;
@@ -158,6 +162,10 @@ public class FileDescriptorUtils {
         //Support all the Protobuf WellKnownTypes
         //and the protos from Google API, https://github.com/googleapis/googleapis
         return new FileDescriptor[] {
+                ApiProto.getDescriptor().getFile(),
+                FieldMaskProto.getDescriptor().getFile(),
+                SourceContextProto.getDescriptor().getFile(),
+                TypeProto.getDescriptor().getFile(),
                 StructProto.getDescriptor().getFile(),
                 TimestampProto.getDescriptor().getFile(),
                 WrappersProto.getDescriptor().getFile(),
