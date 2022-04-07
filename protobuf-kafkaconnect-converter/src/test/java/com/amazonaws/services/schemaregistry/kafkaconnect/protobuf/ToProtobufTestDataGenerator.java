@@ -218,7 +218,9 @@ public class ToProtobufTestDataGenerator {
 
             return dynamicMessageBuilder
                     .setField(descriptor.findFieldByName("corpus"), fileDescriptor.findEnumTypeByName("corpus").findValueByName("UNIVERSAL"))
+                    .setField(descriptor.findFieldByName("shapes"), fileDescriptor.findEnumTypeByName("shapes").findValueByName("TRIANGLE"))
                     .setField(descriptor.findFieldByName("color"), fileDescriptor.findEnumTypeByName("color").findValueByName("BLUE"))
+                    .setField(descriptor.findFieldByName("fruits"), fileDescriptor.findEnumTypeByName("fruits").findValueByName("BANANA"))
                     .build();
     }
 
@@ -232,7 +234,10 @@ public class ToProtobufTestDataGenerator {
 
         connectData
                 .put("corpus", "UNIVERSAL")
-                .put("color", "BLUE");
+                .put("shapes", "TRIANGLE")
+                .put("color", "BLUE")
+                .put("fruits", "BANANA");
+
         return connectData;
     }
 
@@ -242,13 +247,21 @@ public class ToProtobufTestDataGenerator {
                         .parameter("protobuf.type", "enum")
                         .parameter("PROTOBUF_ENUM_VALUE.UNIVERSAL", "0")
                         .parameter("PROTOBUF_ENUM_VALUE.WEB", "1")
+                        .parameter("PROTOBUF_ENUM_VALUE.NEWS", "4")
                         .parameter("PROTOBUF_ENUM_VALUE.IMAGES", "2")
                         .parameter("PROTOBUF_ENUM_VALUE.LOCAL", "3")
-                        .parameter("PROTOBUF_ENUM_VALUE.NEWS", "4")
                         .parameter("PROTOBUF_ENUM_VALUE.PRODUCTS", "5")
                         .parameter("PROTOBUF_ENUM_VALUE.VIDEO", "6")
                         .parameter("ENUM_NAME", "corpus")
-                        .parameter("protobuf.tag", "4")
+                        .parameter("protobuf.tag", "1")
+                        .build())
+                .put("shapes", new SchemaBuilder(Schema.Type.STRING)
+                        .parameter("protobuf.type", "enum")
+                        .parameter("PROTOBUF_ENUM_VALUE.SQUARE", "0")
+                        .parameter("PROTOBUF_ENUM_VALUE.CIRCLE", "1")
+                        .parameter("PROTOBUF_ENUM_VALUE.TRIANGLE", "2")
+                        .parameter("ENUM_NAME", "shapes")
+                        .parameter("protobuf.tag", "12345")
                         .build())
                 .put("color", new SchemaBuilder(Schema.Type.STRING)
                         .parameter("protobuf.type", "enum")
@@ -257,6 +270,15 @@ public class ToProtobufTestDataGenerator {
                         .parameter("PROTOBUF_ENUM_VALUE.GREEN", "2")
                         .parameter("PROTOBUF_ENUM_VALUE.BLUE", "3")
                         .parameter("ENUM_NAME", "color")
+                        .parameter("protobuf.tag", "2")
+                        .optional()
+                        .build())
+                .put("fruits", new SchemaBuilder(Schema.Type.STRING).defaultValue("APPLE")
+                        .parameter("protobuf.type", "enum")
+                        .parameter("PROTOBUF_ENUM_VALUE.APPLE", "0")
+                        .parameter("PROTOBUF_ENUM_VALUE.ORANGE", "1")
+                        .parameter("PROTOBUF_ENUM_VALUE.BANANA", "2")
+                        .parameter("ENUM_NAME", "fruits")
                         .parameter("protobuf.tag", "3")
                         .build())
                 .build();

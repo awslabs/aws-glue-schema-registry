@@ -12,7 +12,14 @@ message EnumTest {
     PRODUCTS = 5;
     VIDEO = 6;
   }
-  optional Corpus corpus = 4;
+  Corpus corpus = 1;
+
+  enum ShapesWithParam {
+    SQUARE = 0;
+    CIRCLE = 1;
+    TRIANGLE = 2;
+  }
+  ShapesWithParam shapes = 12345;
 
   enum Colors {
     BLACK = 0;
@@ -20,5 +27,13 @@ message EnumTest {
     GREEN = 2;
     BLUE = 3;
   }
-  optional Colors color = 3;
+  optional Colors color = 2;
+
+  enum FruitsWithDefault {
+    APPLE = 0;
+    ORANGE = 1;
+    BANANA = 2;
+  }
+  FruitsWithDefault fruits = 3;
+
 }

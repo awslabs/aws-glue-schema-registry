@@ -4,15 +4,32 @@ message_type {
   name: "EnumType"
   field {
     name: "corpus"
-    number: 4
+    number: 1
     type: TYPE_ENUM
     type_name: "corpus"
   }
   field {
+    name: "shapes"
+    number: 12345
+    type: TYPE_ENUM
+    type_name: "shapes"
+  }
+  field {
     name: "color"
-    number: 3
+    number: 2
     type: TYPE_ENUM
     type_name: "color"
+    oneof_index: 0
+    proto3_optional: true
+  }
+  field {
+    name: "fruits"
+    number: 3
+    type: TYPE_ENUM
+    type_name: "fruits"
+  }
+  oneof_decl {
+    name: "_color"
   }
 }
 enum_type {
@@ -26,6 +43,10 @@ enum_type {
     number: 1
   }
   value {
+    name: "NEWS"
+    number: 4
+  }
+  value {
     name: "IMAGES"
     number: 2
   }
@@ -34,16 +55,27 @@ enum_type {
     number: 3
   }
   value {
-    name: "NEWS"
-    number: 4
-  }
-  value {
     name: "PRODUCTS"
     number: 5
   }
   value {
     name: "VIDEO"
     number: 6
+  }
+}
+enum_type {
+  name: "shapes"
+  value {
+    name: "SQUARE"
+    number: 0
+  }
+  value {
+    name: "CIRCLE"
+    number: 1
+  }
+  value {
+    name: "TRIANGLE"
+    number: 2
   }
 }
 enum_type {
@@ -63,6 +95,21 @@ enum_type {
   value {
     name: "BLUE"
     number: 3
+  }
+}
+enum_type {
+  name: "fruits"
+  value {
+    name: "APPLE"
+    number: 0
+  }
+  value {
+    name: "ORANGE"
+    number: 1
+  }
+  value {
+    name: "BANANA"
+    number: 2
   }
 }
 syntax: "proto3"

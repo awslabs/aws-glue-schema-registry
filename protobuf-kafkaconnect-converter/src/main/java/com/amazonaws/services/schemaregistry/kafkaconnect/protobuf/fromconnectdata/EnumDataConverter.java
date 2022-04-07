@@ -3,8 +3,6 @@ import com.google.protobuf.Descriptors;
 import com.google.protobuf.Message;
 import org.apache.kafka.connect.data.Schema;
 public class EnumDataConverter implements DataConverter {
-
-
     @Override
     public void toProtobufData(final Schema schema,
                                   final Object value,
