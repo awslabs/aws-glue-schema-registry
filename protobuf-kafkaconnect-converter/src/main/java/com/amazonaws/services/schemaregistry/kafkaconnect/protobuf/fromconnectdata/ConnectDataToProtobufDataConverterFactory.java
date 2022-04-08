@@ -6,6 +6,7 @@ import org.apache.kafka.connect.data.Schema;
 
 import java.util.Map;
 
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_ENUM_TYPE;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_TYPE;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
@@ -18,7 +19,7 @@ public class ConnectDataToProtobufDataConverterFactory {
         if (Schema.Type.STRING.equals(connectType)
                 && schemaParams != null
                 && schemaParams.containsKey(PROTOBUF_TYPE)
-                && "enum".equals(schemaParams.get(PROTOBUF_TYPE))) {
+                && PROTOBUF_ENUM_TYPE.equals(schemaParams.get(PROTOBUF_TYPE))) {
             return new EnumDataConverter();
         } else if (connectType.isPrimitive()) {
             return new PrimitiveDataConverter();
