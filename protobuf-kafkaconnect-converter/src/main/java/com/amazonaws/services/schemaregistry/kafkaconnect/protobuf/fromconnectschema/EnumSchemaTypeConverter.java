@@ -9,7 +9,9 @@ import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromco
 
 public class EnumSchemaTypeConverter implements SchemaTypeConverter {
 
-    public DescriptorProtos.FieldDescriptorProto.Builder toProtobufSchema(Schema schema, DescriptorProtos.DescriptorProto.Builder descriptorProto, DescriptorProtos.FileDescriptorProto.Builder fileDescriptorProtoBuilder) {
+    public DescriptorProtos.FieldDescriptorProto.Builder toProtobufSchema(
+            Schema schema, DescriptorProtos.DescriptorProto.Builder descriptorProto,
+            DescriptorProtos.FileDescriptorProto.Builder fileDescriptorProtoBuilder) {
 
         //Defining the Enum in protobuf schema form
         final Map<String, String> schemaParams = schema.parameters();

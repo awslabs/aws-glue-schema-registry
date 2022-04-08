@@ -20,12 +20,10 @@ public class ConnectDataToProtobufDataConverterFactory {
                 && schemaParams.containsKey(PROTOBUF_TYPE)
                 && "enum".equals(schemaParams.get(PROTOBUF_TYPE))) {
             return new EnumDataConverter();
-
         } else if (connectType.isPrimitive()) {
             return new PrimitiveDataConverter();
         } else if (connectType.equals(Schema.Type.ARRAY)) {
             return new ArrayDataConverter();
-
         }
 
         throw new IllegalArgumentException("Unrecognized connect type: " + connectType);

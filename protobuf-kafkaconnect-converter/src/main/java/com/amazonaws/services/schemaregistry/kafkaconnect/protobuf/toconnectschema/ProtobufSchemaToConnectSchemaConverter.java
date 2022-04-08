@@ -120,12 +120,11 @@ public class ProtobufSchemaToConnectSchemaConverter {
 
         //Protobuf provides different types of integers.
         //We add metadata to Connect schema to store the original type used.
-        //final SchemaBuilder schemaBuilder = new SchemaBuilder(connectType);
         if (TYPES_TO_ADD_METADATA.contains(protobufType)) {
             schemaBuilder.parameter(PROTOBUF_TYPE, protobufType.name().toUpperCase());
         } else if (protobufType.equals(ENUM)) { //ENUM case; storing ENUM data as metadata to avoid being lost in translation.
             schemaBuilder.parameter(PROTOBUF_TYPE, PROTOBUF_ENUM_TYPE);
-            for (Descriptors.EnumValueDescriptor  enumValueDescriptor: fieldDescriptor.getEnumType().getValues()) { //iterating through the values of the Enum to store each one
+            for (Descriptors.EnumValueDescriptor enumValueDescriptor: fieldDescriptor.getEnumType().getValues()) { //iterating through the values of the Enum to store each one
                 schemaBuilder.parameter(PROTOBUF_ENUM_VALUE + enumValueDescriptor.getName(), String.valueOf(enumValueDescriptor.getNumber()));
             }
             schemaBuilder.parameter(PROTOBUF_ENUM_NAME, fieldDescriptor.getName());
