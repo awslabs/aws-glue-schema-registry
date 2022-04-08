@@ -27,9 +27,14 @@ message_type {
     number: 3
     type: TYPE_ENUM
     type_name: "fruits"
+    oneof_index: 1
+    proto3_optional: true
   }
   oneof_decl {
     name: "_color"
+  }
+  oneof_decl {
+    name: "_fruits"
   }
 }
 enum_type {

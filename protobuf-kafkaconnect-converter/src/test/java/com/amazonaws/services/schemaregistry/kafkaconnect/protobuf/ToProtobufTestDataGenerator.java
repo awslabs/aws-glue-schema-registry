@@ -235,8 +235,8 @@ public class ToProtobufTestDataGenerator {
         connectData
                 .put("corpus", "UNIVERSAL")
                 .put("shapes", "TRIANGLE")
-                .put("color", "BLUE")
-                .put("fruits", "BANANA");
+                .put("color", "BLUE");
+                //.put("fruits", "BANANA"); //Unset to check default value
 
         return connectData;
     }
@@ -273,13 +273,14 @@ public class ToProtobufTestDataGenerator {
                         .parameter("protobuf.tag", "2")
                         .optional()
                         .build())
-                .put("fruits", new SchemaBuilder(Schema.Type.STRING).defaultValue("APPLE")
+                .put("fruits", new SchemaBuilder(Schema.Type.STRING).defaultValue("BANANA")
                         .parameter("protobuf.type", "enum")
                         .parameter("PROTOBUF_ENUM_VALUE.APPLE", "0")
                         .parameter("PROTOBUF_ENUM_VALUE.ORANGE", "1")
                         .parameter("PROTOBUF_ENUM_VALUE.BANANA", "2")
                         .parameter("ENUM_NAME", "fruits")
                         .parameter("protobuf.tag", "3")
+                        .optional()
                         .build())
                 .build();
     }
