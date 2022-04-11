@@ -13,6 +13,6 @@ public class EnumDataConverter implements DataConverter {
 
     @Override
     public Object toProtobufData(Schema schema, Object value, Descriptors.FieldDescriptor fieldDescriptor) {
-        return fieldDescriptor.getEnumType().findValueByName((value.toString()));
+        return fieldDescriptor.getEnumType().findValueByName(value.toString());
     }
 }
