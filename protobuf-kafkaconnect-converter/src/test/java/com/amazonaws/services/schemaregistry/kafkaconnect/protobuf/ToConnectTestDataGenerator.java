@@ -6,6 +6,8 @@ import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax2.Primitiv
 import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax3.ArrayTypeSyntax3;
 import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax3.MapTypeSyntax3;
 import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax3.PrimitiveTypesSyntax3;
+import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax2.EnumTypeSyntax2;
+import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax3.EnumTypeSyntax3;
 import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Message;
@@ -251,6 +253,87 @@ public class ToConnectTestDataGenerator {
             .put("strOptional", new SchemaBuilder(Schema.Type.STRING).parameter(PROTOBUF_TAG, "33").optional().build())
             .put("strWithDefault", new SchemaBuilder(Schema.Type.STRING).parameter(PROTOBUF_TAG, "34").build())
             .build();
+    }
+
+    public static List<Message> getEnumProtobufMessages() {
+        return Arrays.asList(
+                EnumTypeSyntax3.EnumTest.newBuilder()
+                        .setCorpus(EnumTypeSyntax3.EnumTest.Corpus.UNIVERSAL)
+                        .setShapes(EnumTypeSyntax3.EnumTest.ShapesWithParam.TRIANGLE)
+                        .setColor(EnumTypeSyntax3.EnumTest.Colors.BLUE)
+                        .setFruits(EnumTypeSyntax3.EnumTest.FruitsWithDefault.BANANA)
+                        .build(),
+                EnumTypeSyntax2.EnumTest.newBuilder()
+                        .setCorpus(EnumTypeSyntax2.EnumTest.Corpus.UNIVERSAL)
+                        .setShapes(EnumTypeSyntax2.EnumTest.ShapesWithParam.TRIANGLE)
+                        .setColor(EnumTypeSyntax2.EnumTest.Colors.BLUE)
+                        .setFruits(EnumTypeSyntax2.EnumTest.FruitsWithDefault.BANANA)
+                        .build()
+        );
+    }
+
+    public static Schema getEnumSchema(String packageName) {
+        return createConnectSchema(
+                "EnumTest",
+                getEnumType(),
+                ImmutableMap.of(
+                        "protobuf.package", packageName
+                )
+        );
+    }
+
+    public static Struct getEnumTypeData(String packageName) {
+        final Struct connectData = new Struct(getEnumSchema(packageName));
+
+        connectData
+                .put("corpus", "UNIVERSAL")
+                .put("shapes", "TRIANGLE")
+                .put( "color", "BLUE")
+                .put("fruits", "BANANA");
+        return connectData;
+    }
+
+    private static Map<String, Schema> getEnumType() {
+        return ImmutableMap.<String, Schema>builder()
+                .put("corpus", new SchemaBuilder(Schema.Type.STRING)
+                        .parameter("protobuf.type", "enum")
+                        .parameter("PROTOBUF_ENUM_VALUE.UNIVERSAL", "0")
+                        .parameter("PROTOBUF_ENUM_VALUE.WEB", "1")
+                        .parameter("PROTOBUF_ENUM_VALUE.NEWS", "4")
+                        .parameter("PROTOBUF_ENUM_VALUE.IMAGES", "2")
+                        .parameter("PROTOBUF_ENUM_VALUE.LOCAL", "3")
+                        .parameter("PROTOBUF_ENUM_VALUE.PRODUCTS", "5")
+                        .parameter("PROTOBUF_ENUM_VALUE.VIDEO", "6")
+                        .parameter("ENUM_NAME", "corpus")
+                        .parameter("protobuf.tag", "1")
+                        .build())
+                .put("shapes", new SchemaBuilder(Schema.Type.STRING)
+                        .parameter("protobuf.type", "enum")
+                        .parameter("PROTOBUF_ENUM_VALUE.SQUARE", "0")
+                        .parameter("PROTOBUF_ENUM_VALUE.CIRCLE", "1")
+                        .parameter("PROTOBUF_ENUM_VALUE.TRIANGLE", "2")
+                        .parameter("ENUM_NAME", "shapes")
+                        .parameter("protobuf.tag", "12345")
+                        .build())
+                .put("color", new SchemaBuilder(Schema.Type.STRING)
+                        .parameter("protobuf.type", "enum")
+                        .parameter("PROTOBUF_ENUM_VALUE.BLACK", "0")
+                        .parameter("PROTOBUF_ENUM_VALUE.RED", "1")
+                        .parameter("PROTOBUF_ENUM_VALUE.GREEN", "2")
+                        .parameter("PROTOBUF_ENUM_VALUE.BLUE", "3")
+                        .parameter("ENUM_NAME", "color")
+                        .parameter("protobuf.tag", "2")
+                        .optional()
+                        .build())
+                .put("fruits", new SchemaBuilder(Schema.Type.STRING)
+                        .parameter("protobuf.type", "enum")
+                        .parameter("PROTOBUF_ENUM_VALUE.APPLE", "0")
+                        .parameter("PROTOBUF_ENUM_VALUE.ORANGE", "1")
+                        .parameter("PROTOBUF_ENUM_VALUE.BANANA", "2")
+                        .parameter("ENUM_NAME", "fruits")
+                        .parameter("protobuf.tag", "3")
+                        .build())
+                .build();
     }
 
     public static List<Message> getArrayProtobufMessages() {

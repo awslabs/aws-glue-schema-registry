@@ -13,6 +13,9 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.stream.Stream;
 
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getEnumProtobufMessages;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getEnumSchema;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getEnumTypeData;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getArrayProtobufMessages;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getArraySchema;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getArrayTypeData;
@@ -33,6 +36,10 @@ public class ProtobufDataToConnectDataConverterTest {
         return getPrimitiveProtobufMessages().stream().map(Arguments::of);
     }
 
+    private static Stream<Arguments> getEnumTestCases() {
+        return getEnumProtobufMessages().stream().map(Arguments::of);
+    }
+
     private static Stream<Arguments> getArrayTestCases() {
         return getArrayProtobufMessages().stream().map(Arguments::of);
     }
@@ -48,6 +55,17 @@ public class ProtobufDataToConnectDataConverterTest {
         final Schema connectSchema = getPrimitiveSchema(packageName);
         Object actualData = PROTOBUF_DATA_TO_CONNECT_DATA_CONVERTER.toConnectData(primitiveMessage, connectSchema);
         Struct expectedData = getPrimitiveTypesData(packageName);
+
+        assertEquals(expectedData, actualData);
+    }
+
+    @ParameterizedTest
+    @MethodSource("getEnumTestCases")
+    public void toConnectData_convertsProtobufMessageToConnect_forEnumType(Message enumMessage) {
+        String packageName = enumMessage.getDescriptorForType().getFile().getPackage();
+        final Schema connectSchema = getEnumSchema(packageName);
+        Object actualData = PROTOBUF_DATA_TO_CONNECT_DATA_CONVERTER.toConnectData(enumMessage, connectSchema);
+        Struct expectedData = getEnumTypeData(packageName);
 
         assertEquals(expectedData, actualData);
     }

@@ -23,4 +23,19 @@ public class ProtobufSchemaConverterConstants {
      * This will be available in the parent level connect schema parameters.
      */
     public static final String PROTOBUF_PACKAGE = "protobuf.package";
+
+    /**
+     * Used to specify the metadata parameter containing the name of the enum
+     */
+    public static final String PROTOBUF_ENUM_NAME = "ENUM_NAME";
+
+    /**
+     * Used to mark metadata parameters containing values for the enum
+     */
+    public static final String PROTOBUF_ENUM_VALUE = "PROTOBUF_ENUM_VALUE.";
+
+    /**
+     * The string used to validate that protobuf type is enum
+     */
+    public static final String PROTOBUF_ENUM_TYPE = "enum";
 }

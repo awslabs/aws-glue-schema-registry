@@ -2,6 +2,7 @@ package com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.toconnectdat
 
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Descriptors;
+import com.google.protobuf.Enum;
 import com.google.protobuf.MapEntry;
 import com.google.protobuf.Message;
 import lombok.NonNull;
@@ -90,8 +91,13 @@ public class ProtobufDataToConnectDataConverter {
                 return boolValue;
             }
             case STRING: {
-                String strValue = (String) value;
-                return strValue;
+                if (value instanceof Enum || value instanceof Descriptors.EnumValueDescriptor) {
+                    String enumValue = value.toString();
+                    return enumValue;
+                } else {
+                    String strValue = (String) value;
+                    return strValue;
+                }
             }
             case BYTES: {
                 final byte[] valueBytes = ((ByteString) value).toByteArray();

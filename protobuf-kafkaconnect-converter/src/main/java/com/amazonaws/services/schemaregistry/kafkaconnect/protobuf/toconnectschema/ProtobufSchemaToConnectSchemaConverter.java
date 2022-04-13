@@ -11,9 +11,12 @@ import org.apache.kafka.connect.errors.DataException;
 import java.util.List;
 import java.util.Set;
 
-import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_PACKAGE;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_ENUM_NAME;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_ENUM_VALUE;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_ENUM_TYPE;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_TAG;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_TYPE;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_PACKAGE;
 import static com.google.protobuf.Descriptors.FieldDescriptor.Type.FIXED32;
 import static com.google.protobuf.Descriptors.FieldDescriptor.Type.FIXED64;
 import static com.google.protobuf.Descriptors.FieldDescriptor.Type.SFIXED32;
@@ -22,7 +25,7 @@ import static com.google.protobuf.Descriptors.FieldDescriptor.Type.SINT32;
 import static com.google.protobuf.Descriptors.FieldDescriptor.Type.SINT64;
 import static com.google.protobuf.Descriptors.FieldDescriptor.Type.UINT32;
 import static com.google.protobuf.Descriptors.FieldDescriptor.Type.UINT64;
-
+import static com.google.protobuf.Descriptors.FieldDescriptor.Type.ENUM;
 /**
  * Converts the Protobuf schema to Connect schemas.
  * Partially inspired from https://github.com/blueapron/kafka-connect-protobuf-converter/blob/master/src/main/java/com/blueapron/connect/protobuf/ProtobufData.java#L135
@@ -91,6 +94,7 @@ public class ProtobufSchemaToConnectSchemaConverter {
                 schemaBuilder = SchemaBuilder.bool();
                 break;
             }
+            case ENUM: //ENUM will be converted into a string in Connect, as Connect does not support ENUM. data stored in metadata (see below)
             case STRING: {
                 schemaBuilder = SchemaBuilder.string();
                 break;
@@ -118,6 +122,12 @@ public class ProtobufSchemaToConnectSchemaConverter {
         //We add metadata to Connect schema to store the original type used.
         if (TYPES_TO_ADD_METADATA.contains(protobufType)) {
             schemaBuilder.parameter(PROTOBUF_TYPE, protobufType.name().toUpperCase());
+        } else if (protobufType.equals(ENUM)) { //ENUM case; storing ENUM data as metadata to avoid being lost in translation.
+            schemaBuilder.parameter(PROTOBUF_TYPE, PROTOBUF_ENUM_TYPE);
+            for (Descriptors.EnumValueDescriptor enumValueDescriptor: fieldDescriptor.getEnumType().getValues()) { //iterating through the values of the Enum to store each one
+                schemaBuilder.parameter(PROTOBUF_ENUM_VALUE + enumValueDescriptor.getName(), String.valueOf(enumValueDescriptor.getNumber()));
+            }
+            schemaBuilder.parameter(PROTOBUF_ENUM_NAME, fieldDescriptor.getName());
         }
 
         if (fieldDescriptor.hasOptionalKeyword()) {

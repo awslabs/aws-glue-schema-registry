@@ -44,13 +44,24 @@ public class ConnectDataToProtobufDataConverterTest {
     }
 
     @Test
+    public void convert_ForEnumTypes_ConvertsSuccessfully() {
+        final DynamicMessage enumMessage = ToProtobufTestDataGenerator.getProtobufEnumMessage();
+        final Descriptors.FileDescriptor fileDescriptor = enumMessage.getDescriptorForType().getFile();
+        final Schema enumSchema = ToProtobufTestDataGenerator.getEnumSchema("EnumDataTest");
+        final Message actualMessage = connectDataToProtobufDataConverter.convert(fileDescriptor, enumSchema,
+            ToProtobufTestDataGenerator.getEnumTypeData());
+
+        assertEquals(enumMessage, actualMessage);
+    }
+
+    @Test
     public void convert_ForArrayType_ConvertsSuccessfully() {
         // TODO add test case for repeated Message/Enum and other complex types
         final DynamicMessage arrayMessage = ToProtobufTestDataGenerator.getProtobufArrayMessage();
         final Descriptors.FileDescriptor fileDescriptor = arrayMessage.getDescriptorForType().getFile();
         final Schema arraySchema = ToProtobufTestDataGenerator.getArraySchema("ArrayDataTest");
         final Message actualMessage = connectDataToProtobufDataConverter.convert(fileDescriptor, arraySchema,
-                ToProtobufTestDataGenerator.getArrayTypeData());
+            ToProtobufTestDataGenerator.getArrayTypeData());
 
         assertEquals(arrayMessage, actualMessage);
     }
@@ -61,7 +72,7 @@ public class ConnectDataToProtobufDataConverterTest {
         final Descriptors.FileDescriptor fileDescriptor = mapMessage.getDescriptorForType().getFile();
         final Schema mapSchema = ToProtobufTestDataGenerator.getMapSchema("MapDataTest");
         final Message actualMessage = connectDataToProtobufDataConverter.convert(fileDescriptor, mapSchema,
-                ToProtobufTestDataGenerator.getMapTypeData());
+            ToProtobufTestDataGenerator.getMapTypeData());
 
         assertEquals(mapMessage, actualMessage);
     }

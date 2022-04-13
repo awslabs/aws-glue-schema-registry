@@ -1,6 +1,7 @@
 package com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.toconnectschema;
 
 import com.google.protobuf.Message;
+import org.apache.commons.validator.Arg;
 import org.apache.kafka.connect.data.Schema;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -10,12 +11,14 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.stream.Stream;
 
-import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getArrayProtobufMessages;
-import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getArraySchema;
-import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getMapProtobufMessages;
-import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getMapSchema;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getPrimitiveProtobufMessages;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getEnumProtobufMessages;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getArrayProtobufMessages;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getMapProtobufMessages;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getPrimitiveSchema;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getEnumSchema;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getArraySchema;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getMapSchema;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -26,6 +29,10 @@ public class ProtobufSchemaToConnectSchemaConverterTest {
 
     private static Stream<Arguments> getPrimitiveTestCases() {
         return getPrimitiveProtobufMessages().stream().map(Arguments::of);
+    }
+
+    private static Stream<Arguments> getEnumTestCases() {
+        return getEnumProtobufMessages().stream().map(Arguments::of);
     }
 
     private static Stream<Arguments> getArrayTestCases() {
@@ -46,6 +53,15 @@ public class ProtobufSchemaToConnectSchemaConverterTest {
         String packageName = message.getDescriptorForType().getFile().getPackage();
         Schema actualConnectSchema = PROTOBUF_SCHEMA_TO_CONNECT_SCHEMA_CONVERTER.toConnectSchema(message);
         Schema expectedConnectSchema = getPrimitiveSchema(packageName);
+        assertEquals(expectedConnectSchema, actualConnectSchema);
+    }
+
+    @ParameterizedTest
+    @MethodSource("getEnumTestCases")
+    public void toConnectSchema_convertsEnumTypesSchema(Message message) {
+        String packageName = message.getDescriptorForType().getFile().getPackage();
+        Schema actualConnectSchema = PROTOBUF_SCHEMA_TO_CONNECT_SCHEMA_CONVERTER.toConnectSchema(message);
+        Schema expectedConnectSchema = getEnumSchema(packageName);
         assertEquals(expectedConnectSchema, actualConnectSchema);
     }
 

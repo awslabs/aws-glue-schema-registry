@@ -16,6 +16,7 @@ import java.util.stream.Stream;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToProtobufTestDataGenerator.getArraySchema;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToProtobufTestDataGenerator.getMapSchema;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToProtobufTestDataGenerator.getPrimitiveSchema;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToProtobufTestDataGenerator.getEnumSchema;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToProtobufTestDataGenerator.getProtobufSchema;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_TAG;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_TYPE;
@@ -43,6 +44,11 @@ public class ConnectSchemaToProtobufSchemaConverterTest {
                 "PrimitiveTypes",
                 getPrimitiveSchema("PrimitiveTypes"),
                 getProtobufSchema("PrimitiveProtobufSchema.filedescproto")
+            ),
+            Arguments.of(
+                "EnumType",
+                getEnumSchema("EnumType"),
+                getProtobufSchema("EnumProtobufSchema.filedescproto")
             ),
             // TODO add test case for repeated Message/Enum and other complex types
             Arguments.of(
@@ -100,4 +106,5 @@ public class ConnectSchemaToProtobufSchemaConverterTest {
     public void fromConnectSchema_onNullSchema_ThrowsException() {
         assertThrows(IllegalArgumentException.class, () -> CONNECT_SCHEMA_TO_PROTOBUF_SCHEMA_CONVERTER.convert(null));
     }
+
 }

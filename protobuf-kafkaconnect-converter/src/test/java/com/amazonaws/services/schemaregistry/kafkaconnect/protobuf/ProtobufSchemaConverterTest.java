@@ -22,6 +22,12 @@ import software.amazon.awssdk.services.glue.model.DataFormat;
 import java.util.Map;
 import java.util.stream.Stream;
 
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToProtobufTestDataGenerator.getPrimitiveSchema;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToProtobufTestDataGenerator.getPrimitiveTypesData;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToProtobufTestDataGenerator.getProtobufPrimitiveMessage;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToProtobufTestDataGenerator.getEnumSchema;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToProtobufTestDataGenerator.getEnumTypeData;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToProtobufTestDataGenerator.getProtobufEnumMessage;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -71,6 +77,9 @@ public class ProtobufSchemaConverterTest {
             Arguments.of(ToProtobufTestDataGenerator.getPrimitiveTypesData(),
                 ToProtobufTestDataGenerator.getPrimitiveSchema(SCHEMA_NAME),
                 ToProtobufTestDataGenerator.getProtobufPrimitiveMessage()),
+            Arguments.of(ToProtobufTestDataGenerator.getEnumTypeData(),
+                ToProtobufTestDataGenerator.getEnumSchema(SCHEMA_NAME),
+                ToProtobufTestDataGenerator.getProtobufEnumMessage()),
             Arguments.of(ToProtobufTestDataGenerator.getArrayTypeData(),
                 ToProtobufTestDataGenerator.getArraySchema(SCHEMA_NAME),
                 ToProtobufTestDataGenerator.getProtobufArrayMessage()),
@@ -85,6 +94,9 @@ public class ProtobufSchemaConverterTest {
             Arguments.of(ToConnectTestDataGenerator.getPrimitiveProtobufMessages().get(0),
                 ToConnectTestDataGenerator.getPrimitiveSchema(PACKAGE_NAME),
                 ToConnectTestDataGenerator.getPrimitiveTypesData(PACKAGE_NAME)),
+            Arguments.of(ToConnectTestDataGenerator.getEnumProtobufMessages().get(0),
+                ToConnectTestDataGenerator.getEnumSchema(PACKAGE_NAME),
+                ToConnectTestDataGenerator.getEnumTypeData(PACKAGE_NAME)),
             Arguments.of(ToConnectTestDataGenerator.getArrayProtobufMessages().get(0),
                 ToConnectTestDataGenerator.getArraySchema(PACKAGE_NAME),
                 ToConnectTestDataGenerator.getArrayTypeData(PACKAGE_NAME)),
