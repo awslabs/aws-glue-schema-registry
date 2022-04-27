@@ -1,0 +1,13 @@
+syntax = "proto2";
+
+package com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax2;
+
+import "google/type/date.proto";
+import "google/type/timeofday.proto";
+import "google/protobuf/timestamp.proto";
+
+message TimeTypes {
+  required google.type.Date date = 1;
+  required google.type.TimeOfDay time = 2;
+  required google.protobuf.Timestamp timestamp = 3;
+}

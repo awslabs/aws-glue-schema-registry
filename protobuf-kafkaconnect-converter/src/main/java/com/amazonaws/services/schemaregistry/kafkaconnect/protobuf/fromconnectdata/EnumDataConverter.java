@@ -5,9 +5,9 @@ import org.apache.kafka.connect.data.Schema;
 public class EnumDataConverter implements DataConverter {
     @Override
     public void toProtobufData(final Schema schema,
-                                  final Object value,
-                                  final Descriptors.FieldDescriptor fieldDescriptor,
-                                  final Message.Builder messageBuilder) {
+                               final Object value,
+                               final Descriptors.FieldDescriptor fieldDescriptor,
+                               final Message.Builder messageBuilder) {
         messageBuilder.setField(fieldDescriptor, toProtobufData(schema, value, fieldDescriptor));
     }
 

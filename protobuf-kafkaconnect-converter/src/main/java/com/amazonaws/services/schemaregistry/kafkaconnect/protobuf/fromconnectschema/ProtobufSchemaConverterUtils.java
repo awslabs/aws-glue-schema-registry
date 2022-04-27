@@ -2,6 +2,8 @@ package com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnects
 
 import static com.google.common.base.CaseFormat.LOWER_UNDERSCORE;
 import static com.google.common.base.CaseFormat.UPPER_CAMEL;
+import java.util.Calendar;
+import java.util.TimeZone;
 
 public class ProtobufSchemaConverterUtils {
 
@@ -15,4 +17,32 @@ public class ProtobufSchemaConverterUtils {
         s = s.substring(0, 1).toUpperCase() + s.substring(1);
         return s;
     }
+
+    public static java.util.Date convertFromGoogleDate(com.google.type.Date date) {
+        TimeZone timeZone = TimeZone.getTimeZone("UTC");
+        Calendar cal = Calendar.getInstance(timeZone);
+        cal.setLenient(false);
+        cal.set(Calendar.YEAR, date.getYear());
+        cal.set(Calendar.MONTH, date.getMonth() - 1); // Months start at 0, not 1
+        cal.set(Calendar.DAY_OF_MONTH, date.getDay());
+        cal.set(Calendar.HOUR_OF_DAY, 0);
+        cal.set(Calendar.MINUTE, 0);
+        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.MILLISECOND, 0);
+        return cal.getTime();
+    }
+
+    public static java.util.Date convertFromGoogleTime(com.google.type.TimeOfDay time) {
+        TimeZone timeZone = TimeZone.getTimeZone("UTC");
+        Calendar cal = Calendar.getInstance(timeZone);
+        cal.set(Calendar.YEAR, 1969); //year, month, and day must be hardcoded to match
+        cal.set(Calendar.MONTH, 11); //java.util.date's default value for these fields
+        cal.set(Calendar.DAY_OF_MONTH, 32);
+        cal.set(Calendar.HOUR_OF_DAY, time.getHours());
+        cal.set(Calendar.MINUTE, time.getMinutes());
+        cal.set(Calendar.SECOND, time.getSeconds());
+        cal.set(Calendar.MILLISECOND, time.getNanos() / 1000000);
+        return cal.getTime();
+    }
+
 }

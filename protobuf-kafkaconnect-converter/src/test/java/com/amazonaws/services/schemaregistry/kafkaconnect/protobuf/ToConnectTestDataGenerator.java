@@ -8,9 +8,14 @@ import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax3.MapTypeS
 import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax3.PrimitiveTypesSyntax3;
 import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax2.EnumTypeSyntax2;
 import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax3.EnumTypeSyntax3;
+import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax2.TimeTypeSyntax2;
+import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax3.TimeTypeSyntax3;
 import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Message;
+import org.apache.kafka.connect.data.Date;
+import org.apache.kafka.connect.data.Time;
+import org.apache.kafka.connect.data.Timestamp;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
@@ -336,6 +341,69 @@ public class ToConnectTestDataGenerator {
                         .parameter("ENUM_NAME", "fruits")
                         .parameter("protobuf.tag", "3")
                         .build())
+                .build();
+    }
+
+    public static List<Message> getTimeProtobufMessages() {
+        com.google.type.Date.Builder dateBuilder = com.google.type.Date.newBuilder();
+        dateBuilder.setYear(2022);
+        dateBuilder.setMonth(3);
+        dateBuilder.setDay(20);
+
+        com.google.type.TimeOfDay.Builder todBuilder = com.google.type.TimeOfDay.newBuilder();
+        todBuilder.setHours(2);
+        todBuilder.setMinutes(2);
+        todBuilder.setSeconds(42);
+
+        com.google.protobuf.Timestamp.Builder timestampBuilder = com.google.protobuf.Timestamp.newBuilder();
+        timestampBuilder.setSeconds(1);
+        timestampBuilder.setNanos(805000000);
+        return Arrays.asList(
+                TimeTypeSyntax2.TimeTypes.newBuilder()
+                        .setDate(dateBuilder)
+                        .setTime(todBuilder)
+                        .setTimestamp(timestampBuilder)
+                        .build(),
+                TimeTypeSyntax3.TimeTypes.newBuilder()
+                        .setDate(dateBuilder)
+                        .setTime(todBuilder)
+                        .setTimestamp(timestampBuilder)
+                        .build()
+        );
+    }
+
+
+    public static Schema getTimeSchema(String packageName) {
+        return createConnectSchema(
+                "TimeTypes",
+                getTimeTypes(),
+                ImmutableMap.of(
+                        "protobuf.package", packageName
+                )
+        );
+    }
+
+    public static Struct getTimeTypeData(String packageName) {
+        final Struct connectData = new Struct(getTimeSchema(packageName));
+        int dateDefVal = 365 * 52 + 91;
+        int timeDefVal = 1000 * 60 * 60 * 2 + 45 * 60 * 60;
+        long tsDefVal = 30 * 60 + 5;
+        java.util.Date date = Date.toLogical(Date.SCHEMA, dateDefVal);
+        java.util.Date time = Time.toLogical(Time.SCHEMA, timeDefVal);
+        java.util.Date timestamp = Timestamp.toLogical(Timestamp.SCHEMA, tsDefVal);
+
+        connectData
+                .put("date", date)
+                .put("time", time)
+                .put("timestamp", timestamp);
+        return connectData;
+    }
+
+    private static Map<String, Schema> getTimeTypes() {
+        return ImmutableMap.<String, Schema>builder()
+                .put("date", Date.builder().parameter(PROTOBUF_TAG,"1").build())
+                .put("time", Time.builder().parameter(PROTOBUF_TAG,"2").build())
+                .put("timestamp", Timestamp.builder().parameter(PROTOBUF_TAG,"3").build())
                 .build();
     }
 
