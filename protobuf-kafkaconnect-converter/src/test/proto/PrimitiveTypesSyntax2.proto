@@ -1,4 +1,4 @@
-//syntax = "proto2";
+syntax = "proto2";
 
 package com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax2;
 

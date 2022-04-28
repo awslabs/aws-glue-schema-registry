@@ -344,16 +344,7 @@ public class ToProtobufTestDataGenerator {
     }
 
     private static Map<String, Schema> getTimeTypes() {
-//        int dateDefVal = 100;
-//        int timeDefVal = 1000 * 60 * 60 * 2;
-//        long tsDefVal = 1000 * 60 * 60 * 24 * 365 + 100;
-//        java.util.Date date = Date.toLogical(Date.SCHEMA, dateDefVal);
-//        java.util.Date time = Time.toLogical(Time.SCHEMA, timeDefVal);
-//        java.util.Date timestamp = Timestamp.toLogical(Timestamp.SCHEMA, tsDefVal);
         return ImmutableMap.<String, Schema>builder()
-//                .put("date", Date.builder().defaultValue(date).doc("date field").build())
-//                .put("time", Time.builder().defaultValue(time).doc("time field").build())
-//                .put("timestamp", Timestamp.builder().defaultValue(timestamp).doc("timestamp field").build())
                 .put("date", Date.builder().doc("date field").build())
                 .put("time", Time.builder().doc("time field").build())
                 .put("timestamp", Timestamp.builder().doc("timestamp field").build())
