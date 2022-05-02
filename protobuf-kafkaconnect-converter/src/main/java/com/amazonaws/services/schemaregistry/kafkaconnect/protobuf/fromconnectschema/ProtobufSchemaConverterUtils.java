@@ -35,8 +35,9 @@ public class ProtobufSchemaConverterUtils {
     public static java.util.Date convertFromGoogleTime(com.google.type.TimeOfDay time) {
         TimeZone timeZone = TimeZone.getTimeZone("UTC");
         Calendar cal = Calendar.getInstance(timeZone);
-        cal.set(Calendar.YEAR, 1969); //year, month, and day must be hardcoded to match
-        cal.set(Calendar.MONTH, 11); //the Unix epoch - https://www.unixtimestamp.com/
+        //year, month and day must be hardcoded to match the Unix epoch - https://en.wikipedia.org/wiki/Unix_time
+        cal.set(Calendar.YEAR, 1969);
+        cal.set(Calendar.MONTH, 11);
         cal.set(Calendar.DAY_OF_MONTH, 32);
         cal.set(Calendar.HOUR_OF_DAY, time.getHours());
         cal.set(Calendar.MINUTE, time.getMinutes());
