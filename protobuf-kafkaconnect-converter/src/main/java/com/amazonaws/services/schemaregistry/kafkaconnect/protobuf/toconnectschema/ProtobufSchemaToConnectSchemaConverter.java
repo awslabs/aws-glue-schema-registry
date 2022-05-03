@@ -6,6 +6,9 @@ import com.google.protobuf.Message;
 import lombok.NonNull;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
+import org.apache.kafka.connect.data.Date;
+import org.apache.kafka.connect.data.Time;
+import org.apache.kafka.connect.data.Timestamp;
 import org.apache.kafka.connect.errors.DataException;
 
 import java.util.List;
@@ -26,6 +29,7 @@ import static com.google.protobuf.Descriptors.FieldDescriptor.Type.SINT64;
 import static com.google.protobuf.Descriptors.FieldDescriptor.Type.UINT32;
 import static com.google.protobuf.Descriptors.FieldDescriptor.Type.UINT64;
 import static com.google.protobuf.Descriptors.FieldDescriptor.Type.ENUM;
+
 /**
  * Converts the Protobuf schema to Connect schemas.
  * Partially inspired from https://github.com/blueapron/kafka-connect-protobuf-converter/blob/master/src/main/java/com/blueapron/connect/protobuf/ProtobufData.java#L135
@@ -112,6 +116,15 @@ public class ProtobufSchemaToConnectSchemaConverter {
                             toConnectSchemaBuilderForField(keyFieldDescriptor).optional().build(),
                             toConnectSchemaBuilderForField(valueFieldDescriptor).optional().build());
                 }
+                if (fieldDescriptor.getMessageType().getFullName().equals("google.type.Date")) {
+                    schemaBuilder = Date.builder();
+                }
+                if (fieldDescriptor.getMessageType().getFullName().equals("google.protobuf.Timestamp")) {
+                    schemaBuilder = Timestamp.builder();
+                }
+                if (fieldDescriptor.getMessageType().getFullName().equals("google.type.TimeOfDay")) {
+                    schemaBuilder = Time.builder();
+                }
                 break;
             }
             default:
@@ -122,7 +135,9 @@ public class ProtobufSchemaToConnectSchemaConverter {
         //We add metadata to Connect schema to store the original type used.
         if (TYPES_TO_ADD_METADATA.contains(protobufType)) {
             schemaBuilder.parameter(PROTOBUF_TYPE, protobufType.name().toUpperCase());
-        } else if (protobufType.equals(ENUM)) { //ENUM case; storing ENUM data as metadata to avoid being lost in translation.
+        }
+
+        if (protobufType.equals(ENUM)) { //ENUM case; storing ENUM data as metadata to avoid being lost in translation.
             schemaBuilder.parameter(PROTOBUF_TYPE, PROTOBUF_ENUM_TYPE);
             for (Descriptors.EnumValueDescriptor enumValueDescriptor: fieldDescriptor.getEnumType().getValues()) { //iterating through the values of the Enum to store each one
                 schemaBuilder.parameter(PROTOBUF_ENUM_VALUE + enumValueDescriptor.getName(), String.valueOf(enumValueDescriptor.getNumber()));

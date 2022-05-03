@@ -6,6 +6,9 @@ import com.google.protobuf.ByteString;
 import com.google.protobuf.Descriptors;
 import com.google.protobuf.DynamicMessage;
 import lombok.SneakyThrows;
+import org.apache.kafka.connect.data.Date;
+import org.apache.kafka.connect.data.Time;
+import org.apache.kafka.connect.data.Timestamp;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
@@ -216,12 +219,12 @@ public class ToProtobufTestDataGenerator {
         Descriptors.Descriptor descriptor = fileDescriptor.getMessageTypes().get(0);
         DynamicMessage.Builder dynamicMessageBuilder = DynamicMessage.newBuilder(descriptor);
 
-            return dynamicMessageBuilder
-                    .setField(descriptor.findFieldByName("corpus"), fileDescriptor.findEnumTypeByName("corpus").findValueByName("UNIVERSAL"))
-                    .setField(descriptor.findFieldByName("shapes"), fileDescriptor.findEnumTypeByName("shapes").findValueByName("TRIANGLE"))
-                    .setField(descriptor.findFieldByName("color"), fileDescriptor.findEnumTypeByName("color").findValueByName("BLUE"))
-                    .setField(descriptor.findFieldByName("fruits"), fileDescriptor.findEnumTypeByName("fruits").findValueByName("BANANA"))
-                    .build();
+        return dynamicMessageBuilder
+                .setField(descriptor.findFieldByName("corpus"), fileDescriptor.findEnumTypeByName("corpus").findValueByName("UNIVERSAL"))
+                .setField(descriptor.findFieldByName("shapes"), fileDescriptor.findEnumTypeByName("shapes").findValueByName("TRIANGLE"))
+                .setField(descriptor.findFieldByName("color"), fileDescriptor.findEnumTypeByName("color").findValueByName("BLUE"))
+                .setField(descriptor.findFieldByName("fruits"), fileDescriptor.findEnumTypeByName("fruits").findValueByName("BANANA"))
+                .build();
     }
 
     private static Descriptors.FileDescriptor getEnumFileDescriptor() {
@@ -236,7 +239,7 @@ public class ToProtobufTestDataGenerator {
                 .put("corpus", "UNIVERSAL")
                 .put("shapes", "TRIANGLE")
                 .put("color", "BLUE");
-                //.put("fruits", "BANANA"); //Unset to check default value
+        //.put("fruits", "BANANA"); //Unset to check default value
 
         return connectData;
     }
@@ -284,6 +287,70 @@ public class ToProtobufTestDataGenerator {
                         .build())
                 .build();
     }
+
+
+
+    public static Schema getTimeSchema(String name) {
+        return createConnectSchema(name, getTimeTypes(), ImmutableMap.of());
+    }
+
+    @SneakyThrows
+    public static DynamicMessage getProtobufTimeMessage() {
+        Descriptors.FileDescriptor fileDescriptor = getTimeFileDescriptor();
+        Descriptors.Descriptor descriptor = fileDescriptor.getMessageTypes().get(0);
+        DynamicMessage.Builder dynamicMessageBuilder = DynamicMessage.newBuilder(descriptor);
+
+        com.google.type.Date.Builder dateBuilder = com.google.type.Date.newBuilder();
+        dateBuilder.setYear(2022);
+        dateBuilder.setMonth(3);
+        dateBuilder.setDay(20);
+
+        com.google.type.TimeOfDay.Builder todBuilder = com.google.type.TimeOfDay.newBuilder();
+        todBuilder.setHours(2);
+        todBuilder.setMinutes(2);
+        todBuilder.setSeconds(42);
+
+        com.google.protobuf.Timestamp.Builder timestampBuilder = com.google.protobuf.Timestamp.newBuilder();
+        timestampBuilder.setSeconds(1);
+        timestampBuilder.setNanos(805000000);
+
+        return dynamicMessageBuilder
+                .setField(descriptor.findFieldByName("date"), dateBuilder.build())
+                .setField(descriptor.findFieldByName("time"), todBuilder.build())
+                .setField(descriptor.findFieldByName("timestamp"), timestampBuilder.build())
+                .build();
+    }
+
+    private static Descriptors.FileDescriptor getTimeFileDescriptor() {
+        return new ConnectSchemaToProtobufSchemaConverter().convert(getTimeSchema("timeProtobufSchema"));
+    }
+
+    public static Struct getTimeTypeData() {
+        Schema connectSchema = createConnectSchema("timeProtobufSchema", getTimeTypes(), ImmutableMap.of());
+        final Struct connectData = new Struct(connectSchema);
+
+        int dateDefVal = 19071; // equal to 2022/03/20 with reference to the unix epoch
+        int timeDefVal = 7362000; // equal to 2 hours 2 minutes 42 seconds in millisecond
+        long tsDefVal = 1805; // equal to 1 second 805000000 nanoseconds in millisecond
+        java.util.Date date = Date.toLogical(Date.SCHEMA, dateDefVal);
+        java.util.Date time = Time.toLogical(Time.SCHEMA, timeDefVal);
+        java.util.Date timestamp = Timestamp.toLogical(Timestamp.SCHEMA, tsDefVal);
+
+        connectData
+                .put("date", date)
+                .put("time", time)
+                .put("timestamp", timestamp);
+        return connectData;
+    }
+
+    private static Map<String, Schema> getTimeTypes() {
+        return ImmutableMap.<String, Schema>builder()
+                .put("date", Date.builder().doc("date field").build())
+                .put("time", Time.builder().doc("time field").build())
+                .put("timestamp", Timestamp.builder().doc("timestamp field").build())
+                .build();
+    }
+
 
     public static Schema getArraySchema(String name) {
         return createConnectSchema(name, getArrayType(), ImmutableMap.of());

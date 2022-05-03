@@ -25,6 +25,9 @@ import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConn
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getPrimitiveProtobufMessages;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getPrimitiveSchema;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getPrimitiveTypesData;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getTimeProtobufMessages;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getTimeSchema;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getTimeTypeData;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -46,6 +49,10 @@ public class ProtobufDataToConnectDataConverterTest {
 
     private static Stream<Arguments> getMapTestCases() {
         return getMapProtobufMessages().stream().map(Arguments::of);
+    }
+
+    private static Stream<Arguments> getTimeTestCases() {
+        return getTimeProtobufMessages().stream().map(Arguments::of);
     }
 
     @ParameterizedTest
@@ -88,6 +95,17 @@ public class ProtobufDataToConnectDataConverterTest {
         final Schema connectSchema = getMapSchema(packageName);
         Object actualData = PROTOBUF_DATA_TO_CONNECT_DATA_CONVERTER.toConnectData(mapMessage, connectSchema);
         Struct expectedData = getMapTypeData(packageName);
+
+        assertEquals(expectedData, actualData);
+    }
+
+    @ParameterizedTest
+    @MethodSource("getTimeTestCases")
+    public void toConnectData_convertsProtobufMessageToConnect_forTimeType(Message timeMessage) {
+        String packageName = timeMessage.getDescriptorForType().getFile().getPackage();
+        final Schema connectSchema = getTimeSchema(packageName);
+        Object actualData = PROTOBUF_DATA_TO_CONNECT_DATA_CONVERTER.toConnectData(timeMessage, connectSchema);
+        Struct expectedData = getTimeTypeData(packageName);
 
         assertEquals(expectedData, actualData);
     }

@@ -1,3 +1,5 @@
+syntax = "proto2";
+
 package com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax2;
 
 message PrimitiveTypes {
@@ -86,4 +88,5 @@ message PrimitiveTypes {
   optional string strOptional = 33;
 
   required string strWithDefault = 34;
+
 }

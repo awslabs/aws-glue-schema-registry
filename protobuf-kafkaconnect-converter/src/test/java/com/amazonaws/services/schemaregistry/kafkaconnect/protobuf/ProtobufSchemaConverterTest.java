@@ -85,7 +85,10 @@ public class ProtobufSchemaConverterTest {
                 ToProtobufTestDataGenerator.getProtobufArrayMessage()),
             Arguments.of(ToProtobufTestDataGenerator.getMapTypeData(),
                 ToProtobufTestDataGenerator.getMapSchema(SCHEMA_NAME),
-                ToProtobufTestDataGenerator.getProtobufMapMessage())
+                ToProtobufTestDataGenerator.getProtobufMapMessage()),
+            Arguments.of(ToProtobufTestDataGenerator.getTimeTypeData(),
+                ToProtobufTestDataGenerator.getTimeSchema(SCHEMA_NAME),
+                ToProtobufTestDataGenerator.getProtobufTimeMessage())
         );
     }
 

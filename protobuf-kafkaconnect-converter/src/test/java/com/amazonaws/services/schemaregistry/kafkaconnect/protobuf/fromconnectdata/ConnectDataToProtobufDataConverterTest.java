@@ -78,6 +78,17 @@ public class ConnectDataToProtobufDataConverterTest {
     }
 
     @Test
+    public void convert_ForTimeType_ConvertsSuccessfully() {
+        final DynamicMessage timeMessage = ToProtobufTestDataGenerator.getProtobufTimeMessage();
+        final Descriptors.FileDescriptor fileDescriptor = timeMessage.getDescriptorForType().getFile();
+        final Schema timeSchema = ToProtobufTestDataGenerator.getTimeSchema("TimeDataTest");
+        final Message actualMessage = connectDataToProtobufDataConverter.convert(fileDescriptor, timeSchema,
+                ToProtobufTestDataGenerator.getTimeTypeData());
+
+        assertEquals(timeMessage, actualMessage);
+    }
+
+    @Test
     public void convert_ForNullValues_ThrowsException() {
         final DynamicMessage primitiveMessage = ToProtobufTestDataGenerator.getProtobufPrimitiveMessage();
         final Schema primitiveSchema = ToProtobufTestDataGenerator.getPrimitiveSchema("PrimitiveDataTest");

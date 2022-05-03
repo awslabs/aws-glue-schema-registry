@@ -17,6 +17,7 @@ import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToProt
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToProtobufTestDataGenerator.getMapSchema;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToProtobufTestDataGenerator.getPrimitiveSchema;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToProtobufTestDataGenerator.getEnumSchema;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToProtobufTestDataGenerator.getTimeSchema;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToProtobufTestDataGenerator.getProtobufSchema;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_TAG;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_TYPE;
@@ -60,6 +61,11 @@ public class ConnectSchemaToProtobufSchemaConverterTest {
                 "MapType",
                 getMapSchema("MapType"),
                 getProtobufSchema("MapProtobufSchema.filedescproto")
+            ),
+            Arguments.of(
+                "TimeType",
+                getTimeSchema("TimeType"),
+                getProtobufSchema("TimeProtobufSchema.filedescproto")
             )
         );
     }
@@ -106,5 +112,4 @@ public class ConnectSchemaToProtobufSchemaConverterTest {
     public void fromConnectSchema_onNullSchema_ThrowsException() {
         assertThrows(IllegalArgumentException.class, () -> CONNECT_SCHEMA_TO_PROTOBUF_SCHEMA_CONVERTER.convert(null));
     }
-
 }

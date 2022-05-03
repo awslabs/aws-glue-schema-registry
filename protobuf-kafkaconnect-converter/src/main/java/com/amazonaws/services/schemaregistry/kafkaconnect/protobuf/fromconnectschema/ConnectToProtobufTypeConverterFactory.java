@@ -2,7 +2,10 @@ package com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnects
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
+import org.apache.kafka.connect.data.Date;
 import org.apache.kafka.connect.data.Schema;
+import org.apache.kafka.connect.data.Time;
+import org.apache.kafka.connect.data.Timestamp;
 
 import java.util.Map;
 
@@ -23,6 +26,10 @@ public class ConnectToProtobufTypeConverterFactory {
                 && schemaParams.containsKey(PROTOBUF_TYPE)
                 && PROTOBUF_ENUM_TYPE.equals(schemaParams.get(PROTOBUF_TYPE))) {
             return new EnumSchemaTypeConverter();
+        } else if (Date.SCHEMA.name().equals(connectSchema.name())
+                || Timestamp.SCHEMA.name().equals(connectSchema.name())
+                || Time.SCHEMA.name().equals(connectSchema.name())) {
+            return new TimeSchemaTypeConverter();
         } else if (connectType.isPrimitive()) {
             return new PrimitiveSchemaTypeConverter();
         } else if (connectType.equals(Schema.Type.ARRAY)) {
