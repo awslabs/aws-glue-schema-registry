@@ -50,3 +50,6 @@ GlueSchemaRegistryKafkaSerializer/GlueSchemaRegistryKafkaDeserializer.
 * Fix bug for missing Protobuf wellknown types
 * Fix Json schema converter NPEs due to missing connect.index and connect.type for sink only cases
 * Add AWS SDK dependency to allow irsa service account
+
+## Release 1.1.11
+* Dependency bumps
