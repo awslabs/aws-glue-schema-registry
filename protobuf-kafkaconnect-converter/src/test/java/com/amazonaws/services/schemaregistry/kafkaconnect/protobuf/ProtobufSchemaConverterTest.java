@@ -117,7 +117,6 @@ public class ProtobufSchemaConverterTest {
     @ParameterizedTest
     @MethodSource("getFromConnectTestCases")
     public void fromConnectData_convertsConnectDataToGSRSerializedProtobufData(
-        //TODO: Update this for all types, not just Primitive
         Object connectData, Schema connectSchema, DynamicMessage protobufData) {
 
         ArgumentCaptor<DynamicMessage> argumentCaptor = ArgumentCaptor.forClass(DynamicMessage.class);
