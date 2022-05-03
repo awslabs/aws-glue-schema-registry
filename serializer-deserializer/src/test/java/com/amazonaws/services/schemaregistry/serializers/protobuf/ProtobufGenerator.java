@@ -21,13 +21,35 @@ import com.amazonaws.services.schemaregistry.tests.protobuf.syntax3.basic.Unicod
 import com.amazonaws.services.schemaregistry.tests.protobuf.syntax3.multiplefiles.A;
 import com.amazonaws.services.schemaregistry.tests.protobuf.syntax3.snake_case.AnotherSnakeCaseProtoFile;
 import com.amazonaws.services.schemaregistry.utils.apicurio.FileDescriptorUtils;
+import com.amazonaws.services.schemaregistry.utils.apicurio.syntax2.WellKnownTypesTestSyntax2;
+import com.amazonaws.services.schemaregistry.utils.apicurio.syntax3.WellKnownTypesTestSyntax3;
 import com.google.common.collect.ImmutableList;
+import com.google.protobuf.Api;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Descriptors;
+import com.google.protobuf.Duration;
 import com.google.protobuf.DynamicMessage;
+import com.google.protobuf.Empty;
+import com.google.protobuf.Enum;
+import com.google.protobuf.EnumValue;
+import com.google.protobuf.Int32Value;
+import com.google.protobuf.ListValue;
 import com.google.protobuf.Message;
+import com.google.protobuf.Method;
+import com.google.protobuf.Mixin;
+import com.google.protobuf.StringValue;
+import com.google.protobuf.Struct;
 import com.google.protobuf.Timestamp;
+import com.google.protobuf.UInt64Value;
+import com.google.protobuf.Value;
+import com.google.type.CalendarPeriod;
+import com.google.type.Color;
+import com.google.type.Date;
+import com.google.type.Fraction;
 import com.google.type.Money;
+import com.google.type.Month;
+import com.google.type.PhoneNumber;
+import com.google.type.PostalAddress;
 import lombok.SneakyThrows;
 
 import java.util.List;
@@ -52,7 +74,9 @@ public class ProtobufGenerator {
             UNICODE_MESSAGE,
             NESTED_CONFLICTING_NAME_MESSAGE,
             ALL_TYPES_MESSAGE_SYNTAX3,
-            ALL_TYPES_MESSAGE_SYNTAX2
+            ALL_TYPES_MESSAGE_SYNTAX2,
+            WELL_KNOWN_TYPES_SYNTAX_2,
+            WELL_KNOWN_TYPES_SYNTAX_3
         ).collect(Collectors.toList());
     }
 
@@ -62,7 +86,9 @@ public class ProtobufGenerator {
             createDynamicProtobufRecord(),
             createDynamicNRecord(),
             createDynamicMessageFromPOJO(ALL_TYPES_MESSAGE_SYNTAX2),
-            createDynamicMessageFromPOJO(ALL_TYPES_MESSAGE_SYNTAX3)
+            createDynamicMessageFromPOJO(ALL_TYPES_MESSAGE_SYNTAX3),
+            createDynamicMessageFromPOJO(WELL_KNOWN_TYPES_SYNTAX_2),
+            createDynamicMessageFromPOJO(WELL_KNOWN_TYPES_SYNTAX_3)
             //Add all types,
         ).collect(Collectors.toList());
     }
@@ -224,5 +250,57 @@ public class ProtobufGenerator {
                         Timestamp.newBuilder().setNanos(0).build()
                     )
                 ).build())
+            .build();
+
+    public static final WellKnownTypesTestSyntax2.WellKnownTypesSyntax3 WELL_KNOWN_TYPES_SYNTAX_2 =
+        WellKnownTypesTestSyntax2.WellKnownTypesSyntax3.newBuilder()
+            .setA(101)
+            .setFloating(0)
+            .setF1(Timestamp.newBuilder().setSeconds(123).setNanos(1).build())
+            .setF2(StringValue.newBuilder().setValue("stringValue").build())
+            .setF4(Empty.newBuilder().build())
+            .setF5(Duration.newBuilder().setNanos(5).setSeconds(10).build())
+            .setF22(ListValue.newBuilder().addValues(Value.newBuilder().setNumberValue(2.2).build()).build())
+            .setF27(Int32Value.newBuilder().setValue(27).build())
+            .setF33(Struct.newBuilder().build())
+            .setF35(UInt64Value.newBuilder().setValue(64).build())
+            .setF37(Api.newBuilder().setName("newapi").build())
+            .setF42(Enum.newBuilder().addEnumvalue(EnumValue.newBuilder().setName("enumValue").build()).build())
+            .setF47(Method.newBuilder().setName("method").setRequestTypeUrl("sampleUrl").build())
+            .setF48(Mixin.newBuilder().setName("mixin").build())
+            .setF9(CalendarPeriod.DAY)
+            .setF10(Color.newBuilder().setRed(100).setGreen(100).setBlue(100).build())
+            .setF7(Date.newBuilder().setDay(1).setMonth(4).setYear(2022).build())
+            .setF13(Fraction.newBuilder().setDenominator(100).setNumerator(9).build())
+            .setF6(Money.newBuilder().setUnits(10).build())
+            .setF14(Month.APRIL)
+            .setF16(PostalAddress.newBuilder().setPostalCode("98121").build())
+            .setF15(PhoneNumber.newBuilder().setE164Number("206").build())
+            .build();
+
+    public static final WellKnownTypesTestSyntax3.WellKnownTypesSyntax3 WELL_KNOWN_TYPES_SYNTAX_3 =
+        WellKnownTypesTestSyntax3.WellKnownTypesSyntax3.newBuilder()
+            .setA(101)
+            .setFloating(0)
+            .setF1(Timestamp.newBuilder().setSeconds(123).setNanos(1).build())
+            .setF2(StringValue.newBuilder().setValue("stringValue").build())
+            .setF4(Empty.newBuilder().build())
+            .setF5(Duration.newBuilder().setNanos(5).setSeconds(10).build())
+            .setF22(ListValue.newBuilder().addValues(Value.newBuilder().setNumberValue(2.2).build()).build())
+            .setF27(Int32Value.newBuilder().setValue(27).build())
+            .setF33(Struct.newBuilder().build())
+            .setF35(UInt64Value.newBuilder().setValue(64).build())
+            .setF37(Api.newBuilder().setName("newapi").build())
+            .setF42(Enum.newBuilder().addEnumvalue(EnumValue.newBuilder().setName("enumValue").build()).build())
+            .setF47(Method.newBuilder().setName("method").setRequestTypeUrl("sampleUrl").build())
+            .setF48(Mixin.newBuilder().setName("mixin").build())
+            .setF9(CalendarPeriod.DAY)
+            .setF10(Color.newBuilder().setRed(100).setGreen(100).setBlue(100).build())
+            .setF7(Date.newBuilder().setDay(1).setMonth(4).setYear(2022).build())
+            .setF13(Fraction.newBuilder().setDenominator(100).setNumerator(9).build())
+            .setF6(Money.newBuilder().setUnits(10).build())
+            .setF14(Month.APRIL)
+            .setF16(PostalAddress.newBuilder().setPostalCode("98121").build())
+            .setF15(PhoneNumber.newBuilder().setE164Number("206").build())
             .build();
 }

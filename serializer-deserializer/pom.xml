@@ -32,7 +32,7 @@
     <parent>
         <groupId>software.amazon.glue</groupId>
         <artifactId>schema-registry-parent</artifactId>
-        <version>1.1.9</version>
+        <version>1.1.10</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -60,6 +60,16 @@
     </scm>
 
     <dependencies>
+        <dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk-sts</artifactId>
+            <version>${aws.sdk.v1.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>sts</artifactId>
+            <version>${aws.sdk.v2.version}</version>
+        </dependency>
         <dependency>
             <groupId>${parent.groupId}</groupId>
             <artifactId>schema-registry-common</artifactId>
