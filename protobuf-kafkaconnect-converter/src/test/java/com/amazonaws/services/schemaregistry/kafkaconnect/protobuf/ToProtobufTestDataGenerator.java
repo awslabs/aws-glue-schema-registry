@@ -329,9 +329,9 @@ public class ToProtobufTestDataGenerator {
         Schema connectSchema = createConnectSchema("timeProtobufSchema", getTimeTypes(), ImmutableMap.of());
         final Struct connectData = new Struct(connectSchema);
 
-        int dateDefVal = 365 * 52 + 91;
-        int timeDefVal = 1000 * 60 * 60 * 2 + 45 * 60 * 60;
-        long tsDefVal = 30 * 60 + 5;
+        int dateDefVal = 19071;
+        int timeDefVal = 7362000;
+        long tsDefVal = 1805;
         java.util.Date date = Date.toLogical(Date.SCHEMA, dateDefVal);
         java.util.Date time = Time.toLogical(Time.SCHEMA, timeDefVal);
         java.util.Date timestamp = Timestamp.toLogical(Timestamp.SCHEMA, tsDefVal);
