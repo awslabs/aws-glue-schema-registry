@@ -9,6 +9,10 @@ public class ProtobufSchemaConverterUtils {
 
     private static final String MAP_ENTRY_SUFFIX = "Entry";
 
+    public static String getTypeName(String typeName) {
+        return typeName.startsWith(".") ? typeName : "." + typeName;
+    }
+
     public static String toMapEntryName(String s) {
         if (s.contains("_")) {
             s = LOWER_UNDERSCORE.to(UPPER_CAMEL, s);

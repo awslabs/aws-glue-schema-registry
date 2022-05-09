@@ -12,6 +12,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterUtils.getTypeName;
+
 /**
  * Builds the fields into given message and fileDescriptorProto.
  */
@@ -35,6 +37,16 @@ public class FieldBuilder {
                 String mapEntryName = ProtobufSchemaConverterUtils.toMapEntryName(fieldName);
                 messageDescriptorProtoBuilder.addNestedType(buildMap(fieldSchema, mapEntryName,
                     fileDescriptorProtoBuilder, messageDescriptorProtoBuilder));
+            } else if (Schema.Type.STRUCT.equals(fieldSchema.type())) {
+                DescriptorProtos.DescriptorProto.Builder nestedMessageDescriptorProtoBuilder =
+                        DescriptorProtos.DescriptorProto.newBuilder();
+                nestedMessageDescriptorProtoBuilder.setName(getSchemaSimpleName(fieldSchema.name()));
+                build(fieldSchema, fileDescriptorProtoBuilder, nestedMessageDescriptorProtoBuilder);
+                if (isParentLevel(fileDescriptorProtoBuilder.getPackage(), fieldSchema.name())) {
+                    fileDescriptorProtoBuilder.addMessageType(nestedMessageDescriptorProtoBuilder);
+                } else {
+                    messageDescriptorProtoBuilder.addNestedType(nestedMessageDescriptorProtoBuilder);
+                }
             }
 
             DescriptorProtos.FieldDescriptorProto.Builder fieldDescriptorProtoBuilder =
@@ -87,9 +99,14 @@ public class FieldBuilder {
 
         if (Schema.Type.MAP.equals(fieldSchema.type())) {
             String typeName = getTypeName(fileDescriptorProtoBuilder.getPackage() + "."
-                + ProtobufSchemaConverterUtils.toMapEntryName(fieldName));
+                    + messageDescriptorProtoBuilder.getName() + "."
+                    + ProtobufSchemaConverterUtils.toMapEntryName(fieldName));
+            fieldDescriptorProtoBuilder.setTypeName(typeName);
+        } else if (Schema.Type.STRUCT.equals(fieldSchema.type())) {
+            String typeName = getTypeName(fieldSchema.name());
             fieldDescriptorProtoBuilder.setTypeName(typeName);
         }
+
         fieldDescriptorProtoBuilder.setName(fieldName);
 
         return fieldDescriptorProtoBuilder;
@@ -141,7 +158,17 @@ public class FieldBuilder {
         fieldBuilder.setOneofIndex(descriptorProtoBuilder.getOneofDeclCount() - 1);
     }
 
-    private static String getTypeName(String typeName) {
-        return typeName.startsWith(".") ? typeName : "." + typeName;
+    private static String getSchemaSimpleName(String schemaName) {
+        String[] names = schemaName.split("\\.");
+        return names[names.length - 1];
+    }
+
+    private static boolean isParentLevel(String packageName, String schemaName) {
+        if (!schemaName.startsWith(packageName)) {
+            return false;
+        }
+        String[] names = schemaName.split(packageName)[1].split("\\.");
+        boolean isNotNested = names.length <= 2;
+        return isNotNested;
     }
 }

@@ -36,6 +36,8 @@ public class ConnectToProtobufTypeConverterFactory {
             return new ArraySchemaTypeConverter();
         } else if (connectType.equals(Schema.Type.MAP)) {
             return new MapSchemaTypeConverter();
+        } else if (connectType.equals(Schema.Type.STRUCT)){
+            return new StructSchemaTypeConverter();
         }
 
         throw new IllegalArgumentException("Unrecognized connect type: " + connectType);

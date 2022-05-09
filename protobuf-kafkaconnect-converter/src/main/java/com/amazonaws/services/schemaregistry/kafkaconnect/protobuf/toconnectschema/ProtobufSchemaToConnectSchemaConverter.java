@@ -115,15 +115,25 @@ public class ProtobufSchemaToConnectSchemaConverter {
                     schemaBuilder = SchemaBuilder.map(
                             toConnectSchemaBuilderForField(keyFieldDescriptor).optional().build(),
                             toConnectSchemaBuilderForField(valueFieldDescriptor).optional().build());
+                    break;
                 }
                 if (fieldDescriptor.getMessageType().getFullName().equals("google.type.Date")) {
                     schemaBuilder = Date.builder();
+                    break;
                 }
                 if (fieldDescriptor.getMessageType().getFullName().equals("google.protobuf.Timestamp")) {
                     schemaBuilder = Timestamp.builder();
+                    break;
                 }
                 if (fieldDescriptor.getMessageType().getFullName().equals("google.type.TimeOfDay")) {
                     schemaBuilder = Time.builder();
+                    break;
+                }
+
+                String fullName = fieldDescriptor.getMessageType().getFullName();
+                schemaBuilder = SchemaBuilder.struct().name(fullName);
+                for (Descriptors.FieldDescriptor field : fieldDescriptor.getMessageType().getFields()) {
+                    schemaBuilder.field(field.getName(), toConnectSchemaForField(field));
                 }
                 break;
             }
@@ -142,7 +152,7 @@ public class ProtobufSchemaToConnectSchemaConverter {
             for (Descriptors.EnumValueDescriptor enumValueDescriptor: fieldDescriptor.getEnumType().getValues()) { //iterating through the values of the Enum to store each one
                 schemaBuilder.parameter(PROTOBUF_ENUM_VALUE + enumValueDescriptor.getName(), String.valueOf(enumValueDescriptor.getNumber()));
             }
-            schemaBuilder.parameter(PROTOBUF_ENUM_NAME, fieldDescriptor.getName());
+            schemaBuilder.parameter(PROTOBUF_ENUM_NAME, fieldDescriptor.getEnumType().getName());
         }
 
         if (fieldDescriptor.hasOptionalKeyword()) {

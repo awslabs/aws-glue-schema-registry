@@ -26,6 +26,7 @@ public class TimeSchemaTypeConverter implements SchemaTypeConverter {
         return DescriptorProtos.FieldDescriptorProto
                 .newBuilder()
                 .setType(TYPE_MESSAGE)
-                .setTypeName(typename);
+                .setTypeName(typename)
+                .setLabel(DescriptorProtos.FieldDescriptorProto.Label.LABEL_OPTIONAL);
     }
 }
