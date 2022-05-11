@@ -38,10 +38,13 @@ public class FieldBuilder {
                 messageDescriptorProtoBuilder.addNestedType(buildMap(fieldSchema, mapEntryName,
                     fileDescriptorProtoBuilder, messageDescriptorProtoBuilder));
             } else if (Schema.Type.STRUCT.equals(fieldSchema.type())) {
+                // Convert the Struct type schema to a Protobuf message schema
                 DescriptorProtos.DescriptorProto.Builder nestedMessageDescriptorProtoBuilder =
                         DescriptorProtos.DescriptorProto.newBuilder();
                 nestedMessageDescriptorProtoBuilder.setName(getSchemaSimpleName(fieldSchema.name()));
                 build(fieldSchema, fileDescriptorProtoBuilder, nestedMessageDescriptorProtoBuilder);
+                // If schema is at parent level, Protobuf message is added as a message type
+                // If schema is not at parent level, Protobuf message is added as a nested type
                 if (isParentLevel(fileDescriptorProtoBuilder.getPackage(), fieldSchema.name())) {
                     fileDescriptorProtoBuilder.addMessageType(nestedMessageDescriptorProtoBuilder);
                 } else {
@@ -59,7 +62,6 @@ public class FieldBuilder {
             setProto3Optional(fieldSchema, fieldDescriptorProtoBuilder, messageDescriptorProtoBuilder);
 
             messageDescriptorProtoBuilder.addField(fieldDescriptorProtoBuilder);
-
         }
     }
 
@@ -110,7 +112,6 @@ public class FieldBuilder {
         fieldDescriptorProtoBuilder.setName(fieldName);
 
         return fieldDescriptorProtoBuilder;
-
     }
 
     /**
@@ -163,11 +164,26 @@ public class FieldBuilder {
         return names[names.length - 1];
     }
 
+    /**
+     * Schema name is in a complex form which consists of packageName, parent level schema simple name if exists,
+     * and schema simple name itself
+     * For example: message A { message B {} } message C {}
+     * schema name for each will be
+     * A -》"package.A", B -》"package.A.B", C -》"package.C"
+     *
+     * @param packageName package name of the protobuf schema
+     * @param schemaName  schema name in the complex form
+     * @return true if a schema is a parent level schema, false otherwise.
+     */
     private static boolean isParentLevel(String packageName, String schemaName) {
         if (!schemaName.startsWith(packageName)) {
             return false;
         }
         String[] names = schemaName.split(packageName)[1].split("\\.");
+        // If not nested schema, in other words parent level schema:
+        // for example message A and message C, names should be ["", "A"] and ["", "C"]
+        // If nested schema, in other words non parent level schema:
+        // for example message B, names should be ["", "A", "B"]
         boolean isNotNested = names.length <= 2;
         return isNotNested;
     }

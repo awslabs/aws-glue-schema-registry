@@ -18,6 +18,8 @@ import java.util.Map;
  */
 public class ConnectDataToProtobufDataConverter {
 
+    private Map<String, Descriptors.Descriptor> allMessagesByName = null;
+
     public Message convert(
         @NonNull final Descriptors.FileDescriptor fileDescriptor,
         @NonNull final Schema schema,
@@ -25,7 +27,9 @@ public class ConnectDataToProtobufDataConverter {
         final List<Field> fields = schema.fields();
         final Struct data = (Struct) value;
 
-        Map<String, Descriptors.Descriptor> allMessagesByName = DescriptorTree.parseAllDescriptors(fileDescriptor);
+        if (allMessagesByName == null) {
+            allMessagesByName = DescriptorTree.parseAllDescriptors(fileDescriptor);
+        }
         String pathName = getPathName(fileDescriptor.getPackage(), schema.name());
         Descriptors.Descriptor descriptor = allMessagesByName.get(pathName);
         DynamicMessage.Builder dynamicMessageBuilder = DynamicMessage.newBuilder(descriptor);
