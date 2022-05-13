@@ -25,6 +25,9 @@ import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConn
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getPrimitiveProtobufMessages;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getPrimitiveSchema;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getPrimitiveTypesData;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getStructProtobufMessages;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getStructSchema;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getStructTypeData;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getTimeProtobufMessages;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getTimeSchema;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getTimeTypeData;
@@ -53,6 +56,10 @@ public class ProtobufDataToConnectDataConverterTest {
 
     private static Stream<Arguments> getTimeTestCases() {
         return getTimeProtobufMessages().stream().map(Arguments::of);
+    }
+
+    private static Stream<Arguments> getStructTestCases() {
+        return getStructProtobufMessages().stream().map(Arguments::of);
     }
 
     @ParameterizedTest
@@ -106,6 +113,17 @@ public class ProtobufDataToConnectDataConverterTest {
         final Schema connectSchema = getTimeSchema(packageName);
         Object actualData = PROTOBUF_DATA_TO_CONNECT_DATA_CONVERTER.toConnectData(timeMessage, connectSchema);
         Struct expectedData = getTimeTypeData(packageName);
+
+        assertEquals(expectedData, actualData);
+    }
+
+    @ParameterizedTest
+    @MethodSource("getStructTestCases")
+    public void toConnectData_convertsProtobufMessageToConnect_forStructType(Message nestedMessage) {
+        String packageName = nestedMessage.getDescriptorForType().getFile().getPackage();
+        final Schema connectSchema = getStructSchema(packageName);
+        Object actualData = PROTOBUF_DATA_TO_CONNECT_DATA_CONVERTER.toConnectData(nestedMessage, connectSchema);
+        Struct expectedData = getStructTypeData(packageName);
 
         assertEquals(expectedData, actualData);
     }

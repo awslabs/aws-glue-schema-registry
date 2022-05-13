@@ -24,22 +24,35 @@ public class ConnectDataToProtobufDataConverter {
         @NonNull final Object value) {
         final List<Field> fields = schema.fields();
         final Struct data = (Struct) value;
-        //Assuming the first descriptor is the parent descriptor.
-        //TODO: Evaluate if This needs to be updated when structure support is added.
-        final DynamicMessage.Builder dynamicMessageBuilder =
-            DynamicMessage.newBuilder(fileDescriptor.getMessageTypes().get(0));
+
+        //TODO: add caching of fileDescriptor to messages by name map
+        Map<String, Descriptors.Descriptor> allMessagesByName = DescriptorTree.parseAllDescriptors(fileDescriptor);
+        String pathName = getPathName(fileDescriptor.getPackage(), schema.name());
+        Descriptors.Descriptor descriptor = allMessagesByName.get(pathName);
+        DynamicMessage.Builder dynamicMessageBuilder = DynamicMessage.newBuilder(descriptor);
 
         for (final Field field : fields) {
             final Object fieldValue = data.get(field);
 
             if (field.schema().type().equals(Schema.Type.MAP)) {
                 addMapField(dynamicMessageBuilder, field, fieldValue);
+            } else if (field.schema().type().equals(Schema.Type.STRUCT)) {
+                Descriptors.FieldDescriptor fieldDescriptor = dynamicMessageBuilder.getDescriptorForType().findFieldByName(field.name());
+                Message nestedMessage = convert(fileDescriptor, field.schema(), fieldValue);
+                dynamicMessageBuilder.setField(fieldDescriptor, nestedMessage);
             } else {
                 addField(dynamicMessageBuilder, field, fieldValue);
             }
         }
 
         return dynamicMessageBuilder.build();
+    }
+
+    private String getPathName(final String packageName, final String schemaName) {
+        if (schemaName.startsWith(packageName)) {
+            return schemaName.replace(packageName, "");
+        }
+        return "." + schemaName;
     }
 
     private void addField(final Message.Builder builder, final Field field, final Object value) {

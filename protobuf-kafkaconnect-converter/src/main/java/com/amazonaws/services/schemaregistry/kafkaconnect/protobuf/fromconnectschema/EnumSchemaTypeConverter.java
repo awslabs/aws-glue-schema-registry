@@ -6,6 +6,7 @@ import java.util.Map;
 
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_ENUM_NAME;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_ENUM_VALUE;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterUtils.getTypeName;
 
 public class EnumSchemaTypeConverter implements SchemaTypeConverter {
 
@@ -32,9 +33,12 @@ public class EnumSchemaTypeConverter implements SchemaTypeConverter {
 
         //Adding the Enum to the protobuf schema file, and defining a field as Enum
         fileDescriptorProtoBuilder.addEnumType(enumDescriptorProtoBuilder);
-        DescriptorProtos.FieldDescriptorProto.Builder enumBuilder = DescriptorProtos.FieldDescriptorProto.newBuilder().setName(enumName);
+        DescriptorProtos.FieldDescriptorProto.Builder enumBuilder =
+                DescriptorProtos.FieldDescriptorProto.newBuilder().setName(enumName);
         enumBuilder.setType(DescriptorProtos.FieldDescriptorProto.Type.TYPE_ENUM);
-        enumBuilder.setTypeName(enumDescriptorProtoBuilder.getName());
+        enumBuilder.setTypeName(
+                getTypeName(fileDescriptorProtoBuilder.getPackage() + "." + enumDescriptorProtoBuilder.getName()));
+        enumBuilder.setLabel(DescriptorProtos.FieldDescriptorProto.Label.LABEL_OPTIONAL);
 
         return enumBuilder;
     }

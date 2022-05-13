@@ -137,6 +137,9 @@ public class ProtobufDataToConnectDataConverter {
                 ));
                 return map;
             }
+            case STRUCT: {
+                return toConnectData((Message) value, schema.schema());
+            }
             default:
                 throw new DataException("Cannot convert unrecognized schema type: " + schema.type());
         }
