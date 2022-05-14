@@ -9,6 +9,6 @@ typedef struct glue_schema_registry_serializer {
 
         ~glue_schema_registry_serializer();
 
-        glue_schema_registry_schema *encode(glue_schema_registry_schema *gsr_schema);
+        mutable_byte_array *encode(read_only_byte_array *array, glue_schema_registry_schema *gsr_schema);
     }
 } glue_schema_registry_serializer;

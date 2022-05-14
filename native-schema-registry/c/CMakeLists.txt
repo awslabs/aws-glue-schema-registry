@@ -1,11 +1,14 @@
 cmake_minimum_required(VERSION 3.19)
-project(native_schema_registry_clang C)
+IF (APPLE)
+    #Defaults to Apple Compile. Explicitly install and set to gcc.
+    set(CMAKE_C_COMPILER gcc)
+ENDIF()
+project(native_schema_registry_c C)
 set(CMAKE_C_STANDARD 99)
 
 ##Global variables
 #Path to GraalVM generated shared library
 set(LIB_NATIVE_SCHEMA_REGISTRY_PATH "${PROJECT_SOURCE_DIR}/../target")
-list(APPEND sanitizer_checks "-fsanitize=address,undefined")
 
 ##OS Specific variables
 IF (WIN32)

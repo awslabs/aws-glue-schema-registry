@@ -142,6 +142,7 @@
                                     --verbose
                                     --no-fallback
                                     --shared
+                                    -g
                                     -H:CLibraryPath=../
                                 </buildArgs>
                             </buildArgs>
