@@ -12,6 +12,7 @@ import org.graalvm.nativeimage.c.type.CCharPointer;
 import org.graalvm.nativeimage.c.type.CTypeConversion;
 import org.graalvm.word.PointerBase;
 
+import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -27,12 +28,14 @@ public class GlueSchemaRegistrySerializationHandler {
      */
     static class HandlerDirectives implements CContext.Directives {
 
-        public static final String INCLUDE_PATH = "clang/include/";
+        public static final String INCLUDE_PATH = "c/include/";
 
         @Override
         public List<String> getHeaderFiles() {
             return Stream.of(
-                "glue_schema_registry_schema.h"
+                "glue_schema_registry_schema.h",
+                "read_only_byte_array.h",
+                "mutable_byte_array.h"
             )
                 .map(header -> ProjectHeaderFile.resolve("", INCLUDE_PATH + header))
                 .collect(Collectors.toList());
@@ -60,9 +63,35 @@ public class GlueSchemaRegistrySerializationHandler {
         CCharPointer getDataFormat();
     }
 
+    @CStruct("read_only_byte_array")
+    public interface C_ReadOnlyByteArray extends PointerBase {
+
+        @CField("data")
+        PointerBase getData();
+
+        @CField("len")
+        long getLen();
+    }
+
+    @CStruct("mutable_byte_array")
+    public interface C_MutableByteArray extends PointerBase {
+
+        @CField("data")
+        PointerBase getData();
+
+        @CField("max_len")
+        long getMaxLen();
+    }
+
+    @CFunction("new_mutable_byte_array")
+    protected static native C_MutableByteArray newMutableByteArray(long maxLen);
+
+    @CFunction("mutable_byte_array_write")
+    protected static native void writeToMutableArray(C_MutableByteArray array, long index, byte b);
+
     @CEntryPoint(name = "encode_with_schema")
-    public static C_GlueSchemaRegistrySchema encodeWithSchema(
-        IsolateThread isolateThread, C_GlueSchemaRegistrySchema c_glueSchemaRegistrySchema) {
+    public static C_MutableByteArray encodeWithSchema(
+        IsolateThread isolateThread, C_ReadOnlyByteArray c_readOnlyByteArray, C_GlueSchemaRegistrySchema c_glueSchemaRegistrySchema) {
         //Access the input C schema object
         final String schemaName = CTypeConversion.toJavaString(c_glueSchemaRegistrySchema.getSchemaName());
         final String schemaDef = CTypeConversion.toJavaString(c_glueSchemaRegistrySchema.getSchemaDef());
@@ -74,12 +103,27 @@ public class GlueSchemaRegistrySerializationHandler {
             String.format("Created Java Schema object: %s %s %s",
                 javaSchema.getSchemaName(), javaSchema.getSchemaDefinition(), javaSchema.getDataFormat()));
 
-        C_GlueSchemaRegistrySchema cGsrSchema = newGlueSchemaRegistrySchema(
-            CTypeConversion.toCString(javaSchema.getSchemaName()).get(),
-            CTypeConversion.toCString(javaSchema.getSchemaDefinition()).get(),
-            CTypeConversion.toCString(javaSchema.getDataFormat()).get()
-        );
+        //Read the c_byteArray data and create a new mutable byte array  with encoded data
+        PointerBase cData = c_readOnlyByteArray.getData();
+        long cDataLen = c_readOnlyByteArray.getLen();
 
-        return cGsrSchema;
+        //TODO: Test this at limits
+        ByteBuffer javaByteBuffer = CTypeConversion.asByteBuffer(cData, Math.toIntExact(cDataLen));
+
+        //Creating new response buffer
+        //TODO: Replace this with actual serialization code
+        int extraBytes = 3;
+        int newLen = Math.toIntExact(cDataLen + extraBytes);
+
+        C_MutableByteArray mutableByteArray = newMutableByteArray(newLen);
+        writeToMutableArray(mutableByteArray,0, (byte) 3);
+        writeToMutableArray(mutableByteArray,1, (byte) 5);
+        writeToMutableArray(mutableByteArray,2, (byte) 1);
+
+        for (int index = 0 ; index < javaByteBuffer.capacity(); index++) {
+            writeToMutableArray(mutableByteArray,extraBytes + index, javaByteBuffer.get(index));
+        }
+
+        return mutableByteArray;
     }
 }

@@ -1,4 +1,5 @@
 #include "../include/glue_schema_registry_schema.h"
+#include "../include/error_handling.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -15,6 +16,7 @@ glue_schema_registry_schema * new_glue_schema_registry_schema(
         const char * schema_def,
         const char * data_format) {
     if (validate(schema_name, schema_def, data_format) != 0) {
+        log_error("Schema parameters are NULL", ERR_CODE_INVALID_PARAMETERS);
         return NULL;
     }
     glue_schema_registry_schema * glueSchemaRegistrySchema = NULL;
@@ -29,6 +31,7 @@ glue_schema_registry_schema * new_glue_schema_registry_schema(
 
 void delete_glue_schema_registry_schema(glue_schema_registry_schema * glueSchemaRegistrySchema) {
     if (glueSchemaRegistrySchema == NULL) {
+        log_error("Schema instance is NULL", ERR_CODE_NULL_PARAMETERS);
         return;
     }
 

@@ -1,15 +1,16 @@
-set(module_name native_schema_registry_clang)
+set(module_name native_schema_registry_c)
 
 #Fix the include path in GraalVM generated header file.
 execute_process(COMMAND sed -ie "s/<graal_isolate.h>/\"graal_isolate.h\"/" ${LIB_NATIVE_SCHEMA_REGISTRY_PATH}/libnativeschemaregistry.h)
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -ftest-coverage -fprofile-arcs ${sanitizer_checks} -ggdb3 -O2 -Wall")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -ftest-coverage -fprofile-arcs -ggdb3 -O2 -Wall")
 
 add_library(
         ${module_name} SHARED
-        #TODO: Use file glob
         glue_schema_registry_schema.c
-        glue_schema_registry_serializer.c)
+        read_only_byte_array.c
+        mutable_byte_array.c
+        )
 
 target_link_libraries(
         ${module_name}
@@ -22,7 +23,7 @@ target_link_libraries(
 #
 #file(
 #    GLOB GsrSerDeSrc
-#    "swig/glue_schema_registry_serde.i"
+#    "swig/*.i"
 #)
 
 ##Swig language specific config. TODO: Move to different files
