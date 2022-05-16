@@ -100,6 +100,17 @@ public class ConnectDataToProtobufDataConverterTest {
     }
 
     @Test
+    public void convert_ForOneofType_ConvertsSuccessfully() {
+        final DynamicMessage oneofMessage = ToProtobufTestDataGenerator.getProtobufOneofMessage();
+        final Descriptors.FileDescriptor fileDescriptor = oneofMessage.getDescriptorForType().getFile();
+        final Schema oneofSchema = ToProtobufTestDataGenerator.getOneofSchema("oneofProtobufSchema");
+        final Message actualMessage = connectDataToProtobufDataConverter.convert(fileDescriptor, oneofSchema,
+                ToProtobufTestDataGenerator.getOneofTypeData());
+
+        assertEquals(oneofMessage, actualMessage);
+    }
+
+    @Test
     public void convert_ForNullValues_ThrowsException() {
         final DynamicMessage primitiveMessage = ToProtobufTestDataGenerator.getProtobufPrimitiveMessage();
         final Schema primitiveSchema = ToProtobufTestDataGenerator.getPrimitiveSchema("primitiveProtobufSchema");

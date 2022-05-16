@@ -3,10 +3,12 @@ package com.amazonaws.services.schemaregistry.kafkaconnect.protobuf;
 import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax2.ArrayTypeSyntax2;
 import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax2.MapTypeSyntax2;
 import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax2.NestedTypeSyntax2;
+import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax2.OneofTypeSyntax2;
 import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax2.PrimitiveTypesSyntax2;
 import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax3.ArrayTypeSyntax3;
 import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax3.MapTypeSyntax3;
 import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax3.NestedTypeSyntax3;
+import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax3.OneofTypeSyntax3;
 import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax3.PrimitiveTypesSyntax3;
 import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax2.EnumTypeSyntax2;
 import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax3.EnumTypeSyntax3;
@@ -574,5 +576,53 @@ public class ToConnectTestDataGenerator {
 
     private static String getStructTypeFullName(String packageName, String name) {
         return String.join(".", packageName, name);
+    }
+
+    public static List<Message> getOneofProtobufMessages() {
+        return Arrays.asList(
+                OneofTypeSyntax3.OneofType.newBuilder()
+                        .setName("Jeff")
+                        .setShipped(true)
+                        .build(),
+                OneofTypeSyntax2.OneofType.newBuilder()
+                        .setName("Jeff")
+                        .setShipped(true)
+                        .build()
+        );
+    }
+
+    public static Schema getOneofSchema(String packageName) {
+        return createConnectSchema(
+                "OneofType",
+                getOneofType(),
+                ImmutableMap.of(PROTOBUF_PACKAGE, packageName)
+        );
+    }
+
+    public static Struct getOneofTypeData(String packageName) {
+        final Struct connectData = new Struct(getOneofSchema(packageName));
+        final Schema connectSchema = getOneofSchema(packageName);
+
+        connectData
+                .put("customer", new Struct(connectSchema.field("customer").schema()).put("name", "Jeff"))
+                .put("order", new Struct(connectSchema.field("order").schema()).put("shipped", true));
+        return connectData;
+    }
+
+    private static Map<String, Schema> getOneofType() {
+        return ImmutableMap.<String, Schema>builder()
+                .put("customer", SchemaBuilder.struct()
+                        .name("customer")
+                        .field("name", SchemaBuilder.string().parameter(PROTOBUF_TAG, "5").optional().build())
+                        .field("age", SchemaBuilder.int32().parameter(PROTOBUF_TAG, "6").optional().build())
+                        .parameter("protobuf.type", "oneof")
+                        .optional().build())
+                .put("order", SchemaBuilder.struct()
+                        .name("order")
+                        .field("id", SchemaBuilder.int32().parameter(PROTOBUF_TAG, "1").optional().build())
+                        .field("shipped", SchemaBuilder.bool().parameter(PROTOBUF_TAG, "2").optional().build())
+                        .parameter("protobuf.type", "oneof")
+                        .optional().build())
+                .build();
     }
 }

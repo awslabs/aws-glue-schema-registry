@@ -15,6 +15,7 @@ import java.util.stream.Stream;
 
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToProtobufTestDataGenerator.getArraySchema;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToProtobufTestDataGenerator.getMapSchema;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToProtobufTestDataGenerator.getOneofSchema;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToProtobufTestDataGenerator.getStructSchema;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToProtobufTestDataGenerator.getPrimitiveSchema;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToProtobufTestDataGenerator.getEnumSchema;
@@ -72,6 +73,11 @@ public class ConnectSchemaToProtobufSchemaConverterTest {
                 "NestedType",
                 getStructSchema("NestedType"),
                 getProtobufSchema("NestedProtobufSchema.filedescproto")
+            ),
+            Arguments.of(
+                "OneofType",
+                getOneofSchema("OneofType"),
+                getProtobufSchema("OneofProtobufSchema.filedescproto")
             )
         );
     }

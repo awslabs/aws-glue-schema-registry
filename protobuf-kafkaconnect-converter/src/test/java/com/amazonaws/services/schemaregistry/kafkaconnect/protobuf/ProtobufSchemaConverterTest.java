@@ -22,12 +22,6 @@ import software.amazon.awssdk.services.glue.model.DataFormat;
 import java.util.Map;
 import java.util.stream.Stream;
 
-import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToProtobufTestDataGenerator.getPrimitiveSchema;
-import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToProtobufTestDataGenerator.getPrimitiveTypesData;
-import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToProtobufTestDataGenerator.getProtobufPrimitiveMessage;
-import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToProtobufTestDataGenerator.getEnumSchema;
-import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToProtobufTestDataGenerator.getEnumTypeData;
-import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToProtobufTestDataGenerator.getProtobufEnumMessage;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -91,7 +85,10 @@ public class ProtobufSchemaConverterTest {
                 ToProtobufTestDataGenerator.getProtobufTimeMessage()),
             Arguments.of(ToProtobufTestDataGenerator.getStructTypeData("NestedType"),
                 ToProtobufTestDataGenerator.getStructSchema("NestedType"),
-                ToProtobufTestDataGenerator.getProtobufNestedMessage("NestedType"))
+                ToProtobufTestDataGenerator.getProtobufNestedMessage("NestedType")),
+            Arguments.of(ToProtobufTestDataGenerator.getOneofTypeData(),
+                ToProtobufTestDataGenerator.getOneofSchema("oneofProtobufSchema"),
+                ToProtobufTestDataGenerator.getProtobufOneofMessage())
         );
     }
 
@@ -114,7 +111,10 @@ public class ProtobufSchemaConverterTest {
                 ToConnectTestDataGenerator.getTimeTypeData(PACKAGE_NAME)),
             Arguments.of(ToConnectTestDataGenerator.getStructProtobufMessages().get(0),
                 ToConnectTestDataGenerator.getStructSchema(PACKAGE_NAME),
-                ToConnectTestDataGenerator.getStructTypeData(PACKAGE_NAME))
+                ToConnectTestDataGenerator.getStructTypeData(PACKAGE_NAME)),
+            Arguments.of(ToConnectTestDataGenerator.getOneofProtobufMessages().get(0),
+                ToConnectTestDataGenerator.getOneofSchema(PACKAGE_NAME),
+                ToConnectTestDataGenerator.getOneofTypeData(PACKAGE_NAME))
         );
     }
 

@@ -12,6 +12,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_ONEOF_TYPE;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_TAG;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_TYPE;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterUtils.getTypeName;
 
 /**
@@ -38,6 +41,13 @@ public class FieldBuilder {
                 messageDescriptorProtoBuilder.addNestedType(buildMap(fieldSchema, mapEntryName,
                     fileDescriptorProtoBuilder, messageDescriptorProtoBuilder));
             } else if (Schema.Type.STRUCT.equals(fieldSchema.type())) {
+                if (fieldSchema.parameters().containsKey(PROTOBUF_TYPE)
+                        && fieldSchema.parameters().get(PROTOBUF_TYPE).equals(PROTOBUF_ONEOF_TYPE)) {
+                    buildOneof(fieldSchema, fieldName, tagNumber, fileDescriptorProtoBuilder,
+                            messageDescriptorProtoBuilder);
+                    continue;
+                }
+
                 // Convert the Struct type schema to a Protobuf message schema
                 DescriptorProtos.DescriptorProto.Builder nestedMessageDescriptorProtoBuilder =
                         DescriptorProtos.DescriptorProto.newBuilder();
@@ -89,6 +99,26 @@ public class FieldBuilder {
         return mapBuilder.build();
     }
 
+    private static void buildOneof(Schema schema, String name, AtomicInteger tagNumber,
+                                   final DescriptorProtos.FileDescriptorProto.Builder fileDescriptorProtoBuilder,
+                                   final DescriptorProtos.DescriptorProto.Builder messageDescriptorProtoBuilder) {
+        messageDescriptorProtoBuilder.addOneofDecl(
+                DescriptorProtos.OneofDescriptorProto
+                        .newBuilder()
+                        .setName(name)
+                        .build());
+        for (final Field oneofField: schema.fields()) {
+            DescriptorProtos.FieldDescriptorProto.Builder oneofFieldDescriptorProtoBuilder =
+                    getFieldDescriptorProtoBuilder(oneofField.schema(), oneofField.name(),
+                            fileDescriptorProtoBuilder, messageDescriptorProtoBuilder);
+            oneofFieldDescriptorProtoBuilder.setNumber(
+                    tagNumberFromMetadata(oneofField.schema().parameters()).orElseGet(tagNumber::getAndIncrement)
+            );
+            oneofFieldDescriptorProtoBuilder.setOneofIndex(messageDescriptorProtoBuilder.getOneofDeclCount() - 1);
+            messageDescriptorProtoBuilder.addField(oneofFieldDescriptorProtoBuilder);
+        }
+    }
+
     private static DescriptorProtos.FieldDescriptorProto.Builder getFieldDescriptorProtoBuilder(
             final Schema fieldSchema, final String fieldName,
             final DescriptorProtos.FileDescriptorProto.Builder fileDescriptorProtoBuilder,
@@ -119,12 +149,11 @@ public class FieldBuilder {
      * This can be set using "awsgsr.protobuf.tag" property. We use it to get the tag number if present.
      */
     private static Optional<Integer> tagNumberFromMetadata(Map<String, String> schemaParams) {
-        if (schemaParams == null
-            || !schemaParams.containsKey(ProtobufSchemaConverterConstants.PROTOBUF_TAG)) {
+        if (schemaParams == null || !schemaParams.containsKey(PROTOBUF_TAG)) {
             return Optional.empty();
         }
 
-        final String tag = schemaParams.get(ProtobufSchemaConverterConstants.PROTOBUF_TAG);
+        final String tag = schemaParams.get(PROTOBUF_TAG);
         try {
             return Optional.of(Integer.parseInt(tag));
         } catch (Exception e) {

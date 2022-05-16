@@ -17,6 +17,7 @@ import java.util.Set;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_ENUM_NAME;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_ENUM_VALUE;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_ENUM_TYPE;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_ONEOF_TYPE;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_TAG;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_TYPE;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_PACKAGE;
@@ -50,7 +51,14 @@ public class ProtobufSchemaToConnectSchemaConverter {
         builder.version(CONVERTER_VERSION);
         builder.parameter(PROTOBUF_PACKAGE, descriptor.getFile().getPackage());
 
+        for (Descriptors.OneofDescriptor oneofDescriptor : descriptor.getRealOneofs()) {
+            builder.field(oneofDescriptor.getName(), toConnectSchemaForOneOfField(oneofDescriptor));
+        }
         for (final Descriptors.FieldDescriptor fieldDescriptor : fieldDescriptorList) {
+            if (fieldDescriptor.getRealContainingOneof() != null) {
+                // Already added in oneof
+                continue;
+            }
             final String fieldName = fieldDescriptor.getName();
             builder.field(fieldName, toConnectSchemaForField(fieldDescriptor));
         }
@@ -62,6 +70,17 @@ public class ProtobufSchemaToConnectSchemaConverter {
 
     private Schema toConnectSchemaForField(final Descriptors.FieldDescriptor fieldDescriptor) {
         return toConnectSchemaBuilderForField(fieldDescriptor).build();
+    }
+
+    private Schema toConnectSchemaForOneOfField(final Descriptors.OneofDescriptor oneofDescriptor) {
+        SchemaBuilder builder = SchemaBuilder.struct().name(oneofDescriptor.getName());
+        for (Descriptors.FieldDescriptor fieldDescriptor : oneofDescriptor.getFields()) {
+            builder.field(fieldDescriptor.getName(),
+                    toConnectSchemaBuilderForField(fieldDescriptor).optional().build());
+        }
+        builder.parameter(PROTOBUF_TYPE, PROTOBUF_ONEOF_TYPE);
+        builder.optional();
+        return builder.build();
     }
 
     private SchemaBuilder toConnectSchemaBuilderForField(final Descriptors.FieldDescriptor fieldDescriptor) {

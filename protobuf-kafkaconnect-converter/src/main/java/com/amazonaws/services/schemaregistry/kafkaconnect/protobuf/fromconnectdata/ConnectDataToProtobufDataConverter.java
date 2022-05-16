@@ -13,6 +13,9 @@ import org.apache.kafka.connect.errors.DataException;
 import java.util.List;
 import java.util.Map;
 
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_ONEOF_TYPE;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_TYPE;
+
 /**
  * Converts Connect data to Protobuf data according to the Protobuf schema.
  */
@@ -37,6 +40,13 @@ public class ConnectDataToProtobufDataConverter {
             if (field.schema().type().equals(Schema.Type.MAP)) {
                 addMapField(dynamicMessageBuilder, field, fieldValue);
             } else if (field.schema().type().equals(Schema.Type.STRUCT)) {
+                if (field.schema().parameters().containsKey(PROTOBUF_TYPE)
+                        && field.schema().parameters().get(PROTOBUF_TYPE).equals(PROTOBUF_ONEOF_TYPE)) {
+                    for (Field oneofField : field.schema().fields()) {
+                        addField(dynamicMessageBuilder, oneofField, ((Struct) fieldValue).get(oneofField));
+                    }
+                    continue;
+                }
                 Descriptors.FieldDescriptor fieldDescriptor = dynamicMessageBuilder.getDescriptorForType().findFieldByName(field.name());
                 Message nestedMessage = convert(fileDescriptor, field.schema(), fieldValue);
                 dynamicMessageBuilder.setField(fieldDescriptor, nestedMessage);
