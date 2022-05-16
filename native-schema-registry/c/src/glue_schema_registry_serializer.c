@@ -15,6 +15,8 @@ glue_schema_registry_serializer *new_glue_schema_registry_serializer() {
         delete_glue_schema_registry_serializer(serializer);
         return NULL;
     }
+    //TODO: Handle errors here.
+    initialize_serializer(serializer->instance_context);
     return serializer;
 }
 
@@ -38,6 +40,7 @@ void delete_glue_schema_registry_serializer(glue_schema_registry_serializer *ser
 mutable_byte_array *glue_schema_registry_serializer_encode(
         glue_schema_registry_serializer *serializer,
         read_only_byte_array *array,
+        const char * transport_name,
         glue_schema_registry_schema *gsr_schema) {
     if (serializer == NULL || serializer->instance_context == NULL) {
         log_error("Serializer instance or instance context is null.", ERR_CODE_INVALID_STATE);
@@ -54,5 +57,5 @@ mutable_byte_array *glue_schema_registry_serializer_encode(
         return NULL;
     }
 
-    return encode_with_schema(serializer->instance_context, array, gsr_schema);
+    return encode_with_schema(serializer->instance_context, array, transport_name, gsr_schema);
 }

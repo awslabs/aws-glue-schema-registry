@@ -1,6 +1,11 @@
 package com.amazonaws.services.schemaregistry;
 
 import com.amazonaws.services.schemaregistry.common.Schema;
+import com.amazonaws.services.schemaregistry.common.configs.GlueSchemaRegistryConfiguration;
+import com.amazonaws.services.schemaregistry.serializers.GlueSchemaRegistrySerializer;
+import com.amazonaws.services.schemaregistry.utils.AWSSchemaRegistryConstants;
+import com.google.common.collect.ImmutableMap;
+import com.oracle.svm.core.c.CConst;
 import com.oracle.svm.core.c.ProjectHeaderFile;
 import org.graalvm.nativeimage.IsolateThread;
 import org.graalvm.nativeimage.c.CContext;
@@ -14,6 +19,7 @@ import org.graalvm.word.PointerBase;
 
 import java.nio.ByteBuffer;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -89,39 +95,56 @@ public class GlueSchemaRegistrySerializationHandler {
     @CFunction("mutable_byte_array_write")
     protected static native void writeToMutableArray(C_MutableByteArray array, long index, byte b);
 
+    @CEntryPoint(name = "initialize_serializer")
+    public static void initializeSerializer(IsolateThread isolateThread) {
+        //TODO: Add GlueSchemaRegistryConfiguration to this method. This is hard-coded for now.
+        //TODO: Error handling
+        Map<String, String> configMap =
+            ImmutableMap.of(
+                AWSSchemaRegistryConstants.AWS_REGION,
+                "us-east-1",
+                AWSSchemaRegistryConstants.SCHEMA_AUTO_REGISTRATION_SETTING,
+                "true"
+            );
+        GlueSchemaRegistryConfiguration glueSchemaRegistryConfiguration =
+            new GlueSchemaRegistryConfiguration(configMap);
+
+        SerializerInstance.create(glueSchemaRegistryConfiguration);
+    }
+
     @CEntryPoint(name = "encode_with_schema")
     public static C_MutableByteArray encodeWithSchema(
-        IsolateThread isolateThread, C_ReadOnlyByteArray c_readOnlyByteArray, C_GlueSchemaRegistrySchema c_glueSchemaRegistrySchema) {
+        IsolateThread isolateThread, C_ReadOnlyByteArray c_readOnlyByteArray, @CConst CCharPointer c_transportName, C_GlueSchemaRegistrySchema c_glueSchemaRegistrySchema) {
         //Access the input C schema object
         final String schemaName = CTypeConversion.toJavaString(c_glueSchemaRegistrySchema.getSchemaName());
         final String schemaDef = CTypeConversion.toJavaString(c_glueSchemaRegistrySchema.getSchemaDef());
         final String dataFormat = CTypeConversion.toJavaString(c_glueSchemaRegistrySchema.getDataFormat());
+        final String transportName = CTypeConversion.toJavaString(c_transportName);
 
         Schema javaSchema = new Schema(schemaDef, dataFormat, schemaName);
 
-        System.out.println(
-            String.format("Created Java Schema object: %s %s %s",
-                javaSchema.getSchemaName(), javaSchema.getSchemaDefinition(), javaSchema.getDataFormat()));
-
-        //Read the c_byteArray data and create a new mutable byte array  with encoded data
+        //Read the c_byteArray data and create a new mutable byte array with encoded data
         PointerBase cData = c_readOnlyByteArray.getData();
-        long cDataLen = c_readOnlyByteArray.getLen();
+        //This is validated to fit in Integer limits.
+        int cDataLen = Math.toIntExact(c_readOnlyByteArray.getLen());
+        //Copy the bytebuffer to a byte [].
+        //TODO: This won't be needed if Java APIs accepted ByteBuffer instead of byte[]
+        ByteBuffer javaByteBuffer = CTypeConversion.asByteBuffer(cData, cDataLen);
+        byte [] bytesToEncode = new byte[cDataLen];
+        javaByteBuffer.get(bytesToEncode);
 
-        //TODO: Test this at limits
-        ByteBuffer javaByteBuffer = CTypeConversion.asByteBuffer(cData, Math.toIntExact(cDataLen));
+        //Assuming serializer instance is already initialized
+        GlueSchemaRegistrySerializer glueSchemaRegistrySerializer = SerializerInstance.get();
+        byte[] encodedBytes =
+            glueSchemaRegistrySerializer.encode(transportName, javaSchema, bytesToEncode);
 
-        //Creating new response buffer
-        //TODO: Replace this with actual serialization code
-        int extraBytes = 3;
-        int newLen = Math.toIntExact(cDataLen + extraBytes);
+        int encodedByteArrayLen = encodedBytes.length;
+        //TODO: Handle errors if newMutableByteArray is null in case of limits.
+        C_MutableByteArray mutableByteArray = newMutableByteArray(encodedByteArrayLen);
 
-        C_MutableByteArray mutableByteArray = newMutableByteArray(newLen);
-        writeToMutableArray(mutableByteArray,0, (byte) 3);
-        writeToMutableArray(mutableByteArray,1, (byte) 5);
-        writeToMutableArray(mutableByteArray,2, (byte) 1);
-
-        for (int index = 0 ; index < javaByteBuffer.capacity(); index++) {
-            writeToMutableArray(mutableByteArray,extraBytes + index, javaByteBuffer.get(index));
+        //TODO: Check for performance issues with this.
+        for (int index = 0 ; index < encodedByteArrayLen; index++) {
+            writeToMutableArray(mutableByteArray, index, encodedBytes[index]);
         }
 
         return mutableByteArray;
