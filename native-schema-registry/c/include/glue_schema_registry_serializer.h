@@ -10,13 +10,14 @@ typedef struct glue_schema_registry_serializer {
     void *instance_context;
 } glue_schema_registry_serializer;
 
-glue_schema_registry_serializer *new_glue_schema_registry_serializer();
+glue_schema_registry_serializer *new_glue_schema_registry_serializer(void);
 
 void delete_glue_schema_registry_serializer(glue_schema_registry_serializer *serializer);
 
 //Encodes the GSR Schema with a byte array.
 mutable_byte_array *glue_schema_registry_serializer_encode(glue_schema_registry_serializer *serializer,
                                                                     read_only_byte_array * array,
+                                                                    const char * transport_name,
                                                                     glue_schema_registry_schema *gsr_schema);
 
 #endif //GLUE_SCHEMA_REGISTRY_SERIALIZER_H

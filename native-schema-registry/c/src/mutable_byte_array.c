@@ -10,6 +10,10 @@ mutable_byte_array *new_mutable_byte_array(size_t max_len) {
         log_error("Cannot create byte array of size 0", ERR_CODE_INVALID_PARAMETERS);
         return NULL;
     }
+    if (max_len >= MAX_BYTES_LIMIT) {
+        log_error("max_len cannot be greater than limit: 2147483647", ERR_CODE_INVALID_PARAMETERS);
+        return NULL;
+    }
     mutable_byte_array *array = NULL;
     array = (mutable_byte_array *) malloc(sizeof(mutable_byte_array));
     array->data = (unsigned char*) calloc(max_len, sizeof(unsigned char));

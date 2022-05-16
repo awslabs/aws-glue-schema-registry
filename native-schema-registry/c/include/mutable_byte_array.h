@@ -1,6 +1,10 @@
 #ifndef MUTABLE_BYTE_ARRAY_H
 #define MUTABLE_BYTE_ARRAY_H
 #include <stdlib.h>
+
+//Integer.MAX_VALUE in Java
+//This gives ~2.1Gb limit on a record.
+#define MAX_BYTES_LIMIT 2147483647
 /**
 * A mutable byte array that allows write / updating bytes in a fixed array of size `max_len`.
 */

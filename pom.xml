@@ -102,6 +102,8 @@
         <jupiter.version>5.6.3</jupiter.version>
         <mockito.version>3.3.3</mockito.version>
         <lombok.version>1.18.26</lombok.version>
+        <mockito.version>3.6.28</mockito.version>
+        <lombok.utils.version>1.18.12</lombok.utils.version>
         <hamcrest.version>1.1</hamcrest.version>
         <!--  LATEST KCL Does not work with LocalStack yet, remove once new version works -->
         <kinesis.client.version>2.2.9</kinesis.client.version>
@@ -330,6 +332,12 @@
             <dependency>
                 <groupId>org.mockito</groupId>
                 <artifactId>mockito-core</artifactId>
+                <version>${mockito.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-inline</artifactId>
                 <version>${mockito.version}</version>
                 <scope>test</scope>
             </dependency>
