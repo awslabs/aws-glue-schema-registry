@@ -75,6 +75,13 @@ public class FieldBuilder {
         }
     }
 
+    /**
+     * Protobuf map is built from two parts: the map field and the nested type for the map entry
+     * The nested type for the map entry is constructed as follows:
+     * 1. Key optional field is added to the nested type with field number 1
+     * 2. Value optional field is added to the nested type with field number 2
+     * 3. MapEntry option is set as true in the nested type
+     */
     private static DescriptorProtos.DescriptorProto buildMap(Schema schema, String name,
          final DescriptorProtos.FileDescriptorProto.Builder fileDescriptorProtoBuilder,
          final DescriptorProtos.DescriptorProto.Builder messageDescriptorProtoBuilder) {
@@ -99,6 +106,12 @@ public class FieldBuilder {
         return mapBuilder.build();
     }
 
+    /**
+     * Protobuf Oneof is constructed as follows:
+     * 1. Oneof declaration is added in the message
+     * 2. For each oneof field, it is added as an optional field in the message with oneof index associated to the same
+     * oneof declaration
+     */
     private static void buildOneof(Schema schema, String name, AtomicInteger tagNumber,
                                    final DescriptorProtos.FileDescriptorProto.Builder fileDescriptorProtoBuilder,
                                    final DescriptorProtos.DescriptorProto.Builder messageDescriptorProtoBuilder) {
