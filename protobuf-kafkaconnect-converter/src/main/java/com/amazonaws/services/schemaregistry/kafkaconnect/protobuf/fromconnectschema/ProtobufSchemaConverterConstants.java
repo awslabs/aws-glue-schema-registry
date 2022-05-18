@@ -38,4 +38,9 @@ public class ProtobufSchemaConverterConstants {
      * The string used to validate that protobuf type is enum
      */
     public static final String PROTOBUF_ENUM_TYPE = "enum";
+
+    /**
+     * The string used to validate that protobuf type is oneof
+     */
+    public static final String PROTOBUF_ONEOF_TYPE = "oneof";
 }

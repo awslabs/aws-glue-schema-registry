@@ -12,6 +12,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_ONEOF_TYPE;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_TAG;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_TYPE;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterUtils.getTypeName;
 
 /**
@@ -38,6 +41,13 @@ public class FieldBuilder {
                 messageDescriptorProtoBuilder.addNestedType(buildMap(fieldSchema, mapEntryName,
                     fileDescriptorProtoBuilder, messageDescriptorProtoBuilder));
             } else if (Schema.Type.STRUCT.equals(fieldSchema.type())) {
+                if (fieldSchema.parameters().containsKey(PROTOBUF_TYPE)
+                        && fieldSchema.parameters().get(PROTOBUF_TYPE).equals(PROTOBUF_ONEOF_TYPE)) {
+                    buildOneof(fieldSchema, fieldName, tagNumber, fileDescriptorProtoBuilder,
+                            messageDescriptorProtoBuilder);
+                    continue;
+                }
+
                 // Convert the Struct type schema to a Protobuf message schema
                 DescriptorProtos.DescriptorProto.Builder nestedMessageDescriptorProtoBuilder =
                         DescriptorProtos.DescriptorProto.newBuilder();
@@ -65,6 +75,13 @@ public class FieldBuilder {
         }
     }
 
+    /**
+     * Protobuf map is built from two parts: the map field and the nested type for the map entry
+     * The nested type for the map entry is constructed as follows:
+     * 1. Key optional field is added to the nested type with field number 1
+     * 2. Value optional field is added to the nested type with field number 2
+     * 3. MapEntry option is set as true in the nested type
+     */
     private static DescriptorProtos.DescriptorProto buildMap(Schema schema, String name,
          final DescriptorProtos.FileDescriptorProto.Builder fileDescriptorProtoBuilder,
          final DescriptorProtos.DescriptorProto.Builder messageDescriptorProtoBuilder) {
@@ -87,6 +104,32 @@ public class FieldBuilder {
         mapBuilder.mergeOptions(optionsBuilder.build());
 
         return mapBuilder.build();
+    }
+
+    /**
+     * Protobuf Oneof is constructed as follows:
+     * 1. Oneof declaration is added in the message
+     * 2. For each oneof field, it is added as an optional field in the message with oneof index associated to the same
+     * oneof declaration
+     */
+    private static void buildOneof(Schema schema, String name, AtomicInteger tagNumber,
+                                   final DescriptorProtos.FileDescriptorProto.Builder fileDescriptorProtoBuilder,
+                                   final DescriptorProtos.DescriptorProto.Builder messageDescriptorProtoBuilder) {
+        messageDescriptorProtoBuilder.addOneofDecl(
+                DescriptorProtos.OneofDescriptorProto
+                        .newBuilder()
+                        .setName(name)
+                        .build());
+        for (final Field oneofField: schema.fields()) {
+            DescriptorProtos.FieldDescriptorProto.Builder oneofFieldDescriptorProtoBuilder =
+                    getFieldDescriptorProtoBuilder(oneofField.schema(), oneofField.name(),
+                            fileDescriptorProtoBuilder, messageDescriptorProtoBuilder);
+            oneofFieldDescriptorProtoBuilder.setNumber(
+                    tagNumberFromMetadata(oneofField.schema().parameters()).orElseGet(tagNumber::getAndIncrement)
+            );
+            oneofFieldDescriptorProtoBuilder.setOneofIndex(messageDescriptorProtoBuilder.getOneofDeclCount() - 1);
+            messageDescriptorProtoBuilder.addField(oneofFieldDescriptorProtoBuilder);
+        }
     }
 
     private static DescriptorProtos.FieldDescriptorProto.Builder getFieldDescriptorProtoBuilder(
@@ -119,12 +162,11 @@ public class FieldBuilder {
      * This can be set using "awsgsr.protobuf.tag" property. We use it to get the tag number if present.
      */
     private static Optional<Integer> tagNumberFromMetadata(Map<String, String> schemaParams) {
-        if (schemaParams == null
-            || !schemaParams.containsKey(ProtobufSchemaConverterConstants.PROTOBUF_TAG)) {
+        if (schemaParams == null || !schemaParams.containsKey(PROTOBUF_TAG)) {
             return Optional.empty();
         }
 
-        final String tag = schemaParams.get(ProtobufSchemaConverterConstants.PROTOBUF_TAG);
+        final String tag = schemaParams.get(PROTOBUF_TAG);
         try {
             return Optional.of(Integer.parseInt(tag));
         } catch (Exception e) {
