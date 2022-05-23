@@ -51,12 +51,12 @@ public class ProtobufSchemaToConnectSchemaConverter {
         builder.version(CONVERTER_VERSION);
         builder.parameter(PROTOBUF_PACKAGE, descriptor.getFile().getPackage());
 
-        for (Descriptors.OneofDescriptor oneofDescriptor : descriptor.getRealOneofs()) {
-            builder.field(oneofDescriptor.getName(), toConnectSchemaForOneOfField(oneofDescriptor));
-        }
         for (final Descriptors.FieldDescriptor fieldDescriptor : fieldDescriptorList) {
             if (fieldDescriptor.getRealContainingOneof() != null) {
-                // Already added in oneof
+                Descriptors.OneofDescriptor oneofDescriptor = fieldDescriptor.getRealContainingOneof();
+                if (!builder.fields().stream().anyMatch(field -> field.name().equals(oneofDescriptor.getName()))) {
+                    builder.field(oneofDescriptor.getName(), toConnectSchemaForOneOfField(oneofDescriptor));
+                }
                 continue;
             }
             final String fieldName = fieldDescriptor.getName();
@@ -171,7 +171,7 @@ public class ProtobufSchemaToConnectSchemaConverter {
             for (Descriptors.EnumValueDescriptor enumValueDescriptor: fieldDescriptor.getEnumType().getValues()) { //iterating through the values of the Enum to store each one
                 schemaBuilder.parameter(PROTOBUF_ENUM_VALUE + enumValueDescriptor.getName(), String.valueOf(enumValueDescriptor.getNumber()));
             }
-            schemaBuilder.parameter(PROTOBUF_ENUM_NAME, fieldDescriptor.getEnumType().getName());
+            schemaBuilder.parameter(PROTOBUF_ENUM_NAME, fieldDescriptor.getEnumType().getFullName());
         }
 
         if (fieldDescriptor.hasOptionalKeyword()) {

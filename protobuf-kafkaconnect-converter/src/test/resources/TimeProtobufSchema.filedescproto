@@ -7,21 +7,21 @@ message_type {
     number: 1
     label: LABEL_OPTIONAL
     type: TYPE_MESSAGE
-    type_name: "google.type.Date"
+    type_name: ".google.type.Date"
   }
   field {
     name: "time"
     number: 2
     label: LABEL_OPTIONAL
     type: TYPE_MESSAGE
-    type_name: "google.type.TimeOfDay"
+    type_name: ".google.type.TimeOfDay"
   }
   field {
     name: "timestamp"
     number: 3
     label: LABEL_OPTIONAL
     type: TYPE_MESSAGE
-    type_name: "google.protobuf.Timestamp"
+    type_name: ".google.protobuf.Timestamp"
   }
 }
 syntax: "proto3"

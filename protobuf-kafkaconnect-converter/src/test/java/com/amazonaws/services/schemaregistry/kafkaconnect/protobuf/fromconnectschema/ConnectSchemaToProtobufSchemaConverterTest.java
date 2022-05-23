@@ -13,6 +13,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import java.util.Map;
 import java.util.stream.Stream;
 
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToProtobufTestDataGenerator.getAllTypesSchema;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToProtobufTestDataGenerator.getArraySchema;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToProtobufTestDataGenerator.getMapSchema;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToProtobufTestDataGenerator.getOneofSchema;
@@ -78,6 +79,11 @@ public class ConnectSchemaToProtobufSchemaConverterTest {
                 "OneofType",
                 getOneofSchema("OneofType"),
                 getProtobufSchema("OneofProtobufSchema.filedescproto")
+            ),
+            Arguments.of(
+                "AllTypes",
+                getAllTypesSchema("AllTypes"),
+                getProtobufSchema("AllTypesProtobufSchema.filedescproto")
             )
         );
     }

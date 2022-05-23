@@ -13,6 +13,8 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.stream.Stream;
 
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getAllTypesProtobufMessages;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getAllTypesSchema;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getEnumProtobufMessages;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getEnumSchema;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getEnumTypeData;
@@ -28,6 +30,7 @@ import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConn
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getPrimitiveProtobufMessages;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getPrimitiveSchema;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getPrimitiveTypesData;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getSAllTypesData;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getStructProtobufMessages;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getStructSchema;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getStructTypeData;
@@ -67,6 +70,10 @@ public class ProtobufDataToConnectDataConverterTest {
 
     private static Stream<Arguments> getOneofTestCases() {
         return getOneofProtobufMessages().stream().map(Arguments::of);
+    }
+
+    private static Stream<Arguments> getAllTypesTestCases() {
+        return getAllTypesProtobufMessages().stream().map(Arguments::of);
     }
 
     @ParameterizedTest
@@ -142,6 +149,17 @@ public class ProtobufDataToConnectDataConverterTest {
         final Schema connectSchema = getOneofSchema(packageName);
         Object actualData = PROTOBUF_DATA_TO_CONNECT_DATA_CONVERTER.toConnectData(oneofMessage, connectSchema);
         Struct expectedData = getOneofTypeData(packageName);
+
+        assertEquals(expectedData, actualData);
+    }
+
+    @ParameterizedTest
+    @MethodSource("getAllTypesTestCases")
+    public void toConnectData_convertsProtobufMessageToConnect_forAllTypes(Message message) {
+        String packageName = message.getDescriptorForType().getFile().getPackage();
+        final Schema connectSchema = getAllTypesSchema(packageName);
+        Object actualData = PROTOBUF_DATA_TO_CONNECT_DATA_CONVERTER.toConnectData(message, connectSchema);
+        Struct expectedData = getSAllTypesData(packageName);
 
         assertEquals(expectedData, actualData);
     }

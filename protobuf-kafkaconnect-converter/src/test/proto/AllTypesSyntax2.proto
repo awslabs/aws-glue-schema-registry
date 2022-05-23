@@ -1,0 +1,70 @@
+package com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax2;
+
+import "google/type/date.proto";
+import "google/type/timeofday.proto";
+import "google/protobuf/timestamp.proto";
+
+message AllTypes {
+
+  // Primitive types
+  required int32 i32 = 1;
+  optional bool bool = 2;
+  optional bytes bytes = 3;
+  optional string str = 4;
+  // TODO add metadata for int8, int16, and int64
+  //  optional int32 i8Optional = 5;
+  //  optional int32 i16Optional = 6;
+  //  optional int32 i64Optional = 7;
+
+  // Array types
+  repeated string strArray = 8;
+  repeated int32 intArray = 9;
+  repeated bool boolArray = 10;
+
+  // Time types
+  required google.type.Date date = 11;
+  optional google.type.TimeOfDay time = 12;
+  optional google.protobuf.Timestamp timestamp = 13;
+
+  // Map types
+  map<int32, int32> intMap = 14;
+  map<string, bool> boolMap = 15;
+  map<int32, string> strMap = 16;
+
+  // Enum types
+  enum Colors {
+    BLACK = 0;
+    RED = 1;
+    GREEN = 2;
+    BLUE = 3;
+  }
+  optional Colors color = 17;
+  required Progress progress = 18;
+
+  // Oneof types
+  oneof order {
+    int32 id = 19;
+    bool paid = 20;
+  }
+
+  // Nested types
+  message Customer {
+    required string name = 1;
+  }
+  required AddressAllTypes address = 21;
+  optional Customer customer = 22;
+
+  // TODO add decimal types
+
+}
+
+message AddressAllTypes {
+  required string street = 1;
+  required int32 zipcode = 2;
+}
+
+enum Progress {
+  INPROGRESS = 0;
+  REVIEW = 1;
+  DONE = 2;
+}

@@ -1,10 +1,12 @@
 package com.amazonaws.services.schemaregistry.kafkaconnect.protobuf;
 
+import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax2.AllTypesSyntax2;
 import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax2.ArrayTypeSyntax2;
 import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax2.MapTypeSyntax2;
 import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax2.NestedTypeSyntax2;
 import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax2.OneofTypeSyntax2;
 import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax2.PrimitiveTypesSyntax2;
+import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax3.AllTypesSyntax3;
 import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax3.ArrayTypeSyntax3;
 import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax3.MapTypeSyntax3;
 import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax3.NestedTypeSyntax3;
@@ -36,6 +38,10 @@ import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromco
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_TYPE;
 
 public class ToConnectTestDataGenerator {
+
+    private static String getFullName(String packageName, String name) {
+        return String.join(".", packageName, name);
+    }
 
     public static List<Message> getPrimitiveProtobufMessages() {
         return Arrays.asList(
@@ -284,7 +290,7 @@ public class ToConnectTestDataGenerator {
     public static Schema getEnumSchema(String packageName) {
         return createConnectSchema(
                 "EnumTest",
-                getEnumType(),
+                getEnumType(packageName),
                 ImmutableMap.of(
                         "protobuf.package", packageName
                 )
@@ -302,7 +308,7 @@ public class ToConnectTestDataGenerator {
         return connectData;
     }
 
-    private static Map<String, Schema> getEnumType() {
+    private static Map<String, Schema> getEnumType(String packageName) {
         return ImmutableMap.<String, Schema>builder()
                 .put("corpus", new SchemaBuilder(Schema.Type.STRING)
                         .parameter("protobuf.type", "enum")
@@ -313,7 +319,7 @@ public class ToConnectTestDataGenerator {
                         .parameter("PROTOBUF_ENUM_VALUE.LOCAL", "3")
                         .parameter("PROTOBUF_ENUM_VALUE.PRODUCTS", "5")
                         .parameter("PROTOBUF_ENUM_VALUE.VIDEO", "6")
-                        .parameter("ENUM_NAME", "Corpus")
+                        .parameter("ENUM_NAME", getFullName(packageName, "EnumTest.Corpus"))
                         .parameter("protobuf.tag", "1")
                         .build())
                 .put("shapes", new SchemaBuilder(Schema.Type.STRING)
@@ -321,7 +327,7 @@ public class ToConnectTestDataGenerator {
                         .parameter("PROTOBUF_ENUM_VALUE.SQUARE", "0")
                         .parameter("PROTOBUF_ENUM_VALUE.CIRCLE", "1")
                         .parameter("PROTOBUF_ENUM_VALUE.TRIANGLE", "2")
-                        .parameter("ENUM_NAME", "ShapesWithParam")
+                        .parameter("ENUM_NAME", getFullName(packageName, "EnumTest.ShapesWithParam"))
                         .parameter("protobuf.tag", "12345")
                         .build())
                 .put("color", new SchemaBuilder(Schema.Type.STRING)
@@ -330,7 +336,7 @@ public class ToConnectTestDataGenerator {
                         .parameter("PROTOBUF_ENUM_VALUE.RED", "1")
                         .parameter("PROTOBUF_ENUM_VALUE.GREEN", "2")
                         .parameter("PROTOBUF_ENUM_VALUE.BLUE", "3")
-                        .parameter("ENUM_NAME", "Colors")
+                        .parameter("ENUM_NAME", getFullName(packageName, "EnumTest.Colors"))
                         .parameter("protobuf.tag", "2")
                         .optional()
                         .build())
@@ -339,7 +345,7 @@ public class ToConnectTestDataGenerator {
                         .parameter("PROTOBUF_ENUM_VALUE.APPLE", "0")
                         .parameter("PROTOBUF_ENUM_VALUE.ORANGE", "1")
                         .parameter("PROTOBUF_ENUM_VALUE.BANANA", "2")
-                        .parameter("ENUM_NAME", "FruitsWithDefault")
+                        .parameter("ENUM_NAME", getFullName(packageName, "EnumTest.FruitsWithDefault"))
                         .parameter("protobuf.tag", "3")
                         .build())
                 .build();
@@ -549,16 +555,16 @@ public class ToConnectTestDataGenerator {
 
     private static Map<String, Schema> getStructType(String packageName) {
         final SchemaBuilder addressBuilder =
-                SchemaBuilder.struct().name(getStructTypeFullName(packageName, "Address"))
+                SchemaBuilder.struct().name(getFullName(packageName, "Address"))
                         .field("street", SchemaBuilder.string().parameter(PROTOBUF_TAG, "1").build())
                         .field("zipcode", SchemaBuilder.int32().parameter(PROTOBUF_TAG, "2").build());
         final SchemaBuilder statusBuilder = new SchemaBuilder(Schema.Type.STRING)
                 .parameter("protobuf.type", "enum")
                 .parameter("PROTOBUF_ENUM_VALUE.VALID", "0")
                 .parameter("PROTOBUF_ENUM_VALUE.INVALID", "1")
-                .parameter("ENUM_NAME", "Status");
+                .parameter("ENUM_NAME", getFullName(packageName, "Status"));
         final SchemaBuilder customerBuilder =
-                SchemaBuilder.struct().name(getStructTypeFullName(packageName, "NestedType.Customer"))
+                SchemaBuilder.struct().name(getFullName(packageName, "NestedType.Customer"))
                         .field("name", SchemaBuilder.string().parameter(PROTOBUF_TAG, "1").build());
         final SchemaBuilder mappingBuilder = SchemaBuilder.map(
                 new SchemaBuilder(Schema.Type.STRING).parameter(PROTOBUF_TAG, "1").optional().build(),
@@ -572,10 +578,6 @@ public class ToConnectTestDataGenerator {
                 .put("mapping", mappingBuilder.parameter(PROTOBUF_TAG, "4").build())
                 .put("id", SchemaBuilder.int32().parameter(PROTOBUF_TAG, "5").optional().build())
                 .build();
-    }
-
-    private static String getStructTypeFullName(String packageName, String name) {
-        return String.join(".", packageName, name);
     }
 
     public static List<Message> getOneofProtobufMessages() {
@@ -623,6 +625,177 @@ public class ToConnectTestDataGenerator {
                         .field("shipped", SchemaBuilder.bool().parameter(PROTOBUF_TAG, "2").optional().build())
                         .parameter("protobuf.type", "oneof")
                         .optional().build())
+                .build();
+    }
+
+    public static List<Message> getAllTypesProtobufMessages() {
+
+        com.google.type.Date.Builder dateBuilder = com.google.type.Date.newBuilder();
+        dateBuilder.setYear(2022);
+        dateBuilder.setMonth(3);
+        dateBuilder.setDay(20);
+        com.google.type.TimeOfDay.Builder todBuilder = com.google.type.TimeOfDay.newBuilder();
+        todBuilder.setHours(2);
+        todBuilder.setMinutes(2);
+        todBuilder.setSeconds(42);
+        com.google.protobuf.Timestamp.Builder timestampBuilder = com.google.protobuf.Timestamp.newBuilder();
+        timestampBuilder.setSeconds(1);
+        timestampBuilder.setNanos(805000000);
+
+        Map<String, Boolean> booleanMap = new HashMap<>();
+        booleanMap.put("A", true);
+        booleanMap.put("B", false);
+
+        AllTypesSyntax2.AddressAllTypes addressSyntax2 =
+                AllTypesSyntax2.AddressAllTypes.newBuilder().setStreet("8th").setZipcode(98121).build();
+        AllTypesSyntax2.AllTypes.Customer customerSyntax2 =
+                AllTypesSyntax2.AllTypes.Customer.newBuilder().setName("joe").build();
+
+        AllTypesSyntax2.AllTypes allTypesSyntax2 = AllTypesSyntax2.AllTypes.newBuilder()
+                .setI32(32)
+                .setBool(false)
+                .setBytes(ByteString.copyFrom(new byte[] { 1, 5, 6, 7 }))
+                .setStr("Hello world!")
+                .addAllStrArray(Arrays.asList("foo", "bar", "baz"))
+                .addBoolArray(true)
+                .addBoolArray(false)
+                .setDate(dateBuilder)
+                .setTime(todBuilder)
+                .setTimestamp(timestampBuilder)
+                .putIntMap(2, 22)
+                .putAllBoolMap(booleanMap)
+                .setColor(AllTypesSyntax2.AllTypes.Colors.BLACK)
+                .setProgress(AllTypesSyntax2.Progress.INPROGRESS)
+                .setId(12315)
+                .setAddress(addressSyntax2)
+                .setCustomer(customerSyntax2)
+                .build();
+
+        AllTypesSyntax3.AddressAllTypes addressSyntax3 =
+                AllTypesSyntax3.AddressAllTypes.newBuilder().setStreet("8th").setZipcode(98121).build();
+        AllTypesSyntax3.AllTypes.Customer customerSyntax3 =
+                AllTypesSyntax3.AllTypes.Customer.newBuilder().setName("joe").build();
+
+        AllTypesSyntax3.AllTypes allTypesSyntax3 = AllTypesSyntax3.AllTypes.newBuilder()
+                .setI32(32)
+                .setBool(false)
+                .setBytes(ByteString.copyFrom(new byte[] { 1, 5, 6, 7 }))
+                .setStr("Hello world!")
+                .addAllStrArray(Arrays.asList("foo", "bar", "baz"))
+                .addBoolArray(true)
+                .addBoolArray(false)
+                .setDate(dateBuilder)
+                .setTime(todBuilder)
+                .setTimestamp(timestampBuilder)
+                .putIntMap(2, 22)
+                .putAllBoolMap(booleanMap)
+                .setColor(AllTypesSyntax3.AllTypes.Colors.BLACK)
+                .setProgress(AllTypesSyntax3.Progress.INPROGRESS)
+                .setId(12315)
+                .setAddress(addressSyntax3)
+                .setCustomer(customerSyntax3)
+                .build();
+
+        return Arrays.asList(allTypesSyntax3, allTypesSyntax2);
+    }
+
+    public static Schema getAllTypesSchema(String packageName) {
+        return createConnectSchema(
+                "AllTypes",
+                getAllTypes(packageName),
+                ImmutableMap.of(PROTOBUF_PACKAGE, packageName)
+        );
+    }
+
+    public static Struct getSAllTypesData(String packageName) {
+        final Schema connectSchema = getAllTypesSchema(packageName);
+        final Struct connectData = new Struct(connectSchema);
+
+        int dateDefVal = 19071; // equal to 2022/03/20 with reference to the unix epoch
+        int timeDefVal = 7362000; // equal to 2 hours 2 minutes 42 seconds in millisecond
+        long tsDefVal = 1805; // equal to 1 second 805000000 nanoseconds in millisecond
+        java.util.Date date = Date.toLogical(Date.SCHEMA, dateDefVal);
+        java.util.Date time = Time.toLogical(Time.SCHEMA, timeDefVal);
+        java.util.Date timestamp = Timestamp.toLogical(Timestamp.SCHEMA, tsDefVal);
+
+        connectData
+                .put("i32", 32)
+                .put("bool", false)
+                .put("bytes", new byte[] { 1, 5, 6, 7 })
+                .put("str", "Hello world!")
+                .put("strArray", Arrays.asList("foo", "bar", "baz"))
+                .put("boolArray", Arrays.asList(true, false))
+                .put("intArray", new ArrayList<>())
+                .put("date", date)
+                .put("time", time)
+                .put("timestamp", timestamp)
+                .put("intMap", ImmutableMap.of(2, 22))
+                .put("boolMap", ImmutableMap.of("A", true, "B", false))
+                .put("strMap", new HashMap<>())
+                .put("color", "BLACK")
+                .put("progress", "INPROGRESS")
+                .put("order", new Struct(connectSchema.field("order").schema()).put("id", 12315))
+                .put("address", new Struct(connectSchema.field("address").schema()).put("street", "8th").put("zipcode", 98121))
+                .put("customer", new Struct(connectSchema.field("customer").schema()).put("name", "joe"));
+        return connectData;
+    }
+
+    private static Map<String, Schema> getAllTypes(String packageName) {
+        final SchemaBuilder addressBuilder =
+                SchemaBuilder.struct().name(getFullName(packageName, "AddressAllTypes"))
+                        .field("street", SchemaBuilder.string().parameter(PROTOBUF_TAG, "1").build())
+                        .field("zipcode", SchemaBuilder.int32().parameter(PROTOBUF_TAG, "2").build());
+        final SchemaBuilder customerBuilder =
+                SchemaBuilder.struct().name(getFullName(packageName, "AllTypes.Customer"))
+                        .field("name", SchemaBuilder.string().parameter(PROTOBUF_TAG, "1").build());
+        final SchemaBuilder progressBuilder = new SchemaBuilder(Schema.Type.STRING)
+                .parameter("protobuf.type", "enum")
+                .parameter("PROTOBUF_ENUM_VALUE.INPROGRESS", "0")
+                .parameter("PROTOBUF_ENUM_VALUE.REVIEW", "1")
+                .parameter("PROTOBUF_ENUM_VALUE.DONE", "2")
+                .parameter("ENUM_NAME", getFullName(packageName,"Progress"));
+        final SchemaBuilder colorBuilder = new SchemaBuilder(Schema.Type.STRING)
+                .parameter("protobuf.type", "enum")
+                .parameter("PROTOBUF_ENUM_VALUE.BLACK", "0")
+                .parameter("PROTOBUF_ENUM_VALUE.RED", "1")
+                .parameter("PROTOBUF_ENUM_VALUE.GREEN", "2")
+                .parameter("PROTOBUF_ENUM_VALUE.BLUE", "3")
+                .parameter("ENUM_NAME", getFullName(packageName,"AllTypes.Colors"));
+
+        final SchemaBuilder intMapBuilder = SchemaBuilder.map(
+                new SchemaBuilder(Schema.Type.INT32).parameter(PROTOBUF_TAG, "1").optional().build(),
+                new SchemaBuilder(Schema.Type.INT32).parameter(PROTOBUF_TAG, "2").optional().build());
+        final SchemaBuilder boolMapBuilder = SchemaBuilder.map(
+                new SchemaBuilder(Schema.Type.STRING).parameter(PROTOBUF_TAG, "1").optional().build(),
+                new SchemaBuilder(Schema.Type.BOOLEAN).parameter(PROTOBUF_TAG, "2").optional().build());
+        final SchemaBuilder strMapBuilder = SchemaBuilder.map(
+                new SchemaBuilder(Schema.Type.INT32).parameter(PROTOBUF_TAG, "1").optional().build(),
+                new SchemaBuilder(Schema.Type.STRING).parameter(PROTOBUF_TAG, "2").optional().build());
+
+        return ImmutableMap.<String, Schema>builder()
+                .put("i32", new SchemaBuilder(Schema.Type.INT32).parameter(PROTOBUF_TAG, "1").build())
+                .put("bool", new SchemaBuilder(Schema.Type.BOOLEAN).parameter(PROTOBUF_TAG, "2").optional().build())
+                .put("bytes", new SchemaBuilder(Schema.Type.BYTES).parameter(PROTOBUF_TAG, "3").optional().build())
+                .put("str", new SchemaBuilder(Schema.Type.STRING).parameter(PROTOBUF_TAG, "4").optional().build())
+                .put("strArray", SchemaBuilder.array(Schema.STRING_SCHEMA).parameter(PROTOBUF_TAG, "8").optional().build())
+                .put("intArray", SchemaBuilder.array(Schema.INT32_SCHEMA).parameter(PROTOBUF_TAG, "9").optional().build())
+                .put("boolArray", SchemaBuilder.array(Schema.BOOLEAN_SCHEMA).parameter(PROTOBUF_TAG, "10").optional().build())
+                .put("date", Date.builder().parameter(PROTOBUF_TAG,"11").build())
+                .put("time", Time.builder().parameter(PROTOBUF_TAG,"12").optional().build())
+                .put("timestamp", Timestamp.builder().parameter(PROTOBUF_TAG,"13").optional().build())
+                .put("intMap", intMapBuilder.parameter(PROTOBUF_TAG,"14").build())
+                .put("boolMap", boolMapBuilder.parameter(PROTOBUF_TAG,"15").build())
+                .put("strMap", strMapBuilder.parameter(PROTOBUF_TAG,"16").build())
+                .put("color", colorBuilder.parameter(PROTOBUF_TAG,"17").optional().build())
+                .put("progress", progressBuilder.parameter(PROTOBUF_TAG,"18").build())
+                .put("order", SchemaBuilder.struct()
+                        .name("order")
+                        .field("id", SchemaBuilder.int32().parameter(PROTOBUF_TAG, "19").optional().build())
+                        .field("paid", SchemaBuilder.bool().parameter(PROTOBUF_TAG, "20").optional().build())
+                        .parameter("protobuf.type", "oneof")
+                        .optional().build())
+                .put("address", addressBuilder.parameter(PROTOBUF_TAG, "21").build())
+                .put("customer", customerBuilder.parameter(PROTOBUF_TAG, "22").optional().build())
                 .build();
     }
 }
