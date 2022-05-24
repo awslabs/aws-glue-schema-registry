@@ -1,7 +1,13 @@
 package com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema;
 
+import additionalTypes.Decimals;
+
 import static com.google.common.base.CaseFormat.LOWER_UNDERSCORE;
 import static com.google.common.base.CaseFormat.UPPER_CAMEL;
+
+import java.math.BigDecimal;
+import java.math.MathContext;
+import java.math.RoundingMode;
 import java.util.Calendar;
 import java.util.TimeZone;
 
@@ -46,4 +52,28 @@ public class ProtobufSchemaConverterUtils {
         return cal.getTime();
     }
 
+    public static Decimals.Decimal fromBigDecimal(BigDecimal bigDecimal) {
+        return Decimals.Decimal
+                .newBuilder()
+                .setUnits(bigDecimal.intValue())
+                .setFraction(bigDecimal.remainder(BigDecimal.ONE).multiply(BigDecimal.valueOf(1000000000)).intValue())
+                .setPrecision(bigDecimal.precision())
+                .setScale(bigDecimal.scale())
+                .build();
+    }
+
+    public static BigDecimal fromDecimalProto(Decimals.Decimal decimal) {
+
+        MathContext precisionMathContext = new MathContext(decimal.getPrecision(), RoundingMode.UNNECESSARY);
+        BigDecimal units = new BigDecimal(decimal.getUnits(), precisionMathContext);
+
+        BigDecimal fractionalPart = new BigDecimal(decimal.getFraction(), precisionMathContext);
+        BigDecimal fractionalUnits = new BigDecimal(1000000000, precisionMathContext);
+        //Set the right scale for fractional part. Make sure we ignore the digits beyond the scale.
+        fractionalPart =
+                fractionalPart.divide(fractionalUnits, precisionMathContext)
+                        .setScale(decimal.getScale(), RoundingMode.UNNECESSARY);
+
+        return units.add(fractionalPart);
+    }
 }

@@ -1,0 +1,9 @@
+syntax = "proto2";
+
+package com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax2;
+
+import "additionalTypes/decimal.proto";
+
+message DecimalTypes {
+  required additionalTypes.Decimal decimal = 1;
+}

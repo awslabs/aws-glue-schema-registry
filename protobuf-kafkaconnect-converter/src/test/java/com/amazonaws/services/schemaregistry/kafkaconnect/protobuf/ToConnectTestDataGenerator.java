@@ -1,5 +1,7 @@
 package com.amazonaws.services.schemaregistry.kafkaconnect.protobuf;
 
+import additionalTypes.Decimals;
+import com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ConnectSchemaToProtobufSchemaConverter;
 import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax2.ArrayTypeSyntax2;
 import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax2.MapTypeSyntax2;
 import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax2.PrimitiveTypesSyntax2;
@@ -10,16 +12,17 @@ import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax2.EnumType
 import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax3.EnumTypeSyntax3;
 import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax2.TimeTypeSyntax2;
 import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax3.TimeTypeSyntax3;
+import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax2.DecimalTypeSyntax2;
+import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax3.DecimalTypeSyntax3;
 import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.ByteString;
+import com.google.protobuf.Descriptors;
+import com.google.protobuf.DynamicMessage;
 import com.google.protobuf.Message;
-import org.apache.kafka.connect.data.Date;
-import org.apache.kafka.connect.data.Time;
-import org.apache.kafka.connect.data.Timestamp;
-import org.apache.kafka.connect.data.Schema;
-import org.apache.kafka.connect.data.SchemaBuilder;
-import org.apache.kafka.connect.data.Struct;
+import lombok.SneakyThrows;
+import org.apache.kafka.connect.data.*;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -401,6 +404,48 @@ public class ToConnectTestDataGenerator {
                 .put("date", Date.builder().parameter(PROTOBUF_TAG,"1").build())
                 .put("time", Time.builder().parameter(PROTOBUF_TAG,"2").build())
                 .put("timestamp", Timestamp.builder().parameter(PROTOBUF_TAG,"3").build())
+                .build();
+    }
+
+    public static List<Message> getDecimalProtobufMessages() {
+        Decimals.Decimal.Builder decimalBuilder = Decimals.Decimal.newBuilder();
+        decimalBuilder.setUnits(1234);
+        decimalBuilder.setFraction(567890000);
+        decimalBuilder.setPrecision(9);
+        decimalBuilder.setScale(5);
+
+        return Arrays.asList(
+                DecimalTypeSyntax2.DecimalTypes.newBuilder()
+                        .setDecimal(decimalBuilder)
+                        .build(),
+                DecimalTypeSyntax3.DecimalTypes.newBuilder()
+                        .setDecimal(decimalBuilder)
+                        .build()
+        );
+    }
+
+    public static Schema getDecimalSchema(String packageName) {
+        return createConnectSchema(
+                "DecimalTypes",
+                getDecimalTypes(),
+                ImmutableMap.of(
+                        "protobuf.package", packageName
+                )
+        );
+    }
+
+    public static Struct getDecimalTypeData(String packageName) {
+        final Struct connectData = new Struct(getDecimalSchema(packageName));
+        BigDecimal decimal = BigDecimal.valueOf(1234.56789);
+
+        connectData
+                .put("decimal", decimal);
+        return connectData;
+    }
+
+    private static Map<String, Schema> getDecimalTypes() {
+        return ImmutableMap.<String, Schema>builder()
+                .put("decimal", Decimal.builder(5).parameter(PROTOBUF_TAG,"1").build())
                 .build();
     }
 

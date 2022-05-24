@@ -1,11 +1,9 @@
 package com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema;
 
+import com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectdata.DecimalDataConverter;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
-import org.apache.kafka.connect.data.Date;
-import org.apache.kafka.connect.data.Schema;
-import org.apache.kafka.connect.data.Time;
-import org.apache.kafka.connect.data.Timestamp;
+import org.apache.kafka.connect.data.*;
 
 import java.util.Map;
 
@@ -30,6 +28,8 @@ public class ConnectToProtobufTypeConverterFactory {
                 || Timestamp.SCHEMA.name().equals(connectSchema.name())
                 || Time.SCHEMA.name().equals(connectSchema.name())) {
             return new TimeSchemaTypeConverter();
+        } else if (Decimal.schema(0).name().equals(connectSchema.name())) {
+            return new DecimalSchemaTypeConverter();
         } else if (connectType.isPrimitive()) {
             return new PrimitiveSchemaTypeConverter();
         } else if (connectType.equals(Schema.Type.ARRAY)) {

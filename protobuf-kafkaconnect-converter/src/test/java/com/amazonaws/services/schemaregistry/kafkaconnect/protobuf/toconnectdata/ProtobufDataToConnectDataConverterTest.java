@@ -28,6 +28,9 @@ import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConn
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getTimeProtobufMessages;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getTimeSchema;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getTimeTypeData;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getDecimalProtobufMessages;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getDecimalSchema;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getDecimalTypeData;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -53,6 +56,10 @@ public class ProtobufDataToConnectDataConverterTest {
 
     private static Stream<Arguments> getTimeTestCases() {
         return getTimeProtobufMessages().stream().map(Arguments::of);
+    }
+
+    private static Stream<Arguments> getDecimalTestCases() {
+        return getDecimalProtobufMessages().stream().map(Arguments::of);
     }
 
     @ParameterizedTest
@@ -106,6 +113,17 @@ public class ProtobufDataToConnectDataConverterTest {
         final Schema connectSchema = getTimeSchema(packageName);
         Object actualData = PROTOBUF_DATA_TO_CONNECT_DATA_CONVERTER.toConnectData(timeMessage, connectSchema);
         Struct expectedData = getTimeTypeData(packageName);
+
+        assertEquals(expectedData, actualData);
+    }
+
+    @ParameterizedTest
+    @MethodSource("getDecimalTestCases")
+    public void toConnectData_convertsProtobufMessageToConnect_forDecimalType(Message decimalMessage) {
+        String packageName = decimalMessage.getDescriptorForType().getFile().getPackage();
+        final Schema connectSchema = getDecimalSchema(packageName);
+        Object actualData = PROTOBUF_DATA_TO_CONNECT_DATA_CONVERTER.toConnectData(decimalMessage, connectSchema);
+        Struct expectedData = getDecimalTypeData(packageName);
 
         assertEquals(expectedData, actualData);
     }

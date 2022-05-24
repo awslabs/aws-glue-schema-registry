@@ -1,12 +1,15 @@
 package com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.toconnectdata;
 
+import additionalTypes.Decimals;
 import com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterUtils;
+import com.google.type.TimeOfDay;
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.data.Date;
 import org.apache.kafka.connect.data.Time;
 import org.apache.kafka.connect.data.Timestamp;
+import org.apache.kafka.connect.data.Decimal;
 import com.google.protobuf.util.Timestamps;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Descriptors;
@@ -74,8 +77,12 @@ public class ProtobufDataToConnectDataConverter {
             return Timestamp.toLogical(schema, Timestamps.toMillis(timestamp));
         }
         if (Time.SCHEMA.name().equals(schema.name())) {
-            com.google.type.TimeOfDay time = (com.google.type.TimeOfDay) value;
+            TimeOfDay time = (TimeOfDay) value;
             return ProtobufSchemaConverterUtils.convertFromGoogleTime(time);
+        }
+        if (Decimal.schema(0).name().equals(schema.name())) {
+            Decimals.Decimal decimal = (Decimals.Decimal) value;
+            return ProtobufSchemaConverterUtils.fromDecimalProto(decimal);
         }
         switch (schema.type()) {
             //TODO: Add this when metadata is added to Protobuf schemas.

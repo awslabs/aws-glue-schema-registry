@@ -18,6 +18,7 @@ import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToProt
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToProtobufTestDataGenerator.getPrimitiveSchema;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToProtobufTestDataGenerator.getEnumSchema;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToProtobufTestDataGenerator.getTimeSchema;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToProtobufTestDataGenerator.getDecimalSchema;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToProtobufTestDataGenerator.getProtobufSchema;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_TAG;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_TYPE;
@@ -66,6 +67,11 @@ public class ConnectSchemaToProtobufSchemaConverterTest {
                 "TimeType",
                 getTimeSchema("TimeType"),
                 getProtobufSchema("TimeProtobufSchema.filedescproto")
+            ),
+            Arguments.of(
+                    "DecimalType",
+                    getDecimalSchema("DecimalType"),
+                    getProtobufSchema("DecimalProtobufSchema.filedescproto")
             )
         );
     }

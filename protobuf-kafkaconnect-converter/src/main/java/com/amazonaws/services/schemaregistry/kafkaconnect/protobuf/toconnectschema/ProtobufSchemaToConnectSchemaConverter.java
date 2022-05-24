@@ -9,6 +9,7 @@ import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Date;
 import org.apache.kafka.connect.data.Time;
 import org.apache.kafka.connect.data.Timestamp;
+import org.apache.kafka.connect.data.Decimal;
 import org.apache.kafka.connect.errors.DataException;
 
 import java.util.List;
@@ -124,6 +125,9 @@ public class ProtobufSchemaToConnectSchemaConverter {
                 }
                 if (fieldDescriptor.getMessageType().getFullName().equals("google.type.TimeOfDay")) {
                     schemaBuilder = Time.builder();
+                }
+                if (fieldDescriptor.getMessageType().getFullName().equals("additionalTypes.Decimal")) {
+                    schemaBuilder = Decimal.builder(5);
                 }
                 break;
             }

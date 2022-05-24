@@ -25,6 +25,7 @@ import com.google.protobuf.DescriptorProtos;
 import com.google.protobuf.Descriptors;
 import com.google.protobuf.Message;
 import com.squareup.wire.schema.internal.parser.ProtoFileElement;
+//import com.amazonaws.services.schemaregistry.utils.apicurio.FileDescriptorUtils;
 import io.apicurio.registry.utils.protobuf.schema.FileDescriptorUtils;
 import lombok.Builder;
 import lombok.NonNull;

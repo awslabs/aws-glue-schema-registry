@@ -12,7 +12,9 @@ import org.apache.kafka.connect.data.Timestamp;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
+import org.apache.kafka.connect.data.Decimal;
 
+import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
@@ -24,6 +26,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
+import additionalTypes.Decimals;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.CommonTestHelper.createConnectSchema;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_TAG;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_TYPE;
@@ -351,6 +354,47 @@ public class ToProtobufTestDataGenerator {
                 .build();
     }
 
+    public static Schema getDecimalSchema(String name) {
+        return createConnectSchema(name, getDecimalTypes(), ImmutableMap.of());
+    }
+
+    @SneakyThrows
+    public static DynamicMessage getProtobufDecimalMessage() {
+        Descriptors.FileDescriptor fileDescriptor = getDecimalFileDescriptor();
+        Descriptors.Descriptor descriptor = fileDescriptor.getMessageTypes().get(0);
+        DynamicMessage.Builder dynamicMessageBuilder = DynamicMessage.newBuilder(descriptor);
+
+        Decimals.Decimal.Builder decimalBuilder = Decimals.Decimal.newBuilder();
+        decimalBuilder.setUnits(1234);
+        decimalBuilder.setFraction(567890000);
+        decimalBuilder.setPrecision(9);
+        decimalBuilder.setScale(5);
+
+        return dynamicMessageBuilder
+                .setField(descriptor.findFieldByName("decimal"), decimalBuilder.build())
+                .build();
+    }
+
+    private static Descriptors.FileDescriptor getDecimalFileDescriptor() {
+        return new ConnectSchemaToProtobufSchemaConverter().convert(getDecimalSchema("decimalProtobufSchema"));
+    }
+
+    public static Struct getDecimalTypeData() {
+        Schema connectSchema = createConnectSchema("decimalProtobufSchema", getDecimalTypes(), ImmutableMap.of());
+        final Struct connectData = new Struct(connectSchema);
+
+        BigDecimal decimal = BigDecimal.valueOf(1234.56789);
+
+        connectData
+                .put("decimal", decimal);
+        return connectData;
+    }
+
+    private static Map<String, Schema> getDecimalTypes() {
+        return ImmutableMap.<String, Schema>builder()
+                .put("decimal", Decimal.builder(5))
+                .build();
+    }
 
     public static Schema getArraySchema(String name) {
         return createConnectSchema(name, getArrayType(), ImmutableMap.of());
