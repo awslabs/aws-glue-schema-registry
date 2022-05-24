@@ -11,8 +11,6 @@ list(
         mutable_byte_array_test
 )
 
-add_library(mock_foo SHARED mock_foo.c)
-
 foreach (test ${tests})
     add_executable(
             "${test}"

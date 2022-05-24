@@ -1,3 +1,3 @@
 from .PyGsrSerDe import *
 
-__all__ = ['GlueSchemaRegistrySchema', 'GlueSchemaRegistrySerializer']
+__all__ = ['GlueSchemaRegistrySchema', 'GlueSchemaRegistrySerializer', 'GlueSchemaRegistryDeserializer']
