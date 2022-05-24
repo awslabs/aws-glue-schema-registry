@@ -3,7 +3,11 @@ package com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnects
 import com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectdata.DecimalDataConverter;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
-import org.apache.kafka.connect.data.*;
+import org.apache.kafka.connect.data.Date;
+import org.apache.kafka.connect.data.Schema;
+import org.apache.kafka.connect.data.Time;
+import org.apache.kafka.connect.data.Timestamp;
+import org.apache.kafka.connect.data.Decimal;
 
 import java.util.Map;
 
