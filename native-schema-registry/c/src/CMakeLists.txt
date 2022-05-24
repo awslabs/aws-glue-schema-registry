@@ -10,6 +10,8 @@ add_library(
         glue_schema_registry_schema.c
         read_only_byte_array.c
         mutable_byte_array.c
+        glue_schema_registry_serializer.c
+        glue_schema_registry_deserializer.c
         )
 
 target_link_libraries(

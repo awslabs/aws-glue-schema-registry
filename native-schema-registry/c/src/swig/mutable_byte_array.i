@@ -6,12 +6,11 @@
 #if defined(SWIGPYTHON)
 //Converts the unsigned char * to a Python Bytes object.
 %typemap(out) mutable_byte_array * %{
-        mutable_byte_array *array = $1;
-        PyObject * obj = PyMemoryView_FromMemory((char *) array->data, array->max_len, PyBUF_READ);
+        PyObject * obj = PyMemoryView_FromMemory((char *) $1->data, $1->max_len, PyBUF_READ);
         //Copy the contents to a Python byte array
         $result = PyBytes_FromObject(obj);
         //Release the memoryview object
-        Py_DECREF(obj);
+        Py_CLEAR(obj);
         //Delete the underlying mutable_byte_array
         delete_mutable_byte_array($1);
 %}
