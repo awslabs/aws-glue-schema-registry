@@ -18,13 +18,7 @@ public class DecimalDataConverter implements DataConverter {
 
     @Override
     public Object toProtobufData(Schema schema, Object value, Descriptors.FieldDescriptor fieldDescriptor) {
-        final Decimals.Decimal.Builder decimalBuilder = Decimals.Decimal.newBuilder();
         BigDecimal decimalValue = (BigDecimal) value;
-//        decimalBuilder.setUnits(decimalValue.intValue());
-//        decimalBuilder.setFraction(decimalValue.remainder(BigDecimal.ONE).multiply(BigDecimal.valueOf(1000000000)).intValue());
-//        decimalBuilder.setPrecision(decimalValue.precision());
-//        decimalBuilder.setScale(decimalValue.scale());
         return ProtobufSchemaConverterUtils.fromBigDecimal(decimalValue);
-        //return decimalBuilder.build();
     }
 }
