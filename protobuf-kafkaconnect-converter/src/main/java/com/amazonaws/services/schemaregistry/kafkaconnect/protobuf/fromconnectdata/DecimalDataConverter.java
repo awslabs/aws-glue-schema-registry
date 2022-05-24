@@ -3,7 +3,6 @@ import com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectsc
 import com.google.protobuf.Descriptors;
 import com.google.protobuf.Message;
 import org.apache.kafka.connect.data.Schema;
-import additionalTypes.Decimals;
 
 import java.math.BigDecimal;
 

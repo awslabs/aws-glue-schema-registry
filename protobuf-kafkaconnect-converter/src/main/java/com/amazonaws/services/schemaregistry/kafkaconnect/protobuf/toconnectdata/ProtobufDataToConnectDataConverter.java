@@ -24,6 +24,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.DECIMAL_DEFAULT_SCALE;
+
 /**
  * Converts Protobuf data to Connect data corresponding to the translated schema.
  */
@@ -80,7 +82,7 @@ public class ProtobufDataToConnectDataConverter {
             TimeOfDay time = (TimeOfDay) value;
             return ProtobufSchemaConverterUtils.convertFromGoogleTime(time);
         }
-        if (Decimal.schema(0).name().equals(schema.name())) {
+        if (Decimal.schema(DECIMAL_DEFAULT_SCALE).name().equals(schema.name())) {
             Decimals.Decimal decimal = (Decimals.Decimal) value;
             return ProtobufSchemaConverterUtils.fromDecimalProto(decimal);
         }

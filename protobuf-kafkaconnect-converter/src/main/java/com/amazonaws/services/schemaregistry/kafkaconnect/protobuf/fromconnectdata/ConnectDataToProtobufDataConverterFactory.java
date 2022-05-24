@@ -12,6 +12,7 @@ import java.util.Map;
 
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_ENUM_TYPE;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_TYPE;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.DECIMAL_DEFAULT_SCALE;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class ConnectDataToProtobufDataConverterFactory {
@@ -28,7 +29,7 @@ public class ConnectDataToProtobufDataConverterFactory {
                 || Timestamp.SCHEMA.name().equals(connectSchema.name())
                 || Time.SCHEMA.name().equals(connectSchema.name())) {
             return new TimeDataConverter();
-        } else if (Decimal.schema(0).name().equals(connectSchema.name())) {
+        } else if (Decimal.schema(DECIMAL_DEFAULT_SCALE).name().equals(connectSchema.name())) {
             return new DecimalDataConverter();
         } else if (connectType.isPrimitive()) {
             return new PrimitiveDataConverter();

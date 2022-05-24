@@ -12,6 +12,7 @@ import java.util.Map;
 
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_TYPE;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_ENUM_TYPE;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.DECIMAL_DEFAULT_SCALE;
 
 /**
  * Provides a converter instance that can convert the specific connect type to Protobuf type.
@@ -31,7 +32,7 @@ public class ConnectToProtobufTypeConverterFactory {
                 || Timestamp.SCHEMA.name().equals(connectSchema.name())
                 || Time.SCHEMA.name().equals(connectSchema.name())) {
             return new TimeSchemaTypeConverter();
-        } else if (Decimal.schema(0).name().equals(connectSchema.name())) {
+        } else if (Decimal.schema(DECIMAL_DEFAULT_SCALE).name().equals(connectSchema.name())) {
             return new DecimalSchemaTypeConverter();
         } else if (connectType.isPrimitive()) {
             return new PrimitiveSchemaTypeConverter();

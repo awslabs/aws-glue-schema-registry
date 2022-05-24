@@ -21,6 +21,7 @@ import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromco
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_TAG;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_TYPE;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_PACKAGE;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.DECIMAL_DEFAULT_SCALE;
 import static com.google.protobuf.Descriptors.FieldDescriptor.Type.FIXED32;
 import static com.google.protobuf.Descriptors.FieldDescriptor.Type.FIXED64;
 import static com.google.protobuf.Descriptors.FieldDescriptor.Type.SFIXED32;
@@ -127,7 +128,7 @@ public class ProtobufSchemaToConnectSchemaConverter {
                     schemaBuilder = Time.builder();
                 }
                 if (fieldDescriptor.getMessageType().getFullName().equals("additionalTypes.Decimal")) {
-                    schemaBuilder = Decimal.builder(5);
+                    schemaBuilder = Decimal.builder(DECIMAL_DEFAULT_SCALE);
                 }
                 break;
             }

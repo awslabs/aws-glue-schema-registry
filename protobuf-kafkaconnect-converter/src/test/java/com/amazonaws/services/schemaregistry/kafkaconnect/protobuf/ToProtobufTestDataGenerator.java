@@ -30,6 +30,7 @@ import additionalTypes.Decimals;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.CommonTestHelper.createConnectSchema;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_TAG;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_TYPE;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.DECIMAL_DEFAULT_SCALE;
 
 public class ToProtobufTestDataGenerator {
     private static final String TEST_RESOURCE_PATH = "src/test/resources/";
@@ -392,7 +393,7 @@ public class ToProtobufTestDataGenerator {
 
     private static Map<String, Schema> getDecimalTypes() {
         return ImmutableMap.<String, Schema>builder()
-                .put("decimal", Decimal.builder(5))
+                .put("decimal", Decimal.builder(DECIMAL_DEFAULT_SCALE))
                 .build();
     }
 
