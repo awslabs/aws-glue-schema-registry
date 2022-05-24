@@ -1,6 +1,5 @@
 package com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema;
 
-import com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectdata.DecimalDataConverter;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import org.apache.kafka.connect.data.Date;
