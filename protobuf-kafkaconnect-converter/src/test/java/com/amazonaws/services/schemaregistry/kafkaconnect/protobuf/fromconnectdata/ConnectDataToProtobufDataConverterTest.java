@@ -89,6 +89,17 @@ public class ConnectDataToProtobufDataConverterTest {
     }
 
     @Test
+    public void convert_ForDecimalType_ConvertsSuccessfully() {
+        final DynamicMessage decimalMessage = ToProtobufTestDataGenerator.getProtobufDecimalMessage();
+        final Descriptors.FileDescriptor fileDescriptor = decimalMessage.getDescriptorForType().getFile();
+        final Schema decimalSchema = ToProtobufTestDataGenerator.getDecimalSchema("DecimalDataTest");
+        final Message actualMessage = connectDataToProtobufDataConverter.convert(fileDescriptor, decimalSchema,
+                ToProtobufTestDataGenerator.getDecimalTypeData());
+
+        assertEquals(decimalMessage, actualMessage);
+    }
+  
+    @Test
     public void convert_ForNestedType_ConvertsSuccessfully() {
         final DynamicMessage nestedMessage = ToProtobufTestDataGenerator.getProtobufNestedMessage("NestedType");
         final Descriptors.FileDescriptor fileDescriptor = nestedMessage.getDescriptorForType().getFile();

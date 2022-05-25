@@ -1,12 +1,15 @@
 package com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.toconnectdata;
 
+import additionalTypes.Decimals;
 import com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterUtils;
+import com.google.type.TimeOfDay;
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.data.Date;
 import org.apache.kafka.connect.data.Time;
 import org.apache.kafka.connect.data.Timestamp;
+import org.apache.kafka.connect.data.Decimal;
 import com.google.protobuf.util.Timestamps;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Descriptors;
@@ -16,11 +19,15 @@ import com.google.protobuf.Message;
 import lombok.NonNull;
 import org.apache.kafka.connect.errors.DataException;
 
+import java.math.BigDecimal;
+import java.math.MathContext;
+import java.math.RoundingMode;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.DECIMAL_DEFAULT_SCALE;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_ONEOF_TYPE;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_TYPE;
 
@@ -83,6 +90,21 @@ public class ProtobufDataToConnectDataConverter {
         }
     }
 
+    public static BigDecimal fromDecimalProto(Decimals.Decimal decimal) {
+
+        MathContext precisionMathContext = new MathContext(decimal.getPrecision(), RoundingMode.UNNECESSARY);
+        BigDecimal units = new BigDecimal(decimal.getUnits(), precisionMathContext);
+
+        BigDecimal fractionalPart = new BigDecimal(decimal.getFraction(), precisionMathContext);
+        BigDecimal fractionalUnits = new BigDecimal(1000000000, precisionMathContext);
+        //Set the right scale for fractional part. Make sure we ignore the digits beyond the scale.
+        fractionalPart =
+                fractionalPart.divide(fractionalUnits, precisionMathContext)
+                        .setScale(decimal.getScale(), RoundingMode.UNNECESSARY);
+
+        return units.add(fractionalPart);
+    }
+
     private Object toConnectDataField(Schema schema, Object value) {
         if (Date.SCHEMA.name().equals(schema.name())) {
             com.google.type.Date date = (com.google.type.Date) value;
@@ -93,8 +115,12 @@ public class ProtobufDataToConnectDataConverter {
             return Timestamp.toLogical(schema, Timestamps.toMillis(timestamp));
         }
         if (Time.SCHEMA.name().equals(schema.name())) {
-            com.google.type.TimeOfDay time = (com.google.type.TimeOfDay) value;
+            TimeOfDay time = (TimeOfDay) value;
             return ProtobufSchemaConverterUtils.convertFromGoogleTime(time);
+        }
+        if (Decimal.schema(DECIMAL_DEFAULT_SCALE).name().equals(schema.name())) {
+            Decimals.Decimal decimal = (Decimals.Decimal) value;
+            return fromDecimalProto(decimal);
         }
         switch (schema.type()) {
             //TODO: Add this when metadata is added to Protobuf schemas.

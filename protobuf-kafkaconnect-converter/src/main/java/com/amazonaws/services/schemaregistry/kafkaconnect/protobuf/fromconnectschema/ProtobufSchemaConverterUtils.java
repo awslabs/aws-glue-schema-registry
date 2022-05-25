@@ -1,7 +1,13 @@
 package com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema;
 
+import additionalTypes.Decimals;
+
 import static com.google.common.base.CaseFormat.LOWER_UNDERSCORE;
 import static com.google.common.base.CaseFormat.UPPER_CAMEL;
+
+import java.math.BigDecimal;
+import java.math.MathContext;
+import java.math.RoundingMode;
 import java.util.Calendar;
 import java.util.TimeZone;
 
@@ -49,5 +55,4 @@ public class ProtobufSchemaConverterUtils {
         cal.set(Calendar.MILLISECOND, time.getNanos() / 1000000);
         return cal.getTime();
     }
-
 }

@@ -9,6 +9,7 @@ import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Date;
 import org.apache.kafka.connect.data.Time;
 import org.apache.kafka.connect.data.Timestamp;
+import org.apache.kafka.connect.data.Decimal;
 import org.apache.kafka.connect.errors.DataException;
 
 import java.util.List;
@@ -21,6 +22,7 @@ import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromco
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_TAG;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_TYPE;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_PACKAGE;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.DECIMAL_DEFAULT_SCALE;
 import static com.google.protobuf.Descriptors.FieldDescriptor.Type.FIXED32;
 import static com.google.protobuf.Descriptors.FieldDescriptor.Type.FIXED64;
 import static com.google.protobuf.Descriptors.FieldDescriptor.Type.SFIXED32;
@@ -153,6 +155,9 @@ public class ProtobufSchemaToConnectSchemaConverter {
                 schemaBuilder = SchemaBuilder.struct().name(fullName);
                 for (Descriptors.FieldDescriptor field : fieldDescriptor.getMessageType().getFields()) {
                     schemaBuilder.field(field.getName(), toConnectSchemaForField(field));
+                }
+                if (fieldDescriptor.getMessageType().getFullName().equals("additionalTypes.Decimal")) {
+                    schemaBuilder = Decimal.builder(DECIMAL_DEFAULT_SCALE);
                 }
                 break;
             }
