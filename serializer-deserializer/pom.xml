@@ -101,10 +101,18 @@
             <artifactId>wire-schema</artifactId>
             <version>${square-wireschema.version}</version>
         </dependency>
+
         <dependency>
-            <groupId>io.apicurio</groupId>
-            <artifactId>apicurio-registry-protobuf-schema-utilities</artifactId>
-            <version>${apicurio-registry.version}</version>
+            <groupId>com.squareup.wire</groupId>
+            <artifactId>wire-compiler</artifactId>
+            <version>${square-wireschema.version}</version>
+            <!-- Excluding as the latest version is not present and this is not required -->
+            <exclusions>
+                <exclusion>
+                    <groupId>com.squareup.wire</groupId>
+                    <artifactId>wire-grpc-client</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <!-- https://mvnrepository.com/artifact/com.google.api.grpc/proto-google-common-protos -->
         <dependency>

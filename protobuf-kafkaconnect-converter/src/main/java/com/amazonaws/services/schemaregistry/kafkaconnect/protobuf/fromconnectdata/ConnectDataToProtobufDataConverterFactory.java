@@ -2,6 +2,7 @@ package com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectd
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
+import org.apache.kafka.connect.data.Decimal;
 import org.apache.kafka.connect.data.Schema;
 
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.DECIMAL_DEFAULT_SCALE;
