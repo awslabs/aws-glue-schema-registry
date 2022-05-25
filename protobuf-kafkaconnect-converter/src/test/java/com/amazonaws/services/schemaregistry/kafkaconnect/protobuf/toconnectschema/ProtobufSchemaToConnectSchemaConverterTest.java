@@ -1,13 +1,18 @@
 package com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.toconnectschema;
 
 import com.google.protobuf.Message;
+import org.apache.commons.validator.Arg;
+import org.apache.kafka.common.cache.Cache;
 import org.apache.kafka.connect.data.Schema;
+import org.everit.json.schema.BooleanSchema;
+import org.everit.json.schema.StringSchema;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import java.util.Collections;
 import java.util.stream.Stream;
 
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getArrayProtobufMessages;
@@ -57,7 +62,7 @@ public class ProtobufSchemaToConnectSchemaConverterTest {
     private static Stream<Arguments> getDecimalTestCases() {
         return getDecimalProtobufMessages().stream().map(Arguments::of);
     }
-  
+
     private static Stream<Arguments> getStructTestCases() {
         return getStructProtobufMessages().stream().map(Arguments::of);
     }
