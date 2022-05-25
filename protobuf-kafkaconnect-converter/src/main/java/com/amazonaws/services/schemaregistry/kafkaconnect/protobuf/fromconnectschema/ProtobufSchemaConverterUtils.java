@@ -74,5 +74,4 @@ public class ProtobufSchemaConverterUtils {
         cal.set(Calendar.MILLISECOND, time.getNanos() / 1000000);
         return cal.getTime();
     }
-
 }

@@ -3,7 +3,8 @@ package com.amazonaws.services.schemaregistry.deserializers.protobuf;
 import com.google.protobuf.Descriptors;
 import com.squareup.wire.schema.internal.parser.ProtoFileElement;
 import com.squareup.wire.schema.internal.parser.ProtoParser;
-import io.apicurio.registry.utils.protobuf.schema.FileDescriptorUtils;
+import com.amazonaws.services.schemaregistry.utils.apicurio.FileDescriptorUtils;
+//import io.apicurio.registry.utils.protobuf.schema.FileDescriptorUtils;
 
 /**
  * Utility class to parse the Protobuf schemas using square and apicurio library.

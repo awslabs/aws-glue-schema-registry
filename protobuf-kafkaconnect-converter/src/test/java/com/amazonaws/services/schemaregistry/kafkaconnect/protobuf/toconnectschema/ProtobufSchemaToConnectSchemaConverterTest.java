@@ -26,6 +26,8 @@ import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConn
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getStructSchema;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getTimeProtobufMessages;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getTimeSchema;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getDecimalProtobufMessages;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getDecimalSchema;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -54,6 +56,10 @@ public class ProtobufSchemaToConnectSchemaConverterTest {
         return getTimeProtobufMessages().stream().map(Arguments::of);
     }
 
+    private static Stream<Arguments> getDecimalTestCases() {
+        return getDecimalProtobufMessages().stream().map(Arguments::of);
+    }
+  
     private static Stream<Arguments> getStructTestCases() {
         return getStructProtobufMessages().stream().map(Arguments::of);
     }
@@ -112,6 +118,15 @@ public class ProtobufSchemaToConnectSchemaConverterTest {
         String packageName = message.getDescriptorForType().getFile().getPackage();
         Schema actualConnectSchema = PROTOBUF_SCHEMA_TO_CONNECT_SCHEMA_CONVERTER.toConnectSchema(message);
         Schema expectedConnectSchema = getTimeSchema(packageName);
+        assertEquals(expectedConnectSchema, actualConnectSchema);
+    }
+
+    @ParameterizedTest
+    @MethodSource("getDecimalTestCases")
+    public void toConnectSchema_convertsDecimalTypeSchema(Message message) {
+        String packageName = message.getDescriptorForType().getFile().getPackage();
+        Schema actualConnectSchema = PROTOBUF_SCHEMA_TO_CONNECT_SCHEMA_CONVERTER.toConnectSchema(message);
+        Schema expectedConnectSchema = getDecimalSchema(packageName);
         assertEquals(expectedConnectSchema, actualConnectSchema);
     }
 
