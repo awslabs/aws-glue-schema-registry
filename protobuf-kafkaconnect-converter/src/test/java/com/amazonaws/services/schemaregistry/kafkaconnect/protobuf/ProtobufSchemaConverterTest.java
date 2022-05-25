@@ -22,12 +22,6 @@ import software.amazon.awssdk.services.glue.model.DataFormat;
 import java.util.Map;
 import java.util.stream.Stream;
 
-import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToProtobufTestDataGenerator.getPrimitiveSchema;
-import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToProtobufTestDataGenerator.getPrimitiveTypesData;
-import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToProtobufTestDataGenerator.getProtobufPrimitiveMessage;
-import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToProtobufTestDataGenerator.getEnumSchema;
-import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToProtobufTestDataGenerator.getEnumTypeData;
-import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToProtobufTestDataGenerator.getProtobufEnumMessage;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -75,20 +69,26 @@ public class ProtobufSchemaConverterTest {
     private static Stream<Arguments> getFromConnectTestCases() {
         return Stream.of(
             Arguments.of(ToProtobufTestDataGenerator.getPrimitiveTypesData(),
-                ToProtobufTestDataGenerator.getPrimitiveSchema(SCHEMA_NAME),
+                ToProtobufTestDataGenerator.getPrimitiveSchema("primitiveProtobufSchema"),
                 ToProtobufTestDataGenerator.getProtobufPrimitiveMessage()),
             Arguments.of(ToProtobufTestDataGenerator.getEnumTypeData(),
-                ToProtobufTestDataGenerator.getEnumSchema(SCHEMA_NAME),
+                ToProtobufTestDataGenerator.getEnumSchema("enumProtobufSchema"),
                 ToProtobufTestDataGenerator.getProtobufEnumMessage()),
             Arguments.of(ToProtobufTestDataGenerator.getArrayTypeData(),
-                ToProtobufTestDataGenerator.getArraySchema(SCHEMA_NAME),
+                ToProtobufTestDataGenerator.getArraySchema("arrayProtobufSchema"),
                 ToProtobufTestDataGenerator.getProtobufArrayMessage()),
             Arguments.of(ToProtobufTestDataGenerator.getMapTypeData(),
-                ToProtobufTestDataGenerator.getMapSchema(SCHEMA_NAME),
+                ToProtobufTestDataGenerator.getMapSchema("mapProtobufSchema"),
                 ToProtobufTestDataGenerator.getProtobufMapMessage()),
             Arguments.of(ToProtobufTestDataGenerator.getTimeTypeData(),
-                ToProtobufTestDataGenerator.getTimeSchema(SCHEMA_NAME),
-                ToProtobufTestDataGenerator.getProtobufTimeMessage())
+                ToProtobufTestDataGenerator.getTimeSchema("timeProtobufSchema"),
+                ToProtobufTestDataGenerator.getProtobufTimeMessage()),
+            Arguments.of(ToProtobufTestDataGenerator.getStructTypeData("NestedType"),
+                ToProtobufTestDataGenerator.getStructSchema("NestedType"),
+                ToProtobufTestDataGenerator.getProtobufNestedMessage("NestedType")),
+            Arguments.of(ToProtobufTestDataGenerator.getOneofTypeData(),
+                ToProtobufTestDataGenerator.getOneofSchema("oneofProtobufSchema"),
+                ToProtobufTestDataGenerator.getProtobufOneofMessage())
         );
     }
 
@@ -105,7 +105,16 @@ public class ProtobufSchemaConverterTest {
                 ToConnectTestDataGenerator.getArrayTypeData(PACKAGE_NAME)),
             Arguments.of(ToConnectTestDataGenerator.getMapProtobufMessages().get(0),
                 ToConnectTestDataGenerator.getMapSchema(PACKAGE_NAME),
-                ToConnectTestDataGenerator.getMapTypeData(PACKAGE_NAME))
+                ToConnectTestDataGenerator.getMapTypeData(PACKAGE_NAME)),
+            Arguments.of(ToConnectTestDataGenerator.getTimeProtobufMessages().get(0),
+                ToConnectTestDataGenerator.getTimeSchema(PACKAGE_NAME),
+                ToConnectTestDataGenerator.getTimeTypeData(PACKAGE_NAME)),
+            Arguments.of(ToConnectTestDataGenerator.getStructProtobufMessages().get(0),
+                ToConnectTestDataGenerator.getStructSchema(PACKAGE_NAME),
+                ToConnectTestDataGenerator.getStructTypeData(PACKAGE_NAME)),
+            Arguments.of(ToConnectTestDataGenerator.getOneofProtobufMessages().get(0),
+                ToConnectTestDataGenerator.getOneofSchema(PACKAGE_NAME),
+                ToConnectTestDataGenerator.getOneofTypeData(PACKAGE_NAME))
         );
     }
 

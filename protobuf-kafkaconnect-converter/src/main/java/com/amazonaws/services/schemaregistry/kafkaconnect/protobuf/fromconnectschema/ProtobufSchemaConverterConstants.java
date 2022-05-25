@@ -40,6 +40,11 @@ public class ProtobufSchemaConverterConstants {
     public static final String PROTOBUF_ENUM_TYPE = "enum";
 
     /**
+     * The string used to validate that protobuf type is oneof
+     */
+    public static final String PROTOBUF_ONEOF_TYPE = "oneof";
+  
+    /**
      * Kafka Connect's Decimal builder requires a default scale: https://kafka.apache.org/0100/javadoc/org/apache/kafka/connect/data/Decimal.html#builder(int)
      * Our converter overrides this value during the conversion, so we enter this value just as a temporary default during the creation.
      */

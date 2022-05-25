@@ -22,9 +22,15 @@ import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConn
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getMapProtobufMessages;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getMapSchema;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getMapTypeData;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getOneofProtobufMessages;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getOneofSchema;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getOneofTypeData;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getPrimitiveProtobufMessages;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getPrimitiveSchema;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getPrimitiveTypesData;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getStructProtobufMessages;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getStructSchema;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getStructTypeData;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getTimeProtobufMessages;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getTimeSchema;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getTimeTypeData;
@@ -60,6 +66,14 @@ public class ProtobufDataToConnectDataConverterTest {
 
     private static Stream<Arguments> getDecimalTestCases() {
         return getDecimalProtobufMessages().stream().map(Arguments::of);
+    }
+  
+    private static Stream<Arguments> getStructTestCases() {
+        return getStructProtobufMessages().stream().map(Arguments::of);
+    }
+
+    private static Stream<Arguments> getOneofTestCases() {
+        return getOneofProtobufMessages().stream().map(Arguments::of);
     }
 
     @ParameterizedTest
@@ -124,6 +138,28 @@ public class ProtobufDataToConnectDataConverterTest {
         final Schema connectSchema = getDecimalSchema(packageName);
         Object actualData = PROTOBUF_DATA_TO_CONNECT_DATA_CONVERTER.toConnectData(decimalMessage, connectSchema);
         Struct expectedData = getDecimalTypeData(packageName);
+      
+        assertEquals(expectedData, actualData);
+    }
+
+    @ParameterizedTest
+    @MethodSource("getStructTestCases")
+    public void toConnectData_convertsProtobufMessageToConnect_forStructType(Message nestedMessage) {
+        String packageName = nestedMessage.getDescriptorForType().getFile().getPackage();
+        final Schema connectSchema = getStructSchema(packageName);
+        Object actualData = PROTOBUF_DATA_TO_CONNECT_DATA_CONVERTER.toConnectData(nestedMessage, connectSchema);
+        Struct expectedData = getStructTypeData(packageName);
+
+        assertEquals(expectedData, actualData);
+    }
+
+    @ParameterizedTest
+    @MethodSource("getOneofTestCases")
+    public void toConnectData_convertsProtobufMessageToConnect_forOneofType(Message oneofMessage) {
+        String packageName = oneofMessage.getDescriptorForType().getFile().getPackage();
+        final Schema connectSchema = getOneofSchema(packageName);
+        Object actualData = PROTOBUF_DATA_TO_CONNECT_DATA_CONVERTER.toConnectData(oneofMessage, connectSchema);
+        Struct expectedData = getOneofTypeData(packageName);
 
         assertEquals(expectedData, actualData);
     }

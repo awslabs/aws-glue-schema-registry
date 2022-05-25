@@ -36,7 +36,7 @@ public class ConnectDataToProtobufDataConverterTest {
     public void convert_ForPrimitiveTypes_ConvertsSuccessfully() {
         final DynamicMessage primitiveMessage = ToProtobufTestDataGenerator.getProtobufPrimitiveMessage();
         final Descriptors.FileDescriptor fileDescriptor = primitiveMessage.getDescriptorForType().getFile();
-        final Schema primitiveSchema = ToProtobufTestDataGenerator.getPrimitiveSchema("PrimitiveDataTest");
+        final Schema primitiveSchema = ToProtobufTestDataGenerator.getPrimitiveSchema("primitiveProtobufSchema");
         final Message actualMessage = connectDataToProtobufDataConverter.convert(fileDescriptor, primitiveSchema,
             ToProtobufTestDataGenerator.getPrimitiveTypesData());
 
@@ -47,7 +47,7 @@ public class ConnectDataToProtobufDataConverterTest {
     public void convert_ForEnumTypes_ConvertsSuccessfully() {
         final DynamicMessage enumMessage = ToProtobufTestDataGenerator.getProtobufEnumMessage();
         final Descriptors.FileDescriptor fileDescriptor = enumMessage.getDescriptorForType().getFile();
-        final Schema enumSchema = ToProtobufTestDataGenerator.getEnumSchema("EnumDataTest");
+        final Schema enumSchema = ToProtobufTestDataGenerator.getEnumSchema("enumProtobufSchema");
         final Message actualMessage = connectDataToProtobufDataConverter.convert(fileDescriptor, enumSchema,
             ToProtobufTestDataGenerator.getEnumTypeData());
 
@@ -59,7 +59,7 @@ public class ConnectDataToProtobufDataConverterTest {
         // TODO add test case for repeated Message/Enum and other complex types
         final DynamicMessage arrayMessage = ToProtobufTestDataGenerator.getProtobufArrayMessage();
         final Descriptors.FileDescriptor fileDescriptor = arrayMessage.getDescriptorForType().getFile();
-        final Schema arraySchema = ToProtobufTestDataGenerator.getArraySchema("ArrayDataTest");
+        final Schema arraySchema = ToProtobufTestDataGenerator.getArraySchema("arrayProtobufSchema");
         final Message actualMessage = connectDataToProtobufDataConverter.convert(fileDescriptor, arraySchema,
             ToProtobufTestDataGenerator.getArrayTypeData());
 
@@ -70,7 +70,7 @@ public class ConnectDataToProtobufDataConverterTest {
     public void convert_ForMapType_ConvertsSuccessfully() {
         final DynamicMessage mapMessage = ToProtobufTestDataGenerator.getProtobufMapMessage();
         final Descriptors.FileDescriptor fileDescriptor = mapMessage.getDescriptorForType().getFile();
-        final Schema mapSchema = ToProtobufTestDataGenerator.getMapSchema("MapDataTest");
+        final Schema mapSchema = ToProtobufTestDataGenerator.getMapSchema("mapProtobufSchema");
         final Message actualMessage = connectDataToProtobufDataConverter.convert(fileDescriptor, mapSchema,
             ToProtobufTestDataGenerator.getMapTypeData());
 
@@ -81,7 +81,7 @@ public class ConnectDataToProtobufDataConverterTest {
     public void convert_ForTimeType_ConvertsSuccessfully() {
         final DynamicMessage timeMessage = ToProtobufTestDataGenerator.getProtobufTimeMessage();
         final Descriptors.FileDescriptor fileDescriptor = timeMessage.getDescriptorForType().getFile();
-        final Schema timeSchema = ToProtobufTestDataGenerator.getTimeSchema("TimeDataTest");
+        final Schema timeSchema = ToProtobufTestDataGenerator.getTimeSchema("timeProtobufSchema");
         final Message actualMessage = connectDataToProtobufDataConverter.convert(fileDescriptor, timeSchema,
                 ToProtobufTestDataGenerator.getTimeTypeData());
 
@@ -98,11 +98,33 @@ public class ConnectDataToProtobufDataConverterTest {
 
         assertEquals(decimalMessage, actualMessage);
     }
+  
+    @Test
+    public void convert_ForNestedType_ConvertsSuccessfully() {
+        final DynamicMessage nestedMessage = ToProtobufTestDataGenerator.getProtobufNestedMessage("NestedType");
+        final Descriptors.FileDescriptor fileDescriptor = nestedMessage.getDescriptorForType().getFile();
+        final Schema nestedSchema = ToProtobufTestDataGenerator.getStructSchema("NestedType");
+        final Message actualMessage = connectDataToProtobufDataConverter.convert(fileDescriptor, nestedSchema,
+                ToProtobufTestDataGenerator.getStructTypeData("NestedType"));
+
+        assertEquals(nestedMessage, actualMessage);
+    }
+
+    @Test
+    public void convert_ForOneofType_ConvertsSuccessfully() {
+        final DynamicMessage oneofMessage = ToProtobufTestDataGenerator.getProtobufOneofMessage();
+        final Descriptors.FileDescriptor fileDescriptor = oneofMessage.getDescriptorForType().getFile();
+        final Schema oneofSchema = ToProtobufTestDataGenerator.getOneofSchema("oneofProtobufSchema");
+        final Message actualMessage = connectDataToProtobufDataConverter.convert(fileDescriptor, oneofSchema,
+                ToProtobufTestDataGenerator.getOneofTypeData());
+
+        assertEquals(oneofMessage, actualMessage);
+    }
 
     @Test
     public void convert_ForNullValues_ThrowsException() {
         final DynamicMessage primitiveMessage = ToProtobufTestDataGenerator.getProtobufPrimitiveMessage();
-        final Schema primitiveSchema = ToProtobufTestDataGenerator.getPrimitiveSchema("PrimitiveDataTest");
+        final Schema primitiveSchema = ToProtobufTestDataGenerator.getPrimitiveSchema("primitiveProtobufSchema");
         final Descriptors.FileDescriptor fileDescriptor = primitiveMessage.getDescriptorForType().getFile();
 
         assertThrows(IllegalArgumentException.class,
@@ -121,7 +143,8 @@ public class ConnectDataToProtobufDataConverterTest {
     @Test
     public void convert_WhenSchemaIsNotOptionalForNullValues_ThrowsException() {
         final DynamicMessage primitiveMessage = ToProtobufTestDataGenerator.getProtobufPrimitiveMessage();
-        final Schema nonOptionalSchema = SchemaBuilder.struct().field("nonOpt", SchemaBuilder.int64()).build();
+        final Schema nonOptionalSchema = SchemaBuilder.struct().name("primitiveProtobufSchema")
+                .field("nonOpt", SchemaBuilder.int64()).build();
         final Field nonOptionalField = new Field("nonOpt", 0, SchemaBuilder.int64().optional());
         final Descriptors.FileDescriptor fileDescriptor = primitiveMessage.getDescriptorForType().getFile();
         final Struct value = new Struct(nonOptionalSchema).put(nonOptionalField, null);
@@ -133,7 +156,8 @@ public class ConnectDataToProtobufDataConverterTest {
     @Test
     public void convert_WhenValueCannotBeCasted_ThrowsException() {
         final DynamicMessage primitiveMessage = ToProtobufTestDataGenerator.getProtobufPrimitiveMessage();
-        final Schema nonOptionalSchema = SchemaBuilder.struct().field("nonOpt", SchemaBuilder.int32()).build();
+        final Schema nonOptionalSchema = SchemaBuilder.struct().name("primitiveProtobufSchema")
+                .field("nonOpt", SchemaBuilder.int32()).build();
         final Field nonOptionalField = new Field("nonOpt", 0, SchemaBuilder.string());
         final Descriptors.FileDescriptor fileDescriptor = primitiveMessage.getDescriptorForType().getFile();
         final Struct value = new Struct(nonOptionalSchema).put(nonOptionalField, "some-string");

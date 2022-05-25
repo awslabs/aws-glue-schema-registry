@@ -13,6 +13,9 @@ import org.apache.kafka.connect.errors.DataException;
 import java.util.List;
 import java.util.Map;
 
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_ONEOF_TYPE;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_TYPE;
+
 /**
  * Converts Connect data to Protobuf data according to the Protobuf schema.
  */
@@ -24,22 +27,42 @@ public class ConnectDataToProtobufDataConverter {
         @NonNull final Object value) {
         final List<Field> fields = schema.fields();
         final Struct data = (Struct) value;
-        //Assuming the first descriptor is the parent descriptor.
-        //TODO: Evaluate if This needs to be updated when structure support is added.
-        final DynamicMessage.Builder dynamicMessageBuilder =
-            DynamicMessage.newBuilder(fileDescriptor.getMessageTypes().get(0));
+
+        //TODO: add caching of fileDescriptor to messages by name map
+        Map<String, Descriptors.Descriptor> allMessagesByName = DescriptorTree.parseAllDescriptors(fileDescriptor);
+        String pathName = getPathName(fileDescriptor.getPackage(), schema.name());
+        Descriptors.Descriptor descriptor = allMessagesByName.get(pathName);
+        DynamicMessage.Builder dynamicMessageBuilder = DynamicMessage.newBuilder(descriptor);
 
         for (final Field field : fields) {
             final Object fieldValue = data.get(field);
 
             if (field.schema().type().equals(Schema.Type.MAP)) {
                 addMapField(dynamicMessageBuilder, field, fieldValue);
+            } else if (field.schema().type().equals(Schema.Type.STRUCT)) {
+                if (field.schema().parameters().containsKey(PROTOBUF_TYPE)
+                        && field.schema().parameters().get(PROTOBUF_TYPE).equals(PROTOBUF_ONEOF_TYPE)) {
+                    for (Field oneofField : field.schema().fields()) {
+                        addField(dynamicMessageBuilder, oneofField, ((Struct) fieldValue).get(oneofField));
+                    }
+                    continue;
+                }
+                Descriptors.FieldDescriptor fieldDescriptor = dynamicMessageBuilder.getDescriptorForType().findFieldByName(field.name());
+                Message nestedMessage = convert(fileDescriptor, field.schema(), fieldValue);
+                dynamicMessageBuilder.setField(fieldDescriptor, nestedMessage);
             } else {
                 addField(dynamicMessageBuilder, field, fieldValue);
             }
         }
 
         return dynamicMessageBuilder.build();
+    }
+
+    private String getPathName(final String packageName, final String schemaName) {
+        if (schemaName.startsWith(packageName)) {
+            return schemaName.replace(packageName, "");
+        }
+        return "." + schemaName;
     }
 
     private void addField(final Message.Builder builder, final Field field, final Object value) {

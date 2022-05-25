@@ -12,6 +12,11 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_ONEOF_TYPE;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_TAG;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_TYPE;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterUtils.getTypeName;
+
 /**
  * Builds the fields into given message and fileDescriptorProto.
  */
@@ -35,6 +40,26 @@ public class FieldBuilder {
                 String mapEntryName = ProtobufSchemaConverterUtils.toMapEntryName(fieldName);
                 messageDescriptorProtoBuilder.addNestedType(buildMap(fieldSchema, mapEntryName,
                     fileDescriptorProtoBuilder, messageDescriptorProtoBuilder));
+            } else if (Schema.Type.STRUCT.equals(fieldSchema.type())) {
+                if (fieldSchema.parameters().containsKey(PROTOBUF_TYPE)
+                        && fieldSchema.parameters().get(PROTOBUF_TYPE).equals(PROTOBUF_ONEOF_TYPE)) {
+                    buildOneof(fieldSchema, fieldName, tagNumber, fileDescriptorProtoBuilder,
+                            messageDescriptorProtoBuilder);
+                    continue;
+                }
+
+                // Convert the Struct type schema to a Protobuf message schema
+                DescriptorProtos.DescriptorProto.Builder nestedMessageDescriptorProtoBuilder =
+                        DescriptorProtos.DescriptorProto.newBuilder();
+                nestedMessageDescriptorProtoBuilder.setName(getSchemaSimpleName(fieldSchema.name()));
+                build(fieldSchema, fileDescriptorProtoBuilder, nestedMessageDescriptorProtoBuilder);
+                // If schema is at parent level, Protobuf message is added as a message type
+                // If schema is not at parent level, Protobuf message is added as a nested type
+                if (isParentLevel(fileDescriptorProtoBuilder.getPackage(), fieldSchema.name())) {
+                    fileDescriptorProtoBuilder.addMessageType(nestedMessageDescriptorProtoBuilder);
+                } else {
+                    messageDescriptorProtoBuilder.addNestedType(nestedMessageDescriptorProtoBuilder);
+                }
             }
 
             DescriptorProtos.FieldDescriptorProto.Builder fieldDescriptorProtoBuilder =
@@ -47,10 +72,16 @@ public class FieldBuilder {
             setProto3Optional(fieldSchema, fieldDescriptorProtoBuilder, messageDescriptorProtoBuilder);
 
             messageDescriptorProtoBuilder.addField(fieldDescriptorProtoBuilder);
-
         }
     }
 
+    /**
+     * Protobuf map is built from two parts: the map field and the nested type for the map entry
+     * The nested type for the map entry is constructed as follows:
+     * 1. Key optional field is added to the nested type with field number 1
+     * 2. Value optional field is added to the nested type with field number 2
+     * 3. MapEntry option is set as true in the nested type
+     */
     private static DescriptorProtos.DescriptorProto buildMap(Schema schema, String name,
          final DescriptorProtos.FileDescriptorProto.Builder fileDescriptorProtoBuilder,
          final DescriptorProtos.DescriptorProto.Builder messageDescriptorProtoBuilder) {
@@ -75,6 +106,32 @@ public class FieldBuilder {
         return mapBuilder.build();
     }
 
+    /**
+     * Protobuf Oneof is constructed as follows:
+     * 1. Oneof declaration is added in the message
+     * 2. For each oneof field, it is added as an optional field in the message with oneof index associated to the same
+     * oneof declaration
+     */
+    private static void buildOneof(Schema schema, String name, AtomicInteger tagNumber,
+                                   final DescriptorProtos.FileDescriptorProto.Builder fileDescriptorProtoBuilder,
+                                   final DescriptorProtos.DescriptorProto.Builder messageDescriptorProtoBuilder) {
+        messageDescriptorProtoBuilder.addOneofDecl(
+                DescriptorProtos.OneofDescriptorProto
+                        .newBuilder()
+                        .setName(name)
+                        .build());
+        for (final Field oneofField: schema.fields()) {
+            DescriptorProtos.FieldDescriptorProto.Builder oneofFieldDescriptorProtoBuilder =
+                    getFieldDescriptorProtoBuilder(oneofField.schema(), oneofField.name(),
+                            fileDescriptorProtoBuilder, messageDescriptorProtoBuilder);
+            oneofFieldDescriptorProtoBuilder.setNumber(
+                    tagNumberFromMetadata(oneofField.schema().parameters()).orElseGet(tagNumber::getAndIncrement)
+            );
+            oneofFieldDescriptorProtoBuilder.setOneofIndex(messageDescriptorProtoBuilder.getOneofDeclCount() - 1);
+            messageDescriptorProtoBuilder.addField(oneofFieldDescriptorProtoBuilder);
+        }
+    }
+
     private static DescriptorProtos.FieldDescriptorProto.Builder getFieldDescriptorProtoBuilder(
             final Schema fieldSchema, final String fieldName,
             final DescriptorProtos.FileDescriptorProto.Builder fileDescriptorProtoBuilder,
@@ -87,13 +144,17 @@ public class FieldBuilder {
 
         if (Schema.Type.MAP.equals(fieldSchema.type())) {
             String typeName = getTypeName(fileDescriptorProtoBuilder.getPackage() + "."
-                + ProtobufSchemaConverterUtils.toMapEntryName(fieldName));
+                    + messageDescriptorProtoBuilder.getName() + "."
+                    + ProtobufSchemaConverterUtils.toMapEntryName(fieldName));
+            fieldDescriptorProtoBuilder.setTypeName(typeName);
+        } else if (Schema.Type.STRUCT.equals(fieldSchema.type())) {
+            String typeName = getTypeName(fieldSchema.name());
             fieldDescriptorProtoBuilder.setTypeName(typeName);
         }
+
         fieldDescriptorProtoBuilder.setName(fieldName);
 
         return fieldDescriptorProtoBuilder;
-
     }
 
     /**
@@ -101,12 +162,11 @@ public class FieldBuilder {
      * This can be set using "awsgsr.protobuf.tag" property. We use it to get the tag number if present.
      */
     private static Optional<Integer> tagNumberFromMetadata(Map<String, String> schemaParams) {
-        if (schemaParams == null
-            || !schemaParams.containsKey(ProtobufSchemaConverterConstants.PROTOBUF_TAG)) {
+        if (schemaParams == null || !schemaParams.containsKey(PROTOBUF_TAG)) {
             return Optional.empty();
         }
 
-        final String tag = schemaParams.get(ProtobufSchemaConverterConstants.PROTOBUF_TAG);
+        final String tag = schemaParams.get(PROTOBUF_TAG);
         try {
             return Optional.of(Integer.parseInt(tag));
         } catch (Exception e) {
@@ -141,7 +201,32 @@ public class FieldBuilder {
         fieldBuilder.setOneofIndex(descriptorProtoBuilder.getOneofDeclCount() - 1);
     }
 
-    private static String getTypeName(String typeName) {
-        return typeName.startsWith(".") ? typeName : "." + typeName;
+    private static String getSchemaSimpleName(String schemaName) {
+        String[] names = schemaName.split("\\.");
+        return names[names.length - 1];
+    }
+
+    /**
+     * Schema name is in a complex form which consists of packageName, parent level schema simple name if exists,
+     * and schema simple name itself
+     * For example: message A { message B {} } message C {}
+     * schema name for each will be
+     * A -》"package.A", B -》"package.A.B", C -》"package.C"
+     *
+     * @param packageName package name of the protobuf schema
+     * @param schemaName  schema name in the complex form
+     * @return true if a schema is a parent level schema, false otherwise.
+     */
+    private static boolean isParentLevel(String packageName, String schemaName) {
+        if (!schemaName.startsWith(packageName)) {
+            return false;
+        }
+        String[] names = schemaName.split(packageName)[1].split("\\.");
+        // If not nested schema, in other words parent level schema:
+        // for example message A and message C, names should be ["", "A"] and ["", "C"]
+        // If nested schema, in other words non parent level schema:
+        // for example message B, names should be ["", "A", "B"]
+        boolean isNotNested = names.length <= 2;
+        return isNotNested;
     }
 }

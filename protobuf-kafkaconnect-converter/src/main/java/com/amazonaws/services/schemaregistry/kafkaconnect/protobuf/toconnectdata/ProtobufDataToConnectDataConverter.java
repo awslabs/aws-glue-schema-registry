@@ -28,6 +28,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.DECIMAL_DEFAULT_SCALE;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_ONEOF_TYPE;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_TYPE;
 
 /**
  * Converts Protobuf data to Connect data corresponding to the translated schema.
@@ -37,8 +39,20 @@ public class ProtobufDataToConnectDataConverter {
 
         final List<Field> fields = connectSchema.fields();
         final Struct data = new Struct(connectSchema);
-        fields.forEach(
-            (field) -> toConnectDataField(field, message, data));
+
+        for (Field field : fields) {
+            if (field.schema().type().equals(Schema.Type.STRUCT)
+                    && field.schema().parameters().containsKey(PROTOBUF_TYPE)
+                    && field.schema().parameters().get(PROTOBUF_TYPE).equals(PROTOBUF_ONEOF_TYPE)) {
+                Struct oneof = new Struct(field.schema());
+                for (Field oneofField : field.schema().fields()) {
+                    toConnectDataField(oneofField, message, oneof);
+                }
+                data.put(field, oneof);
+            } else {
+                toConnectDataField(field, message, data);
+            }
+        }
 
         return data;
     }
@@ -52,6 +66,10 @@ public class ProtobufDataToConnectDataConverter {
             throw new DataException("Protobuf schema doesn't contain the connect field: " + connectField.name());
         }
 
+        if (fieldDescriptor.getRealContainingOneof() != null && !message.hasField(fieldDescriptor)) {
+            // Skip the NONE or NOT_SET oneof field
+            return;
+        }
         final Object value = message.getField(fieldDescriptor);
         //Unfortunately Protobuf 3 has a complex way to check for optionals.
         final boolean isOptionalFieldNotSet =
@@ -163,6 +181,9 @@ public class ProtobufDataToConnectDataConverter {
                                 entry -> toConnectDataField(schema.valueSchema(), entry.getValue())
                 ));
                 return map;
+            }
+            case STRUCT: {
+                return toConnectData((Message) value, schema.schema());
             }
             default:
                 throw new DataException("Cannot convert unrecognized schema type: " + schema.type());

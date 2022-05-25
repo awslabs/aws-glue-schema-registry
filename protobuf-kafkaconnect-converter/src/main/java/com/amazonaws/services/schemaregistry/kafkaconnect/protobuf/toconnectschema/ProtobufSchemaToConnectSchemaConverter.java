@@ -18,6 +18,7 @@ import java.util.Set;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_ENUM_NAME;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_ENUM_VALUE;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_ENUM_TYPE;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_ONEOF_TYPE;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_TAG;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_TYPE;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_PACKAGE;
@@ -52,7 +53,14 @@ public class ProtobufSchemaToConnectSchemaConverter {
         builder.version(CONVERTER_VERSION);
         builder.parameter(PROTOBUF_PACKAGE, descriptor.getFile().getPackage());
 
+        for (Descriptors.OneofDescriptor oneofDescriptor : descriptor.getRealOneofs()) {
+            builder.field(oneofDescriptor.getName(), toConnectSchemaForOneOfField(oneofDescriptor));
+        }
         for (final Descriptors.FieldDescriptor fieldDescriptor : fieldDescriptorList) {
+            if (fieldDescriptor.getRealContainingOneof() != null) {
+                // Already added in oneof
+                continue;
+            }
             final String fieldName = fieldDescriptor.getName();
             builder.field(fieldName, toConnectSchemaForField(fieldDescriptor));
         }
@@ -64,6 +72,17 @@ public class ProtobufSchemaToConnectSchemaConverter {
 
     private Schema toConnectSchemaForField(final Descriptors.FieldDescriptor fieldDescriptor) {
         return toConnectSchemaBuilderForField(fieldDescriptor).build();
+    }
+
+    private Schema toConnectSchemaForOneOfField(final Descriptors.OneofDescriptor oneofDescriptor) {
+        SchemaBuilder builder = SchemaBuilder.struct().name(oneofDescriptor.getName());
+        for (Descriptors.FieldDescriptor fieldDescriptor : oneofDescriptor.getFields()) {
+            builder.field(fieldDescriptor.getName(),
+                    toConnectSchemaBuilderForField(fieldDescriptor).optional().build());
+        }
+        builder.parameter(PROTOBUF_TYPE, PROTOBUF_ONEOF_TYPE);
+        builder.optional();
+        return builder.build();
     }
 
     private SchemaBuilder toConnectSchemaBuilderForField(final Descriptors.FieldDescriptor fieldDescriptor) {
@@ -117,15 +136,25 @@ public class ProtobufSchemaToConnectSchemaConverter {
                     schemaBuilder = SchemaBuilder.map(
                             toConnectSchemaBuilderForField(keyFieldDescriptor).optional().build(),
                             toConnectSchemaBuilderForField(valueFieldDescriptor).optional().build());
+                    break;
                 }
                 if (fieldDescriptor.getMessageType().getFullName().equals("google.type.Date")) {
                     schemaBuilder = Date.builder();
+                    break;
                 }
                 if (fieldDescriptor.getMessageType().getFullName().equals("google.protobuf.Timestamp")) {
                     schemaBuilder = Timestamp.builder();
+                    break;
                 }
                 if (fieldDescriptor.getMessageType().getFullName().equals("google.type.TimeOfDay")) {
                     schemaBuilder = Time.builder();
+                    break;
+                }
+
+                String fullName = fieldDescriptor.getMessageType().getFullName();
+                schemaBuilder = SchemaBuilder.struct().name(fullName);
+                for (Descriptors.FieldDescriptor field : fieldDescriptor.getMessageType().getFields()) {
+                    schemaBuilder.field(field.getName(), toConnectSchemaForField(field));
                 }
                 if (fieldDescriptor.getMessageType().getFullName().equals("additionalTypes.Decimal")) {
                     schemaBuilder = Decimal.builder(DECIMAL_DEFAULT_SCALE);
@@ -147,7 +176,7 @@ public class ProtobufSchemaToConnectSchemaConverter {
             for (Descriptors.EnumValueDescriptor enumValueDescriptor: fieldDescriptor.getEnumType().getValues()) { //iterating through the values of the Enum to store each one
                 schemaBuilder.parameter(PROTOBUF_ENUM_VALUE + enumValueDescriptor.getName(), String.valueOf(enumValueDescriptor.getNumber()));
             }
-            schemaBuilder.parameter(PROTOBUF_ENUM_NAME, fieldDescriptor.getName());
+            schemaBuilder.parameter(PROTOBUF_ENUM_NAME, fieldDescriptor.getEnumType().getName());
         }
 
         if (fieldDescriptor.hasOptionalKeyword()) {
