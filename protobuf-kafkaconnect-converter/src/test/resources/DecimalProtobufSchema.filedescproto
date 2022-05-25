@@ -8,5 +8,17 @@ message_type {
     type: TYPE_MESSAGE
     type_name: "additionalTypes/decimal.proto"
   }
+  field {
+    name: "decimalLargeScale"
+    number: 2
+    type: TYPE_MESSAGE
+    type_name: "additionalTypes/decimal.proto"
+  }
+  field {
+    name: "decimalZeroScale"
+    number: 3
+    type: TYPE_MESSAGE
+    type_name: "additionalTypes/decimal.proto"
+  }
 }
 syntax: "proto3"

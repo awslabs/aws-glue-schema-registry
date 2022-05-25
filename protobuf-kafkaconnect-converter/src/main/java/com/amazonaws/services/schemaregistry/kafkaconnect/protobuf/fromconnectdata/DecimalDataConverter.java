@@ -1,5 +1,5 @@
 package com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectdata;
-import com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterUtils;
+import additionalTypes.Decimals;
 import com.google.protobuf.Descriptors;
 import com.google.protobuf.Message;
 import org.apache.kafka.connect.data.Schema;
@@ -18,6 +18,20 @@ public class DecimalDataConverter implements DataConverter {
     @Override
     public Object toProtobufData(Schema schema, Object value, Descriptors.FieldDescriptor fieldDescriptor) {
         BigDecimal decimalValue = (BigDecimal) value;
-        return ProtobufSchemaConverterUtils.fromBigDecimal(decimalValue);
+        return fromBigDecimal(decimalValue);
+    }
+
+    public static Decimals.Decimal fromBigDecimal(BigDecimal bigDecimal) {
+        int units = bigDecimal.intValue();
+        int fraction = bigDecimal.remainder(BigDecimal.ONE).multiply(BigDecimal.valueOf(1000000000)).intValue();
+        int precision = bigDecimal.precision();
+        int scale = bigDecimal.scale();
+        return Decimals.Decimal
+                .newBuilder()
+                .setUnits(units)
+                .setFraction(fraction)
+                .setPrecision(precision)
+                .setScale(scale)
+                .build();
     }
 }

@@ -19,6 +19,9 @@ import com.google.protobuf.Message;
 import lombok.NonNull;
 import org.apache.kafka.connect.errors.DataException;
 
+import java.math.BigDecimal;
+import java.math.MathContext;
+import java.math.RoundingMode;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -69,6 +72,21 @@ public class ProtobufDataToConnectDataConverter {
         }
     }
 
+    public static BigDecimal fromDecimalProto(Decimals.Decimal decimal) {
+
+        MathContext precisionMathContext = new MathContext(decimal.getPrecision(), RoundingMode.UNNECESSARY);
+        BigDecimal units = new BigDecimal(decimal.getUnits(), precisionMathContext);
+
+        BigDecimal fractionalPart = new BigDecimal(decimal.getFraction(), precisionMathContext);
+        BigDecimal fractionalUnits = new BigDecimal(1000000000, precisionMathContext);
+        //Set the right scale for fractional part. Make sure we ignore the digits beyond the scale.
+        fractionalPart =
+                fractionalPart.divide(fractionalUnits, precisionMathContext)
+                        .setScale(decimal.getScale(), RoundingMode.UNNECESSARY);
+
+        return units.add(fractionalPart);
+    }
+
     private Object toConnectDataField(Schema schema, Object value) {
         if (Date.SCHEMA.name().equals(schema.name())) {
             com.google.type.Date date = (com.google.type.Date) value;
@@ -84,7 +102,7 @@ public class ProtobufDataToConnectDataConverter {
         }
         if (Decimal.schema(DECIMAL_DEFAULT_SCALE).name().equals(schema.name())) {
             Decimals.Decimal decimal = (Decimals.Decimal) value;
-            return ProtobufSchemaConverterUtils.fromDecimalProto(decimal);
+            return fromDecimalProto(decimal);
         }
         switch (schema.type()) {
             //TODO: Add this when metadata is added to Protobuf schemas.

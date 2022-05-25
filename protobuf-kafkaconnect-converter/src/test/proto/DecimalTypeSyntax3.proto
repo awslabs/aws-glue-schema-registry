@@ -6,4 +6,6 @@ import "additionalTypes/decimal.proto";
 
 message DecimalTypes {
   additionalTypes.Decimal decimal = 1;
+  additionalTypes.Decimal decimalLargeScale = 2;
+  additionalTypes.Decimal decimalZeroScale = 3;
 }

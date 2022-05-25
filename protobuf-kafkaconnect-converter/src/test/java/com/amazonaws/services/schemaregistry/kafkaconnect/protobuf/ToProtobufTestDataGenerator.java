@@ -371,8 +371,22 @@ public class ToProtobufTestDataGenerator {
         decimalBuilder.setPrecision(9);
         decimalBuilder.setScale(5);
 
+        Decimals.Decimal.Builder decimalLargeScale = Decimals.Decimal.newBuilder();
+        decimalLargeScale.setUnits(1234);
+        decimalLargeScale.setFraction(567891340);
+        decimalLargeScale.setPrecision(12);
+        decimalLargeScale.setScale(8);
+
+        Decimals.Decimal.Builder decimalZeroScale = Decimals.Decimal.newBuilder();
+        decimalZeroScale.setUnits(1234);
+        decimalZeroScale.setFraction(0);
+        decimalZeroScale.setPrecision(4);
+        decimalZeroScale.setScale(0);
+
         return dynamicMessageBuilder
                 .setField(descriptor.findFieldByName("decimal"), decimalBuilder.build())
+                .setField(descriptor.findFieldByName("decimalLargeScale"), decimalLargeScale.build())
+                .setField(descriptor.findFieldByName("decimalZeroScale"), decimalZeroScale.build())
                 .build();
     }
 
@@ -385,15 +399,21 @@ public class ToProtobufTestDataGenerator {
         final Struct connectData = new Struct(connectSchema);
 
         BigDecimal decimal = BigDecimal.valueOf(1234.56789);
+        BigDecimal decimalLargeScale = BigDecimal.valueOf(1234.56789134);
+        BigDecimal decimalZeroScale = BigDecimal.valueOf(1234);
 
         connectData
-                .put("decimal", decimal);
+                .put("decimal", decimal)
+                .put("decimalLargeScale", decimalLargeScale)
+                .put("decimalZeroScale", decimalZeroScale);
         return connectData;
     }
 
     private static Map<String, Schema> getDecimalTypes() {
         return ImmutableMap.<String, Schema>builder()
                 .put("decimal", Decimal.builder(DECIMAL_DEFAULT_SCALE))
+                .put("decimalLargeScale", Decimal.builder(DECIMAL_DEFAULT_SCALE))
+                .put("decimalZeroScale", Decimal.builder(DECIMAL_DEFAULT_SCALE))
                 .build();
     }
 
