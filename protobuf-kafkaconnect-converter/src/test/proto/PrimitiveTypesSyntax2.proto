@@ -2,22 +2,24 @@ syntax = "proto2";
 
 package com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax2;
 
+import "metadata/metadata.proto";
+
 message PrimitiveTypes {
-  required int32 i8 = 1;
+  required int32 i8 = 1 [(metadata.metadata_key) = "connect.schema", (metadata.metadata_value) = "int8"];
 
-  required int32 i8WithParam = 2000;
+  required int32 i8WithParam = 2000 [(metadata.metadata_key) = "connect.schema", (metadata.metadata_value) = "int8"];
 
-  optional int32 i8Optional = 2;
+  optional int32 i8Optional = 2 [(metadata.metadata_key) = "connect.schema", (metadata.metadata_value) = "int8"];
 
-  required int32 i8WithDefault = 3;
+  required int32 i8WithDefault = 3 [(metadata.metadata_key) = "connect.schema", (metadata.metadata_value) = "int8"];
 
-  required int32 i16 = 4;
+  required int32 i16 = 4 [(metadata.metadata_key) = "connect.schema", (metadata.metadata_value) = "int16"];
 
-  required int32 i16WithParam = 4123;
+  required int32 i16WithParam = 4123 [(metadata.metadata_key) = "connect.schema", (metadata.metadata_value) = "int16"];
 
-  required int32 i16WithDefault = 5;
+  required int32 i16WithDefault = 5 [(metadata.metadata_key) = "connect.schema", (metadata.metadata_value) = "int16"];
 
-  optional int32 i16Optional = 6;
+  optional int32 i16Optional = 6 [(metadata.metadata_key) = "connect.schema", (metadata.metadata_value) = "int16"];
 
   required int32 i32 = 7;
 

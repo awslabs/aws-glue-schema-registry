@@ -123,9 +123,12 @@ public class ProtobufDataToConnectDataConverter {
             return fromDecimalProto(decimal);
         }
         switch (schema.type()) {
-            //TODO: Add this when metadata is added to Protobuf schemas.
-            //case INT8:
-            //case INT16:
+            case INT8:
+                Byte byteVal = ((Number) value).byteValue();
+                return byteVal;
+            case INT16:
+                Short shortVal = ((Number) value).shortValue();
+                return shortVal;
             case INT32: {
                 Integer intVal = ((Number) value).intValue();
                 return intVal;

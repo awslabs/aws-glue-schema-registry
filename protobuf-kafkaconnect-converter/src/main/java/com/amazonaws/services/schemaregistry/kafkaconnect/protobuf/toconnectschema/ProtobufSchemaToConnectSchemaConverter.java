@@ -11,10 +11,14 @@ import org.apache.kafka.connect.data.Time;
 import org.apache.kafka.connect.data.Timestamp;
 import org.apache.kafka.connect.data.Decimal;
 import org.apache.kafka.connect.errors.DataException;
+import metadata.ProtobufSchemaMetadata;
 
 import java.util.List;
 import java.util.Set;
 
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.CONNECT_SCHEMA_INT16;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.CONNECT_SCHEMA_INT8;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.CONNECT_SCHEMA_TYPE;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_ENUM_NAME;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_ENUM_VALUE;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_ENUM_TYPE;
@@ -65,8 +69,6 @@ public class ProtobufSchemaToConnectSchemaConverter {
             builder.field(fieldName, toConnectSchemaForField(fieldDescriptor));
         }
 
-        //TODO: Add support for reading metadata from Protobuf schemas for disambiguating between INT8 and INT16
-
         return builder.build();
     }
 
@@ -94,6 +96,20 @@ public class ProtobufSchemaToConnectSchemaConverter {
             case INT32:
             case SINT32:
             case SFIXED32: {
+                if (fieldDescriptor.getOptions().hasExtension(ProtobufSchemaMetadata.metadataKey)
+                        && fieldDescriptor.getOptions().hasExtension(ProtobufSchemaMetadata.metadataValue)) {
+                    String metadataKey = fieldDescriptor.getOptions().getExtension(ProtobufSchemaMetadata.metadataKey);
+                    String metadataValue = fieldDescriptor.getOptions().getExtension(ProtobufSchemaMetadata.metadataValue);
+                    if (metadataKey.equals(CONNECT_SCHEMA_TYPE)) {
+                        if (CONNECT_SCHEMA_INT8.equals(metadataValue)) {
+                            schemaBuilder = SchemaBuilder.int8();
+                            break;
+                        } else if (CONNECT_SCHEMA_INT16.equals(metadataValue)) {
+                            schemaBuilder = SchemaBuilder.int16();
+                            break;
+                        }
+                    }
+                }
                 schemaBuilder = SchemaBuilder.int32();
                 break;
             }
@@ -119,7 +135,8 @@ public class ProtobufSchemaToConnectSchemaConverter {
                 schemaBuilder = SchemaBuilder.bool();
                 break;
             }
-            case ENUM: //ENUM will be converted into a string in Connect, as Connect does not support ENUM. data stored in metadata (see below)
+            // ENUM will be converted into a string in Connect, as Connect does not support ENUM. data stored in metadata (see below)
+            case ENUM:
             case STRING: {
                 schemaBuilder = SchemaBuilder.string();
                 break;
@@ -150,14 +167,15 @@ public class ProtobufSchemaToConnectSchemaConverter {
                     schemaBuilder = Time.builder();
                     break;
                 }
+                if (fieldDescriptor.getMessageType().getFullName().equals("additionalTypes.Decimal")) {
+                    schemaBuilder = Decimal.builder(DECIMAL_DEFAULT_SCALE);
+                    break;
+                }
 
                 String fullName = fieldDescriptor.getMessageType().getFullName();
                 schemaBuilder = SchemaBuilder.struct().name(fullName);
                 for (Descriptors.FieldDescriptor field : fieldDescriptor.getMessageType().getFields()) {
                     schemaBuilder.field(field.getName(), toConnectSchemaForField(field));
-                }
-                if (fieldDescriptor.getMessageType().getFullName().equals("additionalTypes.Decimal")) {
-                    schemaBuilder = Decimal.builder(DECIMAL_DEFAULT_SCALE);
                 }
                 break;
             }
@@ -173,8 +191,10 @@ public class ProtobufSchemaToConnectSchemaConverter {
 
         if (protobufType.equals(ENUM)) { //ENUM case; storing ENUM data as metadata to avoid being lost in translation.
             schemaBuilder.parameter(PROTOBUF_TYPE, PROTOBUF_ENUM_TYPE);
-            for (Descriptors.EnumValueDescriptor enumValueDescriptor: fieldDescriptor.getEnumType().getValues()) { //iterating through the values of the Enum to store each one
-                schemaBuilder.parameter(PROTOBUF_ENUM_VALUE + enumValueDescriptor.getName(), String.valueOf(enumValueDescriptor.getNumber()));
+            // iterating through the values of the Enum to store each one
+            for (Descriptors.EnumValueDescriptor enumValueDescriptor: fieldDescriptor.getEnumType().getValues()) {
+                schemaBuilder.parameter(PROTOBUF_ENUM_VALUE + enumValueDescriptor.getName(),
+                        String.valueOf(enumValueDescriptor.getNumber()));
             }
             schemaBuilder.parameter(PROTOBUF_ENUM_NAME, fieldDescriptor.getEnumType().getFullName());
         }

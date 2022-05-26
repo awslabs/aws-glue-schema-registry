@@ -21,10 +21,7 @@ import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax2.DecimalT
 import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax3.DecimalTypeSyntax3;
 import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.ByteString;
-import com.google.protobuf.Descriptors;
-import com.google.protobuf.DynamicMessage;
 import com.google.protobuf.Message;
-import lombok.SneakyThrows;
 import org.apache.kafka.connect.data.Date;
 import org.apache.kafka.connect.data.Time;
 import org.apache.kafka.connect.data.Timestamp;
@@ -159,23 +156,13 @@ public class ToConnectTestDataGenerator {
         final Struct connectData = new Struct(getPrimitiveSchema(packageName));
 
         connectData
-            //TODO: Temporarily override INT8,16 to INT32 till we support storing metadata in Protobuf schemas.
-            //            .put("i8", (byte) 2)
-            .put("i8", 2)
-            //            .put("i8WithParam", (byte) 0)
-            .put("i8WithParam", 0)
-            .put("i8Optional", null)
-            //            .put("i8WithDefault", (byte) 10)
-            .put("i8WithDefault", 10)
-            //            .put("i16", (short) 255)
-            .put("i16", 255)
-            //            .put("i16WithParam", (short) 234)
-            //            .put("i16WithDefault", (short) 15)
-            //            .put("i16Optional", (short) 87)
-            //End override
-            .put("i16WithParam", 234)
-            .put("i16WithDefault", 15)
-            .put("i16Optional", 87)
+            .put("i8", (byte) 2)
+            .put("i8WithParam", (byte) 0)
+            .put("i8WithDefault", (byte) 10)
+            .put("i16", (short) 255)
+            .put("i16WithParam", (short) 234)
+            .put("i16WithDefault", (short) 15)
+            .put("i16Optional", (short) 87)
             .put("i32", 123123)
             .put("i32WithParam", 23982)
             .put("i32WithSameTypeMetadata", 2345)
@@ -216,17 +203,14 @@ public class ToConnectTestDataGenerator {
 
     private static Map<String, Schema> getPrimitiveTypes() {
         return ImmutableMap.<String, Schema>builder()
-            //TODO: Temporarily override INT8,16 to INT32 till we support storing metadata in Protobuf schemas.
-            .put("i8", new SchemaBuilder(Schema.Type.INT32).parameter(PROTOBUF_TAG, "1").build())
-            .put("i8WithParam", new SchemaBuilder(Schema.Type.INT32).parameter(PROTOBUF_TAG, "2000").build())
-            .put("i8Optional", new SchemaBuilder(Schema.Type.INT32).optional().parameter(PROTOBUF_TAG, "2").build())
-            .put("i8WithDefault", new SchemaBuilder(Schema.Type.INT32).parameter(PROTOBUF_TAG, "3").build())
-            .put("i16", new SchemaBuilder(Schema.Type.INT32).parameter(PROTOBUF_TAG, "4").build())
-            .put("i16WithParam", new SchemaBuilder(Schema.Type.INT32).parameter(PROTOBUF_TAG, "4123").build())
-            .put("i16WithDefault", new SchemaBuilder(Schema.Type.INT32).parameter(PROTOBUF_TAG, "5").build())
-            .put("i16Optional", new SchemaBuilder(Schema.Type.INT32).parameter(PROTOBUF_TAG, "6").optional().build())
-            //End temporary override of INT8 INT 16 to INT 32
-
+            .put("i8", new SchemaBuilder(Schema.Type.INT8).parameter(PROTOBUF_TAG, "1").build())
+            .put("i8WithParam", new SchemaBuilder(Schema.Type.INT8).parameter(PROTOBUF_TAG, "2000").build())
+            .put("i8Optional", new SchemaBuilder(Schema.Type.INT8).optional().parameter(PROTOBUF_TAG, "2").build())
+            .put("i8WithDefault", new SchemaBuilder(Schema.Type.INT8).parameter(PROTOBUF_TAG, "3").build())
+            .put("i16", new SchemaBuilder(Schema.Type.INT16).parameter(PROTOBUF_TAG, "4").build())
+            .put("i16WithParam", new SchemaBuilder(Schema.Type.INT16).parameter(PROTOBUF_TAG, "4123").build())
+            .put("i16WithDefault", new SchemaBuilder(Schema.Type.INT16).parameter(PROTOBUF_TAG, "5").build())
+            .put("i16Optional", new SchemaBuilder(Schema.Type.INT16).parameter(PROTOBUF_TAG, "6").optional().build())
             .put("i32", new SchemaBuilder(Schema.Type.INT32).parameter(PROTOBUF_TAG, "7").build())
             .put("i32WithParam", new SchemaBuilder(Schema.Type.INT32).parameter(PROTOBUF_TAG, "8123").build())
             .put("i32WithSameTypeMetadata",
@@ -729,6 +713,9 @@ public class ToConnectTestDataGenerator {
                 .setBool(false)
                 .setBytes(ByteString.copyFrom(new byte[] { 1, 5, 6, 7 }))
                 .setStr("Hello world!")
+                .setI8Optional(2)
+                .setI16Optional(255)
+                .setI64Optional(1080L)
                 .addAllStrArray(Arrays.asList("foo", "bar", "baz"))
                 .addBoolArray(true)
                 .addBoolArray(false)
@@ -754,6 +741,9 @@ public class ToConnectTestDataGenerator {
                 .setBool(false)
                 .setBytes(ByteString.copyFrom(new byte[] { 1, 5, 6, 7 }))
                 .setStr("Hello world!")
+                .setI8Optional(2)
+                .setI16Optional(255)
+                .setI64Optional(1080L)
                 .addAllStrArray(Arrays.asList("foo", "bar", "baz"))
                 .addBoolArray(true)
                 .addBoolArray(false)
@@ -796,6 +786,9 @@ public class ToConnectTestDataGenerator {
                 .put("bool", false)
                 .put("bytes", new byte[] { 1, 5, 6, 7 })
                 .put("str", "Hello world!")
+                .put("i8Optional", (byte) 2)
+                .put("i16Optional", (short) 255)
+                .put("i64Optional", 1080L)
                 .put("strArray", Arrays.asList("foo", "bar", "baz"))
                 .put("boolArray", Arrays.asList(true, false))
                 .put("intArray", new ArrayList<>())
@@ -850,6 +843,9 @@ public class ToConnectTestDataGenerator {
                 .put("bool", new SchemaBuilder(Schema.Type.BOOLEAN).parameter(PROTOBUF_TAG, "2").optional().build())
                 .put("bytes", new SchemaBuilder(Schema.Type.BYTES).parameter(PROTOBUF_TAG, "3").optional().build())
                 .put("str", new SchemaBuilder(Schema.Type.STRING).parameter(PROTOBUF_TAG, "4").optional().build())
+                .put("i8Optional", new SchemaBuilder(Schema.Type.INT8).parameter(PROTOBUF_TAG, "5").optional().build())
+                .put("i16Optional", new SchemaBuilder(Schema.Type.INT16).parameter(PROTOBUF_TAG, "6").optional().build())
+                .put("i64Optional", new SchemaBuilder(Schema.Type.INT64).parameter(PROTOBUF_TAG, "7").optional().build())
                 .put("strArray", SchemaBuilder.array(Schema.STRING_SCHEMA).parameter(PROTOBUF_TAG, "8").optional().build())
                 .put("intArray", SchemaBuilder.array(Schema.INT32_SCHEMA).parameter(PROTOBUF_TAG, "9").optional().build())
                 .put("boolArray", SchemaBuilder.array(Schema.BOOLEAN_SCHEMA).parameter(PROTOBUF_TAG, "10").optional().build())

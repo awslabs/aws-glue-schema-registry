@@ -3,6 +3,7 @@ package com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax2;
 import "google/type/date.proto";
 import "google/type/timeofday.proto";
 import "google/protobuf/timestamp.proto";
+import "metadata/metadata.proto";
 
 message AllTypes {
 
@@ -11,10 +12,9 @@ message AllTypes {
   optional bool bool = 2;
   optional bytes bytes = 3;
   optional string str = 4;
-  // TODO add metadata for int8, int16, and int64
-  //  optional int32 i8Optional = 5;
-  //  optional int32 i16Optional = 6;
-  //  optional int32 i64Optional = 7;
+  optional int32 i8Optional = 5 [(metadata.metadata_key) = "connect.schema", (metadata.metadata_value) = "int8"];
+  optional int32 i16Optional = 6 [(metadata.metadata_key) = "connect.schema", (metadata.metadata_value) = "int16"];
+  optional int64 i64Optional = 7;
 
   // Array types
   repeated string strArray = 8;

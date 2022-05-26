@@ -4,11 +4,15 @@ import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.DescriptorProtos;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.errors.DataException;
+import metadata.ProtobufSchemaMetadata;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.CONNECT_SCHEMA_INT16;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.CONNECT_SCHEMA_INT8;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.CONNECT_SCHEMA_TYPE;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_TYPE;
 import static com.google.protobuf.DescriptorProtos.FieldDescriptorProto.Type.TYPE_BOOL;
 import static com.google.protobuf.DescriptorProtos.FieldDescriptorProto.Type.TYPE_BYTES;
@@ -80,15 +84,34 @@ public class PrimitiveSchemaTypeConverter implements SchemaTypeConverter {
         return specifiedProtobufType;
     }
 
+    private void setMetadataOptions(DescriptorProtos.FieldDescriptorProto.Builder builder,
+                                    String metadataKey, String metadataValue) {
+        DescriptorProtos.FieldOptions.Builder keyOptionsBuilder = DescriptorProtos.FieldOptions.newBuilder();
+        keyOptionsBuilder.setExtension(ProtobufSchemaMetadata.metadataKey, metadataKey);
+        builder.mergeOptions(keyOptionsBuilder.build());
+
+        DescriptorProtos.FieldOptions.Builder valueOptionsBuilder = DescriptorProtos.FieldOptions.newBuilder();
+        valueOptionsBuilder.setExtension(ProtobufSchemaMetadata.metadataValue, metadataValue);
+        builder.mergeOptions(valueOptionsBuilder.build());
+    }
+
     @Override
     public DescriptorProtos.FieldDescriptorProto.Builder toProtobufSchema(
         final Schema schema, final DescriptorProtos.DescriptorProto.Builder descriptorProto,
         final DescriptorProtos.FileDescriptorProto.Builder fileDescriptorProtoBuilder) {
 
-        return DescriptorProtos.FieldDescriptorProto
-            .newBuilder()
-            .setType(getProtobufType(schema))
-            //Label is OPTIONAL as this is a simple primitive type.
-            .setLabel(DescriptorProtos.FieldDescriptorProto.Label.LABEL_OPTIONAL);
+        DescriptorProtos.FieldDescriptorProto.Builder builder = DescriptorProtos.FieldDescriptorProto
+                .newBuilder()
+                .setType(getProtobufType(schema))
+                //Label is OPTIONAL as this is a simple primitive type.
+                .setLabel(DescriptorProtos.FieldDescriptorProto.Label.LABEL_OPTIONAL);
+
+        if (schema.type().equals(Schema.Type.INT8)) {
+            setMetadataOptions(builder, CONNECT_SCHEMA_TYPE, CONNECT_SCHEMA_INT8);
+        } else if (schema.type().equals(Schema.Type.INT16)) {
+            setMetadataOptions(builder, CONNECT_SCHEMA_TYPE, CONNECT_SCHEMA_INT16);
+        }
+
+        return builder;
     }
 }
