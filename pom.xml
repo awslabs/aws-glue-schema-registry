@@ -488,6 +488,8 @@
                                             com.amazonaws.services.schemaregistry.kafkaconnect.AWSKafkaAvroConverterConfig
                                         </exclude>
                                         <exclude>org.apache.avro</exclude>
+                                        <exclude>metadata</exclude>
+                                        <exclude>additionalTypes</exclude>
                                     </excludes>
                                 </rule>
                             </rules>
