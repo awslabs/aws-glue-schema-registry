@@ -92,7 +92,7 @@ public class ConnectDataToProtobufDataConverterTest {
     public void convert_ForDecimalType_ConvertsSuccessfully() {
         final DynamicMessage decimalMessage = ToProtobufTestDataGenerator.getProtobufDecimalMessage();
         final Descriptors.FileDescriptor fileDescriptor = decimalMessage.getDescriptorForType().getFile();
-        final Schema decimalSchema = ToProtobufTestDataGenerator.getDecimalSchema("DecimalDataTest");
+        final Schema decimalSchema = ToProtobufTestDataGenerator.getDecimalSchema("decimalProtobufSchema");
         final Message actualMessage = connectDataToProtobufDataConverter.convert(fileDescriptor, decimalSchema,
                 ToProtobufTestDataGenerator.getDecimalTypeData());
 

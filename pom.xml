@@ -402,6 +402,7 @@
                     </dependency>
                 </dependencies>
                 <configuration>
+                    <excludes>**/apicurio/**, **/additionalTypes/**, **/metadata/**</excludes>
                     <suppressionsFileExpression>checkstyle.suppression.filter</suppressionsFileExpression>
                     <configLocation>${user.dir}/build-tools/src/main/resources/checkstyle.xml
                     </configLocation>
@@ -425,7 +426,7 @@
                 <artifactId>maven-javadoc-plugin</artifactId>
                 <version>3.2.0</version>
                 <configuration>
-                    <excludePackageNames>*.avrodata</excludePackageNames>
+                    <excludePackageNames>*.avrodata, *.apicurio</excludePackageNames>
                     <source>8</source>
                 </configuration>
                 <executions>
@@ -449,6 +450,7 @@
                         <exclude>**/AWSSchemaNamingStrategy*</exclude>
                         <exclude>**/JsonSchemaDataConfig*</exclude>
                         <exclude>**/JsonSchemaConverterConstants*</exclude>
+                        <exclude>**/apicurio/**</exclude>
                     </excludes>
                 </configuration>
                 <executions>
@@ -486,6 +488,8 @@
                                             com.amazonaws.services.schemaregistry.kafkaconnect.AWSKafkaAvroConverterConfig
                                         </exclude>
                                         <exclude>org.apache.avro</exclude>
+                                        <exclude>metadata</exclude>
+                                        <exclude>additionalTypes</exclude>
                                     </excludes>
                                 </rule>
                             </rules>
