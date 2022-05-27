@@ -8,5 +8,5 @@ import "metadata/metadata.proto";
 message DecimalTypes {
   additionalTypes.Decimal decimal = 1;
   additionalTypes.Decimal decimalLargeScale = 2 [(metadata.metadata_key) = "connect.decimal.scale", (metadata.metadata_value) = "10"];
-  additionalTypes.Decimal decimalZeroScale = 3 [(metadata.metadata_key) = "connect.decimal.scale", (metadata.metadata_value) = "0"];
+  additionalTypes.Decimal decimalZeroScale = 3 [(metadata.metadata_key) = "connect.decimal.scale", (metadata.metadata_value) = "1"];
 }

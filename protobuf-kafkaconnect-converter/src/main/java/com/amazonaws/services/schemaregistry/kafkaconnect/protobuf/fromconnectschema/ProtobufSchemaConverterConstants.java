@@ -51,6 +51,11 @@ public class ProtobufSchemaConverterConstants {
     public static final int DECIMAL_DEFAULT_SCALE = 0;
 
     /**
+     * Specifies the decimal scale value during conversion.
+     */
+    public static final String DECIMAL_SCALE_VALUE = "connect.decimal.scale";
+
+    /**
      * Specifies Connect schema type used to preserve the consistency during conversion.
      */
     public static final String CONNECT_SCHEMA_TYPE = "connect.schema";

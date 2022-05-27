@@ -427,12 +427,12 @@ public class ToConnectTestDataGenerator {
         decimalZeroScale.setScale(0);
 
         return Arrays.asList(
-                DecimalTypeSyntax2.DecimalTypes.newBuilder()
+                DecimalTypeSyntax3.DecimalTypes.newBuilder()
                         .setDecimal(decimalBuilder)
                         .setDecimalLargeScale(decimalLargeScale)
                         .setDecimalZeroScale(decimalZeroScale)
                         .build(),
-                DecimalTypeSyntax3.DecimalTypes.newBuilder()
+                DecimalTypeSyntax2.DecimalTypes.newBuilder()
                         .setDecimal(decimalBuilder)
                         .setDecimalLargeScale(decimalLargeScale)
                         .setDecimalZeroScale(decimalZeroScale)
@@ -466,8 +466,10 @@ public class ToConnectTestDataGenerator {
     private static Map<String, Schema> getDecimalTypes() {
         return ImmutableMap.<String, Schema>builder()
                 .put("decimal", Decimal.builder(DECIMAL_DEFAULT_SCALE).parameter(PROTOBUF_TAG,"1").build())
-                .put("decimalLargeScale", Decimal.builder(DECIMAL_DEFAULT_SCALE).parameter(PROTOBUF_TAG,"2").build())
-                .put("decimalZeroScale", Decimal.builder(DECIMAL_DEFAULT_SCALE).parameter(PROTOBUF_TAG, "3").build())
+                .put("decimalLargeScale", Decimal.builder(10).parameter(PROTOBUF_TAG,"2")
+                        .parameter("connect.decimal.scale", "10").build())
+                .put("decimalZeroScale", Decimal.builder(1).parameter(PROTOBUF_TAG, "3")
+                        .parameter("connect.decimal.scale", "1").build())
                 .build();
     }
 
@@ -708,6 +710,18 @@ public class ToConnectTestDataGenerator {
         AllTypesSyntax2.AllTypes.Customer customerSyntax2 =
                 AllTypesSyntax2.AllTypes.Customer.newBuilder().setName("joe").build();
 
+        Decimals.Decimal.Builder decimalBuilder = Decimals.Decimal.newBuilder();
+        decimalBuilder.setUnits(1234);
+        decimalBuilder.setFraction(567890000);
+        decimalBuilder.setPrecision(9);
+        decimalBuilder.setScale(5);
+
+        Decimals.Decimal.Builder decimalwithScaleBuilder = Decimals.Decimal.newBuilder();
+        decimalwithScaleBuilder.setUnits(1234);
+        decimalwithScaleBuilder.setFraction(567891340);
+        decimalwithScaleBuilder.setPrecision(12);
+        decimalwithScaleBuilder.setScale(8);
+
         AllTypesSyntax2.AllTypes allTypesSyntax2 = AllTypesSyntax2.AllTypes.newBuilder()
                 .setI32(32)
                 .setBool(false)
@@ -729,6 +743,8 @@ public class ToConnectTestDataGenerator {
                 .setId(12315)
                 .setAddress(addressSyntax2)
                 .setCustomer(customerSyntax2)
+                .setDecimal(decimalBuilder)
+                .setDecimalWithScale(decimalwithScaleBuilder)
                 .build();
 
         AllTypesSyntax3.AddressAllTypes addressSyntax3 =
@@ -757,6 +773,8 @@ public class ToConnectTestDataGenerator {
                 .setId(12315)
                 .setAddress(addressSyntax3)
                 .setCustomer(customerSyntax3)
+                .setDecimal(decimalBuilder)
+                .setDecimalWithScale(decimalwithScaleBuilder)
                 .build();
 
         return Arrays.asList(allTypesSyntax3, allTypesSyntax2);
@@ -802,7 +820,9 @@ public class ToConnectTestDataGenerator {
                 .put("progress", "INPROGRESS")
                 .put("order", new Struct(connectSchema.field("order").schema()).put("id", 12315))
                 .put("address", new Struct(connectSchema.field("address").schema()).put("street", "8th").put("zipcode", 98121))
-                .put("customer", new Struct(connectSchema.field("customer").schema()).put("name", "joe"));
+                .put("customer", new Struct(connectSchema.field("customer").schema()).put("name", "joe"))
+                .put("decimal", BigDecimal.valueOf(1234.56789))
+                .put("decimalWithScale", BigDecimal.valueOf(1234.56789134));
         return connectData;
     }
 
@@ -865,6 +885,9 @@ public class ToConnectTestDataGenerator {
                         .optional().build())
                 .put("address", addressBuilder.parameter(PROTOBUF_TAG, "21").build())
                 .put("customer", customerBuilder.parameter(PROTOBUF_TAG, "22").optional().build())
+                .put("decimal", Decimal.builder(DECIMAL_DEFAULT_SCALE).parameter(PROTOBUF_TAG,"23").optional().build())
+                .put("decimalWithScale", Decimal.builder(10).parameter(PROTOBUF_TAG,"24")
+                        .parameter("connect.decimal.scale", "10").optional().build())
                 .build();
     }
 }

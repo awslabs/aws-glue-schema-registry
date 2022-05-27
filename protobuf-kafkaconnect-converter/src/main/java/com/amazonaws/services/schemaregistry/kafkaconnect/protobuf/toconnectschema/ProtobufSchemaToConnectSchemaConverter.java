@@ -19,6 +19,7 @@ import java.util.Set;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.CONNECT_SCHEMA_INT16;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.CONNECT_SCHEMA_INT8;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.CONNECT_SCHEMA_TYPE;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.DECIMAL_SCALE_VALUE;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_ENUM_NAME;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_ENUM_VALUE;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_ENUM_TYPE;
@@ -168,6 +169,20 @@ public class ProtobufSchemaToConnectSchemaConverter {
                     break;
                 }
                 if (fieldDescriptor.getMessageType().getFullName().equals("additionalTypes.Decimal")) {
+                    if (fieldDescriptor.getOptions().hasExtension(ProtobufSchemaMetadata.metadataKey)
+                            && fieldDescriptor.getOptions().hasExtension(ProtobufSchemaMetadata.metadataValue)) {
+                        String metadataKey = fieldDescriptor.getOptions().getExtension(ProtobufSchemaMetadata.metadataKey);
+                        String metadataValue = fieldDescriptor.getOptions().getExtension(ProtobufSchemaMetadata.metadataValue);
+                        if (metadataKey.equals(DECIMAL_SCALE_VALUE)) {
+                            try {
+                                schemaBuilder = Decimal.builder(Integer.valueOf(metadataValue));
+                                schemaBuilder.parameter(DECIMAL_SCALE_VALUE, metadataValue);
+                                break;
+                            } catch (NumberFormatException ex) {
+                                // ignore
+                            }
+                        }
+                    }
                     schemaBuilder = Decimal.builder(DECIMAL_DEFAULT_SCALE);
                     break;
                 }

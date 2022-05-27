@@ -1,5 +1,6 @@
 package com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax2;
 
+import "additionalTypes/decimal.proto";
 import "google/type/date.proto";
 import "google/type/timeofday.proto";
 import "google/protobuf/timestamp.proto";
@@ -54,7 +55,9 @@ message AllTypes {
   required AddressAllTypes address = 21;
   optional Customer customer = 22;
 
-  // TODO add decimal types
+  // Decimal
+  optional additionalTypes.Decimal decimal = 23;
+  optional additionalTypes.Decimal decimalWithScale = 24  [(metadata.metadata_key) = "connect.decimal.scale", (metadata.metadata_value) = "10"];
 
 }
 

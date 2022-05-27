@@ -189,6 +189,28 @@ message_type {
     oneof_index: 10
     proto3_optional: true
   }
+  field {
+    name: "decimal"
+    number: 23
+    label: LABEL_OPTIONAL
+    type: TYPE_MESSAGE
+    type_name: ".additionalTypes.Decimal"
+    oneof_index: 11
+    proto3_optional: true
+  }
+  field {
+    name: "decimalWithScale"
+    number: 24
+    label: LABEL_OPTIONAL
+    type: TYPE_MESSAGE
+    type_name: ".additionalTypes.Decimal"
+    options {
+      [metadata.metadata_key]: "connect.decimal.scale"
+      [metadata.metadata_value]: "10"
+    }
+    oneof_index: 12
+    proto3_optional: true
+  }
   nested_type {
     name: "IntMapEntry"
     field {
@@ -303,6 +325,12 @@ message_type {
   }
   oneof_decl {
     name: "_customer"
+  }
+  oneof_decl {
+    name: "_decimal"
+  }
+  oneof_decl {
+    name: "_decimalWithScale"
   }
 }
 enum_type {

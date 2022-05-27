@@ -420,8 +420,8 @@ public class ToProtobufTestDataGenerator {
     private static Map<String, Schema> getDecimalTypes() {
         return ImmutableMap.<String, Schema>builder()
                 .put("decimal", Decimal.builder(DECIMAL_DEFAULT_SCALE))
-                .put("decimalLargeScale", Decimal.builder(DECIMAL_DEFAULT_SCALE))
-                .put("decimalZeroScale", Decimal.builder(DECIMAL_DEFAULT_SCALE))
+                .put("decimalLargeScale", Decimal.builder(DECIMAL_DEFAULT_SCALE).parameter("connect.decimal.scale", "10"))
+                .put("decimalZeroScale", Decimal.builder(DECIMAL_DEFAULT_SCALE).parameter("connect.decimal.scale", "1"))
                 .build();
     }
 
@@ -686,6 +686,18 @@ public class ToProtobufTestDataGenerator {
                 .setField(boolMapDescriptor.findFieldByName("key"), "B")
                 .setField(boolMapDescriptor.findFieldByName("value"), false);
 
+        Decimals.Decimal.Builder decimalBuilder = Decimals.Decimal.newBuilder();
+        decimalBuilder.setUnits(1234);
+        decimalBuilder.setFraction(567890000);
+        decimalBuilder.setPrecision(9);
+        decimalBuilder.setScale(5);
+
+        Decimals.Decimal.Builder decimalWithScaleBuilder = Decimals.Decimal.newBuilder();
+        decimalWithScaleBuilder.setUnits(1234);
+        decimalWithScaleBuilder.setFraction(567891340);
+        decimalWithScaleBuilder.setPrecision(12);
+        decimalWithScaleBuilder.setScale(8);
+
         return dynamicMessageBuilder
                 .setField(descriptor.findFieldByName("i32"), 32)
                 .setField(descriptor.findFieldByName("bool"), false)
@@ -708,6 +720,8 @@ public class ToProtobufTestDataGenerator {
                 .setField(descriptor.findFieldByName("id"), 12315)
                 .setField(descriptor.findFieldByName("address"), addressBuilder.build())
                 .setField(descriptor.findFieldByName("customer"), customerBuilder.build())
+                .setField(descriptor.findFieldByName("decimal"), decimalBuilder.build())
+                .setField(descriptor.findFieldByName("decimalWithScale"), decimalWithScaleBuilder.build())
                 .build();
     }
 
@@ -747,7 +761,9 @@ public class ToProtobufTestDataGenerator {
                 .put("progress", "INPROGRESS")
                 .put("order", new Struct(connectSchema.field("order").schema()).put("id", 12315))
                 .put("address", new Struct(connectSchema.field("address").schema()).put("street", "8th").put("zipcode", 98121))
-                .put("customer", new Struct(connectSchema.field("customer").schema()).put("name", "joe"));
+                .put("customer", new Struct(connectSchema.field("customer").schema()).put("name", "joe"))
+                .put("decimal", BigDecimal.valueOf(1234.56789))
+                .put("decimalWithScale", BigDecimal.valueOf(1234.56789134));
         return connectData;
     }
 
@@ -810,6 +826,9 @@ public class ToProtobufTestDataGenerator {
                         .optional().build())
                 .put("address", addressBuilder.parameter(PROTOBUF_TAG, "21").build())
                 .put("customer", customerBuilder.parameter(PROTOBUF_TAG, "22").optional().build())
+                .put("decimal", Decimal.builder(DECIMAL_DEFAULT_SCALE).parameter(PROTOBUF_TAG, "23").optional().build())
+                .put("decimalWithScale", Decimal.builder(DECIMAL_DEFAULT_SCALE).parameter(PROTOBUF_TAG, "24")
+                        .parameter("connect.decimal.scale", "10").optional().build())
                 .build();
     }
 }
