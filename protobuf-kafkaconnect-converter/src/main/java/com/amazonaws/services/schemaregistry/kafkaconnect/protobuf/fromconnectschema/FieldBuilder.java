@@ -8,10 +8,6 @@ import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.errors.DataException;
 
-import org.apache.kafka.common.cache.Cache;
-import org.apache.kafka.common.cache.LRUCache;
-import org.apache.kafka.common.cache.SynchronizedCache;
-
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -27,10 +23,6 @@ import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromco
 @Slf4j
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class FieldBuilder {
-
-    public static final int SCHEMAS_CACHE_SIZE_DEFAULT = 1000;
-    private static Cache<Schema, DescriptorProtos.FieldDescriptorProto.Builder> fromConnectSchemaCache = new SynchronizedCache<>(new LRUCache<>(SCHEMAS_CACHE_SIZE_DEFAULT));
-
     public static void build(
         final Schema schema,
         final DescriptorProtos.FileDescriptorProto.Builder fileDescriptorProtoBuilder,
@@ -144,11 +136,6 @@ public class FieldBuilder {
             final DescriptorProtos.FileDescriptorProto.Builder fileDescriptorProtoBuilder,
             final DescriptorProtos.DescriptorProto.Builder messageDescriptorProtoBuilder) {
 
-        DescriptorProtos.FieldDescriptorProto.Builder cached = fromConnectSchemaCache.get(fieldSchema);
-        if (cached != null) {
-            return cached;
-        }
-
         final SchemaTypeConverter schemaTypeConverter = ConnectToProtobufTypeConverterFactory.get(fieldSchema);
         final DescriptorProtos.FieldDescriptorProto.Builder fieldDescriptorProtoBuilder =
                 schemaTypeConverter
@@ -165,8 +152,6 @@ public class FieldBuilder {
         }
 
         fieldDescriptorProtoBuilder.setName(fieldName);
-
-        fromConnectSchemaCache.put(fieldSchema, fieldDescriptorProtoBuilder);
         return fieldDescriptorProtoBuilder;
     }
 

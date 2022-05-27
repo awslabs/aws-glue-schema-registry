@@ -66,7 +66,6 @@ public class ProtobufSchemaToConnectSchemaConverter {
         }
 
         //TODO: Add support for reading metadata from Protobuf schemas for disambiguating between INT8 and INT16
-
         return builder.build();
     }
 
