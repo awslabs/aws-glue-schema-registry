@@ -96,11 +96,8 @@ public class ProtobufSchemaConverter implements Converter {
         final Message message = (Message) deserializer.deserialize(topic, bytes);
 
         final Descriptors.Descriptor descriptor = message.getDescriptorForType();
-        final Schema cachedConnectSchema = toConnectSchemaCache.get(descriptor);
-        final Schema schema;
-        if (cachedConnectSchema != null) {
-            schema = cachedConnectSchema;
-        } else {
+        Schema schema = toConnectSchemaCache.get(descriptor);
+        if (schema == null) {
             schema = protobufSchemaToConnectSchemaConverter.toConnectSchema(message);
             toConnectSchemaCache.put(descriptor, schema);
         }
