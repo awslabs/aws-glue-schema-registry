@@ -14,13 +14,13 @@ public class TimeSchemaTypeConverter implements SchemaTypeConverter {
             Schema schema, DescriptorProtos.DescriptorProto.Builder descriptorProto,
             DescriptorProtos.FileDescriptorProto.Builder fileDescriptorProtoBuilder) {
 
-        String typename = "";
+        String typename = ".";
         if (Date.SCHEMA.name().equals(schema.name())) {
-            typename = com.google.type.Date.getDescriptor().getFullName();
+            typename += com.google.type.Date.getDescriptor().getFullName();
         } else if (Timestamp.SCHEMA.name().equals(schema.name())) {
-            typename = com.google.protobuf.Timestamp.getDescriptor().getFullName();
+            typename += com.google.protobuf.Timestamp.getDescriptor().getFullName();
         } else if (Time.SCHEMA.name().equals(schema.name())) {
-            typename = com.google.type.TimeOfDay.getDescriptor().getFullName();
+            typename += com.google.type.TimeOfDay.getDescriptor().getFullName();
         }
 
         return DescriptorProtos.FieldDescriptorProto

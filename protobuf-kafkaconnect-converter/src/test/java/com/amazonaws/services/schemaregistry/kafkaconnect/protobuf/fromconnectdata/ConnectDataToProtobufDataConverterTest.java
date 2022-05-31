@@ -45,11 +45,11 @@ public class ConnectDataToProtobufDataConverterTest {
 
     @Test
     public void convert_ForEnumTypes_ConvertsSuccessfully() {
-        final DynamicMessage enumMessage = ToProtobufTestDataGenerator.getProtobufEnumMessage();
+        final DynamicMessage enumMessage = ToProtobufTestDataGenerator.getProtobufEnumMessage("EnumType");
         final Descriptors.FileDescriptor fileDescriptor = enumMessage.getDescriptorForType().getFile();
-        final Schema enumSchema = ToProtobufTestDataGenerator.getEnumSchema("enumProtobufSchema");
+        final Schema enumSchema = ToProtobufTestDataGenerator.getEnumSchema("EnumType");
         final Message actualMessage = connectDataToProtobufDataConverter.convert(fileDescriptor, enumSchema,
-            ToProtobufTestDataGenerator.getEnumTypeData());
+            ToProtobufTestDataGenerator.getEnumTypeData("EnumType"));
 
         assertEquals(enumMessage, actualMessage);
     }
@@ -92,7 +92,7 @@ public class ConnectDataToProtobufDataConverterTest {
     public void convert_ForDecimalType_ConvertsSuccessfully() {
         final DynamicMessage decimalMessage = ToProtobufTestDataGenerator.getProtobufDecimalMessage();
         final Descriptors.FileDescriptor fileDescriptor = decimalMessage.getDescriptorForType().getFile();
-        final Schema decimalSchema = ToProtobufTestDataGenerator.getDecimalSchema("DecimalDataTest");
+        final Schema decimalSchema = ToProtobufTestDataGenerator.getDecimalSchema("decimalProtobufSchema");
         final Message actualMessage = connectDataToProtobufDataConverter.convert(fileDescriptor, decimalSchema,
                 ToProtobufTestDataGenerator.getDecimalTypeData());
 
@@ -119,6 +119,17 @@ public class ConnectDataToProtobufDataConverterTest {
                 ToProtobufTestDataGenerator.getOneofTypeData());
 
         assertEquals(oneofMessage, actualMessage);
+    }
+
+    @Test
+    public void convert_ForAllTypes_ConvertsSuccessfully() {
+        final DynamicMessage message = ToProtobufTestDataGenerator.getProtobufAllTypesMessage("AllTypes");
+        final Descriptors.FileDescriptor fileDescriptor = message.getDescriptorForType().getFile();
+        final Schema nestedSchema = ToProtobufTestDataGenerator.getAllTypesSchema("AllTypes");
+        final Message actualMessage = connectDataToProtobufDataConverter.convert(fileDescriptor, nestedSchema,
+                ToProtobufTestDataGenerator.getAllTypesData("AllTypes"));
+
+        assertEquals(message, actualMessage);
     }
 
     @Test

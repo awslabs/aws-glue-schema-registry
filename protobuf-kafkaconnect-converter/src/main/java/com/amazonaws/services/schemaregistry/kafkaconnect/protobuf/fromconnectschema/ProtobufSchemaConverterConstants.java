@@ -43,10 +43,30 @@ public class ProtobufSchemaConverterConstants {
      * The string used to validate that protobuf type is oneof
      */
     public static final String PROTOBUF_ONEOF_TYPE = "oneof";
-  
+
     /**
      * Kafka Connect's Decimal builder requires a default scale: https://kafka.apache.org/0100/javadoc/org/apache/kafka/connect/data/Decimal.html#builder(int)
      * Our converter overrides this value during the conversion, so we enter this value just as a temporary default during the creation.
      */
     public static final int DECIMAL_DEFAULT_SCALE = 0;
+
+    /**
+     * Specifies the decimal scale value during conversion.
+     */
+    public static final String DECIMAL_SCALE_VALUE = "connect.decimal.scale";
+
+    /**
+     * Specifies Connect schema type used to preserve the consistency during conversion.
+     */
+    public static final String CONNECT_SCHEMA_TYPE = "connect.schema";
+
+    /**
+     * Specifies Connect schema type as int8.
+     */
+    public static final String CONNECT_SCHEMA_INT8 = "int8";
+
+    /**
+     * Specifies Connect schema type as int16.
+     */
+    public static final String CONNECT_SCHEMA_INT16 = "int16";
 }

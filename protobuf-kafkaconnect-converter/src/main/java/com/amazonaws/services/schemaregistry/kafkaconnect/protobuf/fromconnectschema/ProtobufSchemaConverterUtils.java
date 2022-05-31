@@ -1,13 +1,14 @@
 package com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema;
 
-import additionalTypes.Decimals;
+import org.apache.kafka.connect.data.Date;
+import org.apache.kafka.connect.data.Schema;
+import org.apache.kafka.connect.data.Time;
+import org.apache.kafka.connect.data.Timestamp;
 
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_ENUM_TYPE;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_TYPE;
 import static com.google.common.base.CaseFormat.LOWER_UNDERSCORE;
 import static com.google.common.base.CaseFormat.UPPER_CAMEL;
-
-import java.math.BigDecimal;
-import java.math.MathContext;
-import java.math.RoundingMode;
 import java.util.Calendar;
 import java.util.TimeZone;
 
@@ -26,6 +27,24 @@ public class ProtobufSchemaConverterUtils {
         s += MAP_ENTRY_SUFFIX;
         s = s.substring(0, 1).toUpperCase() + s.substring(1);
         return s;
+    }
+
+    public static String getSchemaSimpleName(String schemaName) {
+        String[] names = schemaName.split("\\.");
+        return names[names.length - 1];
+    }
+
+    public static boolean isEnumType(Schema schema) {
+        return schema.type().equals(org.apache.kafka.connect.data.Schema.Type.STRING)
+                && schema.parameters() != null
+                && schema.parameters() .containsKey(PROTOBUF_TYPE)
+                && PROTOBUF_ENUM_TYPE.equals(schema.parameters() .get(PROTOBUF_TYPE));
+    }
+
+    public static boolean isTimeType(Schema schema) {
+        return Date.SCHEMA.name().equals(schema.name())
+                || Timestamp.SCHEMA.name().equals(schema.name())
+                || Time.SCHEMA.name().equals(schema.name());
     }
 
     public static java.util.Date convertFromGoogleDate(com.google.type.Date date) {

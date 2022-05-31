@@ -2,17 +2,12 @@ package com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnects
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
-import org.apache.kafka.connect.data.Date;
-import org.apache.kafka.connect.data.Schema;
-import org.apache.kafka.connect.data.Time;
-import org.apache.kafka.connect.data.Timestamp;
 import org.apache.kafka.connect.data.Decimal;
+import org.apache.kafka.connect.data.Schema;
 
-import java.util.Map;
-
-import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_TYPE;
-import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_ENUM_TYPE;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.DECIMAL_DEFAULT_SCALE;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterUtils.isEnumType;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterUtils.isTimeType;
 
 /**
  * Provides a converter instance that can convert the specific connect type to Protobuf type.
@@ -21,16 +16,10 @@ import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromco
 public class ConnectToProtobufTypeConverterFactory {
     public static SchemaTypeConverter get(final Schema connectSchema) {
         final Schema.Type connectType = connectSchema.type();
-        final Map<String, String> schemaParams = connectSchema.parameters();
 
-        if (connectType.equals(Schema.Type.STRING)
-                && schemaParams != null
-                && schemaParams.containsKey(PROTOBUF_TYPE)
-                && PROTOBUF_ENUM_TYPE.equals(schemaParams.get(PROTOBUF_TYPE))) {
+        if (isEnumType(connectSchema)) {
             return new EnumSchemaTypeConverter();
-        } else if (Date.SCHEMA.name().equals(connectSchema.name())
-                || Timestamp.SCHEMA.name().equals(connectSchema.name())
-                || Time.SCHEMA.name().equals(connectSchema.name())) {
+        } else if (isTimeType(connectSchema)) {
             return new TimeSchemaTypeConverter();
         } else if (Decimal.schema(DECIMAL_DEFAULT_SCALE).name().equals(connectSchema.name())) {
             return new DecimalSchemaTypeConverter();
@@ -40,7 +29,7 @@ public class ConnectToProtobufTypeConverterFactory {
             return new ArraySchemaTypeConverter();
         } else if (connectType.equals(Schema.Type.MAP)) {
             return new MapSchemaTypeConverter();
-        } else if (connectType.equals(Schema.Type.STRUCT)){
+        } else if (connectType.equals(Schema.Type.STRUCT)) {
             return new StructSchemaTypeConverter();
         }
 

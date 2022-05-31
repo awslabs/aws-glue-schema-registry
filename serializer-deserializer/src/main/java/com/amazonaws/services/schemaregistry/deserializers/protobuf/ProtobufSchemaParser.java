@@ -4,7 +4,6 @@ import com.google.protobuf.Descriptors;
 import com.squareup.wire.schema.internal.parser.ProtoFileElement;
 import com.squareup.wire.schema.internal.parser.ProtoParser;
 import com.amazonaws.services.schemaregistry.utils.apicurio.FileDescriptorUtils;
-//import io.apicurio.registry.utils.protobuf.schema.FileDescriptorUtils;
 
 /**
  * Utility class to parse the Protobuf schemas using square and apicurio library.

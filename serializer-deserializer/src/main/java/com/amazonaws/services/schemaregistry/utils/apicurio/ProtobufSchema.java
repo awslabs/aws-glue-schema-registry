@@ -1,5 +1,7 @@
 /*
- * Copyright 2021 Red Hat
+ * Copyright 2020 Red Hat
+ * Portions Copyright 2020 Amazon.com, Inc. or its affiliates.
+ * All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +20,6 @@ package com.amazonaws.services.schemaregistry.utils.apicurio;
 
 import com.google.protobuf.Descriptors.FileDescriptor;
 import com.squareup.wire.schema.internal.parser.ProtoFileElement;
-import io.apicurio.registry.utils.protobuf.schema.ProtobufFile;
 
 import java.util.Objects;
 

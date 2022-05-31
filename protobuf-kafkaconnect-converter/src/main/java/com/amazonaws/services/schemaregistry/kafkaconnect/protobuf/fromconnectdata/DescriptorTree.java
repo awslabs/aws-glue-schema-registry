@@ -22,7 +22,7 @@ public class DescriptorTree {
     public static Map<String, Descriptors.Descriptor> parseAllDescriptors(
             final Descriptors.FileDescriptor fileDescriptor) {
 
-        final String PARENT_PATH = ".";
+        final String parentPath = ".";
         final Queue<DescriptorWithPath> traversalQueue = new LinkedList<>();
         final Map<String, Descriptors.Descriptor> messagesByName = new LinkedHashMap<>();
 
@@ -31,7 +31,7 @@ public class DescriptorTree {
                 .getMessageTypes()
                 .stream()
                 .map(descriptor -> new DescriptorWithPath(descriptor,
-                        PARENT_PATH + descriptor.getName()))
+                        parentPath + descriptor.getName()))
                 .forEach(traversalQueue::add);
 
         while (!traversalQueue.isEmpty()) {
@@ -56,7 +56,7 @@ public class DescriptorTree {
 
     @Value
     private static class DescriptorWithPath {
-        Descriptors.Descriptor descriptor;
-        String path;
+        private Descriptors.Descriptor descriptor;
+        private String path;
     }
 }
