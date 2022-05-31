@@ -13,6 +13,7 @@ import java.util.Map;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.CONNECT_SCHEMA_INT16;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.CONNECT_SCHEMA_INT8;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.CONNECT_SCHEMA_TYPE;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.METADATA_IMPORT;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_TYPE;
 import static com.google.protobuf.DescriptorProtos.FieldDescriptorProto.Type.TYPE_BOOL;
 import static com.google.protobuf.DescriptorProtos.FieldDescriptorProto.Type.TYPE_BYTES;
@@ -85,7 +86,11 @@ public class PrimitiveSchemaTypeConverter implements SchemaTypeConverter {
     }
 
     private void setMetadataOptions(DescriptorProtos.FieldDescriptorProto.Builder builder,
-                                    String metadataKey, String metadataValue) {
+        DescriptorProtos.FileDescriptorProto.Builder fileDescriptorProtoBuilder, String metadataKey,
+        String metadataValue) {
+
+        addImportToProtobufSchema(fileDescriptorProtoBuilder, METADATA_IMPORT);
+
         DescriptorProtos.FieldOptions.Builder keyOptionsBuilder = DescriptorProtos.FieldOptions.newBuilder();
         keyOptionsBuilder.setExtension(ProtobufSchemaMetadata.metadataKey, metadataKey);
         builder.mergeOptions(keyOptionsBuilder.build());
@@ -107,9 +112,9 @@ public class PrimitiveSchemaTypeConverter implements SchemaTypeConverter {
                 .setLabel(DescriptorProtos.FieldDescriptorProto.Label.LABEL_OPTIONAL);
 
         if (schema.type().equals(Schema.Type.INT8)) {
-            setMetadataOptions(builder, CONNECT_SCHEMA_TYPE, CONNECT_SCHEMA_INT8);
+            setMetadataOptions(builder, fileDescriptorProtoBuilder, CONNECT_SCHEMA_TYPE, CONNECT_SCHEMA_INT8);
         } else if (schema.type().equals(Schema.Type.INT16)) {
-            setMetadataOptions(builder, CONNECT_SCHEMA_TYPE, CONNECT_SCHEMA_INT16);
+            setMetadataOptions(builder, fileDescriptorProtoBuilder, CONNECT_SCHEMA_TYPE, CONNECT_SCHEMA_INT16);
         }
 
         return builder;
