@@ -199,6 +199,5 @@ public class ProtobufSchemaConverterTest {
         Schema connectEnumSchema = ToProtobufTestDataGenerator.getEnumSchema(SCHEMA_NAME);
         protobufSchemaConverter.fromConnectData(TOPIC_NAME, connectEnumSchema, connectEnumData);
         assertEquals(2, fromConnectSchemaCache.size());
-
     }
 }

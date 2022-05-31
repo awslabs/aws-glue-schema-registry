@@ -7,6 +7,7 @@ import com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectsc
 import com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.toconnectdata.ProtobufDataToConnectDataConverter;
 import com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.toconnectschema.ProtobufSchemaToConnectSchemaConverter;
 import com.amazonaws.services.schemaregistry.serializers.GlueSchemaRegistryKafkaSerializer;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.protobuf.Descriptors;
 import com.google.protobuf.Message;
 import org.apache.kafka.common.cache.Cache;
@@ -37,11 +38,13 @@ public class ProtobufSchemaConverter implements Converter {
 
     private boolean isKey;
 
-    public Cache<Schema, Descriptors.FileDescriptor> getFromConnectSchemaCache() {
+    @VisibleForTesting
+    protected Cache<Schema, Descriptors.FileDescriptor> getFromConnectSchemaCache() {
         return fromConnectSchemaCache;
     }
 
-    public Cache<Descriptors.Descriptor, Schema> getToConnectSchemaCache() {
+    @VisibleForTesting
+    protected Cache<Descriptors.Descriptor, Schema> getToConnectSchemaCache() {
         return toConnectSchemaCache;
     }
 
