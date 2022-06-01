@@ -1,5 +1,6 @@
 package com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema;
 
+import com.amazonaws.services.schemaregistry.utils.apicurio.FileDescriptorUtils;
 import com.google.protobuf.DescriptorProtos;
 import com.google.protobuf.Descriptors;
 import lombok.NonNull;
@@ -68,12 +69,7 @@ public class ConnectSchemaToProtobufSchemaConverter {
     }
 
     @SneakyThrows
-    private Descriptors.FileDescriptor buildFileDescriptor(DescriptorProtos.FileDescriptorProto build) {
-        return Descriptors.FileDescriptor.buildFrom(build, getDependencies(), true);
-    }
-
-    private Descriptors.FileDescriptor[] getDependencies() {
-        //TODO: Add dependencies as required for complex types like Timestamp etc.
-        return new Descriptors.FileDescriptor[0];
+    private Descriptors.FileDescriptor buildFileDescriptor(DescriptorProtos.FileDescriptorProto fileDescriptorProto) {
+        return Descriptors.FileDescriptor.buildFrom(fileDescriptorProto, FileDescriptorUtils.baseDependencies());
     }
 }
