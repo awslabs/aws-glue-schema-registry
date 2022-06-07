@@ -59,7 +59,7 @@ public class ProtobufSchemaToConnectSchemaConverterTest {
     private static Stream<Arguments> getDecimalTestCases() {
         return getDecimalProtobufMessages().stream().map(Arguments::of);
     }
-  
+
     private static Stream<Arguments> getStructTestCases() {
         return getStructProtobufMessages().stream().map(Arguments::of);
     }
