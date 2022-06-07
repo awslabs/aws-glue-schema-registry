@@ -477,6 +477,10 @@ public class FileDescriptorUtils {
                         .map(o -> DescriptorProtos.FieldOptions.CType.valueOf(o.getValue().toString())).orElse(null);
                 DescriptorProtos.FieldOptions.JSType oneOfJsType = findOption(JSTYPE_OPTION, oneOfField.getOptions())
                         .map(o -> DescriptorProtos.FieldOptions.JSType.valueOf(o.getValue().toString())).orElse(null);
+                String metadataKey = findOptionString(ProtobufSchemaMetadata.metadataKey.getDescriptor().getFullName(),
+                        oneOfField.getOptions());
+                String metadataValue = findOptionString(ProtobufSchemaMetadata.metadataValue.getDescriptor().getFullName(),
+                        oneOfField.getOptions());
 
                 allFields.add(ProtobufMessage.buildFieldDescriptorProto(
                         OPTIONAL,
@@ -490,8 +494,8 @@ public class FileDescriptorUtils {
                         oneOfIsPacked,
                         oneOfCType,
                         oneOfJsType,
-                        null,
-                        null,
+                        metadataKey,
+                        metadataValue,
                         message.protoBuilder().getOneofDeclCount() - 1,
                         isProto3OptionalField));
 
