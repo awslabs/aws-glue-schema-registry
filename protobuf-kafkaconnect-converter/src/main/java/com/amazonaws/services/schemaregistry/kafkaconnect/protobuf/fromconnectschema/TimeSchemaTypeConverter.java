@@ -9,19 +9,27 @@ import static com.google.protobuf.DescriptorProtos.FieldDescriptorProto.Type.TYP
 
 public class TimeSchemaTypeConverter implements SchemaTypeConverter {
 
+    private static final String DATE_PROTO_IMPORT = "google/type/date.proto";
+    private static final String TIMESTAMP_PROTO_IMPORT = "google/protobuf/timestamp.proto";
+    private static final String TIMEOFDAY_PROTO_IMPORT = "google/type/timeofday.proto";
+
     @Override
     public DescriptorProtos.FieldDescriptorProto.Builder toProtobufSchema(
             Schema schema, DescriptorProtos.DescriptorProto.Builder descriptorProto,
             DescriptorProtos.FileDescriptorProto.Builder fileDescriptorProtoBuilder) {
 
-        String typename = "";
+        String typename = ".";
         if (Date.SCHEMA.name().equals(schema.name())) {
-            typename = com.google.type.Date.getDescriptor().getFullName();
+            typename += com.google.type.Date.getDescriptor().getFullName();
+            addImportToProtobufSchema(fileDescriptorProtoBuilder, DATE_PROTO_IMPORT);
         } else if (Timestamp.SCHEMA.name().equals(schema.name())) {
-            typename = com.google.protobuf.Timestamp.getDescriptor().getFullName();
+            typename += com.google.protobuf.Timestamp.getDescriptor().getFullName();
+            addImportToProtobufSchema(fileDescriptorProtoBuilder, TIMESTAMP_PROTO_IMPORT);
         } else if (Time.SCHEMA.name().equals(schema.name())) {
-            typename = com.google.type.TimeOfDay.getDescriptor().getFullName();
+            typename += com.google.type.TimeOfDay.getDescriptor().getFullName();
+            addImportToProtobufSchema(fileDescriptorProtoBuilder, TIMEOFDAY_PROTO_IMPORT);
         }
+
 
         return DescriptorProtos.FieldDescriptorProto
                 .newBuilder()

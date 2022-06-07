@@ -73,9 +73,9 @@ public class ProtobufSchemaConverterTest {
             Arguments.of(ToProtobufTestDataGenerator.getPrimitiveTypesData(),
                 ToProtobufTestDataGenerator.getPrimitiveSchema("primitiveProtobufSchema"),
                 ToProtobufTestDataGenerator.getProtobufPrimitiveMessage()),
-            Arguments.of(ToProtobufTestDataGenerator.getEnumTypeData(),
-                ToProtobufTestDataGenerator.getEnumSchema("enumProtobufSchema"),
-                ToProtobufTestDataGenerator.getProtobufEnumMessage()),
+            Arguments.of(ToProtobufTestDataGenerator.getEnumTypeData("EnumType"),
+                ToProtobufTestDataGenerator.getEnumSchema("EnumType"),
+                ToProtobufTestDataGenerator.getProtobufEnumMessage("EnumType")),
             Arguments.of(ToProtobufTestDataGenerator.getArrayTypeData(),
                 ToProtobufTestDataGenerator.getArraySchema("arrayProtobufSchema"),
                 ToProtobufTestDataGenerator.getProtobufArrayMessage()),
@@ -90,7 +90,10 @@ public class ProtobufSchemaConverterTest {
                 ToProtobufTestDataGenerator.getProtobufNestedMessage("NestedType")),
             Arguments.of(ToProtobufTestDataGenerator.getOneofTypeData(),
                 ToProtobufTestDataGenerator.getOneofSchema("oneofProtobufSchema"),
-                ToProtobufTestDataGenerator.getProtobufOneofMessage())
+                ToProtobufTestDataGenerator.getProtobufOneofMessage()),
+            Arguments.of(ToProtobufTestDataGenerator.getAllTypesData("AllTypes"),
+                ToProtobufTestDataGenerator.getAllTypesSchema("AllTypes"),
+                ToProtobufTestDataGenerator.getProtobufAllTypesMessage("AllTypes"))
         );
     }
 
@@ -116,7 +119,10 @@ public class ProtobufSchemaConverterTest {
                 ToConnectTestDataGenerator.getStructTypeData(PACKAGE_NAME)),
             Arguments.of(ToConnectTestDataGenerator.getOneofProtobufMessages().get(0),
                 ToConnectTestDataGenerator.getOneofSchema(PACKAGE_NAME),
-                ToConnectTestDataGenerator.getOneofTypeData(PACKAGE_NAME))
+                ToConnectTestDataGenerator.getOneofTypeData(PACKAGE_NAME)),
+            Arguments.of(ToConnectTestDataGenerator.getAllTypesProtobufMessages().get(0),
+                ToConnectTestDataGenerator.getAllTypesSchema(PACKAGE_NAME),
+                ToConnectTestDataGenerator.getSAllTypesData(PACKAGE_NAME))
         );
     }
 

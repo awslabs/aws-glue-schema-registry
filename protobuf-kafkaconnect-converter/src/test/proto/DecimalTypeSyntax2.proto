@@ -3,9 +3,10 @@ syntax = "proto2";
 package com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax2;
 
 import "additionalTypes/decimal.proto";
+import "metadata/metadata.proto";
 
 message DecimalTypes {
   required additionalTypes.Decimal decimal = 1;
-  required additionalTypes.Decimal decimalLargeScale = 2;
-  required additionalTypes.Decimal decimalZeroScale = 3;
+  required additionalTypes.Decimal decimalLargeScale = 2 [(metadata.metadata_key) = "connect.decimal.scale", (metadata.metadata_value) = "10"];
+  required additionalTypes.Decimal decimalZeroScale = 3 [(metadata.metadata_key) = "connect.decimal.scale", (metadata.metadata_value) = "1"];
 }

@@ -49,4 +49,29 @@ public class ProtobufSchemaConverterConstants {
      * Our converter overrides this value during the conversion, so we enter this value just as a temporary default during the creation.
      */
     public static final int DECIMAL_DEFAULT_SCALE = 0;
+
+    /**
+     * Specifies the decimal scale value during conversion.
+     */
+    public static final String DECIMAL_SCALE_VALUE = "connect.decimal.scale";
+
+    /**
+     * Specifies Connect schema type used to preserve the consistency during conversion.
+     */
+    public static final String CONNECT_SCHEMA_TYPE = "connect.schema";
+
+    /**
+     * Specifies Connect schema type as int8.
+     */
+    public static final String CONNECT_SCHEMA_INT8 = "int8";
+
+    /**
+     * Specifies Connect schema type as int16.
+     */
+    public static final String CONNECT_SCHEMA_INT16 = "int16";
+
+    /**
+     * Import statement for Metadata type.
+     */
+    public static final String METADATA_IMPORT = "metadata/metadata.proto";
 }
