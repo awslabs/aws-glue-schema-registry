@@ -24,6 +24,8 @@ public class ConnectDataToProtobufDataConverterFactory {
             return new PrimitiveDataConverter();
         } else if (connectType.equals(Schema.Type.ARRAY)) {
             return new ArrayDataConverter();
+        } else if (connectType.equals(Schema.Type.STRUCT)) {
+            return new StructDataConverter();
         }
 
         throw new IllegalArgumentException("Unrecognized connect type: " + connectType);

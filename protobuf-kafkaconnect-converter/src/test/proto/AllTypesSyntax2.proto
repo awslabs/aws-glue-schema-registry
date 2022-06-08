@@ -21,6 +21,8 @@ message AllTypes {
   repeated string strArray = 8;
   repeated int32 intArray = 9;
   repeated bool boolArray = 10;
+  repeated Customer customerArray = 25;
+  repeated Colors colorArray = 26;
 
   // Time types
   required google.type.Date date = 11;

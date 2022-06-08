@@ -3,6 +3,9 @@ package com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnects
 import com.google.protobuf.DescriptorProtos;
 import org.apache.kafka.connect.data.Schema;
 
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterUtils.getTypeName;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterUtils.isEnumType;
+
 public class ArraySchemaTypeConverter implements SchemaTypeConverter {
 
     @Override
@@ -15,6 +18,9 @@ public class ArraySchemaTypeConverter implements SchemaTypeConverter {
         DescriptorProtos.FieldDescriptorProto.Builder fieldBuilder = schemaTypeConverter
                 .toProtobufSchema(schema.valueSchema(), descriptorProto, fileDescriptorProtoBuilder);
         fieldBuilder.setLabel(DescriptorProtos.FieldDescriptorProto.Label.LABEL_REPEATED);
+        if (schema.valueSchema().type().equals(Schema.Type.STRUCT)) {
+            fieldBuilder.setTypeName(getTypeName(schema.valueSchema().name()));
+        }
         return fieldBuilder;
     }
 }

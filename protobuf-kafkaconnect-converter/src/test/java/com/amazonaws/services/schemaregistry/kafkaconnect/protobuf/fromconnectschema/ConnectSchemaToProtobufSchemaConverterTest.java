@@ -55,7 +55,6 @@ public class ConnectSchemaToProtobufSchemaConverterTest {
                 getEnumSchema("EnumType"),
                 getProtobufSchema("EnumProtobufSchema.filedescproto")
             ),
-            // TODO add test case for repeated Message/Enum and other complex types
             Arguments.of(
                 "ArrayType",
                 getArraySchema("ArrayType"),

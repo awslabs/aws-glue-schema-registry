@@ -17,18 +17,15 @@ public class PrimitiveDataConverter implements DataConverter {
     private static final List<Descriptors.FieldDescriptor.Type> INT32_METADATA_TYPES = Arrays.asList(UINT32, FIXED32);
 
     @Override
-    public void toProtobufData(
-        final Schema schema,
-        final Object value,
-        final Descriptors.FieldDescriptor fieldDescriptor,
-        final Message.Builder messageBuilder) {
-
-        messageBuilder.setField(fieldDescriptor, toProtobufData(schema, value, fieldDescriptor));
+    public void toProtobufData(final Descriptors.FileDescriptor fileDescriptor, final Schema schema,
+                               final Object value, final Descriptors.FieldDescriptor fieldDescriptor,
+                               final Message.Builder messageBuilder) {
+        messageBuilder.setField(fieldDescriptor, toProtobufData(fileDescriptor, schema, value, fieldDescriptor));
     }
 
     @Override
-    public Object toProtobufData(final Schema schema, final Object value,
-                                 final Descriptors.FieldDescriptor fieldDescriptor) {
+    public Object toProtobufData(final Descriptors.FileDescriptor fileDescriptor, final Schema schema,
+                                 final Object value, final Descriptors.FieldDescriptor fieldDescriptor) {
         final Schema.Type schemaType = schema.type();
         try {
             switch (schemaType) {
