@@ -539,7 +539,7 @@ It should look like this
   $KAFKA_HOME/bin/connect-standalone.sh $KAFKA_HOME/config/connect-standalone.properties $KAFKA_HOME/config/connect-file-sink.properties
   ```
 
-* For more examples for running Kafka Connect with Avro JSON, Protobuf formats, refer script **run-local-tests.sh** under
+* For more examples for running Kafka Connect with Avro, JSON, and Protobuf formats, refer script **run-local-tests.sh** under
 **integration-tests** module.
 
 ### Using Kafka Streams with AWS Glue Schema Registry
