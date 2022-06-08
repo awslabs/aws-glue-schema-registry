@@ -792,6 +792,13 @@ public class ToProtobufTestDataGenerator {
                 .parameter("PROTOBUF_ENUM_VALUE.GREEN", "2")
                 .parameter("PROTOBUF_ENUM_VALUE.BLUE", "3")
                 .parameter("ENUM_NAME", getFullName(schemaName, "AllTypes.Colors"));
+        final SchemaBuilder colorArrayBuilder = new SchemaBuilder(Schema.Type.STRING)
+                .parameter("protobuf.type", "enum")
+                .parameter("PROTOBUF_ENUM_VALUE.BLACK", "0")
+                .parameter("PROTOBUF_ENUM_VALUE.RED", "1")
+                .parameter("PROTOBUF_ENUM_VALUE.GREEN", "2")
+                .parameter("PROTOBUF_ENUM_VALUE.BLUE", "3")
+                .parameter("ENUM_NAME", getFullName(schemaName, "AllTypes.Colors"));
 
         final SchemaBuilder intMapBuilder = SchemaBuilder.map(
                 new SchemaBuilder(Schema.Type.INT32).parameter(PROTOBUF_TAG, "1").optional().build(),
@@ -815,7 +822,7 @@ public class ToProtobufTestDataGenerator {
                 .put("intArray", SchemaBuilder.array(Schema.INT32_SCHEMA).parameter(PROTOBUF_TAG, "9").optional().build())
                 .put("boolArray", SchemaBuilder.array(Schema.BOOLEAN_SCHEMA).parameter(PROTOBUF_TAG, "10").optional().build())
                 .put("customerArray", SchemaBuilder.array(customerBuilder.build()).parameter(PROTOBUF_TAG, "25").optional().build())
-                .put("colorArray", SchemaBuilder.array(colorBuilder.build()).parameter(PROTOBUF_TAG, "26").optional().build())
+                .put("colorArray", SchemaBuilder.array(colorArrayBuilder.build()).parameter(PROTOBUF_TAG, "26").optional().build())
                 .put("date", Date.builder().parameter(PROTOBUF_TAG,"11").build())
                 .put("time", Time.builder().parameter(PROTOBUF_TAG,"12").optional().build())
                 .put("timestamp", Timestamp.builder().parameter(PROTOBUF_TAG,"13").optional().build())
@@ -833,7 +840,7 @@ public class ToProtobufTestDataGenerator {
                 .put("address", addressBuilder.parameter(PROTOBUF_TAG, "21").build())
                 .put("customer", customerBuilder.parameter(PROTOBUF_TAG, "22").optional().build())
                 .put("decimal", Decimal.builder(DECIMAL_DEFAULT_SCALE).parameter(PROTOBUF_TAG, "23").optional().build())
-                .put("decimalWithScale", Decimal.builder(DECIMAL_DEFAULT_SCALE).parameter(PROTOBUF_TAG, "24")
+                .put("decimalWithScale", Decimal.builder(10).parameter(PROTOBUF_TAG, "24")
                         .parameter("connect.decimal.scale", "10").optional().build())
                 .build();
     }
