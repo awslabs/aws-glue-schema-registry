@@ -30,7 +30,6 @@ import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromco
 @Slf4j
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class FieldBuilder {
-
     public static void build(
         final Schema schema,
         final DescriptorProtos.FileDescriptorProto.Builder fileDescriptorProtoBuilder,
@@ -197,7 +196,6 @@ public class FieldBuilder {
         }
 
         fieldDescriptorProtoBuilder.setName(fieldName);
-
         return fieldDescriptorProtoBuilder;
     }
 

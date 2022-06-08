@@ -8,4 +8,10 @@ public interface SchemaTypeConverter {
         Schema schema,
         DescriptorProtos.DescriptorProto.Builder descriptorProto,
         DescriptorProtos.FileDescriptorProto.Builder fileDescriptorProtoBuilder);
+
+    default void addImportToProtobufSchema(DescriptorProtos.FileDescriptorProto.Builder fileDescriptorProtoBuilder, String importFile) {
+        if (!fileDescriptorProtoBuilder.getDependencyList().contains(importFile)) {
+            fileDescriptorProtoBuilder.addDependency(importFile);
+        }
+    }
 }

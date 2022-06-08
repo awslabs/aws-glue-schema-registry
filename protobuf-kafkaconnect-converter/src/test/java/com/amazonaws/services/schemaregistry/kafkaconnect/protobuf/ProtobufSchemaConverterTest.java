@@ -15,6 +15,7 @@ import com.google.protobuf.Descriptors;
 import com.google.protobuf.DynamicMessage;
 import com.google.protobuf.Message;
 import org.apache.kafka.connect.data.Field;
+import org.apache.kafka.common.cache.Cache;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.Struct;
@@ -229,5 +230,52 @@ public class ProtobufSchemaConverterTest {
             }
 
         }
+    }
+      
+    @Test
+    public void testSchemaCache_toConnectConversion() {
+        Cache<Descriptors.Descriptor, Schema> toConnectSchemaCache = protobufSchemaConverter.getToConnectSchemaCache();
+        assertEquals(0, toConnectSchemaCache.size());
+
+        Message protobufPrimitiveData = ToConnectTestDataGenerator.getPrimitiveProtobufMessages().get(0);
+        final byte[] serializedPrimitiveData = protobufPrimitiveData.toByteArray();
+        doReturn(protobufPrimitiveData).when(deserializer).deserialize(TOPIC_NAME, serializedPrimitiveData);
+        protobufSchemaConverter.toConnectData(TOPIC_NAME, serializedPrimitiveData);
+        assertEquals(1, toConnectSchemaCache.size());
+
+        //converting the same schema to see if the cache is working properly
+        doReturn(protobufPrimitiveData).when(deserializer).deserialize(TOPIC_NAME, serializedPrimitiveData);
+        protobufSchemaConverter.toConnectData(TOPIC_NAME, serializedPrimitiveData);
+        assertEquals(1, toConnectSchemaCache.size());
+
+        Message protobufEnumData = ToConnectTestDataGenerator.getEnumProtobufMessages().get(0);
+        final byte[] serializedEnumData = protobufEnumData.toByteArray();
+        doReturn(protobufEnumData).when(deserializer).deserialize(TOPIC_NAME, serializedEnumData);
+        protobufSchemaConverter.toConnectData(TOPIC_NAME, serializedEnumData);
+        assertEquals(2, toConnectSchemaCache.size());
+
+    }
+
+    @Test
+    public void testSchemaCache_fromConnectConversion() {
+        Cache<Schema, Descriptors.FileDescriptor> fromConnectSchemaCache = protobufSchemaConverter.getFromConnectSchemaCache();
+        assertEquals(0, fromConnectSchemaCache.size());
+
+        doReturn(new byte[] {}).when(serializer).serialize(eq(TOPIC_NAME), any());
+        Object connectPrimitiveData = ToProtobufTestDataGenerator.getPrimitiveTypesData();
+        Schema connectPrimitiveSchema = ToProtobufTestDataGenerator.getPrimitiveSchema(SCHEMA_NAME);
+        protobufSchemaConverter.fromConnectData(TOPIC_NAME, connectPrimitiveSchema, connectPrimitiveData);
+        assertEquals(1, fromConnectSchemaCache.size());
+
+        //converting the same schema to see if the cache is working properly
+        doReturn(new byte[] {}).when(serializer).serialize(eq(TOPIC_NAME), any());
+        protobufSchemaConverter.fromConnectData(TOPIC_NAME, connectPrimitiveSchema, connectPrimitiveData);
+        assertEquals(1, fromConnectSchemaCache.size());
+
+        doReturn(new byte[] {}).when(serializer).serialize(eq(TOPIC_NAME), any());
+        Object connectEnumData = ToProtobufTestDataGenerator.getEnumTypeData();
+        Schema connectEnumSchema = ToProtobufTestDataGenerator.getEnumSchema(SCHEMA_NAME);
+        protobufSchemaConverter.fromConnectData(TOPIC_NAME, connectEnumSchema, connectEnumData);
+        assertEquals(2, fromConnectSchemaCache.size());
     }
 }

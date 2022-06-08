@@ -69,4 +69,9 @@ public class ProtobufSchemaConverterConstants {
      * Specifies Connect schema type as int16.
      */
     public static final String CONNECT_SCHEMA_INT16 = "int16";
+
+    /**
+     * Import statement for Metadata type.
+     */
+    public static final String METADATA_IMPORT = "metadata/metadata.proto";
 }
