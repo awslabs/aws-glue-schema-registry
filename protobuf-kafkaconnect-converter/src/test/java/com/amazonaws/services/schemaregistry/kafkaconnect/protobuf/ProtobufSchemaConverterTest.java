@@ -228,7 +228,6 @@ public class ProtobufSchemaConverterTest {
             } else {
                 assertEquals(expectedFieldObject, actualFieldObject, fieldName);
             }
-
         }
     }
       
@@ -258,7 +257,8 @@ public class ProtobufSchemaConverterTest {
 
     @Test
     public void testSchemaCache_fromConnectConversion() {
-        Cache<Schema, Descriptors.FileDescriptor> fromConnectSchemaCache = protobufSchemaConverter.getFromConnectSchemaCache();
+        Cache<Schema, Descriptors.FileDescriptor> fromConnectSchemaCache =
+                protobufSchemaConverter.getFromConnectSchemaCache();
         assertEquals(0, fromConnectSchemaCache.size());
 
         doReturn(new byte[] {}).when(serializer).serialize(eq(TOPIC_NAME), any());
@@ -273,8 +273,8 @@ public class ProtobufSchemaConverterTest {
         assertEquals(1, fromConnectSchemaCache.size());
 
         doReturn(new byte[] {}).when(serializer).serialize(eq(TOPIC_NAME), any());
-        Object connectEnumData = ToProtobufTestDataGenerator.getEnumTypeData();
-        Schema connectEnumSchema = ToProtobufTestDataGenerator.getEnumSchema(SCHEMA_NAME);
+        Object connectEnumData = ToProtobufTestDataGenerator.getEnumTypeData("EnumType");
+        Schema connectEnumSchema = ToProtobufTestDataGenerator.getEnumSchema("EnumType");
         protobufSchemaConverter.fromConnectData(TOPIC_NAME, connectEnumSchema, connectEnumData);
         assertEquals(2, fromConnectSchemaCache.size());
     }
