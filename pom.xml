@@ -72,9 +72,12 @@
         <module>examples</module>
         <module>integration-tests</module>
         <module>jsonschema-kafkaconnect-converter</module>
+        <module>protobuf-kafkaconnect-converter</module>
     </modules>
 
     <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <glue.schema.registry.groupId>software.amazon.glue</glue.schema.registry.groupId>
         <aws.sdk.v2.version>2.17.122</aws.sdk.v2.version>
         <aws.sdk.v1.version>1.12.151</aws.sdk.v1.version>
@@ -373,7 +376,7 @@
                 <configuration>
                     <source>1.8</source>
                     <target>1.8</target>
-                    <encoding>utf-8</encoding>
+                    <encoding>${project.build.sourceEncoding}</encoding>
                 </configuration>
             </plugin>
             <plugin>
@@ -402,7 +405,7 @@
                     </dependency>
                 </dependencies>
                 <configuration>
-                    <excludes>**/apicurio/**</excludes>
+                    <excludes>**/apicurio/**, **/additionalTypes/**, **/metadata/**</excludes>
                     <suppressionsFileExpression>checkstyle.suppression.filter</suppressionsFileExpression>
                     <configLocation>${user.dir}/build-tools/src/main/resources/checkstyle.xml
                     </configLocation>
@@ -488,6 +491,8 @@
                                             com.amazonaws.services.schemaregistry.kafkaconnect.AWSKafkaAvroConverterConfig
                                         </exclude>
                                         <exclude>org.apache.avro</exclude>
+                                        <exclude>metadata</exclude>
+                                        <exclude>additionalTypes</exclude>
                                     </excludes>
                                 </rule>
                             </rules>

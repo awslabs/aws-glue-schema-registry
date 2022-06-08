@@ -14,9 +14,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
- * This will be removed once Apicurio releases the latest version with the json_name fix
- * https://github.com/Apicurio/apicurio-registry/blob/master/utils/protobuf-schema-utilities/src/main/java/io/apicurio/registry/utils/protobuf/schema/ProtobufSchemaLoader.java
  */
 
 package com.amazonaws.services.schemaregistry.utils.apicurio;
@@ -40,6 +37,7 @@ import java.io.InputStreamReader;
 import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
 
@@ -47,50 +45,55 @@ public class ProtobufSchemaLoader {
 
     private static final String GOOGLE_API_PATH = "google/type/";
     private static final String GOOGLE_WELLKNOWN_PATH = "google/protobuf/";
+    private static final String METADATA_PATH = "metadata/";
+    private static final String DECIMAL_PATH = "additionalTypes/";
     //Adding pre-built support for commonly used Google API Protos,
     //https://github.com/googleapis/googleapis
     //These files need to be manually loaded into the FileSystem
     //as Square doesn't support them by default.
     private final static Set<String> GOOGLE_API_PROTOS =
-            ImmutableSet.<String>builder()
-                    .add("money.proto")
-                    .add("timeofday.proto")
-                    .add("date.proto")
-                    .add("calendar_period.proto")
-                    .add("color.proto")
-                    .add("dayofweek.proto")
-                    .add("latlng.proto")
-                    .add("fraction.proto")
-                    .add("month.proto")
-                    .add("phone_number.proto")
-                    .add("postal_address.proto")
-                    .add("localized_text.proto")
-                    .add("interval.proto")
-                    .add("expr.proto")
-                    .add("quaternion.proto")
-                    .build();
+        ImmutableSet.<String>builder()
+            .add("money.proto")
+            .add("timeofday.proto")
+            .add("date.proto")
+            .add("calendar_period.proto")
+            .add("color.proto")
+            .add("dayofweek.proto")
+            .add("latlng.proto")
+            .add("fraction.proto")
+            .add("month.proto")
+            .add("phone_number.proto")
+            .add("postal_address.proto")
+            .add("localized_text.proto")
+            .add("interval.proto")
+            .add("expr.proto")
+            .add("quaternion.proto")
+            .build();
     //Adding support for Protobuf well-known types under package google.protobuf that are not covered by Square
     //https://developers.google.com/protocol-buffers/docs/reference/google.protobuf
     //These files need to be manually loaded into the FileSystem
     //as Square doesn't support them by default.
     private final static Set<String> GOOGLE_WELLKNOWN_PROTOS =
-            ImmutableSet.<String>builder()
-                    .add("api.proto")
-                    .add("field_mask.proto")
-                    .add("source_context.proto")
-                    .add("struct.proto")
-                    .add("type.proto")
-                    .build();
+        ImmutableSet.<String>builder()
+            .add("api.proto")
+            .add("field_mask.proto")
+            .add("source_context.proto")
+            .add("struct.proto")
+            .add("type.proto")
+            .build();
+
+    private final static String METADATA_PROTO = "metadata.proto";
+    private final static String DECIMAL_PROTO = "decimal.proto";
 
     private static FileSystem getFileSystem() throws IOException {
         final FileSystem inMemoryFileSystem =
-                Jimfs.newFileSystem(
-                        Configuration.builder(PathType.unix())
-                                .setRoots("/")
-                                .setWorkingDirectory("/")
-                                .setAttributeViews("basic")
-                                .setSupportedFeatures(Feature.SYMBOLIC_LINKS)
-                                .build());
+            Jimfs.newFileSystem(
+                Configuration.builder(PathType.unix())
+                    .setRoots("/")
+                    .setWorkingDirectory("/")
+                    .setAttributeViews("basic")
+                    .setSupportedFeatures(Feature.SYMBOLIC_LINKS)
+                    .build());
 
         final ClassLoader classLoader = ProtobufSchemaLoader.class.getClassLoader();
 
@@ -99,6 +102,12 @@ public class ProtobufSchemaLoader {
 
         createDirectory(GOOGLE_WELLKNOWN_PATH.split("/"), inMemoryFileSystem);
         loadProtoFiles(inMemoryFileSystem, classLoader, GOOGLE_WELLKNOWN_PROTOS, GOOGLE_WELLKNOWN_PATH);
+
+        createDirectory(METADATA_PATH.split("/"), inMemoryFileSystem);
+        loadProtoFiles(inMemoryFileSystem, classLoader, Collections.singleton(METADATA_PROTO), METADATA_PATH);
+
+        createDirectory(DECIMAL_PATH.split("/"), inMemoryFileSystem);
+        loadProtoFiles(inMemoryFileSystem, classLoader, Collections.singleton(DECIMAL_PROTO), DECIMAL_PATH);
 
         return inMemoryFileSystem;
     }
@@ -138,7 +147,7 @@ public class ProtobufSchemaLoader {
      * @return Schema - parsed and properly linked Schema.
      */
     public static ProtobufSchemaLoaderContext loadSchema(Optional<String> packageName, String fileName, String schemaDefinition)
-            throws IOException {
+        throws IOException {
         final FileSystem inMemoryFileSystem = getFileSystem();
 
         String [] dirs = {};

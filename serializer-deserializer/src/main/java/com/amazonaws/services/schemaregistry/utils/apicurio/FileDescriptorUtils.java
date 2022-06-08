@@ -14,102 +14,38 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
- * This will be removed once Apicurio releases the latest version with the json_name fix
- * https://github.com/Apicurio/apicurio-registry/blob/master/utils/protobuf-schema-utilities/src/main/java/io/apicurio/registry/utils/protobuf/schema/FileDescriptorUtils.java
  */
 
 package com.amazonaws.services.schemaregistry.utils.apicurio;
 
+import additionalTypes.Decimals;
 import com.google.common.collect.ImmutableList;
-import com.google.protobuf.AnyProto;
-import com.google.protobuf.ApiProto;
-import com.google.protobuf.DescriptorProtos;
+import com.google.protobuf.*;
 import com.google.protobuf.Descriptors.DescriptorValidationException;
 import com.google.protobuf.Descriptors.FieldDescriptor;
 import com.google.protobuf.Descriptors.FileDescriptor;
-import com.google.protobuf.DurationProto;
-import com.google.protobuf.EmptyProto;
-import com.google.protobuf.FieldMaskProto;
-import com.google.protobuf.StructProto;
-import com.google.protobuf.SourceContextProto;
-import com.google.protobuf.TimestampProto;
-import com.google.protobuf.TypeProto;
-import com.google.protobuf.WrappersProto;
-import com.google.type.CalendarPeriodProto;
-import com.google.type.ColorProto;
-import com.google.type.DateProto;
-import com.google.type.DayOfWeek;
-import com.google.type.ExprProto;
-import com.google.type.FractionProto;
-import com.google.type.IntervalProto;
-import com.google.type.LatLng;
-import com.google.type.LocalizedTextProto;
-import com.google.type.MoneyProto;
-import com.google.type.MonthProto;
-import com.google.type.PhoneNumberProto;
-import com.google.type.PostalAddressProto;
-import com.google.type.QuaternionProto;
-import com.google.type.TimeOfDayProto;
+import com.google.type.*;
 import com.squareup.wire.Syntax;
-import com.squareup.wire.schema.EnumConstant;
-import com.squareup.wire.schema.EnumType;
 import com.squareup.wire.schema.Field;
-import com.squareup.wire.schema.Location;
-import com.squareup.wire.schema.MessageType;
-import com.squareup.wire.schema.OneOf;
-import com.squareup.wire.schema.Options;
-import com.squareup.wire.schema.ProtoFile;
-import com.squareup.wire.schema.ProtoType;
-import com.squareup.wire.schema.Rpc;
 import com.squareup.wire.schema.Schema;
 import com.squareup.wire.schema.Service;
 import com.squareup.wire.schema.Type;
-import com.squareup.wire.schema.internal.parser.EnumConstantElement;
-import com.squareup.wire.schema.internal.parser.EnumElement;
-import com.squareup.wire.schema.internal.parser.ExtensionsElement;
-import com.squareup.wire.schema.internal.parser.FieldElement;
-import com.squareup.wire.schema.internal.parser.MessageElement;
-import com.squareup.wire.schema.internal.parser.OneOfElement;
-import com.squareup.wire.schema.internal.parser.OptionElement;
-import com.squareup.wire.schema.internal.parser.ProtoFileElement;
-import com.squareup.wire.schema.internal.parser.ReservedElement;
-import com.squareup.wire.schema.internal.parser.RpcElement;
-import com.squareup.wire.schema.internal.parser.ServiceElement;
-import com.squareup.wire.schema.internal.parser.TypeElement;
+import com.squareup.wire.schema.*;
+import com.squareup.wire.schema.internal.parser.*;
 import kotlin.ranges.IntRange;
+import metadata.ProtobufSchemaMetadata;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.CaseFormat.LOWER_UNDERSCORE;
 import static com.google.common.base.CaseFormat.UPPER_CAMEL;
-import static com.google.protobuf.DescriptorProtos.DescriptorProto;
-import static com.google.protobuf.DescriptorProtos.EnumDescriptorProto;
-import static com.google.protobuf.DescriptorProtos.EnumValueDescriptorProto;
-import static com.google.protobuf.DescriptorProtos.FieldDescriptorProto;
-import static com.google.protobuf.DescriptorProtos.FileDescriptorProto;
-import static com.google.protobuf.DescriptorProtos.FileOptions;
-import static com.google.protobuf.DescriptorProtos.MethodDescriptorProto;
-import static com.google.protobuf.DescriptorProtos.MethodOptions;
-import static com.google.protobuf.DescriptorProtos.OneofDescriptorProto;
-import static com.google.protobuf.DescriptorProtos.ServiceDescriptorProto;
+import static com.google.protobuf.DescriptorProtos.*;
 
 /**
- * @author Fabian Martinez, Ravindranath Kakarla
+ * @author Fabian Martinez, Ravindranath Kakarla, Carles Arnal
  */
 public class FileDescriptorUtils {
 
@@ -162,38 +98,40 @@ public class FileDescriptorUtils {
         //Support all the Protobuf WellKnownTypes
         //and the protos from Google API, https://github.com/googleapis/googleapis
         return new FileDescriptor[] {
-                ApiProto.getDescriptor().getFile(),
-                FieldMaskProto.getDescriptor().getFile(),
-                SourceContextProto.getDescriptor().getFile(),
-                TypeProto.getDescriptor().getFile(),
-                StructProto.getDescriptor().getFile(),
-                TimestampProto.getDescriptor().getFile(),
-                WrappersProto.getDescriptor().getFile(),
-                AnyProto.getDescriptor().getFile(),
-                EmptyProto.getDescriptor().getFile(),
-                DurationProto.getDescriptor().getFile(),
-                TimeOfDayProto.getDescriptor().getFile(),
-                DateProto.getDescriptor().getFile(),
-                CalendarPeriodProto.getDescriptor().getFile(),
-                ColorProto.getDescriptor().getFile(),
-                DayOfWeek.getDescriptor().getFile(),
-                LatLng.getDescriptor().getFile(),
-                FractionProto.getDescriptor().getFile(),
-                MoneyProto.getDescriptor().getFile(),
-                MonthProto.getDescriptor().getFile(),
-                PhoneNumberProto.getDescriptor().getFile(),
-                PostalAddressProto.getDescriptor().getFile(),
-                CalendarPeriodProto.getDescriptor().getFile(),
-                LocalizedTextProto.getDescriptor().getFile(),
-                IntervalProto.getDescriptor().getFile(),
-                ExprProto.getDescriptor().getFile(),
-                QuaternionProto.getDescriptor().getFile(),
-                PostalAddressProto.getDescriptor().getFile()
+            ApiProto.getDescriptor().getFile(),
+            FieldMaskProto.getDescriptor().getFile(),
+            SourceContextProto.getDescriptor().getFile(),
+            StructProto.getDescriptor().getFile(),
+            TypeProto.getDescriptor().getFile(),
+            TimestampProto.getDescriptor().getFile(),
+            WrappersProto.getDescriptor().getFile(),
+            AnyProto.getDescriptor().getFile(),
+            EmptyProto.getDescriptor().getFile(),
+            DurationProto.getDescriptor().getFile(),
+            TimeOfDayProto.getDescriptor().getFile(),
+            DateProto.getDescriptor().getFile(),
+            CalendarPeriodProto.getDescriptor().getFile(),
+            ColorProto.getDescriptor().getFile(),
+            DayOfWeek.getDescriptor().getFile(),
+            LatLng.getDescriptor().getFile(),
+            FractionProto.getDescriptor().getFile(),
+            MoneyProto.getDescriptor().getFile(),
+            MonthProto.getDescriptor().getFile(),
+            PhoneNumberProto.getDescriptor().getFile(),
+            PostalAddressProto.getDescriptor().getFile(),
+            CalendarPeriodProto.getDescriptor().getFile(),
+            LocalizedTextProto.getDescriptor().getFile(),
+            IntervalProto.getDescriptor().getFile(),
+            ExprProto.getDescriptor().getFile(),
+            QuaternionProto.getDescriptor().getFile(),
+            PostalAddressProto.getDescriptor().getFile(),
+            ProtobufSchemaMetadata.getDescriptor().getFile(),
+            Decimals.getDescriptor().getFile()
         };
     }
 
     public static FileDescriptor protoFileToFileDescriptor(ProtoFileElement element)
-            throws DescriptorValidationException {
+        throws DescriptorValidationException {
         return protoFileToFileDescriptor(element, "default.proto");
     }
 
@@ -202,11 +140,11 @@ public class FileDescriptorUtils {
         Objects.requireNonNull(protoFileName);
 
         return protoFileToFileDescriptor(element.toSchema(), protoFileName,
-                Optional.ofNullable(element.getPackageName()));
+            Optional.ofNullable(element.getPackageName()));
     }
 
     public static FileDescriptor protoFileToFileDescriptor(String schemaDefinition, String protoFileName, Optional<String> optionalPackageName)
-            throws DescriptorValidationException {
+        throws DescriptorValidationException {
         Objects.requireNonNull(schemaDefinition);
         Objects.requireNonNull(protoFileName);
 
@@ -217,7 +155,7 @@ public class FileDescriptorUtils {
         final ProtobufSchemaLoader.ProtobufSchemaLoaderContext protobufSchemaLoaderContext;
         try {
             protobufSchemaLoaderContext =
-                    ProtobufSchemaLoader.loadSchema(optionalPackageName, protoFileName, schemaDefinition);
+                ProtobufSchemaLoader.loadSchema(optionalPackageName, protoFileName, schemaDefinition);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -245,7 +183,7 @@ public class FileDescriptorUtils {
             Type type = schemaContext.getType(protoType);
             if (type instanceof MessageType) {
                 DescriptorProto
-                        message = messageElementToDescriptorProto((MessageType) type, schemaContext, element);
+                    message = messageElementToDescriptorProto((MessageType) type, schemaContext, element);
                 schema.addMessageType(message);
             } else if (type instanceof EnumType) {
                 EnumDescriptorProto message = enumElementToProto((EnumType) type);
@@ -278,110 +216,110 @@ public class FileDescriptorUtils {
 
         String javaPackageName = findOptionString(JAVA_PACKAGE_OPTION, element.getOptions());
         if (javaPackageName != null) {
-            FileOptions options = DescriptorProtos.FileOptions.newBuilder().setJavaPackage(javaPackageName).build();
+            FileOptions options = FileOptions.newBuilder().setJavaPackage(javaPackageName).build();
             schema.mergeOptions(options);
         }
 
         String javaOuterClassname = findOptionString(JAVA_OUTER_CLASSNAME_OPTION, element.getOptions());
         if (javaOuterClassname != null) {
-            FileOptions options = DescriptorProtos.FileOptions.newBuilder().setJavaOuterClassname(javaOuterClassname).build();
+            FileOptions options = FileOptions.newBuilder().setJavaOuterClassname(javaOuterClassname).build();
             schema.mergeOptions(options);
         }
 
         Boolean javaMultipleFiles = findOptionBoolean(JAVA_MULTIPLE_FILES_OPTION, element.getOptions());
         if (javaMultipleFiles != null) {
-            FileOptions options = DescriptorProtos.FileOptions.newBuilder().setJavaMultipleFiles(javaMultipleFiles).build();
+            FileOptions options = FileOptions.newBuilder().setJavaMultipleFiles(javaMultipleFiles).build();
             schema.mergeOptions(options);
         }
 
         Boolean javaStringCheckUtf8 = findOptionBoolean(JAVA_STRING_CHECK_UTF8_OPTION, element.getOptions());
         if (javaStringCheckUtf8 != null) {
-            FileOptions options = DescriptorProtos.FileOptions.newBuilder().setJavaStringCheckUtf8(javaStringCheckUtf8).build();
+            FileOptions options = FileOptions.newBuilder().setJavaStringCheckUtf8(javaStringCheckUtf8).build();
             schema.mergeOptions(options);
         }
 
         Boolean javaGenericServices= findOptionBoolean(JAVA_GENERIC_SERVICES_OPTION, element.getOptions());
         if (javaGenericServices != null) {
-            FileOptions options = DescriptorProtos.FileOptions.newBuilder().setJavaGenericServices(javaGenericServices).build();
+            FileOptions options = FileOptions.newBuilder().setJavaGenericServices(javaGenericServices).build();
             schema.mergeOptions(options);
         }
 
         Boolean ccGenericServices= findOptionBoolean(CC_GENERIC_SERVICES_OPTION, element.getOptions());
         if (ccGenericServices != null) {
-            FileOptions options = DescriptorProtos.FileOptions.newBuilder().setCcGenericServices(ccGenericServices).build();
+            FileOptions options = FileOptions.newBuilder().setCcGenericServices(ccGenericServices).build();
             schema.mergeOptions(options);
         }
 
         Boolean ccEnableArenas= findOptionBoolean(CC_ENABLE_ARENAS_OPTION, element.getOptions());
         if (ccEnableArenas != null) {
-            FileOptions options = DescriptorProtos.FileOptions.newBuilder().setCcEnableArenas(ccEnableArenas).build();
+            FileOptions options = FileOptions.newBuilder().setCcEnableArenas(ccEnableArenas).build();
             schema.mergeOptions(options);
         }
 
         String csharpNamespace = findOptionString(CSHARP_NAMESPACE_OPTION, element.getOptions());
         if (csharpNamespace != null) {
-            FileOptions options = DescriptorProtos.FileOptions.newBuilder().setCsharpNamespace(csharpNamespace).build();
+            FileOptions options = FileOptions.newBuilder().setCsharpNamespace(csharpNamespace).build();
             schema.mergeOptions(options);
         }
 
         String goPackageName = findOptionString(GO_PACKAGE_OPTION, element.getOptions());
         if (goPackageName != null) {
-            FileOptions options = DescriptorProtos.FileOptions.newBuilder().setGoPackage(goPackageName).build();
+            FileOptions options = FileOptions.newBuilder().setGoPackage(goPackageName).build();
             schema.mergeOptions(options);
         }
 
         String objcClassPrefix = findOptionString(OBJC_CLASS_PREFIX_OPTION, element.getOptions());
         if (objcClassPrefix != null) {
-            FileOptions options = DescriptorProtos.FileOptions.newBuilder().setObjcClassPrefix(objcClassPrefix).build();
+            FileOptions options = FileOptions.newBuilder().setObjcClassPrefix(objcClassPrefix).build();
             schema.mergeOptions(options);
         }
 
         Boolean phpGenericServices= findOptionBoolean(PHP_GENERIC_SERVICES_OPTION, element.getOptions());
         if (phpGenericServices != null) {
-            FileOptions options = DescriptorProtos.FileOptions.newBuilder().setPhpGenericServices(phpGenericServices).build();
+            FileOptions options = FileOptions.newBuilder().setPhpGenericServices(phpGenericServices).build();
             schema.mergeOptions(options);
         }
 
         String phpClassPrefix = findOptionString(PHP_CLASS_PREFIX_OPTION, element.getOptions());
         if (phpClassPrefix != null) {
-            FileOptions options = DescriptorProtos.FileOptions.newBuilder().setPhpClassPrefix(phpClassPrefix).build();
+            FileOptions options = FileOptions.newBuilder().setPhpClassPrefix(phpClassPrefix).build();
             schema.mergeOptions(options);
         }
 
         String phpMetadataNamespace = findOptionString(PHP_METADATA_NAMESPACE_OPTION, element.getOptions());
         if (phpMetadataNamespace != null) {
-            FileOptions options = DescriptorProtos.FileOptions.newBuilder().setPhpMetadataNamespace(phpMetadataNamespace).build();
+            FileOptions options = FileOptions.newBuilder().setPhpMetadataNamespace(phpMetadataNamespace).build();
             schema.mergeOptions(options);
         }
 
         String phpNamespace = findOptionString(PHP_NAMESPACE_OPTION, element.getOptions());
         if (phpNamespace != null) {
-            FileOptions options = DescriptorProtos.FileOptions.newBuilder().setPhpNamespace(phpNamespace).build();
+            FileOptions options = FileOptions.newBuilder().setPhpNamespace(phpNamespace).build();
             schema.mergeOptions(options);
         }
 
         Boolean pyGenericServices= findOptionBoolean(PY_GENERIC_SERVICES_OPTION, element.getOptions());
         if (pyGenericServices != null) {
-            FileOptions options = DescriptorProtos.FileOptions.newBuilder().setPyGenericServices(pyGenericServices).build();
+            FileOptions options = FileOptions.newBuilder().setPyGenericServices(pyGenericServices).build();
             schema.mergeOptions(options);
         }
 
         String rubyPackage = findOptionString(RUBY_PACKAGE_OPTION, element.getOptions());
         if (rubyPackage != null) {
-            FileOptions options = DescriptorProtos.FileOptions.newBuilder().setRubyPackage(rubyPackage).build();
+            FileOptions options = FileOptions.newBuilder().setRubyPackage(rubyPackage).build();
             schema.mergeOptions(options);
         }
 
         String swiftPrefix = findOptionString(SWIFT_PREFIX_OPTION, element.getOptions());
         if (swiftPrefix != null) {
-            FileOptions options = DescriptorProtos.FileOptions.newBuilder().setSwiftPrefix(swiftPrefix).build();
+            FileOptions options = FileOptions.newBuilder().setSwiftPrefix(swiftPrefix).build();
             schema.mergeOptions(options);
         }
 
         FileOptions.OptimizeMode optimizeFor = findOption(OPTIMIZE_FOR_OPTION, element.getOptions())
                 .map(o -> FileOptions.OptimizeMode.valueOf(o.getValue().toString())).orElse(null);
         if (optimizeFor != null) {
-            FileOptions options = DescriptorProtos.FileOptions.newBuilder().setOptimizeFor(optimizeFor).build();
+            FileOptions options = FileOptions.newBuilder().setOptimizeFor(optimizeFor).build();
             schema.mergeOptions(options);
         }
 
@@ -410,12 +348,14 @@ public class FileDescriptorUtils {
             return isNotNested;
         }
 
-        //In case the package is not defined, we select the types that are not google types.
-        return !typeName.startsWith("google.type") && !typeName.startsWith("google.protobuf");
+        //In case the package is not defined, we select the types that are not google types or metadata types.
+        return !typeName.startsWith("google.type") && !typeName.startsWith("google.protobuf")
+            && !typeName.startsWith("metadata")
+            && !typeName.startsWith("additionalTypes");
     }
 
     private static DescriptorProto messageElementToDescriptorProto(
-            MessageType messageElem, Schema schema, ProtoFile element) {
+        MessageType messageElem, Schema schema, ProtoFile element) {
         ProtobufMessage message = new ProtobufMessage();
         message.protoBuilder().setName(messageElem.getType().getSimpleName());
 
@@ -488,9 +428,9 @@ public class FileDescriptorUtils {
                                     .build());
 
                     protobufMapMessage
-                            .addField(OPTIONAL, determineFieldType(keyType, schema), String.valueOf(keyType), KEY_FIELD, 1, null, null, null, null, null, null, null, null);
+                            .addField(OPTIONAL, determineFieldType(keyType, schema), String.valueOf(keyType), KEY_FIELD, 1, null, null, null, null, null, null, null, null, null, null);
                     protobufMapMessage
-                            .addField(OPTIONAL, determineFieldType(valueType, schema), String.valueOf(valueType), VALUE_FIELD, 2, null, null, null, null, null, null, null, null);
+                            .addField(OPTIONAL, determineFieldType(valueType, schema), String.valueOf(valueType), VALUE_FIELD, 2, null, null, null, null, null, null, null, null, null, null);
                     allNestedTypes.put(field.getLocation(), mapMessage.build());
                 }
 
@@ -503,9 +443,14 @@ public class FileDescriptorUtils {
                 DescriptorProtos.FieldOptions.JSType jsType = findOption(JSTYPE_OPTION, field.getOptions())
                         .map(o -> DescriptorProtos.FieldOptions.JSType.valueOf(o.getValue().toString())).orElse(null);
 
+                String metadataKey = findOptionString(ProtobufSchemaMetadata.metadataKey.getDescriptor().getFullName(),
+                        field.getOptions());
+                String metadataValue = findOptionString(ProtobufSchemaMetadata.metadataValue.getDescriptor().getFullName(),
+                        field.getOptions());
+
                 allFields.add(ProtobufMessage.buildFieldDescriptorProto(
                         label, fieldType, fieldTypeName, field.getName(), field.getTag(), field.getDefault(),
-                        jsonName, isDeprecated, isPacked, cType, jsType, null, null));
+                        jsonName, isDeprecated, isPacked, cType, jsType, metadataKey, metadataValue, null, null));
             }
         }
 
@@ -533,6 +478,10 @@ public class FileDescriptorUtils {
                         .map(o -> DescriptorProtos.FieldOptions.CType.valueOf(o.getValue().toString())).orElse(null);
                 DescriptorProtos.FieldOptions.JSType oneOfJsType = findOption(JSTYPE_OPTION, oneOfField.getOptions())
                         .map(o -> DescriptorProtos.FieldOptions.JSType.valueOf(o.getValue().toString())).orElse(null);
+                String metadataKey = findOptionString(ProtobufSchemaMetadata.metadataKey.getDescriptor().getFullName(),
+                        oneOfField.getOptions());
+                String metadataValue = findOptionString(ProtobufSchemaMetadata.metadataValue.getDescriptor().getFullName(),
+                        oneOfField.getOptions());
 
                 allFields.add(ProtobufMessage.buildFieldDescriptorProto(
                         OPTIONAL,
@@ -546,6 +495,8 @@ public class FileDescriptorUtils {
                         oneOfIsPacked,
                         oneOfCType,
                         oneOfJsType,
+                        metadataKey,
+                        metadataValue,
                         message.protoBuilder().getOneofDeclCount() - 1,
                         isProto3OptionalField));
 
@@ -714,6 +665,16 @@ public class FileDescriptorUtils {
 
     private static Boolean findOptionBoolean(String name, Options options) {
         return findOption(name, options).map(o -> Boolean.valueOf(o.getValue().toString())).orElse(null);
+    }
+
+    public static ProtoFileElement fileDescriptorWithDepsToProtoFile(
+            FileDescriptor file, Map<String, ProtoFileElement> dependencies
+    ) {
+        for (FileDescriptor dependency : file.getDependencies()) {
+            String depName = dependency.getName();
+            dependencies.put(depName, fileDescriptorWithDepsToProtoFile(dependency, dependencies));
+        }
+        return fileDescriptorToProtoFile(file.toProto());
     }
 
     public static ProtoFileElement fileDescriptorToProtoFile(FileDescriptorProto file) {
@@ -907,9 +868,9 @@ public class FileDescriptorUtils {
         return new MessageElement(DEFAULT_LOCATION, name, "", nested.build(), options.build(),
                 reserved.build(), fields.build(),
                 oneofs.stream()
-                        //Ignore oneOfs with no fields (like Proto3 Optional)
-                        .filter(e -> e.getValue().build().size() != 0)
-                        .map(e -> toOneof(e.getKey(), e.getValue())).collect(Collectors.toList()),
+                    //Ignore oneOfs with no fields (like Proto3 Optional)
+                    .filter(e -> e.getValue().build().size() != 0)
+                    .map(e -> toOneof(e.getKey(), e.getValue())).collect(Collectors.toList()),
                 extensions.build(), Collections.emptyList());
     }
 
@@ -934,7 +895,7 @@ public class FileDescriptorUtils {
         return new EnumElement(DEFAULT_LOCATION, name, "", options.build(), constants.build());
     }
 
-    private static ServiceElement toService(DescriptorProtos.ServiceDescriptorProto sv) {
+    private static ServiceElement toService(ServiceDescriptorProto sv) {
         String name = sv.getName();
         ImmutableList.Builder<RpcElement> rpcs = ImmutableList.builder();
         for (MethodDescriptorProto md : sv.getMethodList()) {
@@ -960,7 +921,7 @@ public class FileDescriptorUtils {
         }
         if (fieldDescriptorOptions.hasDeprecated()) {
             OptionElement option = new OptionElement(DEPRECATED_OPTION, booleanKind, fieldDescriptorOptions.getDeprecated(),
-                    false);
+                false);
             options.add(option);
         }
         if (fieldDescriptorOptions.hasCtype()) {
@@ -970,6 +931,18 @@ public class FileDescriptorUtils {
         if (fieldDescriptorOptions.hasJstype()) {
             OptionElement option = new OptionElement(JSTYPE_OPTION, enumKind, fieldDescriptorOptions.getJstype(), false);
             options.add(option);
+        }
+        if (fieldDescriptorOptions.hasExtension(ProtobufSchemaMetadata.metadataKey)) {
+            OptionElement keyOption = new OptionElement(
+                ProtobufSchemaMetadata.metadataKey.getDescriptor().getFullName(), stringKind,
+                fieldDescriptorOptions.getExtension(ProtobufSchemaMetadata.metadataKey), false);
+            options.add(keyOption);
+        }
+        if (fieldDescriptorOptions.hasExtension(ProtobufSchemaMetadata.metadataValue)) {
+            OptionElement valueOption = new OptionElement(
+                ProtobufSchemaMetadata.metadataValue.getDescriptor().getFullName(), stringKind,
+                fieldDescriptorOptions.getExtension(ProtobufSchemaMetadata.metadataValue), false);
+            options.add(valueOption);
         }
 
         //Implicitly jsonName to null as Options is already setting it. Setting it here results in duplicate json_name
@@ -1044,4 +1017,187 @@ public class FileDescriptorUtils {
         return defaultJsonName;
     }
 
+    public static Descriptors.Descriptor toDescriptor(String name, ProtoFileElement protoFileElement, Map<String, ProtoFileElement> dependencies) {
+        return toDynamicSchema(name, protoFileElement, dependencies).getMessageDescriptor(name);
+    }
+
+    public static MessageElement firstMessage(ProtoFileElement fileElement) {
+        for (TypeElement typeElement : fileElement.getTypes()) {
+            if (typeElement instanceof MessageElement) {
+                return (MessageElement) typeElement;
+            }
+        }
+        //Intended null return
+        return null;
+    }
+
+    /*
+     * DynamicSchema is used as a temporary helper class and should not be exposed in the API.
+     */
+    private static DynamicSchema toDynamicSchema(
+            String name, ProtoFileElement rootElem, Map<String, ProtoFileElement> dependencies
+    ) {
+
+        DynamicSchema.Builder schema = DynamicSchema.newBuilder();
+        try {
+            Syntax syntax = rootElem.getSyntax();
+            if (syntax != null) {
+                schema.setSyntax(syntax.toString());
+            }
+            if (rootElem.getPackageName() != null) {
+                schema.setPackage(rootElem.getPackageName());
+            }
+            for (TypeElement typeElem : rootElem.getTypes()) {
+                if (typeElem instanceof MessageElement) {
+                    MessageDefinition message = toDynamicMessage((MessageElement) typeElem);
+                    schema.addMessageDefinition(message);
+                } else if (typeElem instanceof EnumElement) {
+                    EnumDefinition enumer = toDynamicEnum((EnumElement) typeElem);
+                    schema.addEnumDefinition(enumer);
+                }
+            }
+            for (String ref : rootElem.getImports()) {
+                ProtoFileElement dep = dependencies.get(ref);
+                if (dep != null) {
+                    schema.addDependency(ref);
+                    schema.addSchema(toDynamicSchema(ref, dep, dependencies));
+                }
+            }
+            for (String ref : rootElem.getPublicImports()) {
+                ProtoFileElement dep = dependencies.get(ref);
+                if (dep != null) {
+                    schema.addPublicDependency(ref);
+                    schema.addSchema(toDynamicSchema(ref, dep, dependencies));
+                }
+            }
+            String javaPackageName = findOption("java_package", rootElem.getOptions())
+                    .map(o -> o.getValue().toString()).orElse(null);
+            if (javaPackageName != null) {
+                schema.setJavaPackage(javaPackageName);
+            }
+            String javaOuterClassname = findOption("java_outer_classname", rootElem.getOptions())
+                    .map(o -> o.getValue().toString()).orElse(null);
+            if (javaOuterClassname != null) {
+                schema.setJavaOuterClassname(javaOuterClassname);
+            }
+            Boolean javaMultipleFiles = findOption("java_multiple_files", rootElem.getOptions())
+                    .map(o -> Boolean.valueOf(o.getValue().toString())).orElse(null);
+            if (javaMultipleFiles != null) {
+                schema.setJavaMultipleFiles(javaMultipleFiles);
+            }
+            schema.setName(name);
+            return schema.build();
+        } catch (DescriptorValidationException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    private static MessageDefinition toDynamicMessage(
+            MessageElement messageElem
+    ) {
+        MessageDefinition.Builder message = MessageDefinition.newBuilder(messageElem.getName());
+        for (TypeElement type : messageElem.getNestedTypes()) {
+            if (type instanceof MessageElement) {
+                message.addMessageDefinition(toDynamicMessage((MessageElement) type));
+            } else if (type instanceof EnumElement) {
+                message.addEnumDefinition(toDynamicEnum((EnumElement) type));
+            }
+        }
+        Set<String> added = new HashSet<>();
+        for (OneOfElement oneof : messageElem.getOneOfs()) {
+            MessageDefinition.OneofBuilder oneofBuilder = message.addOneof(oneof.getName());
+            for (FieldElement field : oneof.getFields()) {
+                String defaultVal = field.getDefaultValue();
+                String jsonName = findOption("json_name", field.getOptions())
+                        .map(o -> o.getValue().toString()).orElse(null);
+                oneofBuilder.addField(
+                        field.getType(),
+                        field.getName(),
+                        field.getTag(),
+                        defaultVal,
+                        jsonName
+                );
+                added.add(field.getName());
+            }
+        }
+        // Process fields after messages so that any newly created map entry messages are at the end
+        for (FieldElement field : messageElem.getFields()) {
+            if (added.contains(field.getName())) {
+                continue;
+            }
+            Field.Label fieldLabel = field.getLabel();
+            String label = fieldLabel != null ? fieldLabel.toString().toLowerCase() : null;
+            String fieldType = field.getType();
+            String defaultVal = field.getDefaultValue();
+            String jsonName = field.getJsonName();
+            Boolean isPacked = findOption("packed", field.getOptions())
+                    .map(o -> Boolean.valueOf(o.getValue().toString())).orElse(null);
+            ProtoType protoType = ProtoType.get(fieldType);
+            ProtoType keyType = protoType.getKeyType();
+            ProtoType valueType = protoType.getValueType();
+            // Map fields are only permitted in messages
+            if (protoType.isMap() && keyType != null && valueType != null) {
+                label = "repeated";
+                fieldType = toMapEntry(field.getName());
+                MessageDefinition.Builder mapMessage = MessageDefinition.newBuilder(fieldType);
+                mapMessage.setMapEntry(true);
+                mapMessage.addField(null, keyType.getSimpleName(), KEY_FIELD, 1, null);
+                mapMessage.addField(null, valueType.getSimpleName(), VALUE_FIELD, 2, null);
+                message.addMessageDefinition(mapMessage.build());
+            }
+            message.addField(
+                    label,
+                    fieldType,
+                    field.getName(),
+                    field.getTag(),
+                    defaultVal,
+                    jsonName,
+                    isPacked
+            );
+        }
+        for (ReservedElement reserved : messageElem.getReserveds()) {
+            for (Object elem : reserved.getValues()) {
+                if (elem instanceof String) {
+                    message.addReservedName((String) elem);
+                } else if (elem instanceof Integer) {
+                    int tag = (Integer) elem;
+                    message.addReservedRange(tag, tag);
+                } else if (elem instanceof IntRange) {
+                    IntRange range = (IntRange) elem;
+                    message.addReservedRange(range.getStart(), range.getEndInclusive());
+                } else {
+                    throw new IllegalStateException("Unsupported reserved type: " + elem.getClass()
+                            .getName());
+                }
+            }
+        }
+        Boolean isMapEntry = findOption("map_entry", messageElem.getOptions())
+                .map(o -> Boolean.valueOf(o.getValue().toString())).orElse(null);
+        if (isMapEntry != null) {
+            message.setMapEntry(isMapEntry);
+        }
+        return message.build();
+    }
+
+    public static Optional<OptionElement> findOption(String name, List<OptionElement> options) {
+        return options.stream().filter(o -> o.getName().equals(name)).findFirst();
+    }
+
+    private static EnumDefinition toDynamicEnum(EnumElement enumElem) {
+        Boolean allowAlias = findOption("allow_alias", enumElem.getOptions())
+                .map(o -> Boolean.valueOf(o.getValue().toString())).orElse(null);
+        EnumDefinition.Builder enumer = EnumDefinition.newBuilder(enumElem.getName(), allowAlias);
+        for (EnumConstantElement constant : enumElem.getConstants()) {
+            enumer.addValue(constant.getName(), constant.getTag());
+        }
+        return enumer.build();
+    }
+
+    public static String toMapField(String s) {
+        if (s.endsWith(MAP_ENTRY_SUFFIX)) {
+            s = s.substring(0, s.length() - MAP_ENTRY_SUFFIX.length());
+            s = UPPER_CAMEL.to(LOWER_UNDERSCORE, s);
+        }
+        return s;
+    }
 }
