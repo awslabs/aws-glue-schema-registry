@@ -4,7 +4,6 @@ import com.google.protobuf.DescriptorProtos;
 import org.apache.kafka.connect.data.Schema;
 
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterUtils.getTypeName;
-import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterUtils.isEnumType;
 
 public class ArraySchemaTypeConverter implements SchemaTypeConverter {
 
