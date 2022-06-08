@@ -72,6 +72,7 @@
         <module>examples</module>
         <module>integration-tests</module>
         <module>jsonschema-kafkaconnect-converter</module>
+        <module>protobuf-kafkaconnect-converter</module>
     </modules>
 
     <properties>
@@ -402,7 +403,7 @@
                     </dependency>
                 </dependencies>
                 <configuration>
-                    <excludes>**/apicurio/**</excludes>
+                    <excludes>**/apicurio/**, **/additionalTypes/**, **/metadata/**</excludes>
                     <suppressionsFileExpression>checkstyle.suppression.filter</suppressionsFileExpression>
                     <configLocation>${user.dir}/build-tools/src/main/resources/checkstyle.xml
                     </configLocation>
@@ -488,6 +489,8 @@
                                             com.amazonaws.services.schemaregistry.kafkaconnect.AWSKafkaAvroConverterConfig
                                         </exclude>
                                         <exclude>org.apache.avro</exclude>
+                                        <exclude>metadata</exclude>
+                                        <exclude>additionalTypes</exclude>
                                     </excludes>
                                 </rule>
                             </rules>

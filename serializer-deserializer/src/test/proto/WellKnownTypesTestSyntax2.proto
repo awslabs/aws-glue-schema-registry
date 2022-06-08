@@ -24,7 +24,6 @@ import "google/type/month.proto";
 import "google/type/postal_address.proto";
 import "google/type/quaternion.proto";
 import "google/type/timeofday.proto";
-
 import "google/type/phone_number.proto";
 import "google/type/localized_text.proto";
 import "google/type/interval.proto";

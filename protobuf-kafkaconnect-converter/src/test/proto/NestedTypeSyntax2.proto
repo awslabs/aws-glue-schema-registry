@@ -1,0 +1,23 @@
+package com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax2;
+
+message NestedType {
+  required Address address = 1;
+  required Status status = 2;
+  required Customer customer = 3;
+  map<string, bool> mapping = 4;
+  optional int32 id = 5;
+
+  message Customer {
+    required string name = 1;
+  }
+}
+
+message Address {
+  required string street = 1;
+  required int32 zipcode = 2;
+}
+
+enum Status {
+  VALID = 0;
+  INVALID = 1;
+}

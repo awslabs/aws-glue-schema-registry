@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax3;
+
+message OneofType {
+  oneof customer {
+    string name = 5;
+    int32 age = 6;
+  }
+  oneof order {
+    int32 id = 1;
+    bool shipped = 2;
+  }
+}
