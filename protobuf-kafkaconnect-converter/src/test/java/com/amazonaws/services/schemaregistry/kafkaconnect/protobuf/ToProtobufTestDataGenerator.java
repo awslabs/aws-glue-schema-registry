@@ -60,7 +60,8 @@ public class ToProtobufTestDataGenerator {
 
     @SneakyThrows
     public static String getProtobufSchema(String fileName) {
-        return new String(Files.readAllBytes(Paths.get(TEST_RESOURCE_PATH, fileName)), StandardCharsets.UTF_8);
+        return new String(Files.readAllBytes(Paths.get(TEST_RESOURCE_PATH, fileName)), StandardCharsets.UTF_8)
+                .replaceAll("\r\n", "\n");
     }
 
     @SneakyThrows
