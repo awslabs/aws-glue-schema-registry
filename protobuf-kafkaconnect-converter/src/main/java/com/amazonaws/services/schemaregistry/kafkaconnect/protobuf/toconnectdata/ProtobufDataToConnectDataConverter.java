@@ -2,7 +2,11 @@ package com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.toconnectdat
 
 import additionalTypes.Decimals;
 import com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterUtils;
+import com.google.protobuf.ByteString;
+import com.google.protobuf.Descriptors;
+import com.google.protobuf.Message;
 import com.google.type.TimeOfDay;
+import lombok.SneakyThrows;
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Struct;
@@ -11,11 +15,6 @@ import org.apache.kafka.connect.data.Time;
 import org.apache.kafka.connect.data.Timestamp;
 import org.apache.kafka.connect.data.Decimal;
 import com.google.protobuf.util.Timestamps;
-import com.google.protobuf.ByteString;
-import com.google.protobuf.Descriptors;
-import com.google.protobuf.Enum;
-import com.google.protobuf.MapEntry;
-import com.google.protobuf.Message;
 import lombok.NonNull;
 import org.apache.kafka.connect.errors.DataException;
 
@@ -105,21 +104,23 @@ public class ProtobufDataToConnectDataConverter {
         return units.add(fractionalPart);
     }
 
+    @SneakyThrows
     private Object toConnectDataField(Schema schema, Object value) {
         if (Date.SCHEMA.name().equals(schema.name())) {
-            com.google.type.Date date = (com.google.type.Date) value;
+            com.google.type.Date date = com.google.type.Date.parseFrom(((Message) value).toByteArray());
             return ProtobufSchemaConverterUtils.convertFromGoogleDate(date);
         }
         if (Timestamp.SCHEMA.name().equals(schema.name())) {
-            com.google.protobuf.Timestamp timestamp = (com.google.protobuf.Timestamp) value;
+            com.google.protobuf.Timestamp timestamp =
+                    com.google.protobuf.Timestamp.parseFrom(((Message) value).toByteArray());
             return Timestamp.toLogical(schema, Timestamps.toMillis(timestamp));
         }
         if (Time.SCHEMA.name().equals(schema.name())) {
-            TimeOfDay time = (TimeOfDay) value;
+            TimeOfDay time = TimeOfDay.parseFrom(((Message) value).toByteArray());
             return ProtobufSchemaConverterUtils.convertFromGoogleTime(time);
         }
         if (Decimal.schema(DECIMAL_DEFAULT_SCALE).name().equals(schema.name())) {
-            Decimals.Decimal decimal = (Decimals.Decimal) value;
+            Decimals.Decimal decimal = Decimals.Decimal.parseFrom(((Message) value).toByteArray());
             return fromDecimalProto(decimal);
         }
         switch (schema.type()) {
@@ -177,11 +178,11 @@ public class ProtobufDataToConnectDataConverter {
                 return array;
             }
             case MAP: {
-                final Collection<MapEntry> original = (Collection<MapEntry>) value;
+                final Collection<Message> original = (Collection<Message>) value;
                 final Map<Object, Object> map = original.stream().collect(
                         Collectors.toMap(
-                                entry -> toConnectDataField(schema.keySchema(), entry.getKey()),
-                                entry -> toConnectDataField(schema.valueSchema(), entry.getValue())
+                                entry -> toConnectDataField(schema.keySchema(), getMapField(entry, "key")),
+                                entry -> toConnectDataField(schema.valueSchema(), getMapField(entry, "value"))
                 ));
                 return map;
             }
@@ -191,6 +192,11 @@ public class ProtobufDataToConnectDataConverter {
             default:
                 throw new DataException("Cannot convert unrecognized schema type: " + schema.type());
         }
+    }
+
+    private Object getMapField(Message mapEntry, String fieldName) {
+        Descriptors.FieldDescriptor field = getFieldByName(mapEntry, fieldName);
+        return mapEntry.getField(field);
     }
 
     private Descriptors.FieldDescriptor getFieldByName(Message message, String fieldName) {

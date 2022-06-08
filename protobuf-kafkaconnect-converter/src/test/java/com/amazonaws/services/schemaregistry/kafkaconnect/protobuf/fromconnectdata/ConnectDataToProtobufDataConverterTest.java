@@ -56,7 +56,6 @@ public class ConnectDataToProtobufDataConverterTest {
 
     @Test
     public void convert_ForArrayType_ConvertsSuccessfully() {
-        // TODO add test case for repeated Message/Enum and other complex types
         final DynamicMessage arrayMessage = ToProtobufTestDataGenerator.getProtobufArrayMessage();
         final Descriptors.FileDescriptor fileDescriptor = arrayMessage.getDescriptorForType().getFile();
         final Schema arraySchema = ToProtobufTestDataGenerator.getArraySchema("arrayProtobufSchema");
@@ -182,9 +181,10 @@ public class ConnectDataToProtobufDataConverterTest {
     public void convert_ThrowsException_WhenIncorrectSchemaTypeIsSentToConverter(DataConverter dataConverter, Schema schema) {
         final DynamicMessage anyMessage = ToProtobufTestDataGenerator.getProtobufPrimitiveMessage();
         final Descriptors.FieldDescriptor anyFieldDescriptor = anyMessage.getDescriptorForType().getFields().get(0);
+        final Descriptors.FileDescriptor fileDescriptor = anyMessage.getDescriptorForType().getFile();
         assertThrows(
             DataException.class,
-            () -> dataConverter.toProtobufData(schema, anyMessage, anyFieldDescriptor, anyMessage.toBuilder())
+            () -> dataConverter.toProtobufData(fileDescriptor, schema, anyMessage, anyFieldDescriptor, anyMessage.toBuilder())
         );
     }
 }

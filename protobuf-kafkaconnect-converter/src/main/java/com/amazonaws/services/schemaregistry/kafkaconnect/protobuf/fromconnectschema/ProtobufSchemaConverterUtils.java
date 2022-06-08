@@ -37,8 +37,8 @@ public class ProtobufSchemaConverterUtils {
     public static boolean isEnumType(Schema schema) {
         return schema.type().equals(org.apache.kafka.connect.data.Schema.Type.STRING)
                 && schema.parameters() != null
-                && schema.parameters() .containsKey(PROTOBUF_TYPE)
-                && PROTOBUF_ENUM_TYPE.equals(schema.parameters() .get(PROTOBUF_TYPE));
+                && schema.parameters().containsKey(PROTOBUF_TYPE)
+                && PROTOBUF_ENUM_TYPE.equals(schema.parameters().get(PROTOBUF_TYPE));
     }
 
     public static boolean isTimeType(Schema schema) {

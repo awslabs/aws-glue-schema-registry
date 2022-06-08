@@ -733,6 +733,8 @@ public class ToConnectTestDataGenerator {
                 .addAllStrArray(Arrays.asList("foo", "bar", "baz"))
                 .addBoolArray(true)
                 .addBoolArray(false)
+                .addCustomerArray(customerSyntax2)
+                .addColorArray(AllTypesSyntax2.AllTypes.Colors.RED)
                 .setDate(dateBuilder)
                 .setTime(todBuilder)
                 .setTimestamp(timestampBuilder)
@@ -763,6 +765,8 @@ public class ToConnectTestDataGenerator {
                 .addAllStrArray(Arrays.asList("foo", "bar", "baz"))
                 .addBoolArray(true)
                 .addBoolArray(false)
+                .addCustomerArray(customerSyntax3)
+                .addColorArray(AllTypesSyntax3.AllTypes.Colors.RED)
                 .setDate(dateBuilder)
                 .setTime(todBuilder)
                 .setTimestamp(timestampBuilder)
@@ -788,7 +792,7 @@ public class ToConnectTestDataGenerator {
         );
     }
 
-    public static Struct getSAllTypesData(String packageName) {
+    public static Struct getAllTypesData(String packageName) {
         final Schema connectSchema = getAllTypesSchema(packageName);
         final Struct connectData = new Struct(connectSchema);
 
@@ -810,6 +814,8 @@ public class ToConnectTestDataGenerator {
                 .put("strArray", Arrays.asList("foo", "bar", "baz"))
                 .put("boolArray", Arrays.asList(true, false))
                 .put("intArray", new ArrayList<>())
+                .put("customerArray", Arrays.asList(new Struct(connectSchema.field("customerArray").schema().valueSchema()).put("name", "joe")))
+                .put("colorArray", Arrays.asList("RED"))
                 .put("date", date)
                 .put("time", time)
                 .put("timestamp", timestamp)
@@ -847,6 +853,13 @@ public class ToConnectTestDataGenerator {
                 .parameter("PROTOBUF_ENUM_VALUE.GREEN", "2")
                 .parameter("PROTOBUF_ENUM_VALUE.BLUE", "3")
                 .parameter("ENUM_NAME", getFullName(packageName,"AllTypes.Colors"));
+        final SchemaBuilder colorArrayBuilder = new SchemaBuilder(Schema.Type.STRING)
+                .parameter("protobuf.type", "enum")
+                .parameter("PROTOBUF_ENUM_VALUE.BLACK", "0")
+                .parameter("PROTOBUF_ENUM_VALUE.RED", "1")
+                .parameter("PROTOBUF_ENUM_VALUE.GREEN", "2")
+                .parameter("PROTOBUF_ENUM_VALUE.BLUE", "3")
+                .parameter("ENUM_NAME", getFullName(packageName,"AllTypes.Colors"));
 
         final SchemaBuilder intMapBuilder = SchemaBuilder.map(
                 new SchemaBuilder(Schema.Type.INT32).parameter(PROTOBUF_TAG, "1").optional().build(),
@@ -869,6 +882,8 @@ public class ToConnectTestDataGenerator {
                 .put("strArray", SchemaBuilder.array(Schema.STRING_SCHEMA).parameter(PROTOBUF_TAG, "8").optional().build())
                 .put("intArray", SchemaBuilder.array(Schema.INT32_SCHEMA).parameter(PROTOBUF_TAG, "9").optional().build())
                 .put("boolArray", SchemaBuilder.array(Schema.BOOLEAN_SCHEMA).parameter(PROTOBUF_TAG, "10").optional().build())
+                .put("customerArray", SchemaBuilder.array(customerBuilder.build()).parameter(PROTOBUF_TAG, "25").optional().build())
+                .put("colorArray", SchemaBuilder.array(colorArrayBuilder.build()).parameter(PROTOBUF_TAG, "26").optional().build())
                 .put("date", Date.builder().parameter(PROTOBUF_TAG,"11").build())
                 .put("time", Time.builder().parameter(PROTOBUF_TAG,"12").optional().build())
                 .put("timestamp", Timestamp.builder().parameter(PROTOBUF_TAG,"13").optional().build())

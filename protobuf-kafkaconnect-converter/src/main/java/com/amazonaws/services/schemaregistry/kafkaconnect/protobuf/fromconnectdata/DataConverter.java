@@ -6,9 +6,11 @@ import org.apache.kafka.connect.data.Schema;
 
 public interface DataConverter {
     //set the field value using the value returned by toProtobufData below
-    void toProtobufData(Schema schema, Object value, Descriptors.FieldDescriptor fieldDescriptor,
+    void toProtobufData(Descriptors.FileDescriptor fileDescriptor, Schema schema, Object value,
+                        Descriptors.FieldDescriptor fieldDescriptor,
         Message.Builder messageBuilder);
 
     //returns the value from the data conversion
-    Object toProtobufData(Schema schema, Object value, Descriptors.FieldDescriptor fieldDescriptor);
+    Object toProtobufData(Descriptors.FileDescriptor fileDescriptor, Schema schema, Object value,
+                          Descriptors.FieldDescriptor fieldDescriptor);
 }
