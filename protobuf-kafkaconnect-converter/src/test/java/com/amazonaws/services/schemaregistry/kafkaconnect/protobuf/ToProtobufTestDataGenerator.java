@@ -31,7 +31,7 @@ import org.apache.kafka.connect.data.Decimal;
 
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -60,8 +60,7 @@ public class ToProtobufTestDataGenerator {
 
     @SneakyThrows
     public static String getProtobufSchema(String fileName) {
-        return new String(Files.readAllBytes(Paths.get(TEST_RESOURCE_PATH, fileName)),
-            Charset.defaultCharset());
+        return new String(Files.readAllBytes(Paths.get(TEST_RESOURCE_PATH, fileName)), StandardCharsets.UTF_8);
     }
 
     @SneakyThrows
