@@ -53,3 +53,6 @@ GlueSchemaRegistryKafkaSerializer/GlueSchemaRegistryKafkaDeserializer.
 
 ## Release 1.1.11
 * Add support for Kafka Connect Protobuf converter
+
+## Release 1.11.12
+* Upgraded Avro Version to prevent a CVE
