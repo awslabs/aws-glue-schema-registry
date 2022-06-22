@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AWSGsrSerDe", "AWSGsrSerDe\AWSGsrSerDe.csproj", "{A36E4C3C-B7C4-4670-90B1-2FC9D883CCD0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AWSGsrSerDe.Tests", "AWSGsrSerDe.Tests\AWSGsrSerDe.Tests.csproj", "{AD987D8A-EC56-47E8-837F-4D2A9E4ABA6C}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A36E4C3C-B7C4-4670-90B1-2FC9D883CCD0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A36E4C3C-B7C4-4670-90B1-2FC9D883CCD0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A36E4C3C-B7C4-4670-90B1-2FC9D883CCD0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A36E4C3C-B7C4-4670-90B1-2FC9D883CCD0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AD987D8A-EC56-47E8-837F-4D2A9E4ABA6C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AD987D8A-EC56-47E8-837F-4D2A9E4ABA6C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AD987D8A-EC56-47E8-837F-4D2A9E4ABA6C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AD987D8A-EC56-47E8-837F-4D2A9E4ABA6C}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

@@ -8,6 +8,7 @@ import org.graalvm.nativeimage.c.struct.CStruct;
 import org.graalvm.nativeimage.c.type.CCharPointer;
 import org.graalvm.word.PointerBase;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -20,6 +21,20 @@ public class DataTypes {
     static class HandlerDirectives implements CContext.Directives {
 
         public static final String INCLUDE_PATH = "c/include/";
+        public static final String LIB_PATH = "c/build/src/";
+        //Intentionally blank.
+        public static final String PROJECT_NAME = "";
+
+        @Override
+        public List<String> getLibraries() {
+            return Collections.singletonList("native_schema_registry_c_data_types");
+        }
+
+        @Override
+        public List<String> getLibraryPaths() {
+            String path = ProjectHeaderFile.resolve(PROJECT_NAME, LIB_PATH).replaceAll("\"", "");
+            return Collections.singletonList(path);
+        }
 
         @Override
         public List<String> getHeaderFiles() {
@@ -28,7 +43,7 @@ public class DataTypes {
                 "read_only_byte_array.h",
                 "mutable_byte_array.h"
             )
-                .map(header -> ProjectHeaderFile.resolve("", INCLUDE_PATH + header))
+                .map(header -> ProjectHeaderFile.resolve(PROJECT_NAME, INCLUDE_PATH + header))
                 .collect(Collectors.toList());
         }
     }
@@ -37,7 +52,7 @@ public class DataTypes {
      * Define the data types and functions to import from C headers.
      */
     @CFunction("new_glue_schema_registry_schema")
-    protected static native C_GlueSchemaRegistrySchema
+    public static native C_GlueSchemaRegistrySchema
     newGlueSchemaRegistrySchema(CCharPointer schemaName, CCharPointer schemaDef, CCharPointer dataFormat);
 
     @CStruct("glue_schema_registry_schema")
