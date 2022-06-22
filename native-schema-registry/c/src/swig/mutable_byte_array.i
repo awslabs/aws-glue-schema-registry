@@ -3,6 +3,10 @@
 #include "mutable_byte_array.h"
 %}
 
+#if defined(SWIGCSHARP)
+%include "arrays_csharp.i"
+#endif
+
 #if defined(SWIGPYTHON)
 //Converts the unsigned char * to a Python Bytes object.
 %typemap(out) mutable_byte_array * %{
@@ -22,6 +26,16 @@ typedef struct mutable_byte_array {
         mutable_byte_array(size_t len);
 
         ~mutable_byte_array();
+        //Uses array output typemap that copies the mutable_byte_array contents
+        //into given array.
+        //TODO: Optimization: We can avoid copying large data by figuring out a way
+        //to expose underlying buffers.
+        #if defined(SWIGCSHARP)
+            %apply unsigned char OUTPUT[] {unsigned char *data};
+        #endif
+        void get_data_copy(unsigned char *data) {
+            memcpy(data, $self->data, $self->max_len);
+        }
 
         unsigned char * get_data();
 

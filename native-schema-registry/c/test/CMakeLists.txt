@@ -18,6 +18,7 @@ foreach (test ${tests})
             )
     target_link_libraries(
             "${test}"
+            native_schema_registry_c_data_types
             native_schema_registry_c
             ${LIB_NATIVE_SCHEMA_REGISTRY_PATH}/${LIB_NATIVE_SCHEMA_REGISTRY_LIBRARY_NAME}
             cmocka
