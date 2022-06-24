@@ -12,22 +12,8 @@ Follow the instructions in those specific projects to build them.
 
 #### Building C# code
 
-##### Linux 
 ```
+dotnet clean .
 dotnet build .
-export LD_LIBRARY_PATH=$PWD/AwsGsrSerDe/bin/
 dotnet test .
 ```
-
-##### OSX
-```
-dotnet build .
-export DYLD_LIBRARY_PATH=$PWD/AwsGsrSerDe/bin/
-dotnet test .
-```
-
-##### Windows
-
-TBD
-
-

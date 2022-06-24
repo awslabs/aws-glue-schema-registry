@@ -20,6 +20,11 @@ ELSE()
     set(LIB_NATIVE_SCHEMA_REGISTRY_LIBRARY_NAME ${LIB_NATIVE_SCHEMA_REGISTRY_LIBRARY_NAME_PREFIX}.so)
 ENDIF()
 
+set(DATA_TYPES_MODULE_NAME native_schema_registry_c_data_types)
+set(SERDE_MODULE_NAME native_schema_registry_c)
+set(NATIVE_SCHEMA_REGISTRY_MODULE_NAME libnativeschemaregistry)
+set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+
 add_subdirectory("src")
 include (CTest)
 enable_testing()

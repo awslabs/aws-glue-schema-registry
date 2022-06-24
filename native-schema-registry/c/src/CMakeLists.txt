@@ -1,8 +1,3 @@
-set(DATA_TYPES_MODULE_NAME native_schema_registry_c_data_types)
-set(SERDE_MODULE_NAME native_schema_registry_c)
-set(NATIVE_SCHEMA_REGISTRY_MODULE_NAME libnativeschemaregistry)
-set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
-
 #Fix the include path in GraalVM generated header file.
 execute_process(COMMAND sed -ie "s/<graal_isolate.h>/\"graal_isolate.h\"/" ${LIB_NATIVE_SCHEMA_REGISTRY_PATH}/libnativeschemaregistry.h)
 
@@ -14,6 +9,12 @@ add_library(
         glue_schema_registry_schema.c
         read_only_byte_array.c
         mutable_byte_array.c
+)
+add_custom_command(
+        TARGET ${DATA_TYPES_MODULE_NAME}
+        POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${DATA_TYPES_MODULE_NAME}> ${LIB_NATIVE_SCHEMA_REGISTRY_PATH}/
+        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_LINKER_FILE:${DATA_TYPES_MODULE_NAME}> ${LIB_NATIVE_SCHEMA_REGISTRY_PATH}/
 )
 
 #Add reference to the GraalVM generated Native schema registry module.
@@ -52,9 +53,9 @@ file(
 
 #####CSharp
 set(CSHARP_MODULE_NAME GsrSerDeCsGen)
-set(CSHARP_SOURCE_PATH ${PROJECT_SOURCE_DIR}/../csharp/AWSGsrSerDe/AWSGsrSerDe/)
-set(CSHARP_GEN_LIB_PATH ${CSHARP_SOURCE_PATH}/bin/)
-
+set(CSHARP_ROOT_PATH ${PROJECT_SOURCE_DIR}/../csharp/AWSGsrSerDe)
+set(CSHARP_SOURCE_PATH ${CSHARP_ROOT_PATH}/AWSGsrSerDe/)
+set(CSHARP_GEN_LIB_PATH ${CSHARP_ROOT_PATH}/Libs/)
 swig_add_library(
         ${CSHARP_MODULE_NAME}
         TYPE SHARED
