@@ -21,7 +21,7 @@ public class DataTypes {
     static class HandlerDirectives implements CContext.Directives {
 
         public static final String INCLUDE_PATH = "c/include/";
-        public static final String LIB_PATH = "c/build/src/";
+        public static final String LIB_PATH = "target/";
         //Intentionally blank.
         public static final String PROJECT_NAME = "";
 

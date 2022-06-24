@@ -11,18 +11,21 @@ list(
         mutable_byte_array_test
 )
 
-foreach (test ${tests})
+foreach (test ${tests}) 
     add_executable(
             "${test}"
             "${test}.c"
             )
     target_link_libraries(
             "${test}"
-            native_schema_registry_c_data_types
-            native_schema_registry_c
-            ${LIB_NATIVE_SCHEMA_REGISTRY_PATH}/${LIB_NATIVE_SCHEMA_REGISTRY_LIBRARY_NAME}
-            cmocka
+            "${DATA_TYPES_MODULE_NAME}"
+            "cmocka"
     )
 
-    add_test(NAME "${test}" COMMAND "${test}")
+    add_test(NAME "${test}" COMMAND "${test}" ${CMAKE_CURRENT_BINARY_DIR})
 endforeach ()
+
+add_custom_target(copy-libs-for-tests ALL
+   COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${DATA_TYPES_MODULE_NAME}> ${CMAKE_CURRENT_BINARY_DIR}/
+   COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:cmocka> ${CMAKE_CURRENT_BINARY_DIR}/
+)
