@@ -2,23 +2,36 @@
 %{
 #include "glue_schema_registry_deserializer.h"
 %}
+%include "glue_schema_registry_exception_interceptor.i"
 
 typedef struct glue_schema_registry_deserializer {
 
-    %newobject decode_schema(read_only_byte_array *array);
+    //Transfers the ownership of return pointer to target language.
+    //so that the language can properly dispose after usage.
+    //This is only required in case of CSharp.
     #if defined(SWIGCSHARP)
-      %newobject decode(read_only_byte_array *array);
+      %newobject decode_schema;
+      %newobject decode;
     #endif
 
     %extend {
-        glue_schema_registry_deserializer();
+        //Exception argument will be intercepted and thrown as exception in target language.
+        //It is 1st argument as there is no '$self' argument passed for constructor methods.
+        %exception new_glue_schema_registry_deserializer %glue_schema_registry_exception_interceptor(arg1)
+        glue_schema_registry_deserializer(glue_schema_registry_error **p_err);
 
         ~glue_schema_registry_deserializer();
 
-        mutable_byte_array *decode(read_only_byte_array *array);
+        //Note that the argument is '3' because the first argument is '$self'
+        %exception decode %glue_schema_registry_exception_interceptor(arg3)
+        mutable_byte_array *decode(read_only_byte_array *array, glue_schema_registry_error **p_err);
 
-        bool can_decode(read_only_byte_array *array);
+        //Note that the argument is '3' because the first argument is '$self'
+        %exception can_decode %glue_schema_registry_exception_interceptor(arg3)
+        bool can_decode(read_only_byte_array *array, glue_schema_registry_error **p_err);
 
-        glue_schema_registry_schema* decode_schema(read_only_byte_array *array);
+        //Note that the argument is '3' because the first argument is '$self'
+        %exception decode_schema %glue_schema_registry_exception_interceptor(arg3)
+        glue_schema_registry_schema* decode_schema(read_only_byte_array *array, glue_schema_registry_error **p_err);
     }
 } glue_schema_registry_deserializer;

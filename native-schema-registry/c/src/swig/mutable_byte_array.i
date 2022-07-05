@@ -7,6 +7,8 @@
 %include "arrays_csharp.i"
 #endif
 
+%include "glue_schema_registry_exception_interceptor.i"
+
 #if defined(SWIGPYTHON)
 //Converts the unsigned char * to a Python Bytes object.
 %typemap(out) mutable_byte_array * %{
@@ -22,8 +24,10 @@
 
 //Methods that map to the C implementation.
 typedef struct mutable_byte_array {
+    //Constructor methods are referred to as 'new_<object_name>'
     %extend {
-        mutable_byte_array(size_t len);
+        %exception new_mutable_byte_array %glue_schema_registry_exception_interceptor(arg2);
+        mutable_byte_array(size_t len, glue_schema_registry_error **p_err);
 
         ~mutable_byte_array();
         //Uses array output typemap that copies the mutable_byte_array contents

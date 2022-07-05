@@ -4,6 +4,7 @@ import com.oracle.svm.core.c.ProjectHeaderFile;
 import org.graalvm.nativeimage.c.CContext;
 import org.graalvm.nativeimage.c.function.CFunction;
 import org.graalvm.nativeimage.c.struct.CField;
+import org.graalvm.nativeimage.c.struct.CPointerTo;
 import org.graalvm.nativeimage.c.struct.CStruct;
 import org.graalvm.nativeimage.c.type.CCharPointer;
 import org.graalvm.word.PointerBase;
@@ -41,7 +42,8 @@ public class DataTypes {
             return Stream.of(
                 "glue_schema_registry_schema.h",
                 "read_only_byte_array.h",
-                "mutable_byte_array.h"
+                "mutable_byte_array.h",
+                "glue_schema_registry_error.h"
             )
                 .map(header -> ProjectHeaderFile.resolve(PROJECT_NAME, INCLUDE_PATH + header))
                 .collect(Collectors.toList());
@@ -53,7 +55,12 @@ public class DataTypes {
      */
     @CFunction("new_glue_schema_registry_schema")
     public static native C_GlueSchemaRegistrySchema
-    newGlueSchemaRegistrySchema(CCharPointer schemaName, CCharPointer schemaDef, CCharPointer dataFormat);
+    newGlueSchemaRegistrySchema(
+        CCharPointer schemaName,
+        CCharPointer schemaDef,
+        CCharPointer dataFormat,
+        C_GlueSchemaRegistryErrorPointerHolder errorPointerHolder
+    );
 
     @CStruct("glue_schema_registry_schema")
     public interface C_GlueSchemaRegistrySchema extends PointerBase {
@@ -90,9 +97,35 @@ public class DataTypes {
     }
 
     @CFunction("new_mutable_byte_array")
-    public static native C_MutableByteArray newMutableByteArray(long maxLen);
+    public static native C_MutableByteArray newMutableByteArray(
+        long maxLen,
+        C_GlueSchemaRegistryErrorPointerHolder errorPointerHolder
+    );
 
     @CFunction("mutable_byte_array_write")
-    public static native void writeToMutableArray(C_MutableByteArray array, long index, byte b);
+    public static native void writeToMutableArray(
+        C_MutableByteArray array,
+        long index,
+        byte b,
+        C_GlueSchemaRegistryErrorPointerHolder errorPointerHolder
+    );
 
+    @CStruct("glue_schema_registry_error")
+    public interface C_GlueSchemaRegistryError extends PointerBase {
+
+        //Read access of a field. A call to the function is replaced with a raw memory load.
+        @CField("msg")
+        CCharPointer getErrMsg();
+
+        @CField("code")
+        int getCode();
+    }
+
+    @CPointerTo(value = C_GlueSchemaRegistryError.class)
+    public interface C_GlueSchemaRegistryErrorPointerHolder extends PointerBase {
+        void write(C_GlueSchemaRegistryError value);
+    }
+
+    @CFunction("throw_error")
+    public static native void throwError(C_GlueSchemaRegistryErrorPointerHolder pErr, CCharPointer msg, int code);
 }

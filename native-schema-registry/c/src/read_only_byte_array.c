@@ -1,12 +1,11 @@
 #include "../include/read_only_byte_array.h"
-#include "../include/error_handling.h"
 #include <stdio.h>
 
 
-read_only_byte_array * new_read_only_byte_array(unsigned char *data, size_t len) {
+read_only_byte_array * new_read_only_byte_array(unsigned char *data, size_t len, glue_schema_registry_error **p_err) {
     read_only_byte_array *array = NULL;
     if (data == NULL || len == 0) {
-        log_error("Data is NULL or is of zero-length", ERR_CODE_NULL_PARAMETERS);
+        throw_error(p_err, "Data is NULL or is of zero-length", ERR_CODE_NULL_PARAMETERS);
         return NULL;
     }
     array = (read_only_byte_array *) malloc(sizeof(read_only_byte_array));
@@ -14,6 +13,9 @@ read_only_byte_array * new_read_only_byte_array(unsigned char *data, size_t len)
     array->data = data;
     array->len = len;
 
+    if (p_err != NULL) {
+        *p_err = NULL;
+    }
     return array;
 }
 

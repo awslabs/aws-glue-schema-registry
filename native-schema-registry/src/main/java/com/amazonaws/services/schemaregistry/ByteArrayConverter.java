@@ -5,6 +5,7 @@ import org.graalvm.word.PointerBase;
 
 import java.nio.ByteBuffer;
 
+import static com.amazonaws.services.schemaregistry.DataTypes.C_GlueSchemaRegistryErrorPointerHolder;
 import static com.amazonaws.services.schemaregistry.DataTypes.C_MutableByteArray;
 import static com.amazonaws.services.schemaregistry.DataTypes.C_ReadOnlyByteArray;
 import static com.amazonaws.services.schemaregistry.DataTypes.newMutableByteArray;
@@ -28,13 +29,20 @@ public class ByteArrayConverter {
         return bytes;
     }
 
-    public static C_MutableByteArray toCMutableByteArray(byte[] bytes) {
+    public static C_MutableByteArray toCMutableByteArray(
+        byte[] bytes,
+        C_GlueSchemaRegistryErrorPointerHolder errorPointerHolder) {
         int len = bytes.length;
-        C_MutableByteArray mutableByteArray = newMutableByteArray(len);
+        C_MutableByteArray mutableByteArray = newMutableByteArray(len, errorPointerHolder);
+
+        //If error encountered creating a mutable_byte_array, return NULL with appropriate error set.
+        if (mutableByteArray.isNull()) {
+            return mutableByteArray;
+        }
 
         //TODO: Check for performance issues with this.
         for (int index = 0; index < len; index++) {
-            writeToMutableArray(mutableByteArray, index, bytes[index]);
+            writeToMutableArray(mutableByteArray, index, bytes[index], errorPointerHolder);
         }
         return mutableByteArray;
     }
