@@ -1,6 +1,7 @@
 #ifndef MUTABLE_BYTE_ARRAY_H
 #define MUTABLE_BYTE_ARRAY_H
 #include <stdlib.h>
+#include "../include/glue_schema_registry_error.h"
 
 //Integer.MAX_VALUE in Java
 //This gives ~2.1Gb limit on a record.
@@ -16,8 +17,9 @@ typedef struct mutable_byte_array {
 /**
  * Initializes a mutable byte array of size `len`
  * The data is initially set to '0'
+ * Caller can optionally provide pointer holder to glue_schema_registry_error to read error messages.
  */
-mutable_byte_array * new_mutable_byte_array(size_t len);
+mutable_byte_array * new_mutable_byte_array(size_t len, glue_schema_registry_error **p_err);
 
 /**
  * Free the data and the pointer to the mutable byte array.
@@ -32,7 +34,8 @@ unsigned char * mutable_byte_array_get_data(mutable_byte_array * array);
 /**
  * Writes a single byte at given index in the byte array.
  */
-void mutable_byte_array_write(mutable_byte_array * array, size_t index, unsigned char byte);
+void mutable_byte_array_write(mutable_byte_array * array, size_t index, unsigned char byte,
+                              glue_schema_registry_error **p_err);
 
 /**
  * Return the len of the byte-array

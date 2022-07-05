@@ -1,6 +1,8 @@
 #ifndef GLUE_SCHEMA_REGISTRY_SCHEMA_H
 #define GLUE_SCHEMA_REGISTRY_SCHEMA_H
 
+#include "glue_schema_registry_error.h"
+
 /*
  * Glue Schema Registry Schema structure that represents
  * schema object required by Glue Schema Registry Serializers / De-serializers.
@@ -21,7 +23,8 @@ typedef struct glue_schema_registry_schema {
 glue_schema_registry_schema *new_glue_schema_registry_schema(
     const char * schema_name,
     const char * schema_def,
-    const char * data_format
+    const char * data_format,
+    glue_schema_registry_error ** p_err
 );
 
 //Deletes the glue schema registry schema.

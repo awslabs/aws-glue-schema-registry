@@ -9,11 +9,13 @@ import org.graalvm.nativeimage.IsolateThread;
 import org.graalvm.nativeimage.c.CContext;
 import org.graalvm.nativeimage.c.function.CEntryPoint;
 import org.graalvm.nativeimage.c.type.CTypeConversion;
+import org.graalvm.word.WordFactory;
 
 import java.util.Map;
 
 import static com.amazonaws.services.schemaregistry.ByteArrayConverter.fromCReadOnlyByteArray;
 import static com.amazonaws.services.schemaregistry.ByteArrayConverter.toCMutableByteArray;
+import static com.amazonaws.services.schemaregistry.DataTypes.C_GlueSchemaRegistryErrorPointerHolder;
 import static com.amazonaws.services.schemaregistry.DataTypes.C_GlueSchemaRegistrySchema;
 import static com.amazonaws.services.schemaregistry.DataTypes.C_MutableByteArray;
 import static com.amazonaws.services.schemaregistry.DataTypes.C_ReadOnlyByteArray;
@@ -43,60 +45,87 @@ public class GlueSchemaRegistryDeserializationHandler {
 
     @CEntryPoint(name = "decode")
     public static C_MutableByteArray decode(
-        IsolateThread isolateThread, C_ReadOnlyByteArray c_readOnlyByteArray) {
+        IsolateThread isolateThread,
+        C_ReadOnlyByteArray c_readOnlyByteArray,
+        C_GlueSchemaRegistryErrorPointerHolder errorPointer) {
 
-        byte[] bytesToDecode = fromCReadOnlyByteArray(c_readOnlyByteArray);
+        try {
+            byte[] bytesToDecode = fromCReadOnlyByteArray(c_readOnlyByteArray);
 
-        //Assuming deserializer instance is already initialized
-        GlueSchemaRegistryDeserializer glueSchemaRegistryDeserializer = DeserializerInstance.get();
+            //Assuming deserializer instance is already initialized
+            GlueSchemaRegistryDeserializer glueSchemaRegistryDeserializer = DeserializerInstance.get();
 
-        byte[] decodedBytes =
-            glueSchemaRegistryDeserializer.getData(bytesToDecode);
+            byte[] decodedBytes =
+                glueSchemaRegistryDeserializer.getData(bytesToDecode);
 
-        return toCMutableByteArray(decodedBytes);
+            return toCMutableByteArray(decodedBytes, errorPointer);
+        } catch (Exception | Error e) {
+            ExceptionWriter.write(errorPointer, e);
+            return WordFactory.nullPointer();
+        }
     }
 
     @CEntryPoint(name = "decode_schema")
     public static C_GlueSchemaRegistrySchema decodeSchema(
-        IsolateThread isolateThread, C_ReadOnlyByteArray c_readOnlyByteArray) {
-        byte[] bytesToDecode = fromCReadOnlyByteArray(c_readOnlyByteArray);
+        IsolateThread isolateThread,
+        C_ReadOnlyByteArray c_readOnlyByteArray,
+        C_GlueSchemaRegistryErrorPointerHolder errorPointer) {
 
-        //Assuming serializer instance is already initialized
-        GlueSchemaRegistryDeserializer glueSchemaRegistryDeserializer = DeserializerInstance.get();
-        Schema decodedSchema =
-            glueSchemaRegistryDeserializer.getSchema(bytesToDecode);
+        try {
+            byte[] bytesToDecode = fromCReadOnlyByteArray(c_readOnlyByteArray);
 
-        CTypeConversion.CCharPointerHolder cSchemaNamePointer =
-            CTypeConversion.toCString(decodedSchema.getSchemaName());
-        CTypeConversion.CCharPointerHolder cSchemaDefPointer =
-            CTypeConversion.toCString(decodedSchema.getSchemaDefinition());
-        CTypeConversion.CCharPointerHolder cDataFormatPointer =
-            CTypeConversion.toCString(decodedSchema.getDataFormat());
+            //Assuming serializer instance is already initialized
+            GlueSchemaRegistryDeserializer glueSchemaRegistryDeserializer = DeserializerInstance.get();
+            Schema decodedSchema =
+                glueSchemaRegistryDeserializer.getSchema(bytesToDecode);
 
-        //TODO: We can potentially expose the C Strings to target language layer to
-        //prevent copying strings repeatedly.
-        C_GlueSchemaRegistrySchema c_glueSchemaRegistrySchema = newGlueSchemaRegistrySchema(
-            cSchemaNamePointer.get(),
-            cSchemaDefPointer.get(),
-            cDataFormatPointer.get()
-        );
-        //newGlueSchemaRegistrySchema has it's own copy of these attributes.
-        cDataFormatPointer.close();
-        cSchemaDefPointer.close();
-        cSchemaNamePointer.close();
+            CTypeConversion.CCharPointerHolder cSchemaNamePointer =
+                CTypeConversion.toCString(decodedSchema.getSchemaName());
+            CTypeConversion.CCharPointerHolder cSchemaDefPointer =
+                CTypeConversion.toCString(decodedSchema.getSchemaDefinition());
+            CTypeConversion.CCharPointerHolder cDataFormatPointer =
+                CTypeConversion.toCString(decodedSchema.getDataFormat());
 
-        return c_glueSchemaRegistrySchema;
+            //TODO: We can potentially expose the C Strings to target language layer to
+            //prevent copying strings repeatedly.
+            C_GlueSchemaRegistrySchema c_glueSchemaRegistrySchema = newGlueSchemaRegistrySchema(
+                cSchemaNamePointer.get(),
+                cSchemaDefPointer.get(),
+                cDataFormatPointer.get(),
+                errorPointer
+            );
+            //newGlueSchemaRegistrySchema has it's own copy of these attributes.
+            cDataFormatPointer.close();
+            cSchemaDefPointer.close();
+            cSchemaNamePointer.close();
+
+            return c_glueSchemaRegistrySchema;
+        } catch (Exception | Error e) {
+            ExceptionWriter.write(errorPointer, e);
+            return WordFactory.nullPointer();
+        }
     }
 
     @CEntryPoint(name = "can_decode")
     public static byte canDecode(
-        IsolateThread isolateThread, C_ReadOnlyByteArray c_readOnlyByteArray) {
-        byte[] bytesToDecode = fromCReadOnlyByteArray(c_readOnlyByteArray);
+        IsolateThread isolateThread,
+        C_ReadOnlyByteArray c_readOnlyByteArray,
+        C_GlueSchemaRegistryErrorPointerHolder errorPointer) {
+        try {
 
-        GlueSchemaRegistryDeserializer glueSchemaRegistryDeserializer = DeserializerInstance.get();
-        boolean canDeserialize =
-            glueSchemaRegistryDeserializer.canDeserialize(bytesToDecode);
+            byte[] bytesToDecode = fromCReadOnlyByteArray(c_readOnlyByteArray);
 
-        return CTypeConversion.toCBoolean(canDeserialize);
+            GlueSchemaRegistryDeserializer glueSchemaRegistryDeserializer = DeserializerInstance.get();
+            boolean canDeserialize =
+                glueSchemaRegistryDeserializer.canDeserialize(bytesToDecode);
+
+            if (errorPointer.isNonNull()) {
+                errorPointer.write(WordFactory.nullPointer());
+            }
+            return CTypeConversion.toCBoolean(canDeserialize);
+        } catch (Exception | Error e) {
+            ExceptionWriter.write(errorPointer, e);
+            return CTypeConversion.toCBoolean(false);
+        }
     }
 }

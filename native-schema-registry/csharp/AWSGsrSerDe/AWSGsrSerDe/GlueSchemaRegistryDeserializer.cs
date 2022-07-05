@@ -1,20 +1,24 @@
+using System;
+
 namespace AWSGsrSerDe
 {
     /// <summary>
     /// GlueSchemaRegistryDeserializer class that decodes the given byte array encoded with GSR schema headers.
     /// </summary>>
-    public class GlueSchemaRegistryDeserializer
+    public class GlueSchemaRegistryDeserializer : IDisposable
     {
         private readonly glue_schema_registry_deserializer _deserializer;
 
         public GlueSchemaRegistryDeserializer()
         {
-            _deserializer = new glue_schema_registry_deserializer();
+            //p_err will be set by Swig automatically.
+            _deserializer = new glue_schema_registry_deserializer(p_err: null);
+            
         }
 
         ~GlueSchemaRegistryDeserializer()
         {
-            _deserializer.Dispose();
+            Dispose(false);
         }
 
         /// <summary>
@@ -24,15 +28,30 @@ namespace AWSGsrSerDe
         /// <returns>Decoded byte array</returns>
         public byte[] Decode(byte[] encoded)
         {
-            var readOnlyByteArr = new read_only_byte_array(encoded, (uint) encoded.Length);
-            var mutableByteArray = _deserializer.decode(readOnlyByteArr);
-            var ret = new byte[mutableByteArray.get_max_len()];
+            Validate(encoded);
+            var readOnlyByteArr = new read_only_byte_array(encoded, (uint)encoded.Length, p_err: null);
+            try
+            {
+                var mutableByteArray = _deserializer.decode(readOnlyByteArr, p_err: null);
+                var ret = new byte[mutableByteArray.get_max_len()];
 
-            mutableByteArray.get_data_copy(ret);
+                mutableByteArray.get_data_copy(ret);
 
-            readOnlyByteArr.Dispose();
-            mutableByteArray.Dispose();
-            return ret;
+                mutableByteArray.Dispose();
+                return ret;
+            }
+            catch (ArgumentException)
+            {
+                throw;
+            }
+            catch (Exception e)
+            {
+                throw new AwsSchemaRegistryException(e.Message);
+            }
+            finally
+            {
+                readOnlyByteArr.Dispose();
+            }
         }
 
         /// <summary>
@@ -42,11 +61,25 @@ namespace AWSGsrSerDe
         /// <returns>true / false</returns>
         public bool CanDecode(byte[] encoded)
         {
-            var readOnlyByteArr = new read_only_byte_array(encoded, (uint)encoded.Length);
-            var ret = _deserializer.can_decode(readOnlyByteArr);
+            Validate(encoded);
 
-            readOnlyByteArr.Dispose();
-            return ret;
+            var readOnlyByteArr = new read_only_byte_array(encoded, (uint)encoded.Length, p_err: null);
+            try
+            {
+                return _deserializer.can_decode(readOnlyByteArr, p_err: null);
+            }
+            catch (ArgumentException)
+            {
+                throw;
+            }
+            catch (Exception e)
+            {
+                throw new AwsSchemaRegistryException(e.Message);
+            }
+            finally
+            {
+                readOnlyByteArr.Dispose();
+            }
         }
 
         /// <summary>
@@ -56,18 +89,61 @@ namespace AWSGsrSerDe
         /// <returns>GlueSchemaRegistrySchema object associated with the encoded byte array</returns>
         public GlueSchemaRegistrySchema DecodeSchema(byte[] encoded)
         {
-            var readOnlyByteArr = new read_only_byte_array(encoded, (uint)encoded.Length);
-            var schema = _deserializer.decode_schema(readOnlyByteArr);
+            Validate(encoded);
 
-            var gsrSchema = new GlueSchemaRegistrySchema(
-                schema.get_schema_name(),
-                schema.get_schema_def(),
-                schema.get_data_format());
+            var readOnlyByteArr = new read_only_byte_array(encoded, (uint)encoded.Length,  p_err: null);
+            try
+            {
+                var schema = _deserializer.decode_schema(readOnlyByteArr, p_err: null);
 
-            readOnlyByteArr.Dispose();
-            schema.Dispose();
+                var glueSchemaRegistrySchema = new GlueSchemaRegistrySchema(
+                    schema.get_schema_name(),
+                    schema.get_schema_def(),
+                    schema.get_data_format());
+                schema.Dispose();
 
-            return gsrSchema;
+                return glueSchemaRegistrySchema;
+            }
+            catch (ArgumentException)
+            {
+                throw;
+            }
+            catch (Exception e)
+            {
+                throw new AwsSchemaRegistryException(e.Message);
+            }
+            finally
+            {
+                readOnlyByteArr.Dispose();
+            }
+        }
+
+        private static void Validate(byte[] encoded)
+        {
+            if (encoded is null || encoded.Length == 0)
+            {
+                throw new ArgumentException("Encoded bytes is null or Empty.", nameof(encoded));
+            }
+        }
+
+        private void ReleaseUnmanagedResources()
+        {
+            _deserializer.Dispose();
+        }
+
+        private void Dispose(bool disposing)
+        {
+            ReleaseUnmanagedResources();
+            if (disposing)
+            {
+                _deserializer?.Dispose();
+            }
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
         }
     }
 }

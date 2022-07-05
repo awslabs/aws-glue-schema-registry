@@ -2,6 +2,7 @@
 #define GLUE_SCHEMA_REGISTRY_SERIALIZER_H
 
 #include "glue_schema_registry_schema.h"
+#include "glue_schema_registry_error.h"
 #include "mutable_byte_array.h"
 #include "read_only_byte_array.h"
 
@@ -10,7 +11,7 @@ typedef struct glue_schema_registry_serializer {
     void *instance_context;
 } glue_schema_registry_serializer;
 
-glue_schema_registry_serializer *new_glue_schema_registry_serializer(void);
+glue_schema_registry_serializer *new_glue_schema_registry_serializer(glue_schema_registry_error **p_err);
 
 void delete_glue_schema_registry_serializer(glue_schema_registry_serializer *serializer);
 
@@ -18,6 +19,7 @@ void delete_glue_schema_registry_serializer(glue_schema_registry_serializer *ser
 mutable_byte_array *glue_schema_registry_serializer_encode(glue_schema_registry_serializer *serializer,
                                                                     read_only_byte_array * array,
                                                                     const char * transport_name,
-                                                                    glue_schema_registry_schema *gsr_schema);
+                                                                    glue_schema_registry_schema *gsr_schema,
+                                                                    glue_schema_registry_error **p_err);
 
 #endif //GLUE_SCHEMA_REGISTRY_SERIALIZER_H

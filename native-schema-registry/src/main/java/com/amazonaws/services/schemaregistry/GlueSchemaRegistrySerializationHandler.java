@@ -11,11 +11,13 @@ import org.graalvm.nativeimage.c.CContext;
 import org.graalvm.nativeimage.c.function.CEntryPoint;
 import org.graalvm.nativeimage.c.type.CCharPointer;
 import org.graalvm.nativeimage.c.type.CTypeConversion;
+import org.graalvm.word.WordFactory;
 
 import java.util.Map;
 
 import static com.amazonaws.services.schemaregistry.ByteArrayConverter.fromCReadOnlyByteArray;
 import static com.amazonaws.services.schemaregistry.ByteArrayConverter.toCMutableByteArray;
+import static com.amazonaws.services.schemaregistry.DataTypes.C_GlueSchemaRegistryErrorPointerHolder;
 import static com.amazonaws.services.schemaregistry.DataTypes.C_GlueSchemaRegistrySchema;
 import static com.amazonaws.services.schemaregistry.DataTypes.C_MutableByteArray;
 import static com.amazonaws.services.schemaregistry.DataTypes.C_ReadOnlyByteArray;
@@ -46,23 +48,35 @@ public class GlueSchemaRegistrySerializationHandler {
 
     @CEntryPoint(name = "encode_with_schema")
     public static C_MutableByteArray encodeWithSchema(
-        IsolateThread isolateThread, C_ReadOnlyByteArray c_readOnlyByteArray, @CConst CCharPointer c_transportName, C_GlueSchemaRegistrySchema c_glueSchemaRegistrySchema) {
-        //Access the input C schema object
-        final String schemaName = CTypeConversion.toJavaString(c_glueSchemaRegistrySchema.getSchemaName());
-        final String schemaDef = CTypeConversion.toJavaString(c_glueSchemaRegistrySchema.getSchemaDef());
-        final String dataFormat = CTypeConversion.toJavaString(c_glueSchemaRegistrySchema.getDataFormat());
-        final String transportName = CTypeConversion.toJavaString(c_transportName);
+        IsolateThread isolateThread,
+        C_ReadOnlyByteArray c_readOnlyByteArray,
+        @CConst CCharPointer c_transportName,
+        C_GlueSchemaRegistrySchema c_glueSchemaRegistrySchema,
+        C_GlueSchemaRegistryErrorPointerHolder errorPointerHolder) {
+        try {
 
-        Schema javaSchema = new Schema(schemaDef, dataFormat, schemaName);
+            //Access the input C schema object
+            final String schemaName = CTypeConversion.toJavaString(c_glueSchemaRegistrySchema.getSchemaName());
+            final String schemaDef = CTypeConversion.toJavaString(c_glueSchemaRegistrySchema.getSchemaDef());
+            final String dataFormat = CTypeConversion.toJavaString(c_glueSchemaRegistrySchema.getDataFormat());
+            final String transportName = CTypeConversion.toJavaString(c_transportName);
 
-        //Read the c_byteArray data and create a new mutable byte array with encoded data
-        byte [] bytesToEncode = fromCReadOnlyByteArray(c_readOnlyByteArray);
+            Schema javaSchema = new Schema(schemaDef, dataFormat, schemaName);
 
-        //Assuming serializer instance is already initialized
-        GlueSchemaRegistrySerializer glueSchemaRegistrySerializer = SerializerInstance.get();
-        byte[] encodedBytes =
-            glueSchemaRegistrySerializer.encode(transportName, javaSchema, bytesToEncode);
+            //Read the c_byteArray data and create a new mutable byte array with encoded data
+            byte [] bytesToEncode = fromCReadOnlyByteArray(c_readOnlyByteArray);
 
-        return toCMutableByteArray(encodedBytes);
+            //Assuming serializer instance is already initialized
+            GlueSchemaRegistrySerializer glueSchemaRegistrySerializer = SerializerInstance.get();
+            byte[] encodedBytes =
+                glueSchemaRegistrySerializer.encode(transportName, javaSchema, bytesToEncode);
+
+            return toCMutableByteArray(encodedBytes, errorPointerHolder);
+        } catch (Exception | Error e) {
+
+            ExceptionWriter.write(errorPointerHolder, e);
+
+            return WordFactory.nullPointer();
+        }
     }
 }

@@ -3,12 +3,15 @@ execute_process(COMMAND sed -ie "s/<graal_isolate.h>/\"graal_isolate.h\"/" ${LIB
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -ftest-coverage -fprofile-arcs -ggdb3 -O2 -Wall")
 
+include_directories("include")
+
 #Adding modules in the build order.
 add_library(
         ${DATA_TYPES_MODULE_NAME} SHARED
         glue_schema_registry_schema.c
         read_only_byte_array.c
         mutable_byte_array.c
+        glue_schema_registry_error.c
 )
 add_custom_command(
         TARGET ${DATA_TYPES_MODULE_NAME}
@@ -38,6 +41,7 @@ add_library(
 
 target_link_libraries(
         ${SERDE_MODULE_NAME}
+        ${DATA_TYPES_MODULE_NAME}
         ${NATIVE_SCHEMA_REGISTRY_MODULE_NAME}
 )
 
