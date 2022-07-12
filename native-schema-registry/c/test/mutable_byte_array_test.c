@@ -1,7 +1,6 @@
 #include <string.h>
 #include "cmocka.h"
 #include "../include/mutable_byte_array.h"
-#include "glue_schema_registry_test_helper.h"
 
 const char * test_mutable_array_payload = "Foobar 01-23 1231!!!!!🍎aosmd🦷";
 
@@ -40,7 +39,7 @@ static void mutable_byte_array_cleanup(mutable_byte_array * byte_array, unsigned
 
 static void mutable_byte_array_test_creates_byte_array(void **state) {
     size_t len = strlen(test_mutable_array_payload);
-    glue_schema_registry_error ** p_err = create_gsr_error_p_holder();
+    glue_schema_registry_error ** p_err = new_glue_schema_registry_error_holder();
 
     mutable_byte_array * byte_array = new_mutable_byte_array(len, p_err);
 
@@ -55,13 +54,13 @@ static void mutable_byte_array_test_creates_byte_array(void **state) {
 
     //No errors are set.
     assert_null(err);
-    cleanup_error(p_err);
+    delete_glue_schema_registry_error_holder(p_err);
 
     mutable_byte_array_cleanup(byte_array, expected.data);
 }
 
 static void mutable_byte_array_test_returns_NULL_when_initialized_empty(void **state) {
-    glue_schema_registry_error ** p_err = create_gsr_error_p_holder();
+    glue_schema_registry_error ** p_err = new_glue_schema_registry_error_holder();
     mutable_byte_array *actual = new_mutable_byte_array(0, p_err);
     assert_null(actual);
     assert_non_null(p_err);
@@ -71,12 +70,12 @@ static void mutable_byte_array_test_returns_NULL_when_initialized_empty(void **s
     assert_int_equal(err->code, ERR_CODE_INVALID_PARAMETERS);
     assert_string_equal(err->msg, "Cannot create byte array of size 0");
 
-    cleanup_error(p_err);
+    delete_glue_schema_registry_error_holder(p_err);
 }
 
 static void mutable_byte_array_test_writes_byte_array(void **state) {
     size_t len = strlen(test_mutable_array_payload);
-    glue_schema_registry_error **p_err = create_gsr_error_p_holder();
+    glue_schema_registry_error **p_err = new_glue_schema_registry_error_holder();
     mutable_byte_array *byte_array = new_mutable_byte_array(len, p_err);
 
     for (size_t index = 0; index < len; index++) {
@@ -90,14 +89,14 @@ static void mutable_byte_array_test_writes_byte_array(void **state) {
     assert_mutable_byte_array_eq(expected, *byte_array);
     //No errors are set.
     assert_null(*p_err);
-    cleanup_error(p_err);
+    delete_glue_schema_registry_error_holder(p_err);
 
     mutable_byte_array_cleanup(byte_array, expected.data);
 }
 
 static void mutable_byte_array_test_noop_when_array_is_NULL(void **state) {
     size_t len = strlen(test_mutable_array_payload);
-    glue_schema_registry_error **p_err = create_gsr_error_p_holder();
+    glue_schema_registry_error **p_err = new_glue_schema_registry_error_holder();
 
     mutable_byte_array *byte_array = new_mutable_byte_array(len, p_err);
     assert_mutable_byte_array_data_zero(byte_array);
@@ -113,13 +112,13 @@ static void mutable_byte_array_test_noop_when_array_is_NULL(void **state) {
     assert_int_equal(err->code, ERR_CODE_NULL_PARAMETERS);
     assert_string_equal(err->msg, "Cannot write to NULL byte array");
 
-    cleanup_error(p_err);
+    delete_glue_schema_registry_error_holder(p_err);
     mutable_byte_array_cleanup(byte_array, NULL);
 }
 
 static void mutable_byte_array_test_throws_exception_when_index_is_out_of_range(void **state) {
     size_t len = strlen(test_mutable_array_payload);
-    glue_schema_registry_error **p_err = create_gsr_error_p_holder();
+    glue_schema_registry_error **p_err = new_glue_schema_registry_error_holder();
 
     mutable_byte_array *byte_array = new_mutable_byte_array(len, p_err);
     assert_mutable_byte_array_data_zero(byte_array);
@@ -137,13 +136,13 @@ static void mutable_byte_array_test_throws_exception_when_index_is_out_of_range(
     assert_mutable_byte_array_data_zero(byte_array);
 
     //Cleanup
-    cleanup_error(p_err);
+    delete_glue_schema_registry_error_holder(p_err);
     mutable_byte_array_cleanup(byte_array, NULL);
 }
 
 static void mutable_byte_array_test_throws_exception_when_index_is_at_range(void **state) {
     size_t len = strlen(test_mutable_array_payload);
-    glue_schema_registry_error **p_err = create_gsr_error_p_holder();
+    glue_schema_registry_error **p_err = new_glue_schema_registry_error_holder();
 
     mutable_byte_array *byte_array = new_mutable_byte_array(len, p_err);
     assert_mutable_byte_array_data_zero(byte_array);
@@ -161,7 +160,7 @@ static void mutable_byte_array_test_throws_exception_when_index_is_at_range(void
     assert_int_equal(err->code, ERR_CODE_INVALID_PARAMETERS);
     assert_string_equal(err->msg, "Index: 39 out of range for the byte-array of max_len: 35");
 
-    cleanup_error(p_err);
+    delete_glue_schema_registry_error_holder(p_err);
 
     //Cleanup
     mutable_byte_array_cleanup(byte_array, NULL);
@@ -169,7 +168,7 @@ static void mutable_byte_array_test_throws_exception_when_index_is_at_range(void
 
 static void mutable_byte_array_test_gets_data_as_expected(void **state) {
     size_t len = strlen(test_mutable_array_payload) + 1;
-    glue_schema_registry_error **p_err = create_gsr_error_p_holder();
+    glue_schema_registry_error **p_err = new_glue_schema_registry_error_holder();
 
     mutable_byte_array *byte_array = new_mutable_byte_array(len, p_err);
 
@@ -182,14 +181,14 @@ static void mutable_byte_array_test_gets_data_as_expected(void **state) {
     assert_string_equal(test_mutable_array_payload, data);
     assert_ptr_not_equal(test_mutable_array_payload, data);
 
-    cleanup_error(p_err);
+    delete_glue_schema_registry_error_holder(p_err);
 
     mutable_byte_array_cleanup(byte_array, NULL);
 }
 
 static void mutable_byte_array_test_gets_max_len_as_expected(void **state) {
     size_t len = strlen(test_mutable_array_payload) + 1;
-    glue_schema_registry_error **p_err = create_gsr_error_p_holder();
+    glue_schema_registry_error **p_err = new_glue_schema_registry_error_holder();
     mutable_byte_array *byte_array = new_mutable_byte_array(len, p_err);
 
     assert_int_equal(len, mutable_byte_array_get_max_len(byte_array));
@@ -202,19 +201,19 @@ static void mutable_byte_array_test_gets_max_len_as_expected(void **state) {
     //Assert again
     assert_int_equal(len, mutable_byte_array_get_max_len(byte_array));
 
-    cleanup_error(p_err);
+    delete_glue_schema_registry_error_holder(p_err);
     mutable_byte_array_cleanup(byte_array, NULL);
 }
 
 static void mutable_byte_array_test_deletes_byte_array(void **state) {
     size_t len = strlen(test_mutable_array_payload);
-    glue_schema_registry_error **p_err = create_gsr_error_p_holder();
+    glue_schema_registry_error **p_err = new_glue_schema_registry_error_holder();
     mutable_byte_array *byte_array = new_mutable_byte_array(len, p_err);
     for (size_t index = 0; index < len; index++) {
         mutable_byte_array_write(byte_array, index, test_mutable_array_payload[index], p_err);
     }
 
-    cleanup_error(p_err);
+    delete_glue_schema_registry_error_holder(p_err);
     delete_mutable_byte_array(byte_array);
 }
 

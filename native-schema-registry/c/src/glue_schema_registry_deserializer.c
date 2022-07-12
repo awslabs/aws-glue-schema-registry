@@ -1,11 +1,12 @@
 #include "../include/glue_schema_registry_deserializer.h"
+#include "../include/memory_allocator.h"
 #include "../../target/libnativeschemaregistry.h"
 #include <stdlib.h>
 
 glue_schema_registry_deserializer * new_glue_schema_registry_deserializer(glue_schema_registry_error **p_err) {
     glue_schema_registry_deserializer *deserializer = NULL;
     deserializer =
-            (glue_schema_registry_deserializer *) malloc(sizeof(glue_schema_registry_deserializer));
+            (glue_schema_registry_deserializer *) aws_common_malloc(sizeof(glue_schema_registry_deserializer));
 
     int ret = graal_create_isolate(NULL, NULL, (graal_isolatethread_t **) &deserializer->instance_context);
     if (ret != 0) {
@@ -31,7 +32,7 @@ void delete_glue_schema_registry_deserializer(glue_schema_registry_deserializer 
         deserializer->instance_context = NULL;
     }
 
-    free(deserializer);
+    aws_common_free(deserializer);
 }
 
 mutable_byte_array *glue_schema_registry_deserializer_decode(glue_schema_registry_deserializer * deserializer,

@@ -2,10 +2,6 @@ list(APPEND sanitizer_checks "-fsanitize=address,undefined -fsanitize-recover=ad
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${sanitizer_checks} -fprofile-arcs -ftest-coverage -ggdb3 -O2 -Wall")
 include(cmake/FetchCMocka.cmake)
 
-set("TEST_HELPERS" "TEST_HELPERS")
-
-add_library(${TEST_HELPERS} "glue_schema_registry_test_helper.c")
-
 list(
         APPEND
         tests
@@ -24,7 +20,7 @@ foreach (test ${tests})
     target_link_libraries(
             "${test}"
             "${DATA_TYPES_MODULE_NAME}"
-            "${TEST_HELPERS}"
+            "${AWS_COMMON_MEMALLOC}"
             "cmocka"
     )
 

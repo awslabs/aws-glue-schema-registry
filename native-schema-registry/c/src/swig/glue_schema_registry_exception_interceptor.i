@@ -10,7 +10,7 @@
 
 %define %glue_schema_registry_exception_interceptor(err_arg) {
     //Initialize the error pointer holder argument. It is expected that the target language caller passes null here.
-    err_arg = (glue_schema_registry_error **) malloc(sizeof(glue_schema_registry_error *));
+    err_arg = new_glue_schema_registry_error_holder();
 
     //Execute the method
     $action
@@ -21,7 +21,7 @@
     //if the error is set to NULL, no exception occurred.
     if (err == NULL) {
         //Release the error pointer holder.
-        free(err_arg);
+        delete_glue_schema_registry_error_holder(err_arg);
 
         return result;
     }
@@ -29,8 +29,7 @@
     //Throw the exception
     if (err->msg == NULL || strlen(err->msg) == 0) {
         //Make sure memory is released before throwing exception.
-        delete_glue_schema_registry_error(err);
-        free(err_arg);
+        delete_glue_schema_registry_error_holder(err_arg);
 
         SWIG_exception(SWIG_RuntimeError, "Unknown exception occurred.");
     } else {
@@ -41,8 +40,7 @@
         int err_code = err->code;
 
         //Make sure memory is released before throwing exception.
-        delete_glue_schema_registry_error(err);
-        free(err_arg);
+        delete_glue_schema_registry_error_holder(err_arg);
 
         if (err_code == ERR_CODE_NULL_PARAMETERS || err_code == ERR_CODE_INVALID_PARAMETERS) {
             SWIG_exception(SWIG_ValueError, msg);

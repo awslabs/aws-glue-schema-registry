@@ -32,7 +32,7 @@ static void glue_schema_registry_error_returns_null_when_null_msg_is_passed(void
 }
 
 static void glue_schema_registry_error_sets_exception_instance_as_expected(void **state) {
-    glue_schema_registry_error **p_err = (glue_schema_registry_error**) malloc(sizeof(glue_schema_registry_error*));
+    glue_schema_registry_error **p_err = new_glue_schema_registry_error_holder();
     throw_error(p_err, TEST_ERROR_MSG, TEST_ERROR_CODE);
 
     assert_non_null(p_err);
@@ -42,8 +42,7 @@ static void glue_schema_registry_error_sets_exception_instance_as_expected(void 
     assert_string_equal(TEST_ERROR_MSG, err->msg);
     assert_int_equal(TEST_ERROR_CODE, err->code);
 
-    error_cleanup(err);
-    free(p_err);
+    delete_glue_schema_registry_error_holder(p_err);
 }
 
 static void glue_schema_registry_error_does_not_set_exception_if_error_pointer_is_null(void **state) {
@@ -79,6 +78,18 @@ static void glue_schema_registry_error_truncates_error_message_when_len_matches_
     error_cleanup(error);
 }
 
+static void glue_schema_registry_error_holder_creates_new_instance(void **state) {
+    glue_schema_registry_error **p_err = new_glue_schema_registry_error_holder();
+    assert_non_null(p_err);
+
+    delete_glue_schema_registry_error_holder(p_err);
+}
+
+static void glue_schema_registry_error_holder_creates_deletes_instance(void **state) {
+    glue_schema_registry_error **p_err = new_glue_schema_registry_error_holder();
+    delete_glue_schema_registry_error_holder(p_err);
+}
+
 int main() {
 
     const struct CMUnitTest tests[] = {
@@ -89,7 +100,9 @@ int main() {
             cmocka_unit_test(glue_schema_registry_error_creates_new_glue_schema_registry_error),
             cmocka_unit_test(glue_schema_registry_error_gets_error_message_of_requested_size),
             cmocka_unit_test(glue_schema_registry_error_truncates_error_message_when_len_is_exceeded),
-            cmocka_unit_test(glue_schema_registry_error_truncates_error_message_when_len_matches_msg_len)
+            cmocka_unit_test(glue_schema_registry_error_truncates_error_message_when_len_matches_msg_len),
+            cmocka_unit_test(glue_schema_registry_error_holder_creates_new_instance),
+            cmocka_unit_test(glue_schema_registry_error_holder_creates_deletes_instance)
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);
