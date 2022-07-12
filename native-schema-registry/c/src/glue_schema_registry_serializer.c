@@ -1,10 +1,11 @@
 #include "../include/glue_schema_registry_serializer.h"
+#include "../include/memory_allocator.h"
 #include "../../target/libnativeschemaregistry.h"
 #include <stdlib.h>
 
 glue_schema_registry_serializer *new_glue_schema_registry_serializer(glue_schema_registry_error **p_err) {
     glue_schema_registry_serializer *serializer = NULL;
-    serializer = (glue_schema_registry_serializer *) malloc(sizeof(glue_schema_registry_serializer));
+    serializer = (glue_schema_registry_serializer *) aws_common_malloc(sizeof(glue_schema_registry_serializer));
 
     //Initializes a GraalVM instance to call the entry points.
     int ret = graal_create_isolate(NULL, NULL, (graal_isolatethread_t **) &serializer->instance_context);
@@ -33,7 +34,7 @@ void delete_glue_schema_registry_serializer(glue_schema_registry_serializer *ser
         serializer->instance_context = NULL;
     }
 
-    free(serializer);
+    aws_common_free(serializer);
 }
 
 mutable_byte_array *glue_schema_registry_serializer_encode(

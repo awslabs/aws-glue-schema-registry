@@ -1,4 +1,5 @@
 #include "../include/read_only_byte_array.h"
+#include "../include/memory_allocator.h"
 #include <stdio.h>
 
 
@@ -8,7 +9,7 @@ read_only_byte_array * new_read_only_byte_array(unsigned char *data, size_t len,
         throw_error(p_err, "Data is NULL or is of zero-length", ERR_CODE_NULL_PARAMETERS);
         return NULL;
     }
-    array = (read_only_byte_array *) malloc(sizeof(read_only_byte_array));
+    array = (read_only_byte_array *) aws_common_malloc(sizeof(read_only_byte_array));
 
     array->data = data;
     array->len = len;
@@ -25,7 +26,7 @@ void delete_read_only_byte_array(read_only_byte_array *array) {
         return;
     }
     array->len = 0;
-    free(array);
+    aws_common_free(array);
 }
 
 unsigned char * read_only_byte_array_get_data(read_only_byte_array *array) {

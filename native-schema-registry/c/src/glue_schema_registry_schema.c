@@ -1,6 +1,6 @@
 #include "../include/glue_schema_registry_schema.h"
 #include "../include/glue_schema_registry_error.h"
-#include <stdlib.h>
+#include "../include/memory_allocator.h"
 #include <string.h>
 
 static int validate(const char *schema_name, const char *schema_def, const char *data_format) {
@@ -21,7 +21,7 @@ glue_schema_registry_schema * new_glue_schema_registry_schema(
         return NULL;
     }
     glue_schema_registry_schema * glueSchemaRegistrySchema = NULL;
-    glueSchemaRegistrySchema = (glue_schema_registry_schema *) malloc(sizeof(glue_schema_registry_schema));
+    glueSchemaRegistrySchema = (glue_schema_registry_schema *) aws_common_malloc(sizeof(glue_schema_registry_schema));
 
     glueSchemaRegistrySchema->schema_name = strdup(schema_name);
     glueSchemaRegistrySchema->schema_def = strdup(schema_def);
@@ -41,15 +41,15 @@ void delete_glue_schema_registry_schema(glue_schema_registry_schema * glueSchema
     }
 
     if (glueSchemaRegistrySchema->schema_name != NULL) {
-        free(glueSchemaRegistrySchema->schema_name);
+        aws_common_free(glueSchemaRegistrySchema->schema_name);
     }
     if (glueSchemaRegistrySchema->schema_def != NULL) {
-        free(glueSchemaRegistrySchema->schema_def);
+        aws_common_free(glueSchemaRegistrySchema->schema_def);
     }
     if (glueSchemaRegistrySchema->data_format != NULL) {
-        free(glueSchemaRegistrySchema->data_format);
+        aws_common_free(glueSchemaRegistrySchema->data_format);
     }
-    free(glueSchemaRegistrySchema);
+    aws_common_free(glueSchemaRegistrySchema);
 }
 
 const char * glue_schema_registry_schema_get_schema_name(glue_schema_registry_schema * glueSchemaRegistrySchema) {

@@ -1,7 +1,6 @@
 #include <string.h>
 #include "cmocka.h"
 #include "../include/read_only_byte_array.h"
-#include "glue_schema_registry_test_helper.h"
 
 const char * test_array_payload = "🦀HelloWorld!!!!!🥶";
 
@@ -28,7 +27,7 @@ static void byte_array_cleanup(read_only_byte_array * byte_array, unsigned char 
 static void read_only_byte_array_test_creates_byte_array(void **state) {
     size_t len = strlen(test_array_payload);
     unsigned char * data = create_test_payload();
-    glue_schema_registry_error **p_err = create_gsr_error_p_holder();
+    glue_schema_registry_error **p_err = new_glue_schema_registry_error_holder();
 
     read_only_byte_array * byte_array = new_read_only_byte_array(data, len, p_err);
 
@@ -40,11 +39,11 @@ static void read_only_byte_array_test_creates_byte_array(void **state) {
     assert_null(*p_err);
 
     byte_array_cleanup(byte_array, data);
-    cleanup_error(p_err);
+    delete_glue_schema_registry_error_holder(p_err);
 }
 
 static void read_only_byte_array_test_returns_NULL_when_data_len_is_Zero(void **state) {
-    glue_schema_registry_error **p_err = create_gsr_error_p_holder();
+    glue_schema_registry_error **p_err = new_glue_schema_registry_error_holder();
     unsigned char * data = create_test_payload();
     read_only_byte_array *actual = new_read_only_byte_array(data, 0, p_err);
 
@@ -54,12 +53,12 @@ static void read_only_byte_array_test_returns_NULL_when_data_len_is_Zero(void **
     assert_int_equal(err->code, ERR_CODE_NULL_PARAMETERS);
     assert_string_equal(err->msg, "Data is NULL or is of zero-length");
 
-    cleanup_error(p_err);
+    delete_glue_schema_registry_error_holder(p_err);
     byte_array_cleanup(actual, data);
 }
 
 static void read_only_byte_array_test_returns_NULL_when_data_is_NULL(void **state) {
-    glue_schema_registry_error **p_err = create_gsr_error_p_holder();
+    glue_schema_registry_error **p_err = new_glue_schema_registry_error_holder();
     read_only_byte_array *actual = new_read_only_byte_array(NULL, 10, p_err);
 
     assert_null(actual);
@@ -68,22 +67,22 @@ static void read_only_byte_array_test_returns_NULL_when_data_is_NULL(void **stat
     assert_int_equal(err->code, ERR_CODE_NULL_PARAMETERS);
     assert_string_equal(err->msg, "Data is NULL or is of zero-length");
 
-    cleanup_error(p_err);
+    delete_glue_schema_registry_error_holder(p_err);
 }
 
 static void read_only_byte_array_test_deletes_byte_array(void **state) {
-    glue_schema_registry_error **p_err = create_gsr_error_p_holder();
+    glue_schema_registry_error **p_err = new_glue_schema_registry_error_holder();
     size_t len = strlen(test_array_payload);
     unsigned char * data = create_test_payload();
     read_only_byte_array *byte_array = new_read_only_byte_array(data, len, p_err);
 
-    cleanup_error(p_err);
+    delete_glue_schema_registry_error_holder(p_err);
     delete_read_only_byte_array(byte_array);
     free(data);
 }
 
 static void read_only_byte_array_get_data_fetches_bytes_correctly(void **state) {
-    glue_schema_registry_error **p_err = create_gsr_error_p_holder();
+    glue_schema_registry_error **p_err = new_glue_schema_registry_error_holder();
     size_t len = strlen(test_array_payload);
     unsigned char * expected = create_test_payload();
 
@@ -95,7 +94,7 @@ static void read_only_byte_array_get_data_fetches_bytes_correctly(void **state) 
     assert_int_equal(len, actual_len);
     assert_memory_equal(expected, actual, len);
 
-    cleanup_error(p_err);
+    delete_glue_schema_registry_error_holder(p_err);
     byte_array_cleanup(byte_array, expected);
 }
 

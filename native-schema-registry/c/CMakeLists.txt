@@ -22,6 +22,7 @@ ENDIF()
 
 set(DATA_TYPES_MODULE_NAME native_schema_registry_c_data_types)
 set(SERDE_MODULE_NAME native_schema_registry_c)
+set(AWS_COMMON_MEMALLOC aws_common_memalloc)
 set(NATIVE_SCHEMA_REGISTRY_MODULE_NAME libnativeschemaregistry)
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 

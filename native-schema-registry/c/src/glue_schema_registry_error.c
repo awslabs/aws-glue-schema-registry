@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
+#include "../include/memory_allocator.h"
 #include "../include/glue_schema_registry_error.h"
 
 static int validate(const char *err_msg) {
@@ -18,7 +19,7 @@ glue_schema_registry_error *new_glue_schema_registry_error(
         return NULL;
     }
     glue_schema_registry_error *error = NULL;
-    error = (glue_schema_registry_error *) malloc(sizeof(glue_schema_registry_error));
+    error = (glue_schema_registry_error *) aws_common_malloc(sizeof(glue_schema_registry_error));
     error->msg = strdup(err_msg);
     error->code = err_code;
 
@@ -32,12 +33,12 @@ void delete_glue_schema_registry_error(glue_schema_registry_error *error) {
     }
 
     if (error->msg != NULL) {
-        free(error->msg);
+        aws_common_free(error->msg);
         error->msg = NULL;
     }
     error->code = 0;
 
-    free(error);
+    aws_common_free(error);
 }
 
 void glue_schema_registry_error_get_msg(glue_schema_registry_error *error, char *dst, size_t len) {
@@ -64,4 +65,20 @@ void throw_error(glue_schema_registry_error **p_err, const char *msg, int code) 
 
     glue_schema_registry_error *err = new_glue_schema_registry_error(msg, code);
     *p_err = err;
+}
+
+glue_schema_registry_error ** new_glue_schema_registry_error_holder(void) {
+    glue_schema_registry_error **p_err =
+            (glue_schema_registry_error **) aws_common_malloc(sizeof(glue_schema_registry_error *));
+    *p_err = NULL;
+    return p_err;
+}
+
+void delete_glue_schema_registry_error_holder(glue_schema_registry_error **p_err) {
+    if (p_err == NULL) {
+        return;
+    }
+
+    delete_glue_schema_registry_error(*p_err);
+    aws_common_free(p_err);
 }

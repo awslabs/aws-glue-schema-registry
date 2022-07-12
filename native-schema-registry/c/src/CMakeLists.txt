@@ -2,8 +2,12 @@
 execute_process(COMMAND sed -ie "s/<graal_isolate.h>/\"graal_isolate.h\"/" ${LIB_NATIVE_SCHEMA_REGISTRY_PATH}/libnativeschemaregistry.h)
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -ftest-coverage -fprofile-arcs -ggdb3 -O2 -Wall")
+include(cmake/FetchAwsCommon.cmake)
 
 include_directories("include")
+
+add_library(${AWS_COMMON_MEMALLOC} SHARED memory_allocator.c)
+target_link_libraries(${AWS_COMMON_MEMALLOC} ${AWS_C_COMMON})
 
 #Adding modules in the build order.
 add_library(
@@ -40,7 +44,13 @@ add_library(
 )
 
 target_link_libraries(
+        ${DATA_TYPES_MODULE_NAME}
+        ${AWS_COMMON_MEMALLOC}
+)
+
+target_link_libraries(
         ${SERDE_MODULE_NAME}
+        ${AWS_COMMON_MEMALLOC}
         ${DATA_TYPES_MODULE_NAME}
         ${NATIVE_SCHEMA_REGISTRY_MODULE_NAME}
 )

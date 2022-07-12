@@ -41,4 +41,14 @@ void glue_schema_registry_error_get_msg(glue_schema_registry_error *error, char 
  */
 void throw_error(glue_schema_registry_error **p_err, const char *msg, int code);
 
+/**
+ * Creates a pointer to hold an instance of glue_schema_registry_error
+ */
+glue_schema_registry_error **new_glue_schema_registry_error_holder(void);
+
+/**
+ * Deletes the pointer holder of glue_schema_registry_error and it's content.
+ */
+void delete_glue_schema_registry_error_holder(glue_schema_registry_error **p_err);
+
 #endif //NATIVE_SCHEMA_REGISTRY_GLUE_SCHEMA_REGISTRY_ERROR_H

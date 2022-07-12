@@ -1,5 +1,6 @@
 #include "../include/mutable_byte_array.h"
 #include "../include/glue_schema_registry_error.h"
+#include "../include/memory_allocator.h"
 #include <stdio.h>
 
 /**
@@ -15,8 +16,8 @@ mutable_byte_array *new_mutable_byte_array(size_t max_len, glue_schema_registry_
         return NULL;
     }
     mutable_byte_array *array = NULL;
-    array = (mutable_byte_array *) malloc(sizeof(mutable_byte_array));
-    array->data = (unsigned char*) calloc(max_len, sizeof(unsigned char));
+    array = (mutable_byte_array *) aws_common_malloc(sizeof(mutable_byte_array));
+    array->data = (unsigned char*) aws_common_calloc(max_len, sizeof(unsigned char));
     array->max_len = max_len;
 
     //Explicitly set to null
@@ -39,11 +40,11 @@ void delete_mutable_byte_array(mutable_byte_array *array) {
         for (size_t index = 0; index < array->max_len; index++) {
             array->data[index] = 0;
         }
-        free(array->data);
+        aws_common_free(array->data);
         array->data = NULL;
     }
     array->max_len = 0;
-    free(array);
+    aws_common_free(array);
 }
 
 void mutable_byte_array_write(mutable_byte_array *array, size_t index, unsigned char byte,
