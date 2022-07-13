@@ -1,6 +1,6 @@
-#include "../include/glue_schema_registry_serializer.h"
-#include "../include/memory_allocator.h"
-#include "../../target/libnativeschemaregistry.h"
+#include "glue_schema_registry_serializer.h"
+#include "memory_allocator.h"
+#include "libnativeschemaregistry.h"
 #include <stdlib.h>
 
 glue_schema_registry_serializer *new_glue_schema_registry_serializer(glue_schema_registry_error **p_err) {

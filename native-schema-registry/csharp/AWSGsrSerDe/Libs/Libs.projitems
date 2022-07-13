@@ -21,5 +21,8 @@
     <Content Include="$(MSBuildThisFileDirectory)native_schema_registry_c_data_types.*">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <Content Include="$(MSBuildThisFileDirectory)aws_common_memalloc.*">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 </Project>

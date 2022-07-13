@@ -1,7 +1,7 @@
 #ifndef MUTABLE_BYTE_ARRAY_H
 #define MUTABLE_BYTE_ARRAY_H
 #include <stdlib.h>
-#include "../include/glue_schema_registry_error.h"
+#include "glue_schema_registry_error.h"
 
 //Integer.MAX_VALUE in Java
 //This gives ~2.1Gb limit on a record.

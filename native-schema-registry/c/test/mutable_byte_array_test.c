@@ -1,6 +1,7 @@
 #include <string.h>
 #include "cmocka.h"
-#include "../include/mutable_byte_array.h"
+#include "glue_schema_registry_test_helper.h"
+#include "mutable_byte_array.h"
 
 const char * test_mutable_array_payload = "Foobar 01-23 1231!!!!!🍎aosmd🦷";
 
@@ -11,17 +12,6 @@ static unsigned char * create_mutable_test_payload() {
         data[i] = test_mutable_array_payload[i];
     }
     return data;
-}
-
-static void assert_mutable_byte_array_eq(mutable_byte_array expected, mutable_byte_array actual) {
-    assert_int_equal(expected.max_len, actual.max_len);
-
-    //Ensure the pointers are not pointing to same memory address
-    assert_ptr_not_equal(expected.data, actual.data);
-
-    for (size_t index = 0; index < expected.max_len; index++) {
-        assert_int_equal(expected.data[index], actual.data[index]);
-    }
 }
 
 static void assert_mutable_byte_array_data_zero(mutable_byte_array *byte_array) {
@@ -228,7 +218,7 @@ static void mutable_byte_array_test_ignores_null_err_pointer(void **state) {
     delete_mutable_byte_array(byte_array);
 }
 
-int main() {
+int main(void) {
     const struct CMUnitTest tests[] = {
             cmocka_unit_test(mutable_byte_array_test_creates_byte_array),
             cmocka_unit_test(mutable_byte_array_test_returns_NULL_when_initialized_empty),

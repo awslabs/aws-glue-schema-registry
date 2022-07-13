@@ -1,6 +1,6 @@
-#include "../include/mutable_byte_array.h"
-#include "../include/glue_schema_registry_error.h"
-#include "../include/memory_allocator.h"
+#include "mutable_byte_array.h"
+#include "glue_schema_registry_error.h"
+#include "memory_allocator.h"
 #include <stdio.h>
 
 /**

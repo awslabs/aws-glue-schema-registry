@@ -1,6 +1,6 @@
-#include "../include/glue_schema_registry_deserializer.h"
-#include "../include/memory_allocator.h"
-#include "../../target/libnativeschemaregistry.h"
+#include "glue_schema_registry_deserializer.h"
+#include "memory_allocator.h"
+#include "libnativeschemaregistry.h"
 #include <stdlib.h>
 
 glue_schema_registry_deserializer * new_glue_schema_registry_deserializer(glue_schema_registry_error **p_err) {
@@ -35,16 +35,26 @@ void delete_glue_schema_registry_deserializer(glue_schema_registry_deserializer 
     aws_common_free(deserializer);
 }
 
-mutable_byte_array *glue_schema_registry_deserializer_decode(glue_schema_registry_deserializer * deserializer,
-                                                             read_only_byte_array *array,
-                                                             glue_schema_registry_error **p_err) {
+static bool validate(
+        glue_schema_registry_deserializer *deserializer,
+        read_only_byte_array *array,
+        glue_schema_registry_error **p_err) {
     if (deserializer == NULL || deserializer->instance_context == NULL) {
         throw_error(p_err, "Deserializer instance or instance context is null.", ERR_CODE_INVALID_STATE);
-        return NULL;
+        return false;
     }
 
     if (array == NULL || array->len == 0) {
         throw_error(p_err, "Byte array cannot be null", ERR_CODE_NULL_PARAMETERS);
+        return false;
+    }
+    return true;
+}
+
+mutable_byte_array *glue_schema_registry_deserializer_decode(glue_schema_registry_deserializer * deserializer,
+                                                             read_only_byte_array *array,
+                                                             glue_schema_registry_error **p_err) {
+    if (!validate(deserializer, array, p_err)) {
         return NULL;
     }
 
@@ -54,13 +64,7 @@ mutable_byte_array *glue_schema_registry_deserializer_decode(glue_schema_registr
 glue_schema_registry_schema *glue_schema_registry_deserializer_decode_schema(glue_schema_registry_deserializer * deserializer,
                                                                              read_only_byte_array *array,
                                                                              glue_schema_registry_error **p_err) {
-    if (deserializer == NULL || deserializer->instance_context == NULL) {
-        throw_error(p_err, "Deserializer instance or instance context is null.", ERR_CODE_INVALID_STATE);
-        return NULL;
-    }
-
-    if (array == NULL || array->len == 0) {
-        throw_error(p_err, "Byte array cannot be null", ERR_CODE_NULL_PARAMETERS);
+    if (!validate(deserializer, array, p_err)) {
         return NULL;
     }
 
@@ -71,13 +75,7 @@ glue_schema_registry_schema *glue_schema_registry_deserializer_decode_schema(glu
 bool glue_schema_registry_deserializer_can_decode(glue_schema_registry_deserializer * deserializer,
                                                   read_only_byte_array *array,
                                                   glue_schema_registry_error **p_err) {
-    if (deserializer == NULL || deserializer->instance_context == NULL) {
-        throw_error(p_err, "Deserializer instance or instance context is null.", ERR_CODE_INVALID_STATE);
-        return NULL;
-    }
-
-    if (array == NULL || array->len == 0) {
-        throw_error(p_err, "Byte array cannot be null", ERR_CODE_NULL_PARAMETERS);
+    if (!validate(deserializer, array, p_err)) {
         return NULL;
     }
 

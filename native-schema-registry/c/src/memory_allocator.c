@@ -1,4 +1,4 @@
-#include "../include/memory_allocator.h"
+#include "memory_allocator.h"
 #include "aws/common/allocator.h"
 
 /*

@@ -1,10 +1,10 @@
 #include <string.h>
 #include "cmocka.h"
-#include "../include/read_only_byte_array.h"
+#include "read_only_byte_array.h"
 
 const char * test_array_payload = "🦀HelloWorld!!!!!🥶";
 
-static unsigned char * create_test_payload() {
+static unsigned char * create_test_payload(void) {
     size_t len = strlen(test_array_payload);
     unsigned char * data = malloc(len + 1);
     for (int i = 0 ; i <= len ; i ++) {
@@ -107,7 +107,7 @@ static void read_only_byte_array_test_does_not_fail_when_error_pointer_is_null(v
     byte_array_cleanup(byte_array, expected);
 }
 
-int main() {
+int main(void) {
     const struct CMUnitTest tests[] = {
             cmocka_unit_test(read_only_byte_array_test_creates_byte_array),
             cmocka_unit_test(read_only_byte_array_test_deletes_byte_array),

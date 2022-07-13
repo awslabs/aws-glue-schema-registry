@@ -1,4 +1,4 @@
-#include "../include/glue_schema_registry_error.h"
+#include "glue_schema_registry_error.h"
 #include <stdlib.h>
 #include "cmocka.h"
 
@@ -90,7 +90,7 @@ static void glue_schema_registry_error_holder_creates_deletes_instance(void **st
     delete_glue_schema_registry_error_holder(p_err);
 }
 
-int main() {
+int main(void) {
 
     const struct CMUnitTest tests[] = {
             cmocka_unit_test(glue_schema_registry_error_deletes_the_instance),
