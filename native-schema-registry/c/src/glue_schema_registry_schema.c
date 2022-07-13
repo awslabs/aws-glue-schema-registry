@@ -1,6 +1,6 @@
-#include "../include/glue_schema_registry_schema.h"
-#include "../include/glue_schema_registry_error.h"
-#include "../include/memory_allocator.h"
+#include "glue_schema_registry_schema.h"
+#include "glue_schema_registry_error.h"
+#include "memory_allocator.h"
 #include <string.h>
 
 static int validate(const char *schema_name, const char *schema_def, const char *data_format) {
@@ -41,13 +41,13 @@ void delete_glue_schema_registry_schema(glue_schema_registry_schema * glueSchema
     }
 
     if (glueSchemaRegistrySchema->schema_name != NULL) {
-        aws_common_free(glueSchemaRegistrySchema->schema_name);
+        free(glueSchemaRegistrySchema->schema_name);
     }
     if (glueSchemaRegistrySchema->schema_def != NULL) {
-        aws_common_free(glueSchemaRegistrySchema->schema_def);
+        free(glueSchemaRegistrySchema->schema_def);
     }
     if (glueSchemaRegistrySchema->data_format != NULL) {
-        aws_common_free(glueSchemaRegistrySchema->data_format);
+        free(glueSchemaRegistrySchema->data_format);
     }
     aws_common_free(glueSchemaRegistrySchema);
 }

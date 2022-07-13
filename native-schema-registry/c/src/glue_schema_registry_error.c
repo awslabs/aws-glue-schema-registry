@@ -1,20 +1,21 @@
 #include <stdlib.h>
 #include <string.h>
-#include "../include/memory_allocator.h"
-#include "../include/glue_schema_registry_error.h"
+#include <stdbool.h>
+#include "memory_allocator.h"
+#include "glue_schema_registry_error.h"
 
-static int validate(const char *err_msg) {
+static bool validate(const char *err_msg) {
     if (err_msg == NULL) {
-        return 1;
+        return false;
     }
 
-    return 0;
+    return true;
 }
 
 glue_schema_registry_error *new_glue_schema_registry_error(
         const char *err_msg,
         int err_code) {
-    if (validate(err_msg) != 0) {
+    if (!validate(err_msg)) {
         log_warn("Error message cannot be null", ERR_CODE_NULL_PARAMETERS);
         return NULL;
     }
@@ -28,12 +29,11 @@ glue_schema_registry_error *new_glue_schema_registry_error(
 
 void delete_glue_schema_registry_error(glue_schema_registry_error *error) {
     if (error == NULL) {
-        log_warn("Error pointer passed is NULL", ERR_CODE_NULL_PARAMETERS);
         return;
     }
 
     if (error->msg != NULL) {
-        aws_common_free(error->msg);
+        free(error->msg);
         error->msg = NULL;
     }
     error->code = 0;

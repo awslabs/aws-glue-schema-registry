@@ -1,7 +1,7 @@
 #ifndef READ_ONLY_BYTE_ARRAY_H
 #define READ_ONLY_BYTE_ARRAY_H
 #include <stdlib.h>
-#include "../include/glue_schema_registry_error.h"
+#include "glue_schema_registry_error.h"
 
 typedef struct read_only_byte_array {
     unsigned char * data;

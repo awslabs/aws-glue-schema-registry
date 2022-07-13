@@ -1,16 +1,11 @@
-#include "../include/glue_schema_registry_schema.h"
+#include "glue_schema_registry_schema.h"
 #include <stdlib.h>
 #include "cmocka.h"
+#include "glue_schema_registry_test_helper.h"
 
 #define TEST_SCHEMA_NAME "Employee.proto"
 #define TEST_DATA_FORMAT "PROTOBUF"
 #define TEST_SCHEMA_DEF "message Employee { string name = 1; int32 rank = 2;}"
-
-static void assert_gsr_schema(glue_schema_registry_schema expected, glue_schema_registry_schema actual) {
-    assert_string_equal(expected.schema_name, actual.schema_name);
-    assert_string_equal(expected.schema_def, actual.schema_def);
-    assert_string_equal(expected.data_format, actual.data_format);
-}
 
 static void schema_cleanup(glue_schema_registry_schema * obj) {
     delete_glue_schema_registry_schema(obj);
@@ -113,7 +108,7 @@ static void glue_schema_registry_schema_not_fail_when_error_pointer_is_null(void
     schema_cleanup(gsr_schema);
 }
 
-int main() {
+int main(void) {
     const struct CMUnitTest tests[] = {
             cmocka_unit_test(glue_schema_registry_schema_deletes_the_instance),
             cmocka_unit_test(glue_schema_registry_schema_when_NULLs_are_passed_does_not_initialize),

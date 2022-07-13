@@ -1,5 +1,5 @@
-#include "../include/read_only_byte_array.h"
-#include "../include/memory_allocator.h"
+#include "read_only_byte_array.h"
+#include "memory_allocator.h"
 #include <stdio.h>
 
 

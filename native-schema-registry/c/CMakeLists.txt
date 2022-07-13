@@ -26,8 +26,10 @@ set(AWS_COMMON_MEMALLOC aws_common_memalloc)
 set(NATIVE_SCHEMA_REGISTRY_MODULE_NAME libnativeschemaregistry)
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
+include_directories("include")
+include_directories(${LIB_NATIVE_SCHEMA_REGISTRY_PATH})
+
 add_subdirectory("src")
 include (CTest)
 enable_testing()
 add_subdirectory("test")
-include_directories("include")

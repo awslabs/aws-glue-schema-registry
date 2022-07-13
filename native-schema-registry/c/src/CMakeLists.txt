@@ -1,10 +1,15 @@
 #Fix the include path in GraalVM generated header file.
 execute_process(COMMAND sed -ie "s/<graal_isolate.h>/\"graal_isolate.h\"/" ${LIB_NATIVE_SCHEMA_REGISTRY_PATH}/libnativeschemaregistry.h)
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -ftest-coverage -fprofile-arcs -ggdb3 -O2 -Wall")
-include(cmake/FetchAwsCommon.cmake)
+if (CMAKE_SYSTEM_NAME MATCHES "^(Linux|Darwin)$")
+    list(APPEND TEST_COVERAGE "-fsanitize=address,undefined -fsanitize-recover=address")
+else()
+    #TODO: Figure out equivalent options for Windows
+    list(APPEND TEST_COVERAGE "")
+endif()
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${TEST_COVERAGE} -O2 -Wall")
 
-include_directories("include")
+include(cmake/FetchAwsCommon.cmake)
 
 add_library(${AWS_COMMON_MEMALLOC} SHARED memory_allocator.c)
 target_link_libraries(${AWS_COMMON_MEMALLOC} ${AWS_C_COMMON})
@@ -88,6 +93,7 @@ swig_link_libraries(
         PUBLIC
         ${DATA_TYPES_MODULE_NAME}
         ${SERDE_MODULE_NAME}
+        ${AWS_COMMON_MEMALLOC}
         ${NATIVE_SCHEMA_REGISTRY_MODULE_NAME}
 )
 ##TODO: Fix this during release. We should segregate Debug and Release
@@ -98,6 +104,7 @@ add_custom_command(
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${CSHARP_MODULE_NAME}> ${CSHARP_GEN_LIB_PATH}/
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${DATA_TYPES_MODULE_NAME}> ${CSHARP_GEN_LIB_PATH}/
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${NATIVE_SCHEMA_REGISTRY_MODULE_NAME}> ${CSHARP_GEN_LIB_PATH}/
+        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${AWS_COMMON_MEMALLOC}> ${CSHARP_GEN_LIB_PATH}/
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${SERDE_MODULE_NAME}> ${CSHARP_GEN_LIB_PATH}/
 )
 
