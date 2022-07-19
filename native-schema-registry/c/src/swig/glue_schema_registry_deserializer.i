@@ -8,11 +8,8 @@ typedef struct glue_schema_registry_deserializer {
 
     //Transfers the ownership of return pointer to target language.
     //so that the language can properly dispose after usage.
-    //This is only required in case of CSharp.
-    #if defined(SWIGCSHARP)
-      %newobject decode_schema;
-      %newobject decode;
-    #endif
+    %newobject decode;
+    %newobject decode_schema;
 
     %extend {
         //Exception argument will be intercepted and thrown as exception in target language.

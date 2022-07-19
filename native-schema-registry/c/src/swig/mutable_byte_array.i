@@ -7,20 +7,11 @@
 %include "arrays_csharp.i"
 #endif
 
-%include "glue_schema_registry_exception_interceptor.i"
-
 #if defined(SWIGPYTHON)
-//Converts the unsigned char * to a Python Bytes object.
-%typemap(out) mutable_byte_array * %{
-        PyObject * obj = PyMemoryView_FromMemory((char *) $1->data, $1->max_len, PyBUF_READ);
-        //Copy the contents to a Python byte array
-        $result = PyBytes_FromObject(obj);
-        //Release the memoryview object
-        Py_CLEAR(obj);
-        //Delete the underlying mutable_byte_array
-        delete_mutable_byte_array($1);
-%}
+%include "pybuffer.i"
 #endif
+
+%include "glue_schema_registry_exception_interceptor.i"
 
 //Methods that map to the C implementation.
 typedef struct mutable_byte_array {
@@ -36,10 +27,16 @@ typedef struct mutable_byte_array {
         //to expose underlying buffers.
         #if defined(SWIGCSHARP)
             %apply unsigned char OUTPUT[] {unsigned char *data};
+            void get_data_copy(unsigned char *data) {
+                memcpy(data, $self->data, $self->max_len);
+            }
         #endif
-        void get_data_copy(unsigned char *data) {
-            memcpy(data, $self->data, $self->max_len);
-        }
+        #if defined(SWIGPYTHON)
+            %pybuffer_mutable_binary(unsigned char * data, size_t len);
+            void get_data_copy(unsigned char *data, size_t len) {
+                memcpy(data, $self->data, len);
+            }
+        #endif
 
         unsigned char * get_data();
 

@@ -22,30 +22,30 @@
     if (err == NULL) {
         //Release the error pointer holder.
         delete_glue_schema_registry_error_holder(err_arg);
-
-        return result;
-    }
-
-    //Throw the exception
-    if (err->msg == NULL || strlen(err->msg) == 0) {
-        //Make sure memory is released before throwing exception.
-        delete_glue_schema_registry_error_holder(err_arg);
-
-        SWIG_exception(SWIG_RuntimeError, "Unknown exception occurred.");
     } else {
-        //Temporarily copy the error_msg to stack before releasing the error pointers.
-        char msg[MAX_ERROR_MSG_LEN];
-        glue_schema_registry_error_get_msg(err, msg, sizeof msg);
 
-        int err_code = err->code;
+        //Throw the exception
+        if (err->msg == NULL || strlen(err->msg) == 0) {
+            //Make sure memory is released before throwing exception.
+            delete_glue_schema_registry_error_holder(err_arg);
 
-        //Make sure memory is released before throwing exception.
-        delete_glue_schema_registry_error_holder(err_arg);
+            SWIG_exception(SWIG_RuntimeError, "Unknown exception occurred.");
+        } else {
+            //Temporarily copy the error_msg to stack before releasing the error pointers.
+            char msg[MAX_ERROR_MSG_LEN];
+            glue_schema_registry_error_get_msg(err, msg, sizeof msg);
 
-        if (err_code == ERR_CODE_NULL_PARAMETERS || err_code == ERR_CODE_INVALID_PARAMETERS) {
-            SWIG_exception(SWIG_ValueError, msg);
+            int err_code = err->code;
+
+            //Make sure memory is released before throwing exception.
+            delete_glue_schema_registry_error_holder(err_arg);
+
+            if (err_code == ERR_CODE_NULL_PARAMETERS || err_code == ERR_CODE_INVALID_PARAMETERS) {
+                SWIG_exception(SWIG_ValueError, msg);
+            } else {
+                SWIG_exception(SWIG_RuntimeError, msg);
+            }
         }
-        SWIG_exception(SWIG_RuntimeError, msg);
     }
 }
 %enddef
