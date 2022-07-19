@@ -7,10 +7,10 @@
 %include "glue_schema_registry_exception_interceptor.i"
 
 typedef struct glue_schema_registry_serializer {
-    #if defined(SWIGCSHARP)
-        //Pass the ownership to C# runtime.
-        %newobject encode;
-    #endif
+    //Transfers the ownership of return pointer to target language.
+    //so that the language can properly dispose after usage.
+    %newobject encode;
+
     %extend {
         //Exception argument will be intercepted and thrown as exception in target language.
         //It is 1st argument as there is no '$self' argument passed for constructor methods.
