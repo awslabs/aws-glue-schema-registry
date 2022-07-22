@@ -60,3 +60,11 @@ add_custom_target(copy-libs-for-tests ALL
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${AWS_COMMON_MEMALLOC}> ${CMAKE_CURRENT_BINARY_DIR}/
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${NATIVE_SCHEMA_REGISTRY_MODULE_NAME}> ${CMAKE_CURRENT_BINARY_DIR}/
 )
+
+#Create code coverage target
+if (CMAKE_SYSTEM_NAME MATCHES "^(Linux)$")
+    set(CMAKE_COMPILER_IS_GNUCXX 1)
+    include(cmake/CodeCoverage.cmake)
+    set(min_code_coverage 100)
+    setup_target_for_coverage(coverage "ctest ." coverage ${min_code_coverage})
+endif()
