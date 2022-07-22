@@ -54,7 +54,7 @@ void mutable_byte_array_write(mutable_byte_array *array, size_t index, unsigned 
         return;
     }
     if (index >= array->max_len) {
-        char error_msg[70];
+        char error_msg[MAX_ERROR_MSG_LEN];
         sprintf(error_msg, "Index: %ld out of range for the byte-array of max_len: %ld", index, array->max_len);
         throw_error(p_err, error_msg, ERR_CODE_INVALID_PARAMETERS);
         return;

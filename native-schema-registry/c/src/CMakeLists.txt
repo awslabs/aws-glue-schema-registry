@@ -1,18 +1,14 @@
-#Fix the include path in GraalVM generated header file.
-execute_process(COMMAND sed -ie "s/<graal_isolate.h>/\"graal_isolate.h\"/" ${LIB_NATIVE_SCHEMA_REGISTRY_PATH}/libnativeschemaregistry.h)
-
-if (CMAKE_SYSTEM_NAME MATCHES "^(Linux|Darwin)$")
-    list(APPEND TEST_COVERAGE "-ftest-coverage -fprofile-arcs")
-else()
-    #TODO: Figure out equivalent options for Windows
-    list(APPEND TEST_COVERAGE "")
-endif()
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${TEST_COVERAGE} -O2 -Wall")
-
 include(cmake/FetchAwsCommon.cmake)
 
+#TODO: Disable coverage / debug for production builds.
+if (CMAKE_SYSTEM_NAME MATCHES "^(Linux)$")
+        list(APPEND TEST_COVERAGE "-ftest-coverage -fprofile-arcs")
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${TEST_COVERAGE} -g -O0 -Wall")
+        set(CMAKE_C_CLANG_TIDY clang-tidy -checks=-*,readability-*)
+endif()
+
 add_library(${AWS_COMMON_MEMALLOC} SHARED memory_allocator.c)
-target_link_libraries(${AWS_COMMON_MEMALLOC} ${AWS_C_COMMON})
+target_link_libraries(${AWS_COMMON_MEMALLOC} PRIVATE ${AWS_C_COMMON})
 
 #Adding modules in the build order.
 add_library(
@@ -30,6 +26,8 @@ add_custom_command(
 )
 
 #Add reference to the GraalVM generated Native schema registry module.
+#First, fix the include path in GraalVM generated header file.
+execute_process(COMMAND sed -ie "s/<graal_isolate.h>/\"graal_isolate.h\"/" ${LIB_NATIVE_SCHEMA_REGISTRY_PATH}/libnativeschemaregistry.h)
 add_library(
         ${NATIVE_SCHEMA_REGISTRY_MODULE_NAME} SHARED
         IMPORTED
@@ -69,6 +67,9 @@ file(
         GLOB GsrSerDeSrc
         "swig/glue_schema_registry_serde.i"
 )
+
+#No need to run CLang Tidy on Swig generated code.
+unset(CMAKE_C_CLANG_TIDY)
 
 #####CSharp
 set(CSHARP_MODULE_NAME GsrSerDeCsGen)

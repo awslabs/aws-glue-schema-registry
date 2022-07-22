@@ -34,32 +34,32 @@ glue_schema_registry_schema * new_glue_schema_registry_schema(
     return glueSchemaRegistrySchema;
 }
 
-void delete_glue_schema_registry_schema(glue_schema_registry_schema * glueSchemaRegistrySchema) {
-    if (glueSchemaRegistrySchema == NULL) {
+void delete_glue_schema_registry_schema(glue_schema_registry_schema * schema) {
+    if (schema == NULL) {
         log_warn("Schema instance is NULL", ERR_CODE_NULL_PARAMETERS);
         return;
     }
 
-    if (glueSchemaRegistrySchema->schema_name != NULL) {
-        free(glueSchemaRegistrySchema->schema_name);
+    if (schema->schema_name != NULL) {
+        free(schema->schema_name);
     }
-    if (glueSchemaRegistrySchema->schema_def != NULL) {
-        free(glueSchemaRegistrySchema->schema_def);
+    if (schema->schema_def != NULL) {
+        free(schema->schema_def);
     }
-    if (glueSchemaRegistrySchema->data_format != NULL) {
-        free(glueSchemaRegistrySchema->data_format);
+    if (schema->data_format != NULL) {
+        free(schema->data_format);
     }
-    aws_common_free(glueSchemaRegistrySchema);
+    aws_common_free(schema);
 }
 
-const char * glue_schema_registry_schema_get_schema_name(glue_schema_registry_schema * glueSchemaRegistrySchema) {
-    return glueSchemaRegistrySchema->schema_name;
+const char * glue_schema_registry_schema_get_schema_name(glue_schema_registry_schema * schema) {
+    return schema->schema_name;
 }
 
-const char * glue_schema_registry_schema_get_schema_def(glue_schema_registry_schema * glueSchemaRegistrySchema) {
-    return glueSchemaRegistrySchema->schema_def;
+const char * glue_schema_registry_schema_get_schema_def(glue_schema_registry_schema * schema) {
+    return schema->schema_def;
 }
 
-const char * glue_schema_registry_schema_get_data_format(glue_schema_registry_schema * glueSchemaRegistrySchema) {
-    return glueSchemaRegistrySchema->data_format;
+const char * glue_schema_registry_schema_get_data_format(glue_schema_registry_schema * schema) {
+    return schema->data_format;
 }

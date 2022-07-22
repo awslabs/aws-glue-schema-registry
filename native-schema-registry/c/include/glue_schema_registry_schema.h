@@ -28,14 +28,14 @@ glue_schema_registry_schema *new_glue_schema_registry_schema(
 );
 
 //Deletes the glue schema registry schema.
-void delete_glue_schema_registry_schema(glue_schema_registry_schema * gsr_schema);
+void delete_glue_schema_registry_schema(glue_schema_registry_schema * schema);
 
 //Gets different attributes from glue_schema_registry_schema instance.
 //These getter methods are translated into "Getter" methods in target languages.
-const char * glue_schema_registry_schema_get_schema_name(glue_schema_registry_schema * gsr_schema);
+const char * glue_schema_registry_schema_get_schema_name(glue_schema_registry_schema * schema);
 
-const char * glue_schema_registry_schema_get_schema_def(glue_schema_registry_schema * gsr_schema);
+const char * glue_schema_registry_schema_get_schema_def(glue_schema_registry_schema * schema);
 
-const char * glue_schema_registry_schema_get_data_format(glue_schema_registry_schema * gsr_schema);
+const char * glue_schema_registry_schema_get_data_format(glue_schema_registry_schema * schema);
 
 #endif //GLUE_SCHEMA_REGISTRY_SCHEMA_H

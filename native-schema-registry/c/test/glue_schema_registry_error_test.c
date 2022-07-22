@@ -1,5 +1,4 @@
 #include "glue_schema_registry_error.h"
-#include <stdlib.h>
 #include "cmocka.h"
 
 #define TEST_ERROR_MSG "Some error occurred"
@@ -22,6 +21,10 @@ static void glue_schema_registry_error_deletes_the_instance(void **state) {
     glue_schema_registry_error *error = new_glue_schema_registry_error(TEST_ERROR_MSG, TEST_ERROR_CODE);
 
     delete_glue_schema_registry_error(error);
+}
+
+static void glue_schema_registry_error_deletes_ignores_null_instance(void **state) {
+    delete_glue_schema_registry_error_holder(NULL);
 }
 
 static void glue_schema_registry_error_returns_null_when_null_msg_is_passed(void **state) {
@@ -94,6 +97,7 @@ int main(void) {
 
     const struct CMUnitTest tests[] = {
             cmocka_unit_test(glue_schema_registry_error_deletes_the_instance),
+            cmocka_unit_test(glue_schema_registry_error_deletes_ignores_null_instance),
             cmocka_unit_test(glue_schema_registry_error_returns_null_when_null_msg_is_passed),
             cmocka_unit_test(glue_schema_registry_error_sets_exception_instance_as_expected),
             cmocka_unit_test(glue_schema_registry_error_does_not_set_exception_if_error_pointer_is_null),

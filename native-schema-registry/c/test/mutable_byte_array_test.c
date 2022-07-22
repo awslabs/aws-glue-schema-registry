@@ -156,6 +156,18 @@ static void mutable_byte_array_test_throws_exception_when_index_is_at_range(void
     mutable_byte_array_cleanup(byte_array, NULL);
 }
 
+static void mutable_byte_array_test_throws_exception_when_index_exceeds_max_allowed_range(void **state) {
+    size_t len = MAX_BYTES_LIMIT;
+    glue_schema_registry_error **p_err = new_glue_schema_registry_error_holder();
+
+    mutable_byte_array *byte_array = new_mutable_byte_array(len, p_err);
+
+    assert_error_and_clear(p_err, "max_len cannot be greater than limit: 2147483647", ERR_CODE_INVALID_PARAMETERS);
+
+    //Cleanup
+    mutable_byte_array_cleanup(byte_array, NULL);
+}
+
 static void mutable_byte_array_test_gets_data_as_expected(void **state) {
     size_t len = strlen(test_mutable_array_payload) + 1;
     glue_schema_registry_error **p_err = new_glue_schema_registry_error_holder();
@@ -207,6 +219,10 @@ static void mutable_byte_array_test_deletes_byte_array(void **state) {
     delete_mutable_byte_array(byte_array);
 }
 
+static void mutable_byte_array_test_delete_ignores_NULL_array(void **state) {
+    delete_mutable_byte_array(NULL);
+}
+
 static void mutable_byte_array_test_ignores_null_err_pointer(void **state) {
     size_t len = strlen(test_mutable_array_payload);
     mutable_byte_array *byte_array = new_mutable_byte_array(len, NULL);
@@ -223,9 +239,11 @@ int main(void) {
             cmocka_unit_test(mutable_byte_array_test_creates_byte_array),
             cmocka_unit_test(mutable_byte_array_test_returns_NULL_when_initialized_empty),
             cmocka_unit_test(mutable_byte_array_test_deletes_byte_array),
+            cmocka_unit_test(mutable_byte_array_test_delete_ignores_NULL_array),
             cmocka_unit_test(mutable_byte_array_test_writes_byte_array),
             cmocka_unit_test(mutable_byte_array_test_throws_exception_when_index_is_at_range),
             cmocka_unit_test(mutable_byte_array_test_throws_exception_when_index_is_out_of_range),
+            cmocka_unit_test(mutable_byte_array_test_throws_exception_when_index_exceeds_max_allowed_range),
             cmocka_unit_test(mutable_byte_array_test_gets_data_as_expected),
             cmocka_unit_test(mutable_byte_array_test_gets_max_len_as_expected),
             cmocka_unit_test(mutable_byte_array_test_ignores_null_err_pointer),

@@ -9,20 +9,31 @@ We use CMake to build the targets in this module.
 ```asm
 #Run in c directory
 
-cmake --build build --target clean 
 cmake -S. -Bbuild 
 cd build 
 cmake --build .
+
+#### Clean
+cmake --build . --target clean
 ```
 ### Testing
 ```asm
-ctest 
+ctest .
 #Re-run failed tests with verbose output
 ctest --rerun-failed --output-on-failure
 ```
 
+### Code Analysis
+Code is statically analyzed using clang-tidy.
+
+### Coverage
+Code coverage checks using gcov and lcov and fail if the coverage is below threshold.
+
+#### Installation
+You might have to install these modules using your OS package manager.
+
 ### Sanitizers
-We use address,leak sanitizers to detect memory leaks and any potential issues during build. As of now, they don't work well on OSX
+We use address,leak sanitizers to detect memory leaks and any potential issues during build. As of now, they only work on Linux.
 
 ### Platform Support
 
