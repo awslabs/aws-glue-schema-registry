@@ -88,12 +88,6 @@ public class DataTypes {
 
     @CStruct("mutable_byte_array")
     public interface C_MutableByteArray extends PointerBase {
-
-        @CField("data")
-        PointerBase getData();
-
-        @CField("max_len")
-        long getMaxLen();
     }
 
     @CFunction("new_mutable_byte_array")
@@ -105,7 +99,6 @@ public class DataTypes {
     @CFunction("mutable_byte_array_write")
     public static native void writeToMutableArray(
         C_MutableByteArray array,
-        long index,
         byte b,
         C_GlueSchemaRegistryErrorPointerHolder errorPointerHolder
     );

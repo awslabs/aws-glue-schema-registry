@@ -9,11 +9,11 @@ include(cmake/FetchCMocka.cmake)
 
 set(TEST_HELPERS test_helpers)
 add_library(${TEST_HELPERS} glue_schema_registry_test_helper.c)
-target_link_libraries(${TEST_HELPERS} cmocka)
+target_link_libraries(${TEST_HELPERS} PRIVATE cmocka ${AWS_C_COMMON})
 
 ##GraalVM Mock
 add_library(${NATIVE_SCHEMA_REGISTRY_MODULE_NAME} libnativeschemaregistry_mock.c)
-target_link_libraries(${NATIVE_SCHEMA_REGISTRY_MODULE_NAME} cmocka)
+target_link_libraries(${NATIVE_SCHEMA_REGISTRY_MODULE_NAME} cmocka ${AWS_C_COMMON})
 
 list(
         APPEND
@@ -47,6 +47,7 @@ foreach (test ${tests})
             "${NATIVE_SCHEMA_REGISTRY_MODULE_NAME}"
             "${AWS_COMMON_MEMALLOC}"
             "${TEST_HELPERS}"
+            "${AWS_C_COMMON}"
             "cmocka"
     )
 

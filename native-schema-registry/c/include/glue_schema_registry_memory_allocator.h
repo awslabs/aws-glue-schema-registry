@@ -1,5 +1,5 @@
-#ifndef NATIVE_SCHEMA_REGISTRY_MEMORY_ALLOCATOR_H
-#define NATIVE_SCHEMA_REGISTRY_MEMORY_ALLOCATOR_H
+#ifndef GLUE_SCHEMA_REGISTRY_MEMORY_ALLOCATOR_H
+#define GLUE_SCHEMA_REGISTRY_MEMORY_ALLOCATOR_H
 
 #include <stdlib.h>
 
@@ -13,4 +13,4 @@ void *aws_common_calloc(size_t count, size_t size);
 
 void aws_common_free(void *ptr);
 
-#endif //NATIVE_SCHEMA_REGISTRY_MEMORY_ALLOCATOR_H
+#endif /* GLUE_SCHEMA_REGISTRY_MEMORY_ALLOCATOR_H */

@@ -27,6 +27,7 @@ set(NATIVE_SCHEMA_REGISTRY_MODULE_NAME libnativeschemaregistry)
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
 include_directories("include")
+include(cmake/FetchAwsCommon.cmake)
 include_directories(${LIB_NATIVE_SCHEMA_REGISTRY_PATH})
 
 add_subdirectory("src")

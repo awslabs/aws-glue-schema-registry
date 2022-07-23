@@ -1,5 +1,5 @@
-#ifndef NATIVE_SCHEMA_REGISTRY_TEST_FIXTURES_H
-#define NATIVE_SCHEMA_REGISTRY_TEST_FIXTURES_H
+#ifndef GLUE_SCHEMA_REGISTRY_TEST_HELPER_H
+#define GLUE_SCHEMA_REGISTRY_TEST_HELPER_H
 #include "read_only_byte_array.h"
 #include "mutable_byte_array.h"
 #include "glue_schema_registry_schema.h"
@@ -18,4 +18,4 @@ void assert_gsr_schema(glue_schema_registry_schema, glue_schema_registry_schema)
 
 const char * get_transport_name_fixture(void);
 
-#endif //NATIVE_SCHEMA_REGISTRY_TEST_FIXTURES_H
+#endif /* GLUE_SCHEMA_REGISTRY_TEST_HELPER_H */

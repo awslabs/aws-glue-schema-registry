@@ -1,5 +1,3 @@
-include(cmake/FetchAwsCommon.cmake)
-
 #TODO: Disable coverage / debug for production builds.
 if (CMAKE_SYSTEM_NAME MATCHES "^(Linux)$")
         list(APPEND TEST_COVERAGE "-ftest-coverage -fprofile-arcs")
@@ -7,7 +5,7 @@ if (CMAKE_SYSTEM_NAME MATCHES "^(Linux)$")
         set(CMAKE_C_CLANG_TIDY clang-tidy -checks=-*,readability-*)
 endif()
 
-add_library(${AWS_COMMON_MEMALLOC} SHARED memory_allocator.c)
+add_library(${AWS_COMMON_MEMALLOC} SHARED glue_schema_registry_memory_allocator.c)
 target_link_libraries(${AWS_COMMON_MEMALLOC} PRIVATE ${AWS_C_COMMON})
 
 #Adding modules in the build order.
@@ -48,11 +46,15 @@ add_library(
 
 target_link_libraries(
         ${DATA_TYPES_MODULE_NAME}
+        PRIVATE
+        ${AWS_C_COMMON}
         ${AWS_COMMON_MEMALLOC}
 )
 
 target_link_libraries(
         ${SERDE_MODULE_NAME}
+        PRIVATE
+        ${AWS_C_COMMON}
         ${AWS_COMMON_MEMALLOC}
         ${DATA_TYPES_MODULE_NAME}
         ${NATIVE_SCHEMA_REGISTRY_MODULE_NAME}
@@ -94,6 +96,7 @@ swig_link_libraries(
         PUBLIC
         ${DATA_TYPES_MODULE_NAME}
         ${SERDE_MODULE_NAME}
+        ${AWS_C_COMMON}
         ${AWS_COMMON_MEMALLOC}
         ${NATIVE_SCHEMA_REGISTRY_MODULE_NAME}
 )
@@ -106,6 +109,7 @@ add_custom_command(
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${DATA_TYPES_MODULE_NAME}> ${CSHARP_GEN_LIB_PATH}/
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${NATIVE_SCHEMA_REGISTRY_MODULE_NAME}> ${CSHARP_GEN_LIB_PATH}/
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${AWS_COMMON_MEMALLOC}> ${CSHARP_GEN_LIB_PATH}/
+        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${AWS_C_COMMON}> ${CSHARP_GEN_LIB_PATH}/
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${SERDE_MODULE_NAME}> ${CSHARP_GEN_LIB_PATH}/
 )
 
@@ -133,6 +137,15 @@ set_target_properties(
         PROPERTIES
         SWIG_USE_TARGET_INCLUDE_DIRECTORIES TRUE
 )
+swig_link_libraries(
+        ${PYTHON_MODULE_NAME}
+        PUBLIC
+        ${DATA_TYPES_MODULE_NAME}
+        ${SERDE_MODULE_NAME}
+        ${AWS_C_COMMON}
+        ${AWS_COMMON_MEMALLOC}
+        ${NATIVE_SCHEMA_REGISTRY_MODULE_NAME}
+)
 
 ##TODO: Fix this during release. We should segregate Debug and Release
 ##Copying built libraries to PYTHON project
@@ -142,5 +155,6 @@ add_custom_command(
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${DATA_TYPES_MODULE_NAME}> ${PYTHON_GEN_LIB_PATH}/
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${NATIVE_SCHEMA_REGISTRY_MODULE_NAME}> ${PYTHON_GEN_LIB_PATH}/
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${AWS_COMMON_MEMALLOC}> ${PYTHON_GEN_LIB_PATH}/
+        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${AWS_C_COMMON}> ${PYTHON_GEN_LIB_PATH}/
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${SERDE_MODULE_NAME}> ${PYTHON_GEN_LIB_PATH}/
 )
