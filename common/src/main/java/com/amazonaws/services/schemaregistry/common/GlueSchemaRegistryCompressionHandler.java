@@ -81,7 +81,10 @@ public interface GlueSchemaRegistryCompressionHandler {
      * @throws IOException
      */
     default byte[] compress(byte[] record) throws IOException {
-        return writeToDeflatorObject(record, getDeflatorObject(record));
+        Deflater deflator = getDeflatorObject(record);
+        byte[] compressed = writeToDeflatorObject(record, deflator);
+        deflator.end();
+        return compressed;
     }
 
     /**
@@ -95,6 +98,9 @@ public interface GlueSchemaRegistryCompressionHandler {
      * @throws IOException
      */
     default byte[] decompress(byte[] compressedRecord, int start, int end) throws IOException {
-        return decompress(getInflatorObject(compressedRecord, start, end), compressedRecord.length);
+        Inflater inflator = getInflatorObject(compressedRecord, start, end);
+        byte[] decompressed = decompress(inflator, compressedRecord.length);
+        inflator.end();
+        return decompressed;
     }
 }
