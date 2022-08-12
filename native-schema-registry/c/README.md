@@ -39,6 +39,16 @@ We use address,leak sanitizers to detect memory leaks and any potential issues d
 
 TBD
 
+## Develop
+
+### Add Class
+In order to add a class that is accessible by target language, these steps are required:
+1. Create the .h file in `include` directory
+2. Create the .i file in `src/swig` directory
+3. Create the .c file in `src` directory 
+4. Add the .i file to `glue_schema_registry_serde.i` file in `src/swig` directory
+5. Add the .c file to the `CMakeLists.txt` file in `src` directory
+
 ## License
 
 **Project License** [Apache License Version 2.0](https://github.com/awslabs/aws-glue-schema-registry/blob/master/LICENSE.txt)
