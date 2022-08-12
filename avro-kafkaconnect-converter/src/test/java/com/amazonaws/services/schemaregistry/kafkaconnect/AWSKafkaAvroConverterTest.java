@@ -40,15 +40,14 @@ import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.services.glue.model.DataFormat;
+import software.amazon.awssdk.services.sts.auth.StsAssumeRoleCredentialsProvider;
 
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -95,6 +94,21 @@ public class AWSKafkaAvroConverterTest {
         assertNotNull(converter);
         assertNotNull(converter.getSerializer());
         assertNotNull(converter.getDeserializer());
+        assertNotNull(converter.getAvroData());
+    }
+
+    @Test
+    public void testConverter_configure_usesStsCredentialsProvider() {
+        converter = new AWSKafkaAvroConverter();
+        Map<String, Object> props = getProperties();
+        props.put("sts.roleArn", "TEST_ROLE_ARN");
+        props.put("sts.roleSessionName", "TEST_ROLE_SESSION_NAME");
+        converter.configure(props, false);
+        assertNotNull(converter);
+        assertNotNull(converter.getSerializer());
+        assertTrue(converter.getSerializer().getCredentialProvider() instanceof StsAssumeRoleCredentialsProvider);
+        assertNotNull(converter.getDeserializer());
+        assertTrue(converter.getDeserializer().getCredentialProvider() instanceof StsAssumeRoleCredentialsProvider);
         assertNotNull(converter.getAvroData());
     }
 
