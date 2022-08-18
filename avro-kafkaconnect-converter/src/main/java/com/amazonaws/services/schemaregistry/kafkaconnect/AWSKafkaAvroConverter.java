@@ -22,6 +22,7 @@ import com.amazonaws.services.schemaregistry.kafkaconnect.avrodata.AvroData;
 import com.amazonaws.services.schemaregistry.kafkaconnect.avrodata.AvroDataConfig;
 import com.amazonaws.services.schemaregistry.serializers.avro.AWSKafkaAvroSerializer;
 
+import com.amazonaws.services.schemaregistry.utils.AWSSchemaRegistryConstants;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.common.errors.SerializationException;
@@ -31,7 +32,9 @@ import org.apache.kafka.connect.errors.DataException;
 import org.apache.kafka.connect.storage.Converter;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
+import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.sts.StsClient;
+import software.amazon.awssdk.services.sts.StsClientBuilder;
 import software.amazon.awssdk.services.sts.auth.StsAssumeRoleCredentialsProvider;
 import software.amazon.awssdk.services.sts.model.AssumeRoleRequest;
 
@@ -44,6 +47,8 @@ import java.util.Map;
 @Slf4j
 @Data
 public class AWSKafkaAvroConverter implements Converter {
+    private static final String STS_ROLE_ARN = "sts.roleArn";
+    private static final String STS_ROLE_SESSION_NAME = "sts.roleSessionName";
     private AWSKafkaAvroSerializer serializer;
     private AWSKafkaAvroDeserializer deserializer;
     private AvroData avroData;
@@ -79,15 +84,19 @@ public class AWSKafkaAvroConverter implements Converter {
     public void configure(Map<String, ?> configs, boolean isKey) {
         this.isKey = isKey;
         new AWSKafkaAvroConverterConfig(configs);
-        final String roleArn = configs.get("sts.roleArn") == null
-                ? null : String.valueOf(configs.get("sts.roleArn"));
-        final String roleSessionName = configs.get("sts.roleSessionName") == null
-                ? null : String.valueOf(configs.get("sts.roleSessionName"));
+        final String roleArn = configs.get(STS_ROLE_ARN) == null
+                ? null : String.valueOf(configs.get(STS_ROLE_ARN));
+        final String roleSessionName = configs.get(STS_ROLE_SESSION_NAME) == null
+                ? null : String.valueOf(configs.get(STS_ROLE_SESSION_NAME));
         if (roleArn != null && roleSessionName != null) {
+            StsClientBuilder stsClientBuilder = StsClient.builder()
+                    .httpClient(UrlConnectionHttpClient.builder().build());
+            if (configs.get(AWSSchemaRegistryConstants.AWS_REGION) != null) {
+                stsClientBuilder
+                        .region(Region.of(String.valueOf(configs.get(AWSSchemaRegistryConstants.AWS_REGION))));
+            }
             AwsCredentialsProvider credentialsProvider = StsAssumeRoleCredentialsProvider.builder()
-                    .stsClient(StsClient.builder()
-                            .httpClient(UrlConnectionHttpClient.builder().build())
-                            .build())
+                    .stsClient(stsClientBuilder.build())
                     .refreshRequest(AssumeRoleRequest.builder()
                             .roleArn(roleArn)
                             .roleSessionName(roleSessionName)
