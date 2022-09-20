@@ -2,10 +2,17 @@
 
     <PropertyGroup>
         <TargetFramework>netcoreapp3.1</TargetFramework>
+        <CodeAnalysisRuleSet>GlueSchemaRegistryTest.ruleset</CodeAnalysisRuleSet>
         <IsPackable>false</IsPackable>
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="Google.Api.CommonProtos" Version="2.6.0" />
+        <PackageReference Include="Google.Protobuf" Version="3.21.4" />
+        <PackageReference Include="Grpc.Tools" Version="2.48.1">
+          <PrivateAssets>all</PrivateAssets>
+          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
         <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="6.0.1" />
         <PackageReference Include="NUnit" Version="3.12.0" />
         <PackageReference Include="NUnit3TestAdapter" Version="3.16.1" />
@@ -14,6 +21,7 @@
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
+        <AdditionalFiles Include="stylecop.json" />
         <PackageReference Include="System.Runtime.Caching" Version="6.0.0" />
     </ItemGroup>
 
@@ -21,10 +29,16 @@
         <ProjectReference Include="..\AWSGsrSerDe\AWSGsrSerDe.csproj" />
     </ItemGroup>
     
+    <Target Name="CreateProtobufDirectory" BeforeTargets="Compile">
+        <MakeDir Directories=".proto/" />
+    </Target>
+    
     <ItemGroup>
         <Content Include="resources\**">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </Content>
+        <Protobuf Include="../../../shared/test/protos/*.proto" ProtoRoot="../../../shared/test/protos/" GrpcServices="None" OutputDir=".proto/" CompileOutputs="false" />
+        <Compile Include=".proto/*.cs" />
     </ItemGroup>
 
 </Project>

@@ -4,7 +4,7 @@
 #include "cmocka.h"
 
 glue_schema_registry_schema * get_gsr_schema_fixture(void) {
-    return new_glue_schema_registry_schema("SomeNameOfSchema", "Some Def {}", "PROTOBUF", NULL);
+    return new_glue_schema_registry_schema("SomeNameOfSchema", "Some Def {}", "PROTOBUF", "Some.Descriptor.Fullname", NULL);
 }
 
 read_only_byte_array * get_read_only_byte_array_fixture(void) {
@@ -48,4 +48,5 @@ void assert_gsr_schema(glue_schema_registry_schema expected, glue_schema_registr
     assert_string_equal(expected.schema_name, actual.schema_name);
     assert_string_equal(expected.schema_def, actual.schema_def);
     assert_string_equal(expected.data_format, actual.data_format);
+    assert_string_equal(expected.additional_schema_info, actual.additional_schema_info);
 }

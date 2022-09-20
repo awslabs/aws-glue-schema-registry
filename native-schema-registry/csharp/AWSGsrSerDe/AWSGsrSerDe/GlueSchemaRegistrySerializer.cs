@@ -1,3 +1,16 @@
+// Copyright 2020 Amazon.com, Inc. or its affiliates.
+// Licensed under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//  
+//     http://www.apache.org/licenses/LICENSE-2.0
+//  
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 using System;
 
 namespace AWSGsrSerDe
@@ -6,15 +19,21 @@ namespace AWSGsrSerDe
     /// GlueSchemaRegistrySerializer class that encodes the given byte array with GSR schema headers.
     /// Schema registration / data compression can happen based on specified configuration.
     /// </summary>>
-    public class GlueSchemaRegistrySerializer: IDisposable
+    public class GlueSchemaRegistrySerializer : IDisposable
     {
         private readonly glue_schema_registry_serializer _serializer;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="GlueSchemaRegistrySerializer"/> class.
+        /// </summary>
         public GlueSchemaRegistrySerializer()
         {
             _serializer = new glue_schema_registry_serializer(p_err: null);
         }
 
+        /// <summary>
+        /// Finalizes an instance of the <see cref="GlueSchemaRegistrySerializer"/> class.
+        /// </summary>
         ~GlueSchemaRegistrySerializer()
         {
             Dispose(false);
@@ -26,12 +45,18 @@ namespace AWSGsrSerDe
         /// <param name="schema">GlueSchemaRegistrySchema object to encode with.</param>
         /// <param name="bytes">Input bytes for a message to encode with Schema Registry header information.</param>
         /// </summary>
+        /// <returns>Encoded bytes</returns>
         public byte[] Encode(string transportName, GlueSchemaRegistrySchema schema, byte[] bytes)
         {
             Validate(schema, bytes);
-           
+
             var glueSchemaRegistrySchema =
-                new glue_schema_registry_schema(schema.SchemaName, schema.SchemaDef, schema.DataFormat, p_err: null);
+                new glue_schema_registry_schema(
+                    schema.SchemaName,
+                    schema.SchemaDef,
+                    schema.DataFormat,
+                    schema.AdditionalSchemaInfo,
+                    p_err: null);
             var readOnlyByteArr = new read_only_byte_array(bytes, (uint)bytes.Length, p_err: null);
 
             try
@@ -65,7 +90,7 @@ namespace AWSGsrSerDe
             {
                 throw new ArgumentException("Schema is null", nameof(schema));
             }
-            
+
             if (bytes is null || bytes.Length == 0)
             {
                 throw new ArgumentException("bytes is null or empty", nameof(bytes));
@@ -86,6 +111,7 @@ namespace AWSGsrSerDe
             }
         }
 
+        /// <inheritdoc/>
         public void Dispose()
         {
             Dispose(true);

@@ -6,6 +6,7 @@
 #define TEST_SCHEMA_NAME "Employee.proto"
 #define TEST_DATA_FORMAT "PROTOBUF"
 #define TEST_SCHEMA_DEF "message Employee { string name = 1; int32 rank = 2;}"
+#define TEST_ADDITIONAL_SCHEMA_INFO "Some.Descriptor.Fullname"
 
 static void schema_cleanup(glue_schema_registry_schema * obj) {
     delete_glue_schema_registry_schema(obj);
@@ -15,7 +16,7 @@ static void glue_schema_registry_schema_deletes_the_instance(void **state) {
     glue_schema_registry_error **p_err = new_glue_schema_registry_error_holder();
 
     glue_schema_registry_schema * gsr_schema =
-            new_glue_schema_registry_schema(TEST_SCHEMA_NAME, TEST_SCHEMA_DEF, TEST_DATA_FORMAT, p_err);
+            new_glue_schema_registry_schema(TEST_SCHEMA_NAME, TEST_SCHEMA_DEF, TEST_DATA_FORMAT, TEST_ADDITIONAL_SCHEMA_INFO, p_err);
 
     delete_glue_schema_registry_schema(gsr_schema);
     delete_glue_schema_registry_error_holder(p_err);
@@ -24,12 +25,31 @@ static void glue_schema_registry_schema_deletes_the_instance(void **state) {
 static void glue_schema_registry_schema_creates_new_glue_schema_registry_schema(void **state) {
     glue_schema_registry_error **p_err = new_glue_schema_registry_error_holder();
     glue_schema_registry_schema * gsr_schema =
-            new_glue_schema_registry_schema(TEST_SCHEMA_NAME, TEST_SCHEMA_DEF, TEST_DATA_FORMAT, p_err);
+            new_glue_schema_registry_schema(TEST_SCHEMA_NAME, TEST_SCHEMA_DEF, TEST_DATA_FORMAT, TEST_ADDITIONAL_SCHEMA_INFO, p_err);
 
     glue_schema_registry_schema expected;
     expected.data_format = TEST_DATA_FORMAT;
     expected.schema_def = TEST_SCHEMA_DEF;
     expected.schema_name = TEST_SCHEMA_NAME;
+    expected.additional_schema_info = TEST_ADDITIONAL_SCHEMA_INFO;
+
+    assert_gsr_schema(expected, *gsr_schema);
+    assert_null(*p_err);
+
+    delete_glue_schema_registry_error_holder(p_err);
+    schema_cleanup(gsr_schema);
+}
+
+static void glue_schema_registry_schema_creates_new_glue_schema_registry_schema_when_additional_info_is_null(void **state) {
+    glue_schema_registry_error **p_err = new_glue_schema_registry_error_holder();
+    glue_schema_registry_schema * gsr_schema =
+            new_glue_schema_registry_schema(TEST_SCHEMA_NAME, TEST_SCHEMA_DEF, TEST_DATA_FORMAT,NULL, p_err);
+
+    glue_schema_registry_schema expected;
+    expected.data_format = TEST_DATA_FORMAT;
+    expected.schema_def = TEST_SCHEMA_DEF;
+    expected.schema_name = TEST_SCHEMA_NAME;
+    expected.additional_schema_info = "";
 
     assert_gsr_schema(expected, *gsr_schema);
     assert_null(*p_err);
@@ -41,11 +61,12 @@ static void glue_schema_registry_schema_creates_new_glue_schema_registry_schema(
 static void glue_schema_registry_schema_get_attribute_tests(void **state) {
     glue_schema_registry_error **p_err = new_glue_schema_registry_error_holder();
     glue_schema_registry_schema * gsr_schema =
-            new_glue_schema_registry_schema(TEST_SCHEMA_NAME, TEST_SCHEMA_DEF, TEST_DATA_FORMAT, p_err);
+            new_glue_schema_registry_schema(TEST_SCHEMA_NAME, TEST_SCHEMA_DEF, TEST_DATA_FORMAT, TEST_ADDITIONAL_SCHEMA_INFO, p_err);
 
     assert_string_equal(TEST_DATA_FORMAT, glue_schema_registry_schema_get_data_format(gsr_schema));
     assert_string_equal(TEST_SCHEMA_NAME, glue_schema_registry_schema_get_schema_name(gsr_schema));
     assert_string_equal(TEST_SCHEMA_DEF, glue_schema_registry_schema_get_schema_def(gsr_schema));
+    assert_string_equal(TEST_ADDITIONAL_SCHEMA_INFO, glue_schema_registry_schema_get_schema_def(gsr_schema));
 
     delete_glue_schema_registry_error_holder(p_err);
     schema_cleanup(gsr_schema);
@@ -55,7 +76,7 @@ static void glue_schema_registry_schema_when_NULLs_are_passed_does_not_initializ
     glue_schema_registry_schema * gsr_schema;
     glue_schema_registry_error **p_err = new_glue_schema_registry_error_holder();
 
-    gsr_schema = new_glue_schema_registry_schema(NULL, TEST_SCHEMA_DEF, TEST_DATA_FORMAT, p_err);
+    gsr_schema = new_glue_schema_registry_schema(NULL, TEST_SCHEMA_DEF, TEST_DATA_FORMAT, TEST_ADDITIONAL_SCHEMA_INFO, p_err);
     assert_null(gsr_schema);
 
     glue_schema_registry_error * err = *p_err;
@@ -66,7 +87,7 @@ static void glue_schema_registry_schema_when_NULLs_are_passed_does_not_initializ
     delete_glue_schema_registry_error_holder(p_err);
 
     p_err = new_glue_schema_registry_error_holder();
-    gsr_schema = new_glue_schema_registry_schema(TEST_SCHEMA_NAME, NULL, TEST_DATA_FORMAT, p_err);
+    gsr_schema = new_glue_schema_registry_schema(TEST_SCHEMA_NAME, NULL, TEST_DATA_FORMAT, TEST_ADDITIONAL_SCHEMA_INFO, p_err);
     assert_null(gsr_schema);
     err = *p_err;
     assert_non_null(err);
@@ -76,7 +97,7 @@ static void glue_schema_registry_schema_when_NULLs_are_passed_does_not_initializ
     delete_glue_schema_registry_error_holder(p_err);
 
     p_err = new_glue_schema_registry_error_holder();
-    gsr_schema = new_glue_schema_registry_schema(TEST_SCHEMA_NAME, TEST_SCHEMA_DEF, NULL, p_err);
+    gsr_schema = new_glue_schema_registry_schema(TEST_SCHEMA_NAME, TEST_SCHEMA_DEF, NULL, TEST_ADDITIONAL_SCHEMA_INFO, p_err);
     assert_null(gsr_schema);
     err = *p_err;
     assert_non_null(err);
@@ -90,11 +111,12 @@ static void glue_schema_registry_schema_when_NULLs_are_passed_does_not_initializ
 static void glue_schema_registry_schema_when_initialized_with_EmptyString_does_not_fail(void **state) {
     glue_schema_registry_error **p_err = new_glue_schema_registry_error_holder();
     glue_schema_registry_schema * gsr_schema =
-            new_glue_schema_registry_schema("", "", "", p_err);
+            new_glue_schema_registry_schema("", "", "",NULL, p_err);
 
     assert_string_equal("", glue_schema_registry_schema_get_data_format(gsr_schema));
     assert_string_equal("", glue_schema_registry_schema_get_schema_name(gsr_schema));
     assert_string_equal("", glue_schema_registry_schema_get_schema_def(gsr_schema));
+    assert_string_equal("", glue_schema_registry_schema_get_additional_schema_info(gsr_schema));
 
     delete_glue_schema_registry_error_holder(p_err);
     schema_cleanup(gsr_schema);
@@ -102,7 +124,7 @@ static void glue_schema_registry_schema_when_initialized_with_EmptyString_does_n
 
 static void glue_schema_registry_schema_not_fail_when_error_pointer_is_null(void **state) {
     glue_schema_registry_schema * gsr_schema =
-            new_glue_schema_registry_schema(TEST_SCHEMA_NAME, TEST_SCHEMA_DEF, TEST_DATA_FORMAT, NULL);
+            new_glue_schema_registry_schema(TEST_SCHEMA_NAME, TEST_SCHEMA_DEF, TEST_DATA_FORMAT, TEST_ADDITIONAL_SCHEMA_INFO, NULL);
 
     assert_non_null(gsr_schema);
     schema_cleanup(gsr_schema);
@@ -115,7 +137,8 @@ int main(void) {
             cmocka_unit_test(glue_schema_registry_schema_when_initialized_with_EmptyString_does_not_fail),
             cmocka_unit_test(glue_schema_registry_schema_get_attribute_tests),
             cmocka_unit_test(glue_schema_registry_schema_not_fail_when_error_pointer_is_null),
-            cmocka_unit_test(glue_schema_registry_schema_creates_new_glue_schema_registry_schema)
+            cmocka_unit_test(glue_schema_registry_schema_creates_new_glue_schema_registry_schema),
+            cmocka_unit_test(glue_schema_registry_schema_creates_new_glue_schema_registry_schema_when_additional_info_is_null)
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);

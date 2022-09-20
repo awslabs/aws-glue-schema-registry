@@ -2,6 +2,7 @@ package com.amazonaws.services.schemaregistry;
 
 import com.amazonaws.services.schemaregistry.common.Schema;
 import com.amazonaws.services.schemaregistry.common.configs.GlueSchemaRegistryConfiguration;
+import com.amazonaws.services.schemaregistry.deserializer.ProtobufPostprocessor;
 import com.amazonaws.services.schemaregistry.deserializers.GlueSchemaRegistryDeserializer;
 import com.amazonaws.services.schemaregistry.utils.AWSSchemaRegistryConstants;
 import com.google.common.collect.ImmutableMap;
@@ -10,6 +11,7 @@ import org.graalvm.nativeimage.c.CContext;
 import org.graalvm.nativeimage.c.function.CEntryPoint;
 import org.graalvm.nativeimage.c.type.CTypeConversion;
 import org.graalvm.word.WordFactory;
+import software.amazon.awssdk.services.glue.model.DataFormat;
 
 import java.util.Map;
 
@@ -57,6 +59,13 @@ public class GlueSchemaRegistryDeserializationHandler {
 
             byte[] decodedBytes =
                 glueSchemaRegistryDeserializer.getData(bytesToDecode);
+
+            //Get the schema and perform Protobuf post-processing if needed
+            Schema decodedSchema =
+                glueSchemaRegistryDeserializer.getSchema(bytesToDecode);
+            if (DataFormat.PROTOBUF.name().equals(decodedSchema.getDataFormat())) {
+                decodedBytes = ProtobufPostprocessor.stripMessageIndex(decodedBytes);
+            }
 
             return toCMutableByteArray(decodedBytes, errorPointer);
         } catch (Exception | Error e) {
