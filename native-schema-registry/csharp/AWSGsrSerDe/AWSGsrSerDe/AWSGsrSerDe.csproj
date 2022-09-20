@@ -2,6 +2,7 @@
 
     <PropertyGroup>
         <TargetFramework>netcoreapp3.1</TargetFramework>
+        <CodeAnalysisRuleSet>GlueSchemaRegistry.ruleset</CodeAnalysisRuleSet>
     </PropertyGroup>
 
     <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
@@ -10,11 +11,13 @@
 
     <ItemGroup>
       <PackageReference Include="Apache.Avro" Version="1.11.0" />
+      <PackageReference Include="Google.Protobuf" Version="3.21.4" />
       <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="6.0.1" />
       <PackageReference Include="StyleCop.Analyzers" Version="1.2.0-beta.435">
         <PrivateAssets>all</PrivateAssets>
         <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       </PackageReference>
+      <AdditionalFiles Include="stylecop.json" />
       <PackageReference Include="System.Runtime.Caching" Version="6.0.0" />
     </ItemGroup>
 

@@ -2,6 +2,7 @@ package com.amazonaws.services.schemaregistry;
 
 import com.amazonaws.services.schemaregistry.common.Schema;
 import com.amazonaws.services.schemaregistry.common.configs.GlueSchemaRegistryConfiguration;
+import com.amazonaws.services.schemaregistry.serializer.ProtobufPreprocessor;
 import com.amazonaws.services.schemaregistry.serializers.GlueSchemaRegistrySerializer;
 import com.amazonaws.services.schemaregistry.utils.AWSSchemaRegistryConstants;
 import com.google.common.collect.ImmutableMap;
@@ -12,6 +13,7 @@ import org.graalvm.nativeimage.c.function.CEntryPoint;
 import org.graalvm.nativeimage.c.type.CCharPointer;
 import org.graalvm.nativeimage.c.type.CTypeConversion;
 import org.graalvm.word.WordFactory;
+import software.amazon.awssdk.services.glue.model.DataFormat;
 
 import java.util.Map;
 
@@ -57,14 +59,30 @@ public class GlueSchemaRegistrySerializationHandler {
 
             //Access the input C schema object
             final String schemaName = CTypeConversion.toJavaString(c_glueSchemaRegistrySchema.getSchemaName());
-            final String schemaDef = CTypeConversion.toJavaString(c_glueSchemaRegistrySchema.getSchemaDef());
+            final String schemaDef;
+            String rawSchema = CTypeConversion.toJavaString(c_glueSchemaRegistrySchema.getSchemaDef());
             final String dataFormat = CTypeConversion.toJavaString(c_glueSchemaRegistrySchema.getDataFormat());
+            final String additionalSchemaInfor =
+                CTypeConversion.toJavaString(c_glueSchemaRegistrySchema.getAdditionalSchemaInfo());
             final String transportName = CTypeConversion.toJavaString(c_transportName);
+
+            //Because Protobuf is different from other data format drastically,
+            //we will need to perform some pre-processing before precede
+            if (DataFormat.PROTOBUF.name().equals(dataFormat)) {
+                schemaDef = ProtobufPreprocessor.convertBase64SchemaToStringSchema(rawSchema);
+            } else {
+                schemaDef = rawSchema;
+            }
 
             Schema javaSchema = new Schema(schemaDef, dataFormat, schemaName);
 
             //Read the c_byteArray data and create a new mutable byte array with encoded data
-            byte [] bytesToEncode = fromCReadOnlyByteArray(c_readOnlyByteArray);
+            byte[] bytesToEncode = fromCReadOnlyByteArray(c_readOnlyByteArray);
+
+            if (DataFormat.PROTOBUF.name().equals(dataFormat)) {
+                bytesToEncode =
+                    ProtobufPreprocessor.prefixMessageIndexToBytes(bytesToEncode, schemaDef, additionalSchemaInfor);
+            }
 
             //Assuming serializer instance is already initialized
             GlueSchemaRegistrySerializer glueSchemaRegistrySerializer = SerializerInstance.get();

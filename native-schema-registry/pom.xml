@@ -149,6 +149,7 @@
                                     --shared
                                     -g
                                     -H:CLibraryPath=${project.basedir}
+                                    -H:ResourceConfigurationFiles=${project.basedir}/src/main/resources/resource-config.json
                                 </buildArgs>
                             </buildArgs>
                         </configuration>

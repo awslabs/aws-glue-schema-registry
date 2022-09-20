@@ -15,6 +15,7 @@ glue_schema_registry_schema * new_glue_schema_registry_schema(
         const char * schema_name,
         const char * schema_def,
         const char * data_format,
+        const char * additional_schema_info,
         glue_schema_registry_error **p_err) {
     if (validate(schema_name, schema_def, data_format) != 0) {
         throw_error(p_err, "Schema parameters are NULL", ERR_CODE_NULL_PARAMETERS);
@@ -26,6 +27,11 @@ glue_schema_registry_schema * new_glue_schema_registry_schema(
     glueSchemaRegistrySchema->schema_name = strdup(schema_name);
     glueSchemaRegistrySchema->schema_def = strdup(schema_def);
     glueSchemaRegistrySchema->data_format = strdup(data_format);
+    if (additional_schema_info == NULL) {
+        glueSchemaRegistrySchema->additional_schema_info = strdup("");
+    } else {
+        glueSchemaRegistrySchema->additional_schema_info = strdup(additional_schema_info);
+    }
 
     if (p_err != NULL) {
         *p_err = NULL;
@@ -49,6 +55,9 @@ void delete_glue_schema_registry_schema(glue_schema_registry_schema * schema) {
     if (schema->data_format != NULL) {
         free(schema->data_format);
     }
+    if (schema->additional_schema_info != NULL) {
+        free(schema->additional_schema_info);
+    }
     aws_common_free(schema);
 }
 
@@ -62,4 +71,8 @@ const char * glue_schema_registry_schema_get_schema_def(glue_schema_registry_sch
 
 const char * glue_schema_registry_schema_get_data_format(glue_schema_registry_schema * schema) {
     return schema->data_format;
+}
+
+const char * glue_schema_registry_schema_get_additional_schema_info(glue_schema_registry_schema * schema) {
+    return schema->additional_schema_info;
 }

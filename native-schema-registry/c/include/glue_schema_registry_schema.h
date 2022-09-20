@@ -17,6 +17,9 @@ typedef struct glue_schema_registry_schema {
     //Data format name, JSON, AVRO, PROTOBUF as String
     char * data_format;
 
+    //Additional Schema Info needed, such as Protobuf message descriptor full name
+    char * additional_schema_info;
+
 } glue_schema_registry_schema;
 
 //Creates a new instance of glue_schema_registry_schema
@@ -24,6 +27,7 @@ glue_schema_registry_schema *new_glue_schema_registry_schema(
     const char * schema_name,
     const char * schema_def,
     const char * data_format,
+    const char * additional_schema_info,
     glue_schema_registry_error ** p_err
 );
 
@@ -37,5 +41,7 @@ const char * glue_schema_registry_schema_get_schema_name(glue_schema_registry_sc
 const char * glue_schema_registry_schema_get_schema_def(glue_schema_registry_schema * schema);
 
 const char * glue_schema_registry_schema_get_data_format(glue_schema_registry_schema * schema);
+
+const char * glue_schema_registry_schema_get_additional_schema_info(glue_schema_registry_schema * schema);
 
 #endif //GLUE_SCHEMA_REGISTRY_SCHEMA_H
