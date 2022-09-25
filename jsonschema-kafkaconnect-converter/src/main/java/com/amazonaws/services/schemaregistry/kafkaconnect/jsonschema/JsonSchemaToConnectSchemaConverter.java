@@ -93,7 +93,9 @@ public class JsonSchemaToConnectSchemaConverter {
                     .anyMatch(schema -> schema instanceof NullSchema);
 
             boolean isOptionalUnion =
-                    CombinedSchema.ONE_CRITERION.equals(criterion) && subSchemas.size() == 2 && hasNullSchema;
+                        (CombinedSchema.ONE_CRITERION.equals(criterion)
+                        || CombinedSchema.ANY_CRITERION.equals(criterion))
+                        && subSchemas.size() == 2 && hasNullSchema;
             if (isOptionalUnion) {
                 return buildOptionalUnionSchema(subSchemas);
             }
