@@ -118,6 +118,16 @@ public class JsonSchemaToConnectSchemaConverter {
         Optional<org.everit.json.schema.Schema> oneOfSchema = subSchemas.stream()
                 .filter(schema -> !(schema instanceof NullSchema))
                 .findAny();
+
+        if (oneOfSchema.get() instanceof CombinedSchema) {
+            CombinedSchema x = (CombinedSchema) oneOfSchema.get();
+            Object[] subs = x.getSubschemas().toArray();
+            if (subs[0] instanceof org.everit.json.schema.EnumSchema) {
+                if (subs[1] instanceof org.everit.json.schema.StringSchema) {
+                    return toConnectSchema((org.everit.json.schema.Schema) subs[0], false);
+                }
+            }
+        }
         return toConnectSchema(oneOfSchema.get(), false);
     }
 
