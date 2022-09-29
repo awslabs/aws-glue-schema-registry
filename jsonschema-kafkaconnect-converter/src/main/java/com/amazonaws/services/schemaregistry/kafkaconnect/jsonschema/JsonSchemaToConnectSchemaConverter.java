@@ -28,6 +28,7 @@ import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.errors.DataException;
 import org.everit.json.schema.CombinedSchema;
 import org.everit.json.schema.NullSchema;
+import org.everit.json.schema.ObjectSchema;
 import org.everit.json.schema.ReferenceSchema;
 
 import java.util.Collection;
@@ -112,7 +113,9 @@ public class JsonSchemaToConnectSchemaConverter {
         populateConnectProperties(builder, jsonSchema, required, connectName);
 
         Schema result = builder.build();
-        toConnectSchemaCache.put(jsonSchema, result);
+        if (jsonSchema instanceof ObjectSchema) {
+            toConnectSchemaCache.put(jsonSchema, result);
+        }
         return result;
     }
 
