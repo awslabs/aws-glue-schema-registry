@@ -10,7 +10,7 @@ https://github.com/confluentinc/schema-registry/tree/master/avro-serializer
 ** Jackson; version 2.11.3 -- https://github.com/FasterXML/jackson
 ** LocalStack Java Utils : version 0.2.10 -- https://github.com/localstack/localstack-java-utils
 ** Awaitility : version 3.0.0 -- https://github.com/awaitility/awaitility
-** Ever-it JSON Schema 1.12.2 -- https://github.com/everit-org/json-schema
+** Ever-it JSON Schema 1.14.1 -- https://github.com/everit-org/json-schema
 ** MongoDB Kafka Connector 1.3.0-all -- https://github.com/mongodb/mongo-kafka
 ** Connect JSON Schema Compatibility -- https://github.com/rayokota/json-schema-compatibility/blob/master/json-schema-converter/src/main/java/io/yokota/json/connect/JsonSchemaConverter.java
 ** Square Wire -- https://github.com/square/wire/tree/master/wire-library/wire-schema
