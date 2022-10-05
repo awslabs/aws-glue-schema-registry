@@ -7,8 +7,8 @@ namespace AWSGsrSerDe.Tests.utils
 {
     public static class SchemaLoader
     {
-        
         private const string RelativePathPrefix = "../../../../../../../serializer-deserializer/src/test/resources/";
+
         public static Schema LoadAvroSchema(string schemaFilePath)
         {
             Schema schema = null;
@@ -21,6 +21,7 @@ namespace AWSGsrSerDe.Tests.utils
             {
                 throw new AwsSchemaRegistryException("Failed to parse the avro schema file", e);
             }
+
             return schema;
         }
 
@@ -43,8 +44,24 @@ namespace AWSGsrSerDe.Tests.utils
             catch (Exception e)
             {
                 throw new AwsSchemaRegistryException("Failed to load avro schema files in given directory ", e);
-
             }
+        }
+
+        public static JsonGenericRecord LoadJsonGenericRecord(string schemaRelativePath, string payloadRelativePath,
+            bool isValid)
+        {
+            const string jsonResourcePath = RelativePathPrefix + "json/";
+            var schema = File.ReadAllText(jsonResourcePath + schemaRelativePath);
+            var payload = File.ReadAllText(jsonResourcePath + payloadRelativePath);
+
+            return new JsonGenericRecord { Schema = schema, Payload = payload, IsValid = isValid };
+        }
+
+        public class JsonGenericRecord
+        {
+            public string Schema;
+            public string Payload;
+            public bool IsValid;
         }
     }
 }

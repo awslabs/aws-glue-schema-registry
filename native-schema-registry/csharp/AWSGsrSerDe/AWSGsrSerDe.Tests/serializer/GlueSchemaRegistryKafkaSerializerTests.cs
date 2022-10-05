@@ -13,12 +13,21 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Globalization;
+using System.Text.Json.Nodes;
 using Avro;
 using Avro.Generic;
 using AWSGsrSerDe.common;
 using AWSGsrSerDe.deserializer;
 using AWSGsrSerDe.serializer;
+using AWSGsrSerDe.serializer.avro;
+using AWSGsrSerDe.serializer.json;
+using AWSGsrSerDe.serializer.protobuf;
+using AWSGsrSerDe.Tests.serializer.json;
+using AWSGsrSerDe.Tests.utils;
 using Google.Protobuf;
+using Namotion.Reflection;
 using NUnit.Framework;
 using static AWSGsrSerDe.Tests.utils.ProtobufGenerator;
 
@@ -27,36 +36,47 @@ namespace AWSGsrSerDe.Tests.serializer
     [TestFixture]
     public class GlueSchemaRegistryKafkaSerializerTests
     {
-        private const string TestAvroSchema = "{\"namespace\": \"example.avro\",\n"
-                                              + " \"type\": \"record\",\n"
-                                              + " \"name\": \"User\",\n"
-                                              + " \"fields\": [\n"
-                                              + "     {\"name\": \"name\", \"type\": \"string\"},\n"
-                                              + "     {\"name\": \"favorite_number\",  \"type\": [\"int\", \"null\"]},\n"
-                                              + "     {\"name\": \"favorite_color\", \"type\": [\"string\", \"null\"]}\n"
-                                              + " ]\n"
-                                              + "}";
-        
+        private static readonly Car SPECIFIC_TEST_RECORD = new Car
+        {
+            make = "Honda",
+            model = "crv",
+            used = true,
+            miles = 10000,
+            listedDate = DateTime.Now,
+            purchaseDate = DateTime.Parse("2000-01-01T00:00:00.000Z"),
+            owners = new[] { "John", "Jane", "Hu" },
+            serviceCheckes = new[] { 5000.0f, 10780.30f }
+        };
+
+        private static readonly SchemaLoader.JsonGenericRecord GENERIC_TEST_RECORD = SchemaLoader.LoadJsonGenericRecord(
+            "schema/draft07/geographical-location.schema.json",
+            "geolocation1.json",
+            true);
+
         private static readonly Dictionary<string, dynamic> Configs = new Dictionary<string, dynamic>
         {
             { GlueSchemaRegistryConstants.AvroRecordType, AvroRecordType.GenericRecord },
             { GlueSchemaRegistryConstants.DataFormatType, GlueSchemaRegistryConstants.DataFormat.AVRO },
         };
 
-        private static readonly GlueSchemaRegistryKafkaSerializer KafkaSerializer = new GlueSchemaRegistryKafkaSerializer(Configs);
-        private static readonly GlueSchemaRegistryKafkaDeserializer KafkaDeserializer = new GlueSchemaRegistryKafkaDeserializer(Configs);
+        private static readonly GlueSchemaRegistryKafkaSerializer KafkaSerializer =
+            new GlueSchemaRegistryKafkaSerializer(Configs);
+
+        private static readonly GlueSchemaRegistryKafkaDeserializer KafkaDeserializer =
+            new GlueSchemaRegistryKafkaDeserializer(Configs);
+
 
         [Test]
         public void KafkaSerDeTestForAvroGenericRecord()
         {
-            var avroRecord = GetTestAvroRecord();
-            
+            var avroRecord = RecordGenerator.GetTestAvroRecord();
+
             var configs = new Dictionary<string, dynamic>
             {
                 { GlueSchemaRegistryConstants.AvroRecordType, AvroRecordType.GenericRecord },
                 { GlueSchemaRegistryConstants.DataFormatType, GlueSchemaRegistryConstants.DataFormat.AVRO },
             };
-            
+
             KafkaSerializer.Configure(configs);
             KafkaDeserializer.Configure(configs);
 
@@ -67,17 +87,6 @@ namespace AWSGsrSerDe.Tests.serializer
             var genericRecord = (GenericRecord)deserializeObject;
 
             Assert.AreEqual(avroRecord, genericRecord);
-        }
-
-        private static GenericRecord GetTestAvroRecord()
-        {
-            var recordSchema = Schema.Parse(TestAvroSchema);
-            var user = new GenericRecord((RecordSchema)recordSchema);
-
-            user.Add("name", "Alyssa🌯 🫔 🥗 🥘 🫕 🥫 🍝 🍜 🍲 🍛 🍣 🍱 🥟 🦪 🍤 🍙 🍚 🍘 🍥");
-            user.Add("favorite_number", 256);
-            user.Add("favorite_color", "blue");
-            return user;
         }
 
         private static List<IMessage> TestMessageProvider()
@@ -117,17 +126,54 @@ namespace AWSGsrSerDe.Tests.serializer
             Assert.AreEqual(message, deserializedObject);
         }
 
+        [Test]
+        public void KafkaSerDeTestForJsonMessage()
+        {
+            var message = RecordGenerator.GetSampleJsonTestData();
+            var configs = new Dictionary<string, dynamic>
+            {
+                { GlueSchemaRegistryConstants.DataFormatType, GlueSchemaRegistryConstants.DataFormat.JSON },
+            };
 
-        // TODO: Improve and automate the memory leak check
-        // Test for detecting memory leak
-        // [Test]
-        // [TestCaseSource(nameof(TestMessageProvider))]
-        // public void KafkaSerDeTestForAllProtobufTypesMemCheck(IMessage message)
-        // {
-        //     for (; ;)
-        //     {
-        //         KafkaSerDeTestForAllProtobufTypes(message);
-        //     }
-        // }
+            KafkaSerializer.Configure(configs);
+            KafkaDeserializer.Configure(configs);
+
+            var serialized = KafkaSerializer.Serialize(message, "test-topic-json");
+            var deserializedObject = KafkaDeserializer.Deserialize("test-topic-json", serialized);
+
+            Assert.True(deserializedObject is JsonDataWithSchema);
+            var deserializedMessage = (JsonDataWithSchema)deserializedObject;
+
+            Assert.AreEqual(
+                JsonNode.Parse(message.Schema)?.ToString(),
+                JsonNode.Parse(deserializedMessage.Schema)?.ToString());
+            Assert.AreEqual(
+                JsonNode.Parse(message.Payload)?.ToString(),
+                JsonNode.Parse(deserializedMessage.Payload)?.ToString());
+        }
+
+        [Test]
+        public void KafkaSerDeTestForJsonObject()
+        {
+            var message = SPECIFIC_TEST_RECORD;
+            var configs = new Dictionary<string, dynamic>
+            {
+                { GlueSchemaRegistryConstants.JsonObjectType, message.GetType() },
+                { GlueSchemaRegistryConstants.DataFormatType, GlueSchemaRegistryConstants.DataFormat.JSON },
+            };
+
+            KafkaSerializer.Configure(configs);
+            KafkaDeserializer.Configure(configs);
+
+            var serialized = KafkaSerializer.Serialize(message, "test-topic-json-car");
+            var deserializedObject = KafkaDeserializer.Deserialize("test-topic-json-car", serialized);
+
+            Assert.AreEqual(message.GetType(), deserializedObject.GetType());
+            var deserializedMessage = (Car)deserializedObject;
+            Assert.AreEqual(message.make, deserializedMessage.make);
+            Assert.AreEqual(message.model, deserializedMessage.model);
+            Assert.AreEqual(message.used, deserializedMessage.used);
+            Assert.AreEqual(message.miles, deserializedMessage.miles);
+        }
     }
 }
