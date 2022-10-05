@@ -117,7 +117,9 @@ namespace AWSGsrSerDe.serializer.avro
             var memoryStream = new MemoryStream();
             Encoder encoder = new BinaryEncoder(memoryStream);
             datumWriter.Write(data, encoder);
-            return memoryStream.ToArray();
+            var result = memoryStream.ToArray();
+            memoryStream.Close();
+            return result;
         }
 
         private static Schema GetSchema(object data)

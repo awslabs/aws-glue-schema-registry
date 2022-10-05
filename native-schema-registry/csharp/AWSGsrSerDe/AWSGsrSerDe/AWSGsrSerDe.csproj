@@ -13,12 +13,14 @@
       <PackageReference Include="Apache.Avro" Version="1.11.0" />
       <PackageReference Include="Google.Protobuf" Version="3.21.4" />
       <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="6.0.1" />
+      <PackageReference Include="NJsonSchema" Version="10.8.0" />
       <PackageReference Include="StyleCop.Analyzers" Version="1.2.0-beta.435">
         <PrivateAssets>all</PrivateAssets>
         <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       </PackageReference>
       <AdditionalFiles Include="stylecop.json" />
       <PackageReference Include="System.Runtime.Caching" Version="6.0.0" />
+      <PackageReference Include="System.Text.Json" Version="6.0.6" />
     </ItemGroup>
 
     <Import Project="..\Libs\Libs.projitems" Label="Shared" />

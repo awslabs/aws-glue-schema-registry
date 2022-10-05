@@ -61,6 +61,11 @@ namespace AWSGsrSerDe.deserializer
                 return null;
             }
 
+            if (!_glueSchemaRegistryDeserializer.CanDecode(data))
+            {
+                throw new AwsSchemaRegistryException("Byte data cannot be decoded");
+            }
+
             var decodedBytes = _glueSchemaRegistryDeserializer.Decode(data);
             var schemaRegistrySchema = _glueSchemaRegistryDeserializer.DecodeSchema(data);
 
