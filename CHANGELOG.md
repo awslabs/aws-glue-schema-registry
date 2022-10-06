@@ -59,3 +59,7 @@ GlueSchemaRegistryKafkaSerializer/GlueSchemaRegistryKafkaDeserializer.
 
 ## Release 1.1.13
 * Upgraded kotlin dependency versions to prevent a CVE
+
+## Release 1.1.14
+* Upgraded Protobuf dependency version to prevent a CVE
+* Upgraded everit-json-schema dependency version to prevent a CVE
