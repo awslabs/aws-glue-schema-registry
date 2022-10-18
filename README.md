@@ -381,7 +381,7 @@ Alternatively, a schema registry naming strategy implementation can be provided.
     properties.put(AWSSchemaRegistryConstants.SCHEMA_NAMING_GENERATION_CLASS,
                     "com.amazonaws.services.schemaregistry.serializers.avro.CustomerProvidedSchemaNamingStrategy");
 ```
-An example test implementation class is [here](https://github.com/awslabs/aws-glue-schema-registry/blob/master/avro-serializer-deserializer/src/test/java/com/amazonaws/services/schemaregistry/serializers/avro/CustomerProvidedSchemaNamingStrategy.java).
+An example test implementation class is [here](https://github.com/awslabs/aws-glue-schema-registry/blob/master/serializer-deserializer/src/test/java/com/amazonaws/services/schemaregistry/serializers/avro/CustomerProvidedSchemaNamingStrategy.java).
 
 ### Providing Registry Description
 
