@@ -1,5 +1,18 @@
+// Copyright 2020 Amazon.com, Inc. or its affiliates.
+// Licensed under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//  
+//     http://www.apache.org/licenses/LICENSE-2.0
+//  
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 using System;
+using System.Collections.Generic;
 using AWSGsrSerDe.common;
 
 namespace AWSGsrSerDe.serializer
@@ -9,21 +22,32 @@ namespace AWSGsrSerDe.serializer
     /// </summary>
     public class GlueSchemaRegistryKafkaSerializer
     {
-        private readonly string _dataFormat;
-        private readonly ISchemaNameStrategy _schemaNamingStrategy;
         private readonly GlueSchemaRegistrySerializer _glueSchemaRegistrySerializer;
-
+        
+        private GlueSchemaRegistryConfiguration _configuration;
+        private string _dataFormat;
+        private ISchemaNameStrategy _schemaNamingStrategy;
 
         /// <summary>
-        /// Constructor used by Kafka producer when passing as the property.
+        /// Initializes a new instance of the <see cref="GlueSchemaRegistryKafkaSerializer"/> class.
         /// </summary>
-        public GlueSchemaRegistryKafkaSerializer()
+        /// <param name="configs">configuration elements for serializer</param>
+        public GlueSchemaRegistryKafkaSerializer(Dictionary<string, dynamic> configs)
         {
-            // TODO: remove hardcode property with Config instead, we should also read Naming Strategy from configs
-            _dataFormat = GlueSchemaRegistryConstants.DataFormat.AVRO.ToString();
-            _schemaNamingStrategy = new DefaultSchemaNameStrategy();
+            Configure(configs);
             
             _glueSchemaRegistrySerializer = new GlueSchemaRegistrySerializer();
+        }
+        
+        /// <summary>
+        /// Configures the <see cref="GlueSchemaRegistryKafkaSerializer"/> instance
+        /// </summary>
+        /// <param name="configs">configuration elements for serializer</param>
+        public void Configure(Dictionary<string, dynamic> configs)
+        {
+            _configuration = new GlueSchemaRegistryConfiguration(configs);
+            _dataFormat = _configuration.DataFormat.ToString();
+            _schemaNamingStrategy = new DefaultSchemaNameStrategy();
         }
 
         /// <summary>
@@ -34,23 +58,24 @@ namespace AWSGsrSerDe.serializer
         /// <returns>serialized byte array</returns>
         public byte[] Serialize(object data, string topic)
         {
-            if (null == data)
+            if (data == null)
             {
                 return null;
             }
-            
+
             var serializer = DataFormatSerializerFactory.GetInstance().GetSerializer(_dataFormat);
-            
+
             var bytes = serializer.Serialize(data);
             var schemaDefinition = serializer.GetSchemaDefinition(data);
 
             var glueSchemaRegistrySchema = new GlueSchemaRegistrySchema(
-                _schemaNamingStrategy.GetSchemaName(data, topic), 
-                schemaDefinition, 
+                _schemaNamingStrategy.GetSchemaName(data, topic),
+                schemaDefinition,
                 _dataFormat);
+            
+            serializer.SetAdditionalSchemaInfo(data, ref glueSchemaRegistrySchema);
 
             return _glueSchemaRegistrySerializer.Encode(topic, glueSchemaRegistrySchema, bytes);
         }
-        
     }
 }

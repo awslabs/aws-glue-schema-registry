@@ -80,7 +80,7 @@ namespace AWSGsrSerDe.Tests
             var actual = Assert.Throws(typeof(AwsSchemaRegistryException),
                 () => _serializer.Encode(TransportName, invalidSchema, _data));
             
-            Assert.AreEqual("No enum constant software.amazon.awssdk.services.glue.model.DataFormat.InvalidFormat", actual.Message);
+            Assert.True(actual.Message.Contains("No enum constant software.amazon.awssdk.services.glue.model.DataFormat.InvalidFormat"));
         }
         
         [Test]

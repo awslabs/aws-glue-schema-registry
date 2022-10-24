@@ -1,5 +1,16 @@
-using System;
-using System.Collections.Generic;
+// Copyright 2020 Amazon.com, Inc. or its affiliates.
+// Licensed under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//  
+//     http://www.apache.org/licenses/LICENSE-2.0
+//  
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 using System.IO;
 using Avro;
 using Avro.Generic;
@@ -15,28 +26,27 @@ namespace AWSGsrSerDe.serializer.avro
     /// </summary>
     public class AvroSerializer : IDataFormatSerializer
     {
-
         private readonly MemoryCache _datumWriterCache;
 
         /// <summary>
-        /// Size of datum writer cache for testing purpose
+        /// Initializes a new instance of the <see cref="AvroSerializer"/> class.
         /// </summary>
-        public int CacheSize => _datumWriterCache.Count;
+        /// <param name="configuration">configuration elements</param>
+        public AvroSerializer(GlueSchemaRegistryConfiguration configuration = null)
+            : this()
+        {
+        }
 
         private AvroSerializer()
         {
             // TODO: make cache size limit configurable
-            _datumWriterCache = new MemoryCache(new MemoryCacheOptions{SizeLimit = 1000});
+            _datumWriterCache = new MemoryCache(new MemoryCacheOptions { SizeLimit = 1000 });
         }
 
         /// <summary>
-        ///  Constructor for Avro serializer that accepts configuration elements.
+        /// Gets size of datum writer cache for testing purpose
         /// </summary>
-        /// <param name="configuration">configuration elements</param>
-        public AvroSerializer(GlueSchemaRegistryConfiguration configuration = null)
-        :this()
-        {
-        }
+        public int CacheSize => _datumWriterCache.Count;
 
         /// <summary>
         /// Serialize the Avro message to bytes
@@ -47,7 +57,10 @@ namespace AWSGsrSerDe.serializer.avro
         {
             // ReSharper disable once ConvertIfStatementToReturnStatement
             if (data == null)
+            {
                 return null;
+            }
+
             return Serialize(data, GetOrCreateDatumWriter(data));
         }
 
@@ -62,26 +75,26 @@ namespace AWSGsrSerDe.serializer.avro
             return schema.ToString();
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="schemaDefinition"></param>
-        /// <param name="data"></param>
+        /// <inheritdoc />
         public void Validate(string schemaDefinition, byte[] data)
         {
-            //No-op
-            //We cannot determine accurately if the data bytes match the schema as Avro bytes don't contain the field names.
+            // No-op
+            // We cannot determine accurately if the data bytes match the schema as Avro bytes don't contain the field names.
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="data"></param>
+        /// <inheritdoc />
         public void Validate(object data)
         {
-            //No-op
-            //Avro format assumes that the passed object contains schema and data that are mutually conformant.
-            //We cannot validate the data against the schema.
+            // No-op
+            // Avro format assumes that the passed object contains schema and data that are mutually conformant.
+            // We cannot validate the data against the schema.
+        }
+
+        /// <inheritdoc />
+        public void SetAdditionalSchemaInfo(object data, ref GlueSchemaRegistrySchema schema)
+        {
+            // No-op
+            // Currently we do not need to modify schema object for Avro message
         }
 
         private DatumWriter<object> GetOrCreateDatumWriter(object data)
@@ -98,7 +111,7 @@ namespace AWSGsrSerDe.serializer.avro
                 });
             return datumWriter;
         }
-        
+
         private static byte[] Serialize(object data, DatumWriter<object> datumWriter)
         {
             var memoryStream = new MemoryStream();
@@ -115,7 +128,7 @@ namespace AWSGsrSerDe.serializer.avro
                 GenericEnum record => record.Schema,
                 ISpecificRecord record => record.Schema,
                 GenericFixed record => record.Schema,
-                _ => throw new AwsSchemaRegistryException("Unsupported Avro Data formats")
+                _ => throw new AwsSchemaRegistryException("Unsupported Avro Data formats"),
             };
         }
 
@@ -126,8 +139,8 @@ namespace AWSGsrSerDe.serializer.avro
                 ISpecificRecord _ => new SpecificDatumWriter<object>(schema),
                 GenericRecord _ => new GenericWriter<object>(schema),
                 GenericEnum _ => new GenericWriter<object>(schema),
-                GenericFixed _=> new GenericWriter<object>(schema),
-                _ => throw new AwsSchemaRegistryException($"Unsupported type passed for serialization: {data}")
+                GenericFixed _ => new GenericWriter<object>(schema),
+                _ => throw new AwsSchemaRegistryException($"Unsupported type passed for serialization: {data}"),
             };
         }
     }

@@ -1,7 +1,20 @@
+// Copyright 2020 Amazon.com, Inc. or its affiliates.
+// Licensed under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//  
+//     http://www.apache.org/licenses/LICENSE-2.0
+//  
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 namespace AWSGsrSerDe.serializer
 {
     /// <summary>
-    /// Interface for all schemaType/protocol/dataformat specific serializer implementations.
+    /// Interface for all schemaType/protocol/data format specific serializer implementations.
     /// </summary>
     public interface IDataFormatSerializer
     {
@@ -31,5 +44,12 @@ namespace AWSGsrSerDe.serializer
         /// </summary>
         /// <param name="data">DataFormat specific object.</param>
         void Validate(object data);
+
+        /// <summary>
+        /// Supplies additional information that is needed in GlueSchemaRegistrySchema for the message serialization.
+        /// </summary>
+        /// <param name="data">message to serialize into byte array.</param>
+        /// <param name="schema">schema object for the message that will be updated with additional info.</param>
+        void SetAdditionalSchemaInfo(object data, ref GlueSchemaRegistrySchema schema);
     }
 }

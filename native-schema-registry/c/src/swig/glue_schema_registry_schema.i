@@ -17,6 +17,7 @@ typedef struct glue_schema_registry_schema {
                 const char * schema_name,
                 const char * schema_def,
                 const char * data_format,
+                const char * additional_schema_info,
                 glue_schema_registry_error **p_err
         );
 
@@ -27,5 +28,6 @@ typedef struct glue_schema_registry_schema {
         const char * get_schema_name();
         const char * get_schema_def();
         const char * get_data_format();
+        const char * get_additional_schema_info();
     }
 } glue_schema_registry_schema;

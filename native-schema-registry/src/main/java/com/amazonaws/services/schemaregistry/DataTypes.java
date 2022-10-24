@@ -74,6 +74,9 @@ public class DataTypes {
 
         @CField("data_format")
         CCharPointer getDataFormat();
+
+        @CField("additional_schema_info")
+        CCharPointer getAdditionalSchemaInfo();
     }
 
     @CStruct("read_only_byte_array")
