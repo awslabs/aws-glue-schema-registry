@@ -11,6 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using System.Collections.Generic;
 using Google.Protobuf;
 using Google.Protobuf.Reflection;
@@ -46,12 +47,19 @@ namespace AWSGsrSerDe.common
         /// Gets the Protobuf Message Descriptor provided
         /// </summary>
         public MessageDescriptor ProtobufMessageDescriptor { get; private set; }
+        
+        /// <summary>
+        /// Gets the Object type that the Json message should be de-serialized to
+        /// if this value is not set, Json message will be de-serialized into plain Json
+        /// </summary>
+        public Type JsonObjectType  { get; private set; }
 
         private void BuildConfigs(Dictionary<string, dynamic> configs)
         {
             ValidateAndSetAvroRecordType(configs);
             ValidateAndSetProtobufMessageDescriptor(configs);
             ValidateAndSetDataFormat(configs);
+            ValidateAndSetJsonObjectType(configs);
         }
 
         private void ValidateAndSetDataFormat(Dictionary<string, dynamic> configs)
@@ -75,6 +83,14 @@ namespace AWSGsrSerDe.common
             if (configs.ContainsKey(GlueSchemaRegistryConstants.ProtobufMessageDescriptor))
             {
                 ProtobufMessageDescriptor = configs[GlueSchemaRegistryConstants.ProtobufMessageDescriptor];
+            }
+        }
+
+        private void ValidateAndSetJsonObjectType(Dictionary<string, dynamic> configs)
+        {
+            if (configs.ContainsKey(GlueSchemaRegistryConstants.JsonObjectType))
+            {
+                JsonObjectType = configs[GlueSchemaRegistryConstants.JsonObjectType];
             }
         }
     }

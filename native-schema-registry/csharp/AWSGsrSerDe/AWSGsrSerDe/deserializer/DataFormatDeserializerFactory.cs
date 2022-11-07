@@ -14,6 +14,7 @@
 using System.Collections.Generic;
 using AWSGsrSerDe.common;
 using AWSGsrSerDe.deserializer.avro;
+using AWSGsrSerDe.deserializer.json;
 using AWSGsrSerDe.deserializer.protobuf;
 
 namespace AWSGsrSerDe.deserializer
@@ -28,6 +29,9 @@ namespace AWSGsrSerDe.deserializer
 
         private readonly Dictionary<AvroRecordType, AvroDeserializer> _avroDeserializerMap =
             new Dictionary<AvroRecordType, AvroDeserializer>();
+
+        private readonly Dictionary<string, JsonDeserializer> _jsonDeserializerMap =
+            new Dictionary<string, JsonDeserializer>();
 
         private static DataFormatDeserializerFactory _dataFormatDeserializerFactoryInstance;
 
@@ -58,6 +62,7 @@ namespace AWSGsrSerDe.deserializer
             {
                 nameof(GlueSchemaRegistryConstants.DataFormat.AVRO) => GetAvroDeserializer(configs),
                 nameof(GlueSchemaRegistryConstants.DataFormat.PROTOBUF) => GetProtobufDeserializer(configs),
+                nameof(GlueSchemaRegistryConstants.DataFormat.JSON) => GetJsonDeserializer(configs),
                 _ => throw new AwsSchemaRegistryException($"Unsupported data format: {dataFormat}"),
             };
         }
@@ -72,7 +77,7 @@ namespace AWSGsrSerDe.deserializer
             {
                 _avroDeserializerMap.Add(key, avroDeserializer);
             }
-            
+
             return avroDeserializer;
         }
 
@@ -88,6 +93,30 @@ namespace AWSGsrSerDe.deserializer
             }
 
             return protobufDeserializer;
+        }
+
+        private JsonDeserializer GetJsonDeserializer(GlueSchemaRegistryConfiguration configs)
+        {
+            string key;
+            if (configs.JsonObjectType is null)
+            {
+                key = "default";
+            }
+            else
+            {
+                // If we the fullname of the object is not resolved then we will just use the name
+                key = configs.JsonObjectType.FullName??configs.JsonObjectType.Name;
+            }
+
+            var jsonDeserializer = _jsonDeserializerMap.GetValueOrDefault(
+                key,
+                new JsonDeserializer(configs));
+            if (!_jsonDeserializerMap.ContainsKey(key))
+            {
+                _jsonDeserializerMap.Add(key, jsonDeserializer);
+            }
+
+            return jsonDeserializer;
         }
     }
 }

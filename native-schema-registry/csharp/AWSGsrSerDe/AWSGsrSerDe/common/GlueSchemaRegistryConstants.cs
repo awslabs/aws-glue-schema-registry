@@ -23,6 +23,7 @@ namespace AWSGsrSerDe.common
         public const string DataFormatType = "DataFormatType";
         public const string AvroRecordType = "avroRecordType";
         public const string ProtobufMessageDescriptor = "protobufMessageDescriptor";
+        public const string JsonObjectType = "jsonObjectType";
         public const string CacheItemExpirationTime = "cacheItemExpirationTime";
 
         // TODO: need to expose it from Java to avoid code duplication

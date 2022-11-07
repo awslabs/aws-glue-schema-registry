@@ -15,6 +15,7 @@ using System.Diagnostics.CodeAnalysis;
 using AWSGsrSerDe.common;
 using AWSGsrSerDe.serializer.avro;
 using AWSGsrSerDe.serializer.protobuf;
+using AWSGsrSerDe.serializer.json;
 
 namespace AWSGsrSerDe.serializer
 {
@@ -27,6 +28,7 @@ namespace AWSGsrSerDe.serializer
         
         private AvroSerializer _avroSerializer;
         private ProtobufSerializer _protobufSerializer;
+        private JsonSerializer _jsonSerializer;
 
         private DataFormatSerializerFactory()
         {
@@ -53,6 +55,7 @@ namespace AWSGsrSerDe.serializer
             {
                 nameof(GlueSchemaRegistryConstants.DataFormat.AVRO) => GetAvroSerializer(),
                 nameof(GlueSchemaRegistryConstants.DataFormat.PROTOBUF) => GetProtobufSerializer(),
+                nameof(GlueSchemaRegistryConstants.DataFormat.JSON) => GetJsonSerializer(),
                 _ => throw new AwsSchemaRegistryException($"Unsupported data format: {dataFormat}"),
             };
         }
@@ -65,6 +68,11 @@ namespace AWSGsrSerDe.serializer
         private ProtobufSerializer GetProtobufSerializer()
         {
             return _protobufSerializer ??= new ProtobufSerializer();
+        }
+
+        private JsonSerializer GetJsonSerializer()
+        {
+            return _jsonSerializer ??= new JsonSerializer();
         }
     }
 }
