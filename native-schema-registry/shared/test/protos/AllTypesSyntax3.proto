@@ -1,0 +1,69 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+import "google/type/money.proto";
+
+//Package name is pre-fixed for every message type.
+package com.amazonaws.services.schemaregistry.tests.protobuf.syntax3.alltypes;
+option java_multiple_files = true;
+option java_outer_classname = "AllTypesSyntax3";
+
+message AllTypes { //0
+  string stringType = 80 [json_name="A_A"];
+  optional bytes byteType = 98 [  deprecated = true];
+
+  oneof aOneOf1 {
+    int32 oneOfInt = 1;
+    google.type.Money oneOfMoney = 3;
+  }
+  reserved 20000 to 20003;
+
+  repeated string repeatedString = 4;
+  repeated string repeatedPackedInts = 492;
+  oneof aOneOf2 {
+    int64 int64Bit1 = 5;
+    google.type.Money anotherOneOfMoney = 6;
+    bool oneOfBool = 239;
+  }
+
+  optional sfixed32 optionalSfixed32 = 99;
+  optional sfixed32 anotherOptionalSfixed32 = 992;
+  optional sfixed64 optionalSfixed64  = 991;
+  message NestedMessage1 {
+    float floatingType = 100;
+    double doubleType = 101;
+  }
+  AnEnum anEnum2 = 1902;
+  uint64 uint64Type = 993;
+  uint32 int32Type = 994;
+  sint32 sint32Type = 995;
+  sint64 sint64Type = 996;
+  fixed32 fixed32Type = 997;
+  fixed64 fixed64Type = 998;
+
+  NestedMessage1 nestedMessage1 = 198;
+  map<int32, AnotherTopLevelMessage.NestedMessage2> aComplexMap = 2394;
+  AnEnum anEnum1 = 1999;
+}
+
+message TopLevelMessage {
+  int32 anInt32 = 1;
+  repeated bool repeatedBool = 3 [packed = true];
+  google.type.Money anotherMoney = 2;
+}
+
+message AnotherTopLevelMessage { //a comment
+  message NestedMessage2 {
+    repeated google.protobuf.Timestamp aTimestamp = 2 ;
+  }
+}
+
+enum AnEnum {
+  ALPHA = 0;
+  BETA = 1;
+}
+
+service AService {
+  rpc ARpc (AllTypes.NestedMessage1) returns (AnotherTopLevelMessage.NestedMessage2);
+  rpc streamMethod (stream AnotherTopLevelMessage) returns (stream AllTypes);
+}
