@@ -90,48 +90,48 @@ public class FileDescriptorUtils {
     // rpc options
     private static final String IDEMPOTENCY_LEVEL_OPTION = "idempotency_level";
 
-    private static final OptionElement.Kind booleanKind =  OptionElement.Kind.BOOLEAN;
-    private static final OptionElement.Kind stringKind =  OptionElement.Kind.STRING;
-    private static final OptionElement.Kind enumKind =  OptionElement.Kind.ENUM;
+    private static final OptionElement.Kind booleanKind = OptionElement.Kind.BOOLEAN;
+    private static final OptionElement.Kind stringKind = OptionElement.Kind.STRING;
+    private static final OptionElement.Kind enumKind = OptionElement.Kind.ENUM;
 
     public static FileDescriptor[] baseDependencies() {
         //Support all the Protobuf WellKnownTypes
         //and the protos from Google API, https://github.com/googleapis/googleapis
-        return new FileDescriptor[] {
-            ApiProto.getDescriptor().getFile(),
-            FieldMaskProto.getDescriptor().getFile(),
-            SourceContextProto.getDescriptor().getFile(),
-            StructProto.getDescriptor().getFile(),
-            TypeProto.getDescriptor().getFile(),
-            TimestampProto.getDescriptor().getFile(),
-            WrappersProto.getDescriptor().getFile(),
-            AnyProto.getDescriptor().getFile(),
-            EmptyProto.getDescriptor().getFile(),
-            DurationProto.getDescriptor().getFile(),
-            TimeOfDayProto.getDescriptor().getFile(),
-            DateProto.getDescriptor().getFile(),
-            CalendarPeriodProto.getDescriptor().getFile(),
-            ColorProto.getDescriptor().getFile(),
-            DayOfWeek.getDescriptor().getFile(),
-            LatLng.getDescriptor().getFile(),
-            FractionProto.getDescriptor().getFile(),
-            MoneyProto.getDescriptor().getFile(),
-            MonthProto.getDescriptor().getFile(),
-            PhoneNumberProto.getDescriptor().getFile(),
-            PostalAddressProto.getDescriptor().getFile(),
-            CalendarPeriodProto.getDescriptor().getFile(),
-            LocalizedTextProto.getDescriptor().getFile(),
-            IntervalProto.getDescriptor().getFile(),
-            ExprProto.getDescriptor().getFile(),
-            QuaternionProto.getDescriptor().getFile(),
-            PostalAddressProto.getDescriptor().getFile(),
-            ProtobufSchemaMetadata.getDescriptor().getFile(),
-            Decimals.getDescriptor().getFile()
+        return new FileDescriptor[]{
+                ApiProto.getDescriptor().getFile(),
+                FieldMaskProto.getDescriptor().getFile(),
+                SourceContextProto.getDescriptor().getFile(),
+                StructProto.getDescriptor().getFile(),
+                TypeProto.getDescriptor().getFile(),
+                TimestampProto.getDescriptor().getFile(),
+                WrappersProto.getDescriptor().getFile(),
+                AnyProto.getDescriptor().getFile(),
+                EmptyProto.getDescriptor().getFile(),
+                DurationProto.getDescriptor().getFile(),
+                TimeOfDayProto.getDescriptor().getFile(),
+                DateProto.getDescriptor().getFile(),
+                CalendarPeriodProto.getDescriptor().getFile(),
+                ColorProto.getDescriptor().getFile(),
+                DayOfWeek.getDescriptor().getFile(),
+                LatLng.getDescriptor().getFile(),
+                FractionProto.getDescriptor().getFile(),
+                MoneyProto.getDescriptor().getFile(),
+                MonthProto.getDescriptor().getFile(),
+                PhoneNumberProto.getDescriptor().getFile(),
+                PostalAddressProto.getDescriptor().getFile(),
+                CalendarPeriodProto.getDescriptor().getFile(),
+                LocalizedTextProto.getDescriptor().getFile(),
+                IntervalProto.getDescriptor().getFile(),
+                ExprProto.getDescriptor().getFile(),
+                QuaternionProto.getDescriptor().getFile(),
+                PostalAddressProto.getDescriptor().getFile(),
+                ProtobufSchemaMetadata.getDescriptor().getFile(),
+                Decimals.getDescriptor().getFile()
         };
     }
 
     public static FileDescriptor protoFileToFileDescriptor(ProtoFileElement element)
-        throws DescriptorValidationException {
+            throws DescriptorValidationException {
         return protoFileToFileDescriptor(element, "default.proto");
     }
 
@@ -140,11 +140,11 @@ public class FileDescriptorUtils {
         Objects.requireNonNull(protoFileName);
 
         return protoFileToFileDescriptor(element.toSchema(), protoFileName,
-            Optional.ofNullable(element.getPackageName()));
+                Optional.ofNullable(element.getPackageName()));
     }
 
     public static FileDescriptor protoFileToFileDescriptor(String schemaDefinition, String protoFileName, Optional<String> optionalPackageName)
-        throws DescriptorValidationException {
+            throws DescriptorValidationException {
         Objects.requireNonNull(schemaDefinition);
         Objects.requireNonNull(protoFileName);
 
@@ -155,7 +155,7 @@ public class FileDescriptorUtils {
         final ProtobufSchemaLoader.ProtobufSchemaLoaderContext protobufSchemaLoaderContext;
         try {
             protobufSchemaLoaderContext =
-                ProtobufSchemaLoader.loadSchema(optionalPackageName, protoFileName, schemaDefinition);
+                    ProtobufSchemaLoader.loadSchema(optionalPackageName, protoFileName, schemaDefinition);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -183,7 +183,7 @@ public class FileDescriptorUtils {
             Type type = schemaContext.getType(protoType);
             if (type instanceof MessageType) {
                 DescriptorProto
-                    message = messageElementToDescriptorProto((MessageType) type, schemaContext, element);
+                        message = messageElementToDescriptorProto((MessageType) type, schemaContext, element);
                 schema.addMessageType(message);
             } else if (type instanceof EnumType) {
                 EnumDescriptorProto message = enumElementToProto((EnumType) type);
@@ -238,19 +238,19 @@ public class FileDescriptorUtils {
             schema.mergeOptions(options);
         }
 
-        Boolean javaGenericServices= findOptionBoolean(JAVA_GENERIC_SERVICES_OPTION, element.getOptions());
+        Boolean javaGenericServices = findOptionBoolean(JAVA_GENERIC_SERVICES_OPTION, element.getOptions());
         if (javaGenericServices != null) {
             FileOptions options = FileOptions.newBuilder().setJavaGenericServices(javaGenericServices).build();
             schema.mergeOptions(options);
         }
 
-        Boolean ccGenericServices= findOptionBoolean(CC_GENERIC_SERVICES_OPTION, element.getOptions());
+        Boolean ccGenericServices = findOptionBoolean(CC_GENERIC_SERVICES_OPTION, element.getOptions());
         if (ccGenericServices != null) {
             FileOptions options = FileOptions.newBuilder().setCcGenericServices(ccGenericServices).build();
             schema.mergeOptions(options);
         }
 
-        Boolean ccEnableArenas= findOptionBoolean(CC_ENABLE_ARENAS_OPTION, element.getOptions());
+        Boolean ccEnableArenas = findOptionBoolean(CC_ENABLE_ARENAS_OPTION, element.getOptions());
         if (ccEnableArenas != null) {
             FileOptions options = FileOptions.newBuilder().setCcEnableArenas(ccEnableArenas).build();
             schema.mergeOptions(options);
@@ -274,7 +274,7 @@ public class FileDescriptorUtils {
             schema.mergeOptions(options);
         }
 
-        Boolean phpGenericServices= findOptionBoolean(PHP_GENERIC_SERVICES_OPTION, element.getOptions());
+        Boolean phpGenericServices = findOptionBoolean(PHP_GENERIC_SERVICES_OPTION, element.getOptions());
         if (phpGenericServices != null) {
             FileOptions options = FileOptions.newBuilder().setPhpGenericServices(phpGenericServices).build();
             schema.mergeOptions(options);
@@ -298,7 +298,7 @@ public class FileDescriptorUtils {
             schema.mergeOptions(options);
         }
 
-        Boolean pyGenericServices= findOptionBoolean(PY_GENERIC_SERVICES_OPTION, element.getOptions());
+        Boolean pyGenericServices = findOptionBoolean(PY_GENERIC_SERVICES_OPTION, element.getOptions());
         if (pyGenericServices != null) {
             FileOptions options = FileOptions.newBuilder().setPyGenericServices(pyGenericServices).build();
             schema.mergeOptions(options);
@@ -329,6 +329,7 @@ public class FileDescriptorUtils {
     /**
      * When schema loader links the schema, it also includes google.protobuf types in it.
      * We want to ignore all the other types except for the ones that are present in the current file.
+     *
      * @return true if a type is a parent type, false otherwise.
      */
     private static boolean isParentLevelType(ProtoType protoType, Optional<String> optionalPackageName) {
@@ -350,12 +351,12 @@ public class FileDescriptorUtils {
 
         //In case the package is not defined, we select the types that are not google types or metadata types.
         return !typeName.startsWith("google.type") && !typeName.startsWith("google.protobuf")
-            && !typeName.startsWith("metadata")
-            && !typeName.startsWith("additionalTypes");
+                && !typeName.startsWith("metadata")
+                && !typeName.startsWith("additionalTypes");
     }
 
     private static DescriptorProto messageElementToDescriptorProto(
-        MessageType messageElem, Schema schema, ProtoFile element) {
+            MessageType messageElem, Schema schema, ProtoFile element) {
         ProtobufMessage message = new ProtobufMessage();
         message.protoBuilder().setName(messageElem.getType().getSimpleName());
 
@@ -865,13 +866,20 @@ public class FileDescriptorUtils {
                     descriptor.getOptions().getNoStandardDescriptorAccessor(), false);
             options.add(option);
         }
-        return new MessageElement(DEFAULT_LOCATION, name, "", nested.build(), options.build(),
-                reserved.build(), fields.build(),
+        return new MessageElement(
+                DEFAULT_LOCATION,
+                name, "",
+                nested.build(),
+                options.build(),
+                reserved.build(),
+                fields.build(),
                 oneofs.stream()
-                    //Ignore oneOfs with no fields (like Proto3 Optional)
-                    .filter(e -> e.getValue().build().size() != 0)
-                    .map(e -> toOneof(e.getKey(), e.getValue())).collect(Collectors.toList()),
-                extensions.build(), Collections.emptyList());
+                        //Ignore oneOfs with no fields (like Proto3 Optional)
+                        .filter(e -> e.getValue().build().size() != 0)
+                        .map(e -> toOneof(e.getKey(), e.getValue())).collect(Collectors.toList()),
+                extensions.build(),
+                Collections.emptyList()
+        );
     }
 
     private static OneOfElement toOneof(String name, ImmutableList.Builder<FieldElement> fields) {
@@ -881,10 +889,16 @@ public class FileDescriptorUtils {
     private static EnumElement toEnum(EnumDescriptorProto ed) {
         String name = ed.getName();
         ImmutableList.Builder<EnumConstantElement> constants = ImmutableList.builder();
+        ImmutableList.Builder<ReservedElement> reserved = ImmutableList.builder();
         for (EnumValueDescriptorProto ev : ed.getValueList()) {
             ImmutableList.Builder<OptionElement> options = ImmutableList.builder();
             constants.add(new EnumConstantElement(DEFAULT_LOCATION, ev.getName(), ev.getNumber(), "",
                     options.build()));
+        }
+        for (String reservedName : ed.getReservedNameList()) {
+            ReservedElement reservedElem = new ReservedElement(DEFAULT_LOCATION, "",
+                    Collections.singletonList(reservedName));
+            reserved.add(reservedElem);
         }
         ImmutableList.Builder<OptionElement> options = ImmutableList.builder();
         if (ed.getOptions().hasAllowAlias()) {
@@ -892,7 +906,7 @@ public class FileDescriptorUtils {
                     false);
             options.add(option);
         }
-        return new EnumElement(DEFAULT_LOCATION, name, "", options.build(), constants.build());
+        return new EnumElement(DEFAULT_LOCATION, name, "", options.build(), constants.build(), reserved.build());
     }
 
     private static ServiceElement toService(ServiceDescriptorProto sv) {
@@ -921,7 +935,7 @@ public class FileDescriptorUtils {
         }
         if (fieldDescriptorOptions.hasDeprecated()) {
             OptionElement option = new OptionElement(DEPRECATED_OPTION, booleanKind, fieldDescriptorOptions.getDeprecated(),
-                false);
+                    false);
             options.add(option);
         }
         if (fieldDescriptorOptions.hasCtype()) {
@@ -934,14 +948,14 @@ public class FileDescriptorUtils {
         }
         if (fieldDescriptorOptions.hasExtension(ProtobufSchemaMetadata.metadataKey)) {
             OptionElement keyOption = new OptionElement(
-                ProtobufSchemaMetadata.metadataKey.getDescriptor().getFullName(), stringKind,
-                fieldDescriptorOptions.getExtension(ProtobufSchemaMetadata.metadataKey), false);
+                    ProtobufSchemaMetadata.metadataKey.getDescriptor().getFullName(), stringKind,
+                    fieldDescriptorOptions.getExtension(ProtobufSchemaMetadata.metadataKey), false);
             options.add(keyOption);
         }
         if (fieldDescriptorOptions.hasExtension(ProtobufSchemaMetadata.metadataValue)) {
             OptionElement valueOption = new OptionElement(
-                ProtobufSchemaMetadata.metadataValue.getDescriptor().getFullName(), stringKind,
-                fieldDescriptorOptions.getExtension(ProtobufSchemaMetadata.metadataValue), false);
+                    ProtobufSchemaMetadata.metadataValue.getDescriptor().getFullName(), stringKind,
+                    fieldDescriptorOptions.getExtension(ProtobufSchemaMetadata.metadataValue), false);
             options.add(valueOption);
         }
 
@@ -1012,7 +1026,7 @@ public class FileDescriptorUtils {
         String[] parts = fieldName.split("_");
         String defaultJsonName = parts[0];
         for (int i = 1; i < parts.length; ++i) {
-            defaultJsonName +=  parts[i].substring(0, 1).toUpperCase() + parts[i].substring(1);
+            defaultJsonName += parts[i].substring(0, 1).toUpperCase() + parts[i].substring(1);
         }
         return defaultJsonName;
     }

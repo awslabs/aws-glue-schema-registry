@@ -2,11 +2,11 @@ name: MavenCI
 
 on:
   push:
-    branches: [ master ]
+    branches: [ master, cdk-master ]
   pull_request:
-    branches: [ master ]
+    branches: [ master, cdk-master ]
   release:
-    branches: [ master ] 
+    branches: [ master, cdk-master ] 
     types: [ created ]  
     
 jobs:
