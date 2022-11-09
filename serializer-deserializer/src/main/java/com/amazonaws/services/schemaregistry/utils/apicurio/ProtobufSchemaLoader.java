@@ -30,14 +30,12 @@ import com.squareup.wire.schema.SchemaLoader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
 
 import okio.Buffer;
+import okio.Path;
 import okio.Sink;
 import okio.fakefilesystem.FakeFileSystem;
 
@@ -87,7 +85,7 @@ public class ProtobufSchemaLoader {
 
     private static FakeFileSystem getFileSystem() throws IOException {
         final FakeFileSystem inMemoryFileSystem = new FakeFileSystem();
-        inMemoryFileSystem.setWorkingDirectory(okio.Path.get("/"));
+        inMemoryFileSystem.setWorkingDirectory(Path.get("/"));
         inMemoryFileSystem.setAllowSymlinks(true);
 
         final ClassLoader classLoader = ProtobufSchemaLoader.class.getClassLoader();
@@ -115,15 +113,15 @@ public class ProtobufSchemaLoader {
             //Loads the proto file resource files.
             final InputStream inputStream = classLoader.getResourceAsStream(protoPath + proto);
             final String fileContents = CharStreams.toString(new InputStreamReader(inputStream, Charsets.UTF_8));
-            final okio.Path dir = okio.Path.get(Paths.get("/", protoPath));
+            final Path dir = Path.get("/").resolve(protoPath);
             inMemoryFileSystem.createDirectories(dir);
             byte[] bytes = fileContents.getBytes();
-            okio.Path path = dir.resolve(proto);
+            Path path = dir.resolve(proto);
             writeToFakeFileSystem(inMemoryFileSystem, bytes, path);
         }
     }
 
-    private static void writeToFakeFileSystem(FakeFileSystem inMemoryFileSystem, byte[] bytes, okio.Path path) throws IOException {
+    private static void writeToFakeFileSystem(FakeFileSystem inMemoryFileSystem, byte[] bytes, Path path) throws IOException {
         Buffer buffer = new Buffer();
         buffer.write(bytes);
         Sink sink = inMemoryFileSystem.sink(path);
@@ -134,14 +132,13 @@ public class ProtobufSchemaLoader {
         sink.close();
     }
 
-    private static String createDirectory(String[] dirs, FakeFileSystem fileSystem) throws IOException {
-        String dirPath = "";
-        for (String dir : dirs) {
-            dirPath = dirPath + "/" + dir;
+    private static Path createDirectory(String[] dirs, FakeFileSystem fileSystem) throws IOException {
+        Path path = Path.get("/");
+        for (String dir: dirs) {
+            path = path.resolve(dir);
         }
-        fileSystem.createDirectories(okio.Path.get(dirPath));
-
-        return dirPath;
+        fileSystem.createDirectories(path);
+        return path;
     }
 
     /**
@@ -164,9 +161,9 @@ public class ProtobufSchemaLoader {
         }
         String protoFileName = fileName.endsWith(".proto") ? fileName : fileName + ".proto";
         try {
-            String dirPath = createDirectory(dirs, inMemoryFileSystem);
-            Path path = Paths.get(dirPath, protoFileName);
-            writeToFakeFileSystem(inMemoryFileSystem, schemaDefinition.getBytes(), okio.Path.get(path));
+            Path dirPath = createDirectory(dirs, inMemoryFileSystem);
+            Path path = dirPath.resolve(protoFileName);
+            writeToFakeFileSystem(inMemoryFileSystem, schemaDefinition.getBytes(), path);
 
             SchemaLoader schemaLoader = new SchemaLoader(inMemoryFileSystem);
             schemaLoader.initRoots(Lists.newArrayList(Location.get("/")), Lists.newArrayList(Location.get("/")));
