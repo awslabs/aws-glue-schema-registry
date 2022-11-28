@@ -86,8 +86,7 @@ public class JsonDeserializer implements GlueSchemaRegistryDataFormatDeserialize
                               @NonNull Schema schemaObject) {
         try {
             String schema = schemaObject.getSchemaDefinition();
-//            byte[] data = DESERIALIZER_DATA_PARSER.getPlainData(buffer);
-            byte[] data = buffer.array();
+            byte[] data = DESERIALIZER_DATA_PARSER.getPlainData(buffer);
             log.debug("Length of actual message: {}", data.length);
 
             Object deserializedObject;

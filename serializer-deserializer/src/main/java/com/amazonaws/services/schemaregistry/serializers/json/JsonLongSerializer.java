@@ -16,7 +16,6 @@ public class JsonLongSerializer extends JsonSerializer<Long> {
     @Override
     public void serialize(Long value, JsonGenerator jgen, SerializerProvider provider)
             throws IOException {
-        System.out.println("value = " + value);
         jgen.writeNumber(new BigDecimal(value));
     }
 

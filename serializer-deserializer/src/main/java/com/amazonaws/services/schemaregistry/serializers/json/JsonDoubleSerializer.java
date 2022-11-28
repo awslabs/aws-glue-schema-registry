@@ -16,7 +16,6 @@ public class JsonDoubleSerializer extends JsonSerializer<Double> {
     @Override
     public void serialize(Double value, JsonGenerator jgen, SerializerProvider provider)
             throws IOException {
-        System.out.println("value = " + value);
         jgen.writeNumber(new BigDecimal(value));
     }
 
