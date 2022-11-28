@@ -20,6 +20,7 @@ import com.amazonaws.services.schemaregistry.deserializers.GlueSchemaRegistryDes
 import com.amazonaws.services.schemaregistry.exception.AWSSchemaRegistryException;
 import com.amazonaws.services.schemaregistry.serializers.json.JsonDataWithSchema;
 import com.amazonaws.services.schemaregistry.common.Schema;
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
@@ -57,7 +58,7 @@ public class JsonDeserializer implements GlueSchemaRegistryDataFormatDeserialize
     public JsonDeserializer(GlueSchemaRegistryConfiguration configs) {
         this.schemaRegistrySerDeConfigs = configs;
         JsonNodeFactory jsonNodeFactory = JsonNodeFactory.withExactBigDecimals(true);
-        this.objectMapper = new ObjectMapper();
+        this.objectMapper = new ObjectMapper().enable(JsonGenerator.Feature.WRITE_BIGDECIMAL_AS_PLAIN);
         this.objectMapper.setNodeFactory(jsonNodeFactory);
         if (configs != null) {
             if (!CollectionUtils.isEmpty(configs.getJacksonSerializationFeatures())) {
