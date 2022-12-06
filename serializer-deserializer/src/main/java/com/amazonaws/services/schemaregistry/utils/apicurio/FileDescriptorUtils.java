@@ -329,6 +329,7 @@ public class FileDescriptorUtils {
     /**
      * When schema loader links the schema, it also includes google.protobuf types in it.
      * We want to ignore all the other types except for the ones that are present in the current file.
+     *
      * @return true if a type is a parent type, false otherwise.
      */
     private static boolean isParentLevelType(ProtoType protoType, Optional<String> optionalPackageName) {
@@ -865,13 +866,20 @@ public class FileDescriptorUtils {
                     descriptor.getOptions().getNoStandardDescriptorAccessor(), false);
             options.add(option);
         }
-        return new MessageElement(DEFAULT_LOCATION, name, "", nested.build(), options.build(),
-                reserved.build(), fields.build(),
+        return new MessageElement(
+                DEFAULT_LOCATION,
+                name, "",
+                nested.build(),
+                options.build(),
+                reserved.build(),
+                fields.build(),
                 oneofs.stream()
                     //Ignore oneOfs with no fields (like Proto3 Optional)
                     .filter(e -> e.getValue().build().size() != 0)
                     .map(e -> toOneof(e.getKey(), e.getValue())).collect(Collectors.toList()),
-                extensions.build(), Collections.emptyList());
+                extensions.build(),
+                Collections.emptyList()
+        );
     }
 
     private static OneOfElement toOneof(String name, ImmutableList.Builder<FieldElement> fields) {
@@ -881,10 +889,16 @@ public class FileDescriptorUtils {
     private static EnumElement toEnum(EnumDescriptorProto ed) {
         String name = ed.getName();
         ImmutableList.Builder<EnumConstantElement> constants = ImmutableList.builder();
+        ImmutableList.Builder<ReservedElement> reserved = ImmutableList.builder();
         for (EnumValueDescriptorProto ev : ed.getValueList()) {
             ImmutableList.Builder<OptionElement> options = ImmutableList.builder();
             constants.add(new EnumConstantElement(DEFAULT_LOCATION, ev.getName(), ev.getNumber(), "",
                     options.build()));
+        }
+        for (String reservedName : ed.getReservedNameList()) {
+            ReservedElement reservedElem = new ReservedElement(DEFAULT_LOCATION, "",
+                    Collections.singletonList(reservedName));
+            reserved.add(reservedElem);
         }
         ImmutableList.Builder<OptionElement> options = ImmutableList.builder();
         if (ed.getOptions().hasAllowAlias()) {
@@ -892,7 +906,7 @@ public class FileDescriptorUtils {
                     false);
             options.add(option);
         }
-        return new EnumElement(DEFAULT_LOCATION, name, "", options.build(), constants.build());
+        return new EnumElement(DEFAULT_LOCATION, name, "", options.build(), constants.build(), reserved.build());
     }
 
     private static ServiceElement toService(ServiceDescriptorProto sv) {
