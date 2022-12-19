@@ -173,6 +173,11 @@ public final class AWSSchemaRegistryConstants {
     public static final String USER_AGENT_APP = "userAgentApp";
 
     /**
+     * Boolean indicating if logical types in avro data must be converted or not.
+     */
+    public static final String LOGICAL_TYPES_CONVERSION_ENABLED = "logicalTypesConversionEnabled";
+
+    /**
      * Private constructor to avoid initialization of the class.
      */
 
