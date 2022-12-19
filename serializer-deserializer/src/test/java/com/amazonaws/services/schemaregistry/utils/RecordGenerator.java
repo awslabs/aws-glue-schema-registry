@@ -22,7 +22,9 @@ import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericRecord;
 
+import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -42,6 +44,7 @@ public final class RecordGenerator {
     public static final String AVRO_USER_ARRAY_STRING_SCHEMA_FILE = "src/test/resources/avro/user_array_String.avsc";
     public static final String AVRO_USER_MAP_SCHEMA_FILE = "src/test/resources/avro/user_map.avsc";
     public static final String AVRO_USER_MIXED_TYPE_SCHEMA_FILE = "src/test/resources/avro/user3.avsc";
+    public static final String AVRO_USER_LOGICAL_TYPES_SCHEMA_FILE_PATH = "src/test/resources/avro/user4.avsc";
     public static final String JSON_PERSON_SCHEMA_FILE_PATH =
             "src/test/resources/json/schema/draft07/person.schema.json";
     public static final String JSON_PERSON_DATA_FILE_PATH = "src/test/resources/json/person1.json";
@@ -320,6 +323,21 @@ public final class RecordGenerator {
         genericRecordWithAllTypes.put("integerEnum", k);
 
         return genericRecordWithAllTypes;
+    }
+
+    /**
+     * Test Helper method to generate a test GenericRecord with logical types
+     *
+     * @return Generic AVRO Record
+     */
+    public static GenericRecord createGenericAvroRecordWithLogicalTypes() {
+        Schema schema = SchemaLoader.loadAvroSchema(AVRO_USER_LOGICAL_TYPES_SCHEMA_FILE_PATH);
+        GenericRecord genericRecord = new GenericData.Record(schema);
+        genericRecord.put("name", "Sylvestre");
+        genericRecord.put("dateOfBirth", LocalDate.parse("2021-05-01"));
+        genericRecord.put("age", new BigDecimal("1.56"));
+
+        return genericRecord;
     }
 
     /**
