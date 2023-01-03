@@ -16,7 +16,7 @@
 package com.amazonaws.services.schemaregistry.kafkaconnect;
 
 import com.amazonaws.services.schemaregistry.common.AWSDeserializerInput;
-import com.amazonaws.services.schemaregistry.common.AWSSchemaRegistryClient;
+import com.amazonaws.services.schemaregistry.common.SchemaByDefinitionFetcher;
 import com.amazonaws.services.schemaregistry.deserializers.GlueSchemaRegistryDeserializationFacade;
 import com.amazonaws.services.schemaregistry.deserializers.avro.AWSKafkaAvroDeserializer;
 import com.amazonaws.services.schemaregistry.exception.AWSSchemaRegistryException;
@@ -63,7 +63,7 @@ public class AWSKafkaAvroConverterTest {
     @Mock
     private AvroDataConfig mockAvroDataConfig;
     @Mock
-    private AWSSchemaRegistryClient mockClient;
+    private SchemaByDefinitionFetcher mockSchemaByDefinitionFetcher;
     @Mock
     private AwsCredentialsProvider mockCredProvider;
     @Mock
@@ -160,10 +160,10 @@ public class AWSKafkaAvroConverterTest {
                 GlueSchemaRegistrySerializationFacade.builder()
                         .configs(configs)
                         .credentialProvider(mockCredProvider)
-                        .schemaRegistryClient(mockClient)
+                        .schemaByDefinitionFetcher(mockSchemaByDefinitionFetcher)
                         .build();
 
-        when(mockClient.getORRegisterSchemaVersionId(eq(schemaDefinition), eq("User-Topic"),
+        when(mockSchemaByDefinitionFetcher.getORRegisterSchemaVersionId(eq(schemaDefinition), eq("User-Topic"),
                                                      eq(DataFormat.AVRO.name()), anyMap())).thenReturn(schemaVersionId);
         AWSKafkaAvroSerializer awsKafkaAvroSerializer = new AWSKafkaAvroSerializer(mockCredProvider, null);
         awsKafkaAvroSerializer.configure(configs, true);

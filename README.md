@@ -21,7 +21,7 @@ Registry](https://docs.aws.amazon.com/glue/latest/dg/schema-registry-gs.html) in
 
 1. Messages/records are serialized on producer front and deserialized on the consumer front by using 
 schema-registry-serde.
-1. Support for AVRO and JSON Data formats (with [JSON Schema](https://json-schema.org/) Draft04, Draft06, Draft07).
+1. Support for three data formats: AVRO, JSON (with [JSON Schema](https://json-schema.org/) Draft04, Draft06, Draft07), and Protocol Buffers (Protobuf syntax versions 2 and 3).
 1. Kafka Streams support for AWS Glue Schema Registry.
 1. Records can be compressed to reduce message size.
 1. An inbuilt local in-memory cache to save calls to AWS Glue Schema Registry. The schema version id for a schema 
@@ -60,7 +60,7 @@ The recommended way to use the AWS Glue Schema Registry Library for Java is to c
   <dependency>
       <groupId>software.amazon.glue</groupId>
       <artifactId>schema-registry-serde</artifactId>
-      <version>1.1.8</version>
+      <version>1.1.14</version>
   </dependency>
   ```
 ### Code Example
@@ -155,7 +155,7 @@ The recommended way to use the AWS Glue Schema Registry Library for Java is to c
         String jsonPayload = "{\n" + "        \"employee\": {\n" + "          \"name\": \"John\",\n" + "          \"age\": 30,\n"
                                                  + "          \"city\": \"New York\"\n" + "        }\n" + "      }";
         
-        JsonDataWithSchema jsonSchemaWithData = JsonDataWithSchema.builder(jsonSchema, jsonPayload);
+        JsonDataWithSchema jsonSchemaWithData = JsonDataWithSchema.builder(jsonSchema, jsonPayload).build();
 
         List<JsonDataWithSchema> genericJsonRecords = new ArrayList<>();
         genericJsonRecords.add(jsonSchemaWithData);
@@ -199,6 +199,76 @@ The recommended way to use the AWS Glue Schema Registry Library for Java is to c
                 }
             }
         }
+
+```
+
+#### Producer for Kafka with PROTOBUF format
+
+```java
+        properties.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+        properties.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, GlueSchemaRegistryKafkaSerializer.class.getName());
+        properties.put(AWSSchemaRegistryConstants.DATA_FORMAT, DataFormat.PROTOBUF.name());
+        properties.put(AWSSchemaRegistryConstants.AWS_REGION, "us-east-1");
+        properties.put(AWSSchemaRegistryConstants.REGISTRY_NAME, "my-registry");
+        properties.put(AWSSchemaRegistryConstants.SCHEMA_NAME, "protobuf-file-name.proto")
+
+        // POJO production
+
+        // CustomerAddress is the generated Protocol Buffers class based on the given Protobuf schema definition
+        CustomerAddress customerAddress = CustomerAddress.newBuilder().build();
+        
+        KafkaProducer<String, CustomerAddress> producer = 
+             new KafkaProducer<String, CustomerAddress>(properties);
+             
+        producer.send(customerAddress);
+        
+        // DynamicMessage production
+
+        DynamicMesssage customerDynamicMessage = 
+             DynamicMessage.newBuilder(CustomerAddress.getDescriptor()).build();
+
+        KafkaProducer<String, DynamicMesssage> producer = 
+             new KafkaProducer<String, DynamicMesssage>(properties);
+        
+        producer.send(customerDynamicMessage);
+
+```
+
+#### Consumer for Kafka with PROTOBUF format
+
+```java
+        properties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+        properties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, GlueSchemaRegistryKafkaDeserializer.class.getName());
+        properties.put(AWSSchemaRegistryConstants.AWS_REGION, "us-east-1");
+
+        // POJO consumption
+        
+        properties.put(AWSSchemaRegistryConstants.PROTOBUF_MESSAGE_TYPE, ProtobufMessageType.POJO.getName());
+        
+        KafkaConsumer<String, CustomerAddress> consumer = 
+             new KafkaConsumer<String, CustomerAddress>(properties)
+        
+        consumer.subscribe(Collections.singletonList(topic));
+        
+        final ConsumerRecords<String, CustomerAddress> records = consumer.poll(10);
+        records
+            .stream()
+            .forEach(record -> processRecord(record))
+            
+        // DynamicMessage consumption
+
+        // This is optional. By default AWSSchemaRegistryConstants.PROTOBUF_MESSAGE_TYPE is set as ProtobufMessageType.DYNAMIC_MESSAGE.getName()
+        properties.put(AWSSchemaRegistryConstants.PROTOBUF_MESSAGE_TYPE, ProtobufMessageType.DYNAMIC_MESSAGE.getName());
+        
+        KafkaConsumer<String, DynamicMessage> consumer = 
+             new KafkaConsumer<String, DynamicMesssage>(properties)
+        
+        consumer.subscribe(Collections.singletonList(topic));
+        
+        final ConsumerRecords<String, DynamicMessage> records = consumer.poll(10);
+        records
+            .stream()
+            .forEach(record -> processRecord(record))
 
 ```
 
@@ -311,7 +381,7 @@ Alternatively, a schema registry naming strategy implementation can be provided.
     properties.put(AWSSchemaRegistryConstants.SCHEMA_NAMING_GENERATION_CLASS,
                     "com.amazonaws.services.schemaregistry.serializers.avro.CustomerProvidedSchemaNamingStrategy");
 ```
-An example test implementation class is [here](https://github.com/awslabs/aws-glue-schema-registry/blob/master/avro-serializer-deserializer/src/test/java/com/amazonaws/services/schemaregistry/serializers/avro/CustomerProvidedSchemaNamingStrategy.java).
+An example test implementation class is [here](https://github.com/awslabs/aws-glue-schema-registry/blob/master/serializer-deserializer/src/test/java/com/amazonaws/services/schemaregistry/serializers/avro/CustomerProvidedSchemaNamingStrategy.java).
 
 ### Providing Registry Description
 
@@ -420,7 +490,7 @@ It should look like this
 * If using bash, run the below commands to set-up your CLASSPATH in your bash_profile. (For any other shell, update the environment accordingly.)
   ```bash
       echo 'export GSR_LIB_BASE_DIR=<>' >>~/.bash_profile
-      echo 'export GSR_LIB_VERSION=1.1.8' >>~/.bash_profile
+      echo 'export GSR_LIB_VERSION=1.1.14' >>~/.bash_profile
       echo 'export KAFKA_HOME=<your kafka installation directory>' >>~/.bash_profile
       echo 'export CLASSPATH=$CLASSPATH:$GSR_LIB_BASE_DIR/avro-kafkaconnect-converter/target/schema-registry-kafkaconnect-converter-$GSR_LIB_VERSION.jar:$GSR_LIB_BASE_DIR/common/target/schema-registry-common-$GSR_LIB_VERSION.jar:$GSR_LIB_BASE_DIR/avro-serializer-deserializer/target/schema-registry-serde-$GSR_LIB_VERSION.jar' >>~/.bash_profile
       source ~/.bash_profile
@@ -469,7 +539,7 @@ It should look like this
   $KAFKA_HOME/bin/connect-standalone.sh $KAFKA_HOME/config/connect-standalone.properties $KAFKA_HOME/config/connect-file-sink.properties
   ```
 
-* For more examples for running Kafka Connect with Avro and JSON formats, refer script **run-local-tests.sh** under 
+* For more examples for running Kafka Connect with Avro, JSON, and Protobuf formats, refer script **run-local-tests.sh** under
 **integration-tests** module.
 
 ### Using Kafka Streams with AWS Glue Schema Registry
@@ -479,7 +549,7 @@ It should look like this
   <dependency>
         <groupId>software.amazon.glue</groupId>
         <artifactId>schema-registry-kafkastreams-serde</artifactId>
-        <version>1.1.8</version>
+        <version>1.1.14</version>
   </dependency>
   ```
 
@@ -508,23 +578,16 @@ It should look like this
 ```
 
 ## Using the AWS Glue Schema Registry Flink Connector
-The recommended way to use the AWS Glue Schema Registry Flink Connector for Java is to consume it from Maven.
 
-**Minimum requirements** &mdash; Apache Flink versions supported **Flink 1.11+**
-
-**Working with Kinesis Data Analytics** &mdash; AWS Glue Schema Registry can be setup with [Amazon Kinesis Data 
-Analytics 
-for Apache Flink](https://docs.aws.amazon.com/kinesisanalytics/latest/java/what-is.html).
-
-For using Amazon VPC with Kinesis Data Analytics please see [Configuring Kinesis Data Analytics for Apache Flink 
-inside Amazon VPC.](https://docs.aws.amazon.com/kinesisanalytics/latest/java/vpc.html) 
+AWS Glue Schema Registry Flink Connector for Java in this repository is not recommended. Please check out [Apache Flink](https://github.com/apache/flink) 
+repository for the latest support: [Avro SerializationSchema and DeserializationSchema](https://github.com/apache/flink/tree/master/flink-formats/flink-avro-glue-schema-registry) and [JSON SerializationSchema and DeserializationSchema](https://github.com/apache/flink/tree/master/flink-formats/flink-json-glue-schema-registry). Protobuf integration will be followed up soon.
 
 ### Maven Dependency
   ``` xml
   <dependency>
        <groupId>software.amazon.glue</groupId>
        <artifactId>schema-registry-flink-serde</artifactId>
-       <version>1.0.2</version>
+       <version>1.1.14</version>
   </dependency>
   ```
 ### Code Example

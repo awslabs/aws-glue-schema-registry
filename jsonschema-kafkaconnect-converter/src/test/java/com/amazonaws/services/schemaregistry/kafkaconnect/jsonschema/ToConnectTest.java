@@ -15,11 +15,15 @@
 
 package com.amazonaws.services.schemaregistry.kafkaconnect.jsonschema;
 
+import com.amazonaws.services.schemaregistry.deserializers.GlueSchemaRegistryKafkaDeserializer;
 import com.amazonaws.services.schemaregistry.kafkaconnect.jsonschema.typeconverters.TypeConverter;
+import com.amazonaws.services.schemaregistry.serializers.GlueSchemaRegistryKafkaSerializer;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+
 import org.apache.kafka.common.cache.Cache;
 import org.apache.kafka.connect.data.ConnectSchema;
 import org.apache.kafka.connect.data.Date;
@@ -45,9 +49,16 @@ import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import org.everit.json.schema.loader.SchemaLoader;
+import org.json.JSONObject;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class ToConnectTest {
     private static final JsonNodeFactory JSON_NODE_FACTORY = TypeConverter.JSON_NODE_FACTORY;
@@ -62,9 +73,79 @@ public class ToConnectTest {
         jsonSchemaToConnectSchemaConverter = new JsonSchemaToConnectSchemaConverter(jsonSchemaDataConfig);
     }
 
+
+    @Test
+    public void testConverter_NonSourceConverterGenerated_JSONSchema() throws Exception {
+        JSONObject jsonSchemaObject = new JSONObject("{\n" +
+                "    \"$id\": \"https://example.com/weather-report.schema.json\",\n" +
+                "    \"$schema\": \"http://json-schema.org/draft-07/schema#\",\n" +
+                "    \"title\": \"WeatherReport\",\n" +
+                "    \"type\": \"object\",\n" +
+                "    \"properties\": {\n" +
+                "        \"location\": {\n" +
+                "            \"type\": \"object\",\n" +
+                "            \"properties\": {\n" +
+                "                \"city\": {\n" +
+                "                    \"type\": \"string\",\n" +
+                "                    \"description\": \"Name of the city where the weather is being reported.\"\n" +
+                "                },\n" +
+                "                \"state\": {\n" +
+                "                    \"type\": \"string\",\n" +
+                "                    \"description\": \"Name of the state where the weather is being reported.\"\n" +
+                "                }\n" +
+                "            },\n" +
+                "            \"additionalProperties\": false,\n" +
+                "            \"required\": [\n" +
+                "                \"city\",\n" +
+                "                \"state\"\n" +
+                "            ]\n" +
+                "        },\n" +
+                "        \"temperature\": {\n" +
+                "            \"type\": \"integer\",\n" +
+                "            \"description\": \"Temperature in Farenheit.\"\n" +
+                "        },\n" +
+                "        \"timestamp\": {\n" +
+                "            \"description\": \"Timestamp in epoch format at which the weather was noted.\",\n" +
+                "            \"type\": \"integer\"\n" +
+                "        }\n" +
+                "    },\n" +
+                "    \"additionalProperties\": true,\n" +
+                "    \"required\": [\n" +
+                "        \"location\",\n" +
+                "        \"temperature\",\n" +
+                "        \"timestamp\"\n" +
+                "    ]\n" +
+                "}");
+
+        JSONObject jsonSubject = new JSONObject("{\n" +
+                "    \"location\": {\n" +
+                "        \"city\": \"Phoenix\",\n" +
+                "        \"state\": \"Arizona\"\n" +
+                "    },\n" +
+                "    \"temperature\": 115,\n" +
+                "    \"windSpeed\": 50,\n" +
+                "    \"timestamp\": 1627335205\n" +
+                "}");
+
+        org.everit.json.schema.Schema jsonSchema = org.everit.json.schema.loader.SchemaLoader.load(jsonSchemaObject);
+        assertDoesNotThrow(() -> jsonSchema.validate(jsonSubject));
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        JsonNode jsonValue = objectMapper.readTree(jsonSubject.toString());
+
+        Schema actualConnectSchema = jsonSchemaToConnectSchemaConverter.toConnectSchema(
+                jsonSchema);
+
+        Object actualConnectValue =
+                jsonNodeToConnectValueConverter.toConnectValue(actualConnectSchema,
+                        jsonValue);
+
+        assertDoesNotThrow(() -> ConnectSchema.validateValue(actualConnectSchema, actualConnectValue));
+    }
+
     @ParameterizedTest
     @MethodSource(value = "com.amazonaws.services.schemaregistry.kafkaconnect.jsonschema.TestDataProvider#"
-                          + "testSchemaAndValueArgumentsProvider")
+            + "testSchemaAndValueArgumentsProvider")
     public void testToConnect_schemaAndValue_asExpected(org.everit.json.schema.Schema jsonSchema,
                                                         Schema connectSchema,
                                                         JsonNode jsonValue,

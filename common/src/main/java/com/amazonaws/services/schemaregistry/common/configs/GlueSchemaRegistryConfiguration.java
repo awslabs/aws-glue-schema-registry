@@ -19,6 +19,7 @@ import com.amazonaws.services.schemaregistry.exception.AWSSchemaRegistryExceptio
 import com.amazonaws.services.schemaregistry.utils.AWSSchemaRegistryConstants;
 import com.amazonaws.services.schemaregistry.utils.AvroRecordType;
 import com.amazonaws.services.schemaregistry.utils.GlueSchemaRegistryUtils;
+import com.amazonaws.services.schemaregistry.utils.ProtobufMessageType;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import lombok.Data;
@@ -45,6 +46,7 @@ public class GlueSchemaRegistryConfiguration {
     private long timeToLiveMillis = 24 * 60 * 60 * 1000L;
     private int cacheSize = 200;
     private AvroRecordType avroRecordType;
+    private ProtobufMessageType protobufMessageType;
     private String registryName;
     private Compatibility compatibilitySetting;
     private String description;
@@ -87,6 +89,7 @@ public class GlueSchemaRegistryConfiguration {
         validateAndSetRegistryName(configs);
         validateAndSetDescription(configs);
         validateAndSetAvroRecordType(configs);
+        validateAndSetProtobufMessageType(configs);
         validateAndSetCompatibility(configs);
         validateAndSetCompressionType(configs);
         validateAndSetSchemaAutoRegistrationSetting(configs);
@@ -221,6 +224,13 @@ public class GlueSchemaRegistryConfiguration {
         if (isPresent(configs, AWSSchemaRegistryConstants.AVRO_RECORD_TYPE)) {
             this.avroRecordType =
                     AvroRecordType.valueOf((String) configs.get(AWSSchemaRegistryConstants.AVRO_RECORD_TYPE));
+        }
+    }
+
+    private void validateAndSetProtobufMessageType(Map<String, ?> configs) {
+        if (isPresent(configs, AWSSchemaRegistryConstants.PROTOBUF_MESSAGE_TYPE)) {
+            this.protobufMessageType =
+                    ProtobufMessageType.valueOf((String) configs.get(AWSSchemaRegistryConstants.PROTOBUF_MESSAGE_TYPE));
         }
     }
 

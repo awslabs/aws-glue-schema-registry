@@ -14,20 +14,18 @@
  */
 package com.amazonaws.services.schemaregistry.serializers;
 
-import com.amazonaws.services.schemaregistry.caching.GlueSchemaRegistryCache;
-import com.amazonaws.services.schemaregistry.caching.GlueSchemaRegistrySerializerCache;
 import com.amazonaws.services.schemaregistry.common.AWSSchemaRegistryClient;
 import com.amazonaws.services.schemaregistry.common.AWSSchemaRegistryGlueClientRetryPolicyHelper;
 import com.amazonaws.services.schemaregistry.common.AWSSerializerInput;
 import com.amazonaws.services.schemaregistry.common.GlueSchemaRegistryDataFormatSerializer;
 import com.amazonaws.services.schemaregistry.common.Schema;
+import com.amazonaws.services.schemaregistry.common.SchemaByDefinitionFetcher;
 import com.amazonaws.services.schemaregistry.common.configs.GlueSchemaRegistryConfiguration;
 import com.amazonaws.services.schemaregistry.exception.AWSSchemaRegistryException;
 import com.amazonaws.services.schemaregistry.utils.AWSSchemaRegistryConstants;
 import lombok.Builder;
-import lombok.Getter;
 import lombok.NonNull;
-import lombok.Setter;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.services.glue.model.DataFormat;
@@ -37,25 +35,19 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
 
-import com.google.common.cache.CacheStats;
-
 @Slf4j
 public class GlueSchemaRegistrySerializationFacade {
-    private AWSSchemaRegistryClient awsSchemaRegistryClient;
-
     private SerializationDataEncoder serializationDataEncoder;
     private GlueSchemaRegistryConfiguration glueSchemaRegistryConfiguration;
+
+    private SchemaByDefinitionFetcher schemaByDefinitionFetcher;
 
     private GlueSchemaRegistrySerializerFactory glueSchemaRegistrySerializerFactory =
             new GlueSchemaRegistrySerializerFactory();
 
-    @Setter
-    @Getter
-    private GlueSchemaRegistryCache<Schema, UUID, CacheStats> cache;
-
     @Builder
     public GlueSchemaRegistrySerializationFacade(@NonNull AwsCredentialsProvider credentialProvider,
-                                                 AWSSchemaRegistryClient schemaRegistryClient,
+                                                 SchemaByDefinitionFetcher schemaByDefinitionFetcher,
                                                  GlueSchemaRegistryConfiguration glueSchemaRegistryConfiguration,
                                                  Map<String, ?> configs,
                                                  Properties properties) {
@@ -69,38 +61,30 @@ public class GlueSchemaRegistrySerializationFacade {
             throw new AWSSchemaRegistryException("Configuration map and properties cannot be null");
         }
 
-        if (schemaRegistryClient != null) {
-            this.awsSchemaRegistryClient = schemaRegistryClient;
-        } else {
-            this.awsSchemaRegistryClient =
-                    new AWSSchemaRegistryClient(credentialProvider, this.glueSchemaRegistryConfiguration,
-                                                AWSSchemaRegistryGlueClientRetryPolicyHelper.getRetryPolicy());
+        this.schemaByDefinitionFetcher = schemaByDefinitionFetcher;
+
+        if (this.schemaByDefinitionFetcher == null) {
+            final AWSSchemaRegistryClient client =
+                new AWSSchemaRegistryClient(credentialProvider, this.glueSchemaRegistryConfiguration,
+                    AWSSchemaRegistryGlueClientRetryPolicyHelper.getRetryPolicy());
+            this.schemaByDefinitionFetcher = new SchemaByDefinitionFetcher(client, this.glueSchemaRegistryConfiguration);
         }
 
         this.serializationDataEncoder = new SerializationDataEncoder(this.glueSchemaRegistryConfiguration);
-
-        cache = GlueSchemaRegistrySerializerCache.getInstance(this.glueSchemaRegistryConfiguration);
     }
 
+    @SneakyThrows
     public UUID getOrRegisterSchemaVersion(@NonNull AWSSerializerInput serializerInput) {
         String schemaDefinition = serializerInput.getSchemaDefinition();
         String schemaName = serializerInput.getSchemaName();
         String transportName = serializerInput.getTransportName();
         String dataFormat = serializerInput.getDataFormat();
 
-        Schema key = new Schema(schemaDefinition, dataFormat, schemaName);
         Map<String, String> metadata = constructSchemaVersionMetadata(transportName);
 
-        UUID schemaVersionId = cache.get(key);
-
-        if (schemaVersionId == null) {
-            schemaVersionId =
-                    awsSchemaRegistryClient.getORRegisterSchemaVersionId(schemaDefinition, schemaName, dataFormat,
+        UUID schemaVersionId =
+                    schemaByDefinitionFetcher.getORRegisterSchemaVersionId(schemaDefinition, schemaName, dataFormat,
                                                                          metadata);
-            cache.put(key, schemaVersionId);
-            log.debug("Cache stats {}", cache.getCacheStats());
-        }
-
         return schemaVersionId;
     }
 

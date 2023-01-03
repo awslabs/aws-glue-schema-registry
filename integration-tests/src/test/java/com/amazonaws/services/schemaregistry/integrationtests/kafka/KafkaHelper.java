@@ -15,13 +15,14 @@
 package com.amazonaws.services.schemaregistry.integrationtests.kafka;
 
 import com.amazonaws.services.schemaregistry.deserializers.GlueSchemaRegistryKafkaDeserializer;
+import com.amazonaws.services.schemaregistry.integrationtests.generators.AvroGenericBackwardCompatDataGenerator;
+import com.amazonaws.services.schemaregistry.integrationtests.generators.JsonSchemaGenericBackwardCompatDataGenerator;
+import com.amazonaws.services.schemaregistry.integrationtests.generators.ProtobufGenericBackwardDataGenerator;
 import com.amazonaws.services.schemaregistry.kafkastreams.GlueSchemaRegistryKafkaStreamsSerde;
 import com.amazonaws.services.schemaregistry.serializers.GlueSchemaRegistryKafkaSerializer;
 import com.amazonaws.services.schemaregistry.serializers.json.JsonDataWithSchema;
 import com.amazonaws.services.schemaregistry.utils.AWSSchemaRegistryConstants;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.protobuf.Message;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.kafka.clients.admin.AdminClient;
@@ -210,27 +211,14 @@ public class KafkaHelper {
         switch (DataFormat.fromValue(producerProperties.getDataFormat())) {
             case AVRO:
                 result = source
-                        .filter((key, value) -> !"11".equals(String.valueOf(((GenericRecord) value).get("id"))))
-                        .filter((key, value) -> !"covid-19".equals(String.valueOf(((GenericRecord) value).get("f1"))));
+                        .filter((key, value) -> AvroGenericBackwardCompatDataGenerator.filterRecords((GenericRecord) value));
                 break;
             case JSON:
                 result = source
-                        .filter((key, value) -> {
-                            try {
-                                JsonNode dataNode = new ObjectMapper().readTree(((JsonDataWithSchema) value).getPayload());
-                                return !String.valueOf(dataNode.get("f1")).contains("Stranger");
-                            } catch (JsonProcessingException e) {
-                                return false;
-                            }
-                        })
-                        .filter((key, value) -> {
-                            try {
-                                JsonNode dataNode = new ObjectMapper().readTree(((JsonDataWithSchema) value).getPayload());
-                                return Integer.parseInt(dataNode.get("f2").toString()) != 911;
-                            } catch (JsonProcessingException e) {
-                                return false;
-                            }
-                        });
+                        .filter((key, value) -> JsonSchemaGenericBackwardCompatDataGenerator.filterRecords((JsonDataWithSchema) value));
+                break;
+            case PROTOBUF:
+                result = source.filter((key, value) -> ProtobufGenericBackwardDataGenerator.filterRecords((Message) value));
                 break;
             default:
                 throw new RuntimeException("Data format is not supported");
@@ -263,8 +251,8 @@ public class KafkaHelper {
 
             producerRecords.add(producerRecord);
             producer.send(producerRecord);
+            Thread.sleep(500);
             log.info("Sent {} message {}",  producerProperties.getDataFormat(), i);
-            Thread.sleep(1000L);
         }
         producer.flush();
         log.info("Successfully produced {} messages to a topic called {}", records.size(), producerProperties.getTopicName());
@@ -363,6 +351,10 @@ public class KafkaHelper {
         if(consumerProperties.getAvroRecordType() != null) {
             properties.put(AWSSchemaRegistryConstants.AVRO_RECORD_TYPE, consumerProperties.getAvroRecordType());
         }
+        if(consumerProperties.getProtobufMessageType() != null) {
+            properties.put(AWSSchemaRegistryConstants.PROTOBUF_MESSAGE_TYPE,
+                    consumerProperties.getProtobufMessageType());
+        }
         return properties;
     }
 
@@ -374,7 +366,13 @@ public class KafkaHelper {
         properties.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass().getName());
         properties.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, GlueSchemaRegistryKafkaStreamsSerde.class);
         properties.put(AWSSchemaRegistryConstants.DATA_FORMAT, producerProperties.getDataFormat());
-        properties.put(AWSSchemaRegistryConstants.AVRO_RECORD_TYPE, producerProperties.getRecordType());
+        if (producerProperties.getRecordType() != null) {
+            if (DataFormat.PROTOBUF.name().equals(producerProperties.getDataFormat())) {
+                properties.put(AWSSchemaRegistryConstants.PROTOBUF_MESSAGE_TYPE, producerProperties.getRecordType());
+            } else {
+                properties.put(AWSSchemaRegistryConstants.AVRO_RECORD_TYPE, producerProperties.getRecordType());
+            }
+        }
         properties.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
         return properties;
     }

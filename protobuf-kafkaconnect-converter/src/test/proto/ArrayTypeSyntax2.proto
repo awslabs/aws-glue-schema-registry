@@ -1,0 +1,7 @@
+package com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax2;
+
+message ArrayType {
+  repeated string str = 1;
+  repeated int32 i32 = 2;
+  repeated bool boolean = 3;
+}
