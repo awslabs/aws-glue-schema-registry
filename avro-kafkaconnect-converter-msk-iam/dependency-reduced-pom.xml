@@ -40,31 +40,6 @@
         </executions>
         <configuration />
       </plugin>
-      <plugin>
-        <groupId>org.apache.avro</groupId>
-        <artifactId>avro-maven-plugin</artifactId>
-        <version>${avro.version}</version>
-        <executions>
-          <execution>
-            <id>test-sources</id>
-            <phase>generate-test-sources</phase>
-            <goals>
-              <goal>schema</goal>
-            </goals>
-          </execution>
-          <execution>
-            <id>sources</id>
-            <phase>generate-sources</phase>
-            <goals>
-              <goal>schema</goal>
-            </goals>
-          </execution>
-        </executions>
-        <configuration>
-          <detail>true</detail>
-          <stringType>String</stringType>
-        </configuration>
-      </plugin>
     </plugins>
   </build>
   <profiles>

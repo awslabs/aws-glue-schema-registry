@@ -66,6 +66,11 @@
             <version>${parent.version}</version>
         </dependency>
         <dependency>
+            <groupId>${parent.groupId}</groupId>
+            <artifactId>schema-registry-kafkaconnect-converter</artifactId>
+            <version>${parent.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>connect-api</artifactId>
         </dependency>
@@ -138,31 +143,6 @@
                         </goals>
                     </execution>
                 </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.avro</groupId>
-                <artifactId>avro-maven-plugin</artifactId>
-		<version>${avro.version}</version>
-                <executions>
-                    <execution>
-                        <phase>generate-test-sources</phase>
-                        <id>test-sources</id>
-                        <goals>
-                            <goal>schema</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <phase>generate-sources</phase>
-                        <id>sources</id>
-                        <goals>
-                            <goal>schema</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <detail>true</detail>
-                    <stringType>String</stringType>
-                </configuration>
             </plugin>
         </plugins>
     </build>
