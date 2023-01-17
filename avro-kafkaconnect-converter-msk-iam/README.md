@@ -3,7 +3,9 @@
 
 **AWS Glue Schema Registry** provides a solution for customers to centrally discover, control and evolve 
 schemas while ensuring data produced was validated by registered schemas.
+
 **AWS Glue Schema Registry Library** offers Serializers and Deserializers that plug-in with Glue Schema Registry.
+
 **The Amazon MSK Library for AWS Identity and Access Management** enables developers to use AWS Identity and Access Management (IAM) to connect to their Amazon Managed Streaming for Apache Kafka (Amazon MSK) clusters.
 
 ## Features
