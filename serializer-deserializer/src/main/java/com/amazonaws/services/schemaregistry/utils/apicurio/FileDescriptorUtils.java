@@ -805,6 +805,7 @@ public class FileDescriptorUtils {
         ImmutableList.Builder<TypeElement> nested = ImmutableList.builder();
         ImmutableList.Builder<ReservedElement> reserved = ImmutableList.builder();
         ImmutableList.Builder<ExtensionsElement> extensions = ImmutableList.builder();
+        ImmutableList.Builder<ExtendElement> extendElements = ImmutableList.builder();
         LinkedHashMap<String, ImmutableList.Builder<FieldElement>> oneofsMap = new LinkedHashMap<>();
         for (OneofDescriptorProto od : descriptor.getOneofDeclList()) {
             oneofsMap.put(od.getName(), ImmutableList.builder());
@@ -855,6 +856,23 @@ public class FileDescriptorUtils {
             ExtensionsElement extensionsElement = new ExtensionsElement(DEFAULT_LOCATION, "", values);
             extensions.add(extensionsElement);
         }
+        Map<String, List<FieldDescriptorProto>> extendsMap =
+                descriptor
+                        .getExtensionList()
+                        .stream()
+                        .collect(Collectors.groupingBy(FieldDescriptorProto::getExtendee));
+        for (Map.Entry<String, List<FieldDescriptorProto>> entry : extendsMap.entrySet()) {
+            ImmutableList.Builder<FieldElement> extendFields = ImmutableList.builder();
+
+            for (FieldDescriptorProto fd : entry.getValue()) {
+                FieldElement extendField = toField(file, fd, false);
+                extendFields.add(extendField);
+
+            }
+
+            ExtendElement extendElement = new ExtendElement(DEFAULT_LOCATION, entry.getKey(), "", extendFields.build());
+            extendElements.add(extendElement);
+        }
         ImmutableList.Builder<OptionElement> options = ImmutableList.builder();
         if (descriptor.getOptions().hasMapEntry()) {
             OptionElement option = new OptionElement(MAP_ENTRY_OPTION, booleanKind, descriptor.getOptions().getMapEntry(),
@@ -878,7 +896,8 @@ public class FileDescriptorUtils {
                         .filter(e -> e.getValue().build().size() != 0)
                         .map(e -> toOneof(e.getKey(), e.getValue())).collect(Collectors.toList()),
                 extensions.build(),
-                Collections.emptyList()
+                Collections.emptyList(),
+                extendElements.build()
         );
     }
 
