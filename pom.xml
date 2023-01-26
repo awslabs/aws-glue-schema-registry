@@ -66,8 +66,10 @@
         <module>build-tools</module>
         <module>common</module>
         <module>serializer-deserializer</module>
+        <module>serializer-deserializer-msk-iam</module>
         <module>kafkastreams-serde</module>
         <module>avro-kafkaconnect-converter</module>
+        <module>avro-kafkaconnect-converter-msk-iam</module>
         <module>avro-flink-serde</module>
         <module>examples</module>
         <module>integration-tests</module>
