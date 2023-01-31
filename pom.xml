@@ -66,6 +66,7 @@
         <module>build-tools</module>
         <module>common</module>
         <module>serializer-deserializer</module>
+        <module>serializer-deserializer-msk-iam</module>
         <module>kafkastreams-serde</module>
         <module>avro-kafkaconnect-converter</module>
         <module>avro-flink-serde</module>
@@ -116,6 +117,7 @@
         <localstack.utils>0.2.11</localstack.utils>
         <protobuf.java.version>3.19.6</protobuf.java.version>
         <localstack.utils>0.2.11</localstack.utils>
+        <aws.msk.iam.auth>1.1.5</aws.msk.iam.auth>
     </properties>
 
     <dependencyManagement>
