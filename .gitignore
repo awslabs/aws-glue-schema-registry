@@ -1,5 +1,6 @@
 #Ignore IntelliJ files
 .idea/
+.DS_Store
 *.iml
 
 #Ignore Maven files

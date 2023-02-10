@@ -66,6 +66,7 @@
         <module>build-tools</module>
         <module>common</module>
         <module>serializer-deserializer</module>
+        <module>serializer-deserializer-msk-iam</module>
         <module>kafkastreams-serde</module>
         <module>avro-kafkaconnect-converter</module>
         <module>avro-flink-serde</module>
@@ -82,7 +83,7 @@
         <aws.sdk.v2.version>2.17.122</aws.sdk.v2.version>
         <aws.sdk.v1.version>1.12.151</aws.sdk.v1.version>
         <kafka.scala.version>2.12</kafka.scala.version>
-        <kafka.version>2.8.1</kafka.version>
+        <kafka.version>2.8.2</kafka.version>
         <avro.version>1.11.0</avro.version>
         <mbknor.jsonschema.converter.version>1.0.39</mbknor.jsonschema.converter.version>
         <everit.json.schema.version>1.14.1</everit.json.schema.version>
@@ -116,6 +117,7 @@
         <localstack.utils>0.2.11</localstack.utils>
         <protobuf.java.version>3.19.6</protobuf.java.version>
         <localstack.utils>0.2.11</localstack.utils>
+        <aws.msk.iam.auth>1.1.5</aws.msk.iam.auth>
     </properties>
 
     <dependencyManagement>
