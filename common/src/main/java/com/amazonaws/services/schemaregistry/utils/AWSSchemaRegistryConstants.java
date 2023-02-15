@@ -18,6 +18,10 @@ package com.amazonaws.services.schemaregistry.utils;
 import software.amazon.awssdk.services.glue.model.Compatibility;
 
 public final class AWSSchemaRegistryConstants {
+	/**
+     * Proxy URL to use while connecting to AWS endpoint.
+     */
+    public static final String PROXY_URL = "proxyUrl";
     /**
      * AWS endpoint to use while initializing the client for service.
      */
