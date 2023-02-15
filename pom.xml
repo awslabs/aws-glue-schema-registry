@@ -79,7 +79,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <glue.schema.registry.groupId>software.amazon.glue</glue.schema.registry.groupId>
-        <aws.sdk.v2.version>2.17.122</aws.sdk.v2.version>
+        <aws.sdk.v2.version>2.18.4</aws.sdk.v2.version>
         <aws.sdk.v1.version>1.12.151</aws.sdk.v1.version>
         <kafka.scala.version>2.12</kafka.scala.version>
         <kafka.version>2.8.1</kafka.version>
@@ -397,7 +397,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
-                <version>3.1.2</version>
+                <version>3.2.0</version>
                 <dependencies>
                     <dependency>
                         <groupId>${project.groupId}</groupId>
