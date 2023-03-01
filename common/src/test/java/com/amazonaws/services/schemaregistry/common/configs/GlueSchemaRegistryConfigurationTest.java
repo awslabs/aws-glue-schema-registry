@@ -25,6 +25,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import software.amazon.awssdk.services.glue.model.Compatibility;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -368,6 +369,28 @@ public class GlueSchemaRegistryConfigurationTest {
 
         assertEquals(expectedRegistryName, glueSchemaRegistryConfiguration.getRegistryName());
     }
+
+    /**
+     * Tests valid proxy URL value.
+     */
+    @Test
+    public void testBuildConfig_validProxyUrl_success() {
+        Properties props = createTestProperties();
+        String proxy = "http://proxy.servers.url:8080";
+        props.put(AWSSchemaRegistryConstants.PROXY_URL, proxy);
+        GlueSchemaRegistryConfiguration glueSchemaRegistryConfiguration = new GlueSchemaRegistryConfiguration(props);
+        assertEquals(URI.create(proxy), glueSchemaRegistryConfiguration.getProxyUrl());
+    }
+
+    /**
+     * Tests invalid proxy URL value.
+     */
+    @Test
+    public void testBuildConfig_invalidProxyUrl_throwsException() {
+        Properties props = createTestProperties();
+        String proxy = "http:// proxy.url: 8080";
+        props.put(AWSSchemaRegistryConstants.PROXY_URL, "http:// proxy.url: 8080");
+        Exception exception = assertThrows(AWSSchemaRegistryException.class, () -> new GlueSchemaRegistryConfiguration(props));
+        assertEquals("Proxy URL property is not a valid URL: "+proxy, exception.getMessage());
+    }
 }
-
-
