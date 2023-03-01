@@ -90,20 +90,11 @@ public class AWSSchemaRegistryClient {
                 .retryPolicy(retryPolicy)
                 .addExecutionInterceptor(new UserAgentRequestInterceptor())
                 .build();
-
         UrlConnectionHttpClient.Builder urlConnectionHttpClientBuilder = UrlConnectionHttpClient.builder();
-
         if (glueSchemaRegistryConfiguration.getProxyUrl() != null) {
-        	log.debug("Creating http client using proxy {}", glueSchemaRegistryConfiguration.getProxyUrl());
-        	try {
-    	    	URI uri = new URI(glueSchemaRegistryConfiguration.getProxyUrl());
-    	        ProxyConfiguration proxy = ProxyConfiguration.builder().endpoint(uri).build();
-    	        urlConnectionHttpClientBuilder.proxyConfiguration(proxy);
-        	} catch (URISyntaxException e) {
-        		String message = String.format("Malformed uri, please pass the valid proxy uri for creating the client",
-                        glueSchemaRegistryConfiguration.getEndPoint());
-        		throw new AWSSchemaRegistryException(message, e);
-        	}
+        	log.debug("Creating http client using proxy {}", glueSchemaRegistryConfiguration.getProxyUrl().toString());
+    		ProxyConfiguration proxy = ProxyConfiguration.builder().endpoint(glueSchemaRegistryConfiguration.getProxyUrl()).build();
+    		urlConnectionHttpClientBuilder.proxyConfiguration(proxy);
         }
 
         GlueClientBuilder glueClientBuilder = GlueClient
