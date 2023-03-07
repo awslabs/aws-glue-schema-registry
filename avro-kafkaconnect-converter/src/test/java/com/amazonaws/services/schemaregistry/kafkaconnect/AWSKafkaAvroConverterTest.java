@@ -101,8 +101,8 @@ public class AWSKafkaAvroConverterTest {
     public void testConverter_configure_usesStsCredentialsProvider() {
         converter = new AWSKafkaAvroConverter();
         Map<String, Object> props = getProperties();
-        props.put("sts.roleArn", "TEST_ROLE_ARN");
-        props.put("sts.roleSessionName", "TEST_ROLE_SESSION_NAME");
+        props.put("sts.role.arn", "TEST_ROLE_ARN");
+        props.put("sts.role.session.name", "TEST_ROLE_SESSION_NAME");
         converter.configure(props, false);
         assertNotNull(converter);
         assertNotNull(converter.getSerializer());

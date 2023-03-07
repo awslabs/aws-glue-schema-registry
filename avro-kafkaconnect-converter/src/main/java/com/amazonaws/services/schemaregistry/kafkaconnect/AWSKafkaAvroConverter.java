@@ -47,8 +47,9 @@ import java.util.Map;
 @Slf4j
 @Data
 public class AWSKafkaAvroConverter implements Converter {
-    private static final String STS_ROLE_ARN = "sts.roleArn";
-    private static final String STS_ROLE_SESSION_NAME = "sts.roleSessionName";
+    private static final String STS_ROLE_ARN = "sts.role.arn";
+    private static final String STS_ROLE_SESSION_NAME = "sts.role.session.name";
+    private static final String STS_ROLE_SESSION_NAME_DEFAULT = "schema-registry-kafkaconnect-converter";
     private AWSKafkaAvroSerializer serializer;
     private AWSKafkaAvroDeserializer deserializer;
     private AvroData avroData;
@@ -87,7 +88,7 @@ public class AWSKafkaAvroConverter implements Converter {
         final String roleArn = configs.get(STS_ROLE_ARN) == null
                 ? null : String.valueOf(configs.get(STS_ROLE_ARN));
         final String roleSessionName = configs.get(STS_ROLE_SESSION_NAME) == null
-                ? null : String.valueOf(configs.get(STS_ROLE_SESSION_NAME));
+                ? STS_ROLE_SESSION_NAME_DEFAULT : String.valueOf(configs.get(STS_ROLE_SESSION_NAME));
         if (roleArn != null && roleSessionName != null) {
             StsClientBuilder stsClientBuilder = StsClient.builder()
                     .httpClient(UrlConnectionHttpClient.builder().build());
