@@ -6,9 +6,9 @@ on:
   pull_request:
     branches: [ master ]
   release:
-    branches: [ master ] 
-    types: [ created ]  
-    
+    branches: [ master ]
+    types: [ created ]
+
 jobs:
   build:
     runs-on: ${{ matrix.operating-system }}
@@ -23,27 +23,21 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    
+
     - name: Set up JDK ${{ matrix.java-version }}
       uses: actions/setup-java@v1
       with:
         java-version: ${{ matrix.java-version }}
-    
+
     - name: Cache Maven packages
       uses: actions/cache@v2
       with:
         path: ~/.m2
         key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
         restore-keys: ${{ runner.os }}-m2
-        
-    - name: install build-tools 
-      run: mvn --file build-tools/pom.xml clean install
-    
-    - name: Clean, build and install 
+
+    - name: Clean, build and install
       run: mvn --file pom.xml clean install
-    
-    - name: Run tests
-      run: mvn --file pom.xml test
-    
+
     - name: Build package
       run: mvn -B package --file pom.xml
