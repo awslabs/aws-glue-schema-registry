@@ -27,6 +27,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.EnumUtils;
 import software.amazon.awssdk.services.glue.model.Compatibility;
 
+import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -54,6 +55,7 @@ public class GlueSchemaRegistryConfiguration {
     private Map<String, String> tags = new HashMap<>();
     private Map<String, String> metadata;
     private String secondaryDeserializer;
+    private URI proxyUrl;
 
     /**
      * Name of the application using the serializer/deserializer.
@@ -99,6 +101,7 @@ public class GlueSchemaRegistryConfiguration {
         validateAndSetMetadata(configs);
         validateAndSetUserAgent(configs);
         validateAndSetSecondaryDeserializer(configs);
+        validateAndSetProxyUrl(configs);
     }
 
     private void validateAndSetSecondaryDeserializer(Map<String, ?> configs) {
@@ -180,6 +183,18 @@ public class GlueSchemaRegistryConfiguration {
     private void validateAndSetAWSEndpoint(Map<String, ?> configs) {
         if (isPresent(configs, AWSSchemaRegistryConstants.AWS_ENDPOINT)) {
             this.endPoint = String.valueOf(configs.get(AWSSchemaRegistryConstants.AWS_ENDPOINT));
+        }
+    }
+
+    private void validateAndSetProxyUrl(Map<String, ?> configs) {
+        if (isPresent(configs, AWSSchemaRegistryConstants.PROXY_URL)) {
+    		String value = (String) configs.get(AWSSchemaRegistryConstants.PROXY_URL);
+    		try {
+    			this.proxyUrl = URI.create(value);
+    		} catch (IllegalArgumentException e) {
+        		String message = String.format("Proxy URL property is not a valid URL: %s", value);
+        		throw new AWSSchemaRegistryException(message, e);
+        	}
         }
     }
 
