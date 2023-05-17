@@ -71,4 +71,5 @@ GlueSchemaRegistryKafkaSerializer/GlueSchemaRegistryKafkaDeserializer.
 * Add GlueClientBuilder as an argument to AWSSchemaRegistryClient
 * Change default http client implementation to apache http client
 * Remove url-connection-client as a runtime dependency
+* Remove lombok as a runtime dependency
 * Remove proxyUrl from accessible configuration
