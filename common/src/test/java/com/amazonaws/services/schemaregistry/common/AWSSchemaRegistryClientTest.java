@@ -140,13 +140,6 @@ public class AWSSchemaRegistryClientTest {
     }
 
     @Test
-    public void testConstructor_nullCredentials_throwsException() {
-        glueSchemaRegistryConfiguration = new GlueSchemaRegistryConfiguration(configs);
-        Assertions.assertThrows(IllegalArgumentException.class , () -> new AWSSchemaRegistryClient(null,
-            glueSchemaRegistryConfiguration));
-    }
-
-    @Test
     public void testConstructor_nullSerdeConfigs_throwsException() {
         AwsCredentialsProvider mockAwsCredentialsProvider = mock(AwsCredentialsProvider.class);
         Assertions.assertThrows(IllegalArgumentException.class , () -> new AWSSchemaRegistryClient(mockAwsCredentialsProvider,null ));
@@ -154,7 +147,7 @@ public class AWSSchemaRegistryClientTest {
 
     @Test
     public void testConstructor_nullGlueClient_throwsException() {
-        Assertions.assertThrows(IllegalArgumentException.class , () -> new AWSSchemaRegistryClient(null));
+        Assertions.assertThrows(IllegalArgumentException.class , () -> new AWSSchemaRegistryClient((GlueClient) null));
     }
 
     @Test

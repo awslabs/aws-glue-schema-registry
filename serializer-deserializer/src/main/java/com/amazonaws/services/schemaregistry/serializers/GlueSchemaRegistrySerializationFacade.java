@@ -15,7 +15,6 @@
 package com.amazonaws.services.schemaregistry.serializers;
 
 import com.amazonaws.services.schemaregistry.common.AWSSchemaRegistryClient;
-import com.amazonaws.services.schemaregistry.common.AWSSchemaRegistryGlueClientRetryPolicyHelper;
 import com.amazonaws.services.schemaregistry.common.AWSSerializerInput;
 import com.amazonaws.services.schemaregistry.common.GlueSchemaRegistryDataFormatSerializer;
 import com.amazonaws.services.schemaregistry.common.Schema;
@@ -65,8 +64,7 @@ public class GlueSchemaRegistrySerializationFacade {
 
         if (this.schemaByDefinitionFetcher == null) {
             final AWSSchemaRegistryClient client =
-                new AWSSchemaRegistryClient(credentialProvider, this.glueSchemaRegistryConfiguration,
-                    AWSSchemaRegistryGlueClientRetryPolicyHelper.getRetryPolicy());
+                new AWSSchemaRegistryClient(credentialProvider, this.glueSchemaRegistryConfiguration);
             this.schemaByDefinitionFetcher = new SchemaByDefinitionFetcher(client, this.glueSchemaRegistryConfiguration);
         }
 

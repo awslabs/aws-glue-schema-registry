@@ -66,3 +66,10 @@ GlueSchemaRegistryKafkaSerializer/GlueSchemaRegistryKafkaDeserializer.
 
 ## Release 1.1.15
 * Upgrade Avro, Apicurio and Localhost utils versions
+
+## Release 2.0.0
+* Add GlueClientBuilder as an argument to AWSSchemaRegistryClient
+* Change default http client implementation to apache http client
+* Remove url-connection-client as a runtime dependency
+* Remove lombok as a runtime dependency
+* Remove proxyUrl from accessible configuration
