@@ -30,9 +30,6 @@ import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
 import software.amazon.awssdk.core.interceptor.Context;
 import software.amazon.awssdk.core.interceptor.ExecutionAttributes;
 import software.amazon.awssdk.core.interceptor.ExecutionInterceptor;
-import software.amazon.awssdk.core.retry.RetryPolicy;
-import software.amazon.awssdk.http.urlconnection.ProxyConfiguration;
-import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.glue.GlueClient;
 import software.amazon.awssdk.services.glue.GlueClientBuilder;
@@ -56,6 +53,7 @@ import software.amazon.awssdk.services.glue.model.RegisterSchemaVersionRequest;
 import software.amazon.awssdk.services.glue.model.RegisterSchemaVersionResponse;
 import software.amazon.awssdk.services.glue.model.RegistryId;
 import software.amazon.awssdk.services.glue.model.SchemaId;
+import software.amazon.awssdk.utils.StringUtils;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -78,56 +76,62 @@ public class AWSSchemaRegistryClient {
     /**
      * Create Amazon Schema Registry Client.
      *
-     * @param credentialsProvider           credentials provider
      * @param glueSchemaRegistryConfiguration schema registry configuration elements
      * @throws AWSSchemaRegistryException on any error while building the client
      */
-    public AWSSchemaRegistryClient(@NonNull AwsCredentialsProvider credentialsProvider,
-                                   @NonNull GlueSchemaRegistryConfiguration glueSchemaRegistryConfiguration,
-                                   @NonNull RetryPolicy retryPolicy) {
-        this.glueSchemaRegistryConfiguration = glueSchemaRegistryConfiguration;
-        ClientOverrideConfiguration overrideConfiguration = ClientOverrideConfiguration.builder()
-                .retryPolicy(retryPolicy)
-                .addExecutionInterceptor(new UserAgentRequestInterceptor())
-                .build();
-        UrlConnectionHttpClient.Builder urlConnectionHttpClientBuilder = UrlConnectionHttpClient.builder();
-        if (glueSchemaRegistryConfiguration.getProxyUrl() != null) {
-        	log.debug("Creating http client using proxy {}", glueSchemaRegistryConfiguration.getProxyUrl().toString());
-    		ProxyConfiguration proxy = ProxyConfiguration.builder().endpoint(glueSchemaRegistryConfiguration.getProxyUrl()).build();
-    		urlConnectionHttpClientBuilder.proxyConfiguration(proxy);
-        }
-
-        GlueClientBuilder glueClientBuilder = GlueClient
-                .builder()
-                .credentialsProvider(credentialsProvider)
-                .overrideConfiguration(overrideConfiguration)
-                .httpClient(urlConnectionHttpClientBuilder.build())
-                .region(Region.of(glueSchemaRegistryConfiguration.getRegion()));
-
-        if (glueSchemaRegistryConfiguration.getEndPoint() != null) {
-            try {
-                glueClientBuilder.endpointOverride(new URI(glueSchemaRegistryConfiguration.getEndPoint()));
-            } catch (URISyntaxException e) {
-                String message = String.format("Malformed uri, please pass the valid uri for creating the client",
-                                               glueSchemaRegistryConfiguration.getEndPoint());
-                throw new AWSSchemaRegistryException(message, e);
-            }
-        }
-        this.client = glueClientBuilder.build();
+    public AWSSchemaRegistryClient(
+            @NonNull GlueSchemaRegistryConfiguration glueSchemaRegistryConfiguration) {
+        this(GlueClient.builder(), glueSchemaRegistryConfiguration);
     }
 
     /**
      * Create Amazon Schema Registry Client.
      *
-     * @param credentialsProvider           credentials provider
      * @param glueSchemaRegistryConfiguration schema registry configuration elements
      * @throws AWSSchemaRegistryException on any error while building the client
      */
-    public AWSSchemaRegistryClient(@NonNull AwsCredentialsProvider credentialsProvider,
-                                   @NonNull GlueSchemaRegistryConfiguration glueSchemaRegistryConfiguration) {
-        this(credentialsProvider, glueSchemaRegistryConfiguration, RetryPolicy.defaultRetryPolicy());
+    public AWSSchemaRegistryClient(
+            @NonNull AwsCredentialsProvider credentialsProvider,
+            @NonNull GlueSchemaRegistryConfiguration glueSchemaRegistryConfiguration) {
+        this(GlueClient.builder().credentialsProvider(credentialsProvider), glueSchemaRegistryConfiguration);
     }
 
+    /**
+     * Create Amazon Schema Registry Client.
+     *
+     * @param glueClientBuilder   glue client builder, configured with appropriate http client, etc.
+     * @param glueSchemaRegistryConfiguration schema registry configuration elements
+     * @throws AWSSchemaRegistryException on any error while building the client
+     */
+    public AWSSchemaRegistryClient(
+            @NonNull GlueClientBuilder glueClientBuilder,
+            @NonNull GlueSchemaRegistryConfiguration glueSchemaRegistryConfiguration) {
+        this.glueSchemaRegistryConfiguration = glueSchemaRegistryConfiguration;
+
+        ClientOverrideConfiguration previousConfiguration = glueClientBuilder.overrideConfiguration();
+
+        ClientOverrideConfiguration clientOverrideConfiguration = previousConfiguration
+                .toBuilder()
+                .addExecutionInterceptor(new UserAgentRequestInterceptor())
+                .retryPolicy(previousConfiguration.retryPolicy().orElse(AWSSchemaRegistryGlueClientRetryPolicyHelper.getRetryPolicy()))
+                .build();
+
+        if (StringUtils.isNotBlank(glueSchemaRegistryConfiguration.getEndPoint())) {
+            try {
+                glueClientBuilder.endpointOverride(new URI(glueSchemaRegistryConfiguration.getEndPoint()));
+            } catch (URISyntaxException e) {
+                String message = String.format("Malformed uri, please pass the valid uri for creating the client",
+                        glueSchemaRegistryConfiguration.getEndPoint());
+                throw new AWSSchemaRegistryException(message, e);
+            }
+        }
+
+        this.client = glueClientBuilder.region(Region.of(glueSchemaRegistryConfiguration.getRegion()))
+                .overrideConfiguration(clientOverrideConfiguration)
+                .build();
+    }
+
+    @VisibleForTesting
     public AWSSchemaRegistryClient(@NonNull GlueClient glueClient) {
         this.client = glueClient;
     }
@@ -246,18 +250,18 @@ public class AWSSchemaRegistryClient {
         UUID schemaVersionId = null;
         try {
             log.info("Auto Creating schema with schemaName: {} and schemaDefinition : {}", schemaName,
-                      schemaDefinition);
+                    schemaDefinition);
             CreateSchemaResponse createSchemaResponse =
                     client.createSchema(getCreateSchemaRequestObject(schemaName, dataFormat, schemaDefinition));
             schemaVersionId = UUID.fromString(createSchemaResponse.schemaVersionId());
         } catch (AlreadyExistsException e) {
             log.warn("Schema is already created, this could be caused by multiple producers racing to "
-                     + "auto-create schema.");
+                    + "auto-create schema.");
             schemaVersionId = registerSchemaVersion(schemaDefinition, schemaName, dataFormat, metadata);
         } catch (Exception e) {
             String errorMessage = String.format(
                     "Create schema :: Call failed when creating the schema with the schema registry for"
-                    + " schema name = %s", schemaName);
+                            + " schema name = %s", schemaName);
             throw new AWSSchemaRegistryException(errorMessage, e);
         }
 
@@ -300,8 +304,8 @@ public class AWSSchemaRegistryClient {
                     client.registerSchemaVersion(getRegisterSchemaVersionRequest(schemaDefinition, schemaName));
 
             log.info("Registered the schema version with schema version id = {} and with version number = {} and "
-                     + "status {}", registerSchemaVersionResponse.schemaVersionId(),
-                     registerSchemaVersionResponse.versionNumber(), registerSchemaVersionResponse.statusAsString());
+                            + "status {}", registerSchemaVersionResponse.schemaVersionId(),
+                    registerSchemaVersionResponse.versionNumber(), registerSchemaVersionResponse.statusAsString());
 
             if (AWSSchemaRegistryConstants.SchemaVersionStatus.AVAILABLE.toString()
                     .equals(registerSchemaVersionResponse.statusAsString())) {
@@ -388,9 +392,9 @@ public class AWSSchemaRegistryClient {
                 } else if (!AWSSchemaRegistryConstants.SchemaVersionStatus.PENDING.toString()
                         .equals(response.statusAsString())) {
                     throw new AWSSchemaRegistryException(String.format("Schema evolution check failed. "
-                                                                       + "schemaVersionId %s is in %s status.",
-                                                                       getSchemaVersionRequest.schemaVersionId(),
-                                                                       response.statusAsString()));
+                                    + "schemaVersionId %s is in %s status.",
+                            getSchemaVersionRequest.schemaVersionId(),
+                            response.statusAsString()));
                 }
 
             } while (retries++ < MAX_ATTEMPTS - 1);
@@ -398,13 +402,13 @@ public class AWSSchemaRegistryClient {
             if (retries >= MAX_ATTEMPTS && !AWSSchemaRegistryConstants.SchemaVersionStatus.AVAILABLE.toString()
                     .equals(response.statusAsString())) {
                 throw new AWSSchemaRegistryException(String.format("Retries exhausted for schema evolution check for "
-                                                                   + "schemaVersionId = %s",
-                                                                   getSchemaVersionRequest.schemaVersionId()));
+                                + "schemaVersionId = %s",
+                        getSchemaVersionRequest.schemaVersionId()));
             }
         } catch (Exception ex) {
             String message =
                     String.format("Exception occurred, while performing schema evolution check for schemaVersionId = "
-                                  + "%s", getSchemaVersionRequest.schemaVersionId());
+                            + "%s", getSchemaVersionRequest.schemaVersionId());
             throw new AWSSchemaRegistryException(message, ex);
         }
         return response;
@@ -523,6 +527,11 @@ public class AWSSchemaRegistryClient {
     protected class UserAgentRequestInterceptor implements ExecutionInterceptor {
         private static final String ONE = "1";
         private static final String ZERO = "0";
+        private final ApiName apiName;
+
+        public UserAgentRequestInterceptor() {
+            this.apiName = getApiName();
+        }
 
         @Override
         public SdkRequest modifyRequest(Context.ModifyRequest context, ExecutionAttributes executionAttributes) {
@@ -533,38 +542,36 @@ public class AWSSchemaRegistryClient {
 
             GlueRequest request = (GlueRequest) context.request();
             AwsRequestOverrideConfiguration overrideConfiguration =
-                request.overrideConfiguration().map(config ->
-                    config
-                        .toBuilder()
-                        .addApiName(getApiName())
-                        .build())
-                    .orElse((AwsRequestOverrideConfiguration.builder()
-                        .addApiName(getApiName())
-                        .build()));
+                    request.overrideConfiguration().map(AwsRequestOverrideConfiguration::toBuilder)
+                            .orElse(AwsRequestOverrideConfiguration.builder())
+                            .addApiName(apiName)
+                            .build();
 
-            return request.toBuilder().overrideConfiguration(overrideConfiguration).build();
+            return request.toBuilder()
+                    .overrideConfiguration(overrideConfiguration)
+                    .build();
         }
 
         private ApiName getApiName() {
             return ApiName.builder()
-                .version(com.amazonaws.services.schemaregistry.common.MavenPackaging.VERSION)
-                .name(buildUserAgentSuffix())
-                .build();
+                    .version(com.amazonaws.services.schemaregistry.common.MavenPackaging.VERSION)
+                    .name(buildUserAgentSuffix())
+                    .build();
         }
 
         private String buildUserAgentSuffix() {
             Map<String, String> userAgentSuffixItems = ImmutableMap.of(
-                "autoreg", glueSchemaRegistryConfiguration.isSchemaAutoRegistrationEnabled() ? ONE : ZERO,
-                "compress", glueSchemaRegistryConfiguration.getCompressionType().equals(
-                    AWSSchemaRegistryConstants.COMPRESSION.ZLIB) ? ONE : ZERO,
-                "secdeser", glueSchemaRegistryConfiguration.getSecondaryDeserializer() != null ? ONE : ZERO,
-                "app", glueSchemaRegistryConfiguration.getUserAgentApp()
+                    "autoreg", glueSchemaRegistryConfiguration.isSchemaAutoRegistrationEnabled() ? ONE : ZERO,
+                    "compress", glueSchemaRegistryConfiguration.getCompressionType().equals(
+                            AWSSchemaRegistryConstants.COMPRESSION.ZLIB) ? ONE : ZERO,
+                    "secdeser", glueSchemaRegistryConfiguration.getSecondaryDeserializer() != null ? ONE : ZERO,
+                    "app", glueSchemaRegistryConfiguration.getUserAgentApp()
             );
 
             StringJoiner userAgentSuffix = new StringJoiner(":");
 
             userAgentSuffixItems
-                .forEach((key, value) -> userAgentSuffix.add(key + "/" + value));
+                    .forEach((key, value) -> userAgentSuffix.add(key + "/" + value));
 
             return userAgentSuffix.toString();
         }

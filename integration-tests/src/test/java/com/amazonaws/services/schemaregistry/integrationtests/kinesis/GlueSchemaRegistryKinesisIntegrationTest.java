@@ -57,7 +57,6 @@ import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.core.SdkSystemSetting;
-import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.cloudwatch.CloudWatchAsyncClient;
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
@@ -195,8 +194,6 @@ public class GlueSchemaRegistryKinesisIntegrationTest {
                 .credentialsProvider(awsCredentialsProvider)
                 .region(Region.of(REGION))
                 .endpointOverride(new URI(SCHEMA_REGISTRY_ENDPOINT_OVERRIDE))
-                .httpClient(UrlConnectionHttpClient.builder()
-                                    .build())
                 .build();
 
         for (String schemaName : schemasToCleanUp) {
