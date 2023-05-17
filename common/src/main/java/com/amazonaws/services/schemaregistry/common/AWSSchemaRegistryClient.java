@@ -30,6 +30,7 @@ import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
 import software.amazon.awssdk.core.interceptor.Context;
 import software.amazon.awssdk.core.interceptor.ExecutionAttributes;
 import software.amazon.awssdk.core.interceptor.ExecutionInterceptor;
+import software.amazon.awssdk.core.retry.RetryPolicy;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.glue.GlueClient;
 import software.amazon.awssdk.services.glue.GlueClientBuilder;
@@ -87,18 +88,6 @@ public class AWSSchemaRegistryClient {
     /**
      * Create Amazon Schema Registry Client.
      *
-     * @param glueSchemaRegistryConfiguration schema registry configuration elements
-     * @throws AWSSchemaRegistryException on any error while building the client
-     */
-    public AWSSchemaRegistryClient(
-            @NonNull AwsCredentialsProvider credentialsProvider,
-            @NonNull GlueSchemaRegistryConfiguration glueSchemaRegistryConfiguration) {
-        this(GlueClient.builder().credentialsProvider(credentialsProvider), glueSchemaRegistryConfiguration);
-    }
-
-    /**
-     * Create Amazon Schema Registry Client.
-     *
      * @param glueClientBuilder   glue client builder, configured with appropriate http client, etc.
      * @param glueSchemaRegistryConfiguration schema registry configuration elements
      * @throws AWSSchemaRegistryException on any error while building the client
@@ -129,6 +118,34 @@ public class AWSSchemaRegistryClient {
         this.client = glueClientBuilder.region(Region.of(glueSchemaRegistryConfiguration.getRegion()))
                 .overrideConfiguration(clientOverrideConfiguration)
                 .build();
+    }
+
+    /**
+     * Create Amazon Schema Registry Client.
+     *
+     * @param credentialsProvider           credentials provider
+     * @param glueSchemaRegistryConfiguration schema registry configuration elements
+     * @throws AWSSchemaRegistryException on any error while building the client
+     */
+    @Deprecated
+    public AWSSchemaRegistryClient(@NonNull AwsCredentialsProvider credentialsProvider,
+                                   @NonNull GlueSchemaRegistryConfiguration glueSchemaRegistryConfiguration,
+                                   @NonNull RetryPolicy retryPolicy) {
+        this(GlueClient.builder().credentialsProvider(credentialsProvider)
+                .overrideConfiguration(oc -> oc.retryPolicy(retryPolicy)), glueSchemaRegistryConfiguration);
+    }
+
+    /**
+     * Create Amazon Schema Registry Client.
+     *
+     * @param glueSchemaRegistryConfiguration schema registry configuration elements
+     * @throws AWSSchemaRegistryException on any error while building the client
+     */
+    @Deprecated
+    public AWSSchemaRegistryClient(
+            @NonNull AwsCredentialsProvider credentialsProvider,
+            @NonNull GlueSchemaRegistryConfiguration glueSchemaRegistryConfiguration) {
+        this(GlueClient.builder().credentialsProvider(credentialsProvider), glueSchemaRegistryConfiguration);
     }
 
     @VisibleForTesting

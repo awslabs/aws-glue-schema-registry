@@ -58,17 +58,19 @@ public class UserAgentRequestInterceptorTest {
     @MethodSource("getClientConfigTestCases")
     void test_UserAgentInterceptor_ReturnsSdkRequestWithUserAgent(GlueSchemaRegistryConfiguration config,
         String expectedName) {
-        AWSSchemaRegistryClient awsSchemaRegistryClient =
-            new AWSSchemaRegistryClient(GlueClient.builder(), config);
+        AwsCredentialsProvider mockAwsCredentialsProvider = mock(AwsCredentialsProvider.class);
 
-        AWSSchemaRegistryClient.UserAgentRequestInterceptor schemaRegistryClientVersionUserAgentAppenderRequestInterceptor =
+        AWSSchemaRegistryClient awsSchemaRegistryClient =
+                new AWSSchemaRegistryClient(mockAwsCredentialsProvider, config);
+
+        AWSSchemaRegistryClient.UserAgentRequestInterceptor userAgentRequestInterceptor =
             awsSchemaRegistryClient.new UserAgentRequestInterceptor();
 
         Context.ModifyRequest modifyRequest = mock(Context.ModifyRequest.class);
         GetSchemaVersionRequest glueRequest = GetSchemaVersionRequest.builder().build();
         doReturn(glueRequest).when(modifyRequest).request();
 
-        SdkRequest sdkHttpRequest = schemaRegistryClientVersionUserAgentAppenderRequestInterceptor.modifyRequest(modifyRequest, null);
+        SdkRequest sdkHttpRequest = userAgentRequestInterceptor.modifyRequest(modifyRequest, null);
         assertNotNull(sdkHttpRequest);
         assertTrue(sdkHttpRequest.overrideConfiguration().isPresent());
 
@@ -80,17 +82,19 @@ public class UserAgentRequestInterceptorTest {
 
     @Test
     void test_UserAgentInterceptor_ReturnsSameRequestForNonGlueRequests() {
-        AWSSchemaRegistryClient awsSchemaRegistryClient =
-            new AWSSchemaRegistryClient(GlueClient.builder(), new GlueSchemaRegistryConfiguration(REGION));
+        AwsCredentialsProvider mockAwsCredentialsProvider = mock(AwsCredentialsProvider.class);
 
-        AWSSchemaRegistryClient.UserAgentRequestInterceptor schemaRegistryClientVersionUserAgentAppenderRequestInterceptor =
+        AWSSchemaRegistryClient awsSchemaRegistryClient =
+                new AWSSchemaRegistryClient(mockAwsCredentialsProvider, new GlueSchemaRegistryConfiguration(REGION));
+
+        AWSSchemaRegistryClient.UserAgentRequestInterceptor userAgentRequestInterceptor =
             awsSchemaRegistryClient.new UserAgentRequestInterceptor();
 
         SdkRequest nonGlueRequest = mock(SdkRequest.class);
         Context.ModifyRequest modifyRequest = mock(Context.ModifyRequest.class);
         doReturn(nonGlueRequest).when(modifyRequest).request();
 
-        SdkRequest actualRequest = schemaRegistryClientVersionUserAgentAppenderRequestInterceptor.modifyRequest(modifyRequest, null);
+        SdkRequest actualRequest = userAgentRequestInterceptor.modifyRequest(modifyRequest, null);
 
         assertEquals(nonGlueRequest, actualRequest);
     }
