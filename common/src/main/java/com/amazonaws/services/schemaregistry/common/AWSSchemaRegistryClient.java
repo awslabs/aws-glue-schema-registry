@@ -152,7 +152,6 @@ public class AWSSchemaRegistryClient {
     public AWSSchemaRegistryClient(@NonNull GlueClient glueClient) {
         this.client = glueClient;
     }
-
     /**
      * Get Schema Version ID by passing the schema definition.
      * @param schemaDefinition Schema Definition
@@ -571,24 +570,24 @@ public class AWSSchemaRegistryClient {
 
         private ApiName getApiName() {
             return ApiName.builder()
-                    .version(com.amazonaws.services.schemaregistry.common.MavenPackaging.VERSION)
-                    .name(buildUserAgentSuffix())
-                    .build();
+                .version(com.amazonaws.services.schemaregistry.common.MavenPackaging.VERSION)
+                .name(buildUserAgentSuffix())
+                .build();
         }
 
         private String buildUserAgentSuffix() {
             Map<String, String> userAgentSuffixItems = ImmutableMap.of(
-                    "autoreg", glueSchemaRegistryConfiguration.isSchemaAutoRegistrationEnabled() ? ONE : ZERO,
-                    "compress", glueSchemaRegistryConfiguration.getCompressionType().equals(
-                            AWSSchemaRegistryConstants.COMPRESSION.ZLIB) ? ONE : ZERO,
-                    "secdeser", glueSchemaRegistryConfiguration.getSecondaryDeserializer() != null ? ONE : ZERO,
-                    "app", glueSchemaRegistryConfiguration.getUserAgentApp()
+                "autoreg", glueSchemaRegistryConfiguration.isSchemaAutoRegistrationEnabled() ? ONE : ZERO,
+                "compress", glueSchemaRegistryConfiguration.getCompressionType().equals(
+                        AWSSchemaRegistryConstants.COMPRESSION.ZLIB) ? ONE : ZERO,
+                "secdeser", glueSchemaRegistryConfiguration.getSecondaryDeserializer() != null ? ONE : ZERO,
+                "app", glueSchemaRegistryConfiguration.getUserAgentApp()
             );
 
             StringJoiner userAgentSuffix = new StringJoiner(":");
 
             userAgentSuffixItems
-                    .forEach((key, value) -> userAgentSuffix.add(key + "/" + value));
+                .forEach((key, value) -> userAgentSuffix.add(key + "/" + value));
 
             return userAgentSuffix.toString();
         }

@@ -61,7 +61,7 @@ public class UserAgentRequestInterceptorTest {
         AwsCredentialsProvider mockAwsCredentialsProvider = mock(AwsCredentialsProvider.class);
 
         AWSSchemaRegistryClient awsSchemaRegistryClient =
-                new AWSSchemaRegistryClient(mockAwsCredentialsProvider, config);
+            new AWSSchemaRegistryClient(mockAwsCredentialsProvider, config);
 
         AWSSchemaRegistryClient.UserAgentRequestInterceptor userAgentRequestInterceptor =
             awsSchemaRegistryClient.new UserAgentRequestInterceptor();
@@ -85,7 +85,7 @@ public class UserAgentRequestInterceptorTest {
         AwsCredentialsProvider mockAwsCredentialsProvider = mock(AwsCredentialsProvider.class);
 
         AWSSchemaRegistryClient awsSchemaRegistryClient =
-                new AWSSchemaRegistryClient(mockAwsCredentialsProvider, new GlueSchemaRegistryConfiguration(REGION));
+            new AWSSchemaRegistryClient(mockAwsCredentialsProvider, new GlueSchemaRegistryConfiguration(REGION));
 
         AWSSchemaRegistryClient.UserAgentRequestInterceptor userAgentRequestInterceptor =
             awsSchemaRegistryClient.new UserAgentRequestInterceptor();
