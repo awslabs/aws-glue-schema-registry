@@ -66,3 +66,7 @@ GlueSchemaRegistryKafkaSerializer/GlueSchemaRegistryKafkaDeserializer.
 
 ## Release 1.1.15
 * Upgrade Avro, Apicurio and Localhost utils versions
+
+## Release 1.1.16
+* Upgraded Wire version
+* Excluded some transitive dependencies that are having vulnerabilities
