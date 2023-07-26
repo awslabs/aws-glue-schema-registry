@@ -90,19 +90,18 @@ public class AWSSchemaRegistryClient {
                 .retryPolicy(retryPolicy)
                 .addExecutionInterceptor(new UserAgentRequestInterceptor())
                 .build();
-//        UrlConnectionHttpClient.Builder urlConnectionHttpClientBuilder = UrlConnectionHttpClient.builder();
-//        if (glueSchemaRegistryConfiguration.getProxyUrl() != null) {
-//        	log.debug("Creating http client using proxy {}", glueSchemaRegistryConfiguration.getProxyUrl().toString());
-//    		ProxyConfiguration proxy = ProxyConfiguration.builder().endpoint(glueSchemaRegistryConfiguration.getProxyUrl()).build();
-//    		urlConnectionHttpClientBuilder.proxyConfiguration(proxy);
-//        }
+        UrlConnectionHttpClient.Builder urlConnectionHttpClientBuilder = UrlConnectionHttpClient.builder();
+        if (glueSchemaRegistryConfiguration.getProxyUrl() != null) {
+        	log.debug("Creating http client using proxy {}", glueSchemaRegistryConfiguration.getProxyUrl().toString());
+    		ProxyConfiguration proxy = ProxyConfiguration.builder().endpoint(glueSchemaRegistryConfiguration.getProxyUrl()).build();
+    		urlConnectionHttpClientBuilder.proxyConfiguration(proxy);
+        }
 
         GlueClientBuilder glueClientBuilder = GlueClient
                 .builder()
                 .credentialsProvider(credentialsProvider)
                 .overrideConfiguration(overrideConfiguration)
-//                .httpClient(urlConnectionHttpClientBuilder.build())
-                .httpClient(UrlConnectionHttpClient.builder().build())
+                .httpClient(urlConnectionHttpClientBuilder.build())
                 .region(Region.of(glueSchemaRegistryConfiguration.getRegion()));
 
         if (glueSchemaRegistryConfiguration.getEndPoint() != null) {

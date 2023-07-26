@@ -19,23 +19,30 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
+    <groupId>${parent.groupId}</groupId>
+    <artifactId>schema-registry-cross-region-kafkaconnect-converter</artifactId>
+    <version>${parent.version}</version>
+    <name>AWS Cross Region Glue Schema Registry Kafka Connect Schema Replication Converter</name>
+    <description>The AWS Glue Schema Registry Kafka Connect Converter enables Java developers to easily replicate
+        schemas across different AWS Glue Schema Registries
+    </description>
+    <url>https://aws.amazon.com/glue</url>
+    <packaging>jar</packaging>
+
     <parent>
         <groupId>software.amazon.glue</groupId>
         <artifactId>schema-registry-parent</artifactId>
-        <version>1.1.20</version>
+        <version>1.1.15</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <groupId>${parent.groupId}</groupId>
-    <artifactId>schema-registry-common</artifactId>
-    <version>${parent.version}</version>
-    <name>AWS Glue Schema Registry common</name>
-    <description>The AWS Glue Schema Common is the common package used by AWS Glue Schema Registry Library and has
-        the core functionality.
-    </description>
-    <packaging>jar</packaging>
-    <url>https://aws.amazon.com/glue</url>
-
+    <licenses>
+        <license>
+            <name>Apache License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
     <distributionManagement>
         <snapshotRepository>
             <id>ossrh</id>
@@ -52,54 +59,23 @@
         <url>https://github.com/awslabs/aws-glue-schema-registry.git</url>
     </scm>
 
-    <licenses>
-        <license>
-            <name>Apache License, Version 2.0</name>
-            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
-            <distribution>repo</distribution>
-        </license>
-    </licenses>
-
     <dependencies>
         <dependency>
-            <groupId>software.amazon.awssdk</groupId>
-            <artifactId>glue</artifactId>
-        </dependency>
-        <dependency>
             <groupId>${parent.groupId}</groupId>
-            <artifactId>schema-registry-build-tools</artifactId>
+            <artifactId>schema-registry-serde</artifactId>
             <version>${parent.version}</version>
         </dependency>
+
         <dependency>
-            <groupId>software.amazon.awssdk</groupId>
-            <artifactId>aws-json-protocol</artifactId>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-shade-plugin</artifactId>
+            <version>3.2.1</version>
+            <type>maven-plugin</type>
         </dependency>
+
         <dependency>
-            <groupId>software.amazon.awssdk</groupId>
-            <artifactId>url-connection-client</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.avro</groupId>
-            <artifactId>avro</artifactId>
-            <!-- Temporarily excluding old version of transitive dependency to fix security bug in underlying library. Remove when dependency is upgraded. -->
-            <exclusions>
-                <exclusion>
-                    <groupId>org.apache.commons</groupId>
-                    <artifactId>commons-compress</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-lang3</artifactId>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>connect-api</artifactId>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
@@ -114,6 +90,11 @@
             <groupId>org.mockito</groupId>
             <artifactId>mockito-junit-jupiter</artifactId>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.vintage</groupId>
+            <artifactId>junit-vintage-engine</artifactId>
+            <version>5.7.0</version>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -135,8 +116,82 @@
             <artifactId>junit-jupiter-api</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.powermock</groupId>
+            <artifactId>powermock-reflect</artifactId>
+            <version>2.0.7</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>uk.co.jemos.podam</groupId>
+            <artifactId>podam</artifactId>
+            <version>7.2.5.RELEASE</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.glue</groupId>
+            <artifactId>schema-registry-kafkaconnect-converter</artifactId>
+            <version>1.1.15</version>
+            <scope>compile</scope>
+        </dependency>
     </dependencies>
 
+    <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.2.1</version>
+                <configuration>
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.avro</groupId>
+                <artifactId>avro-maven-plugin</artifactId>
+                <version>${avro.version}</version>
+                <executions>
+                    <execution>
+                        <phase>generate-test-sources</phase>
+                        <id>test-sources</id>
+                        <goals>
+                            <goal>schema</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <phase>generate-sources</phase>
+                        <id>sources</id>
+                        <goals>
+                            <goal>schema</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <detail>true</detail>
+                    <stringType>String</stringType>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>15</source>
+                    <target>15</target>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
     <profiles>
         <profile>
             <id>publishing</id>
@@ -171,47 +226,4 @@
             </build>
         </profile>
     </profiles>
-    <build>
-        <plugins>
-            <!-- Required for generating maven version as a Java class for runtime access -->
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>templating-maven-plugin</artifactId>
-                <version>1.0.0</version>
-                <executions>
-                    <execution>
-                        <id>generate-version-class</id>
-                        <goals>
-                            <goal>filter-sources</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-resources-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>copy-dist</id>
-                        <phase>prepare-package</phase>
-                        <goals>
-                            <goal>copy-resources</goal>
-                        </goals>
-                        <configuration>
-                            <outputDirectory>${project.build.outputDirectory}</outputDirectory>
-                            <resources>
-                                <resource>
-                                    <directory>${project.basedir}/target/generated-sources/java-templates/</directory>
-                                    <filtering>false</filtering>
-                                    <excludes>
-                                    </excludes>
-                                </resource>
-                            </resources>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
-    </build>
-
 </project>

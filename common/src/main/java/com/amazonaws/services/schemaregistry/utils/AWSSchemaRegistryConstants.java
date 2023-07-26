@@ -19,6 +19,10 @@ import software.amazon.awssdk.services.glue.model.Compatibility;
 
 public final class AWSSchemaRegistryConstants {
     /**
+     * Proxy URL to use while connecting to AWS endpoint.
+     */
+    public static final String PROXY_URL = "proxyUrl";
+    /**
      * AWS endpoint to use while initializing the client for service.
      */
     public static final String AWS_ENDPOINT = "endpoint";
@@ -29,20 +33,19 @@ public final class AWSSchemaRegistryConstants {
     /**
      * TODO: CR_GSR: AWS source endpoint to use while initializing the client for service.
      */
-    public static final String AWS_SRC_ENDPOINT = "source.endpoint";
+    public static final String AWS_SOURCE_ENDPOINT = "source.endpoint";
     /**
      * TODO: CR_GSR: AWS source region to use while initializing the client for service.
      */
-    public static final String AWS_SRC_REGION = "source.region";
+    public static final String AWS_SOURCE_REGION = "source.region";
     /**
      * AWS target endpoint to use while initializing the client for service.
      */
-    public static final String AWS_TGT_ENDPOINT = "target.endpoint";
+    public static final String AWS_TARGET_ENDPOINT = "target.endpoint";
     /**
      * AWS target region to use while initializing the client for service.
      */
-    public static final String AWS_TGT_REGION = "target.region";
-
+    public static final String AWS_TARGET_REGION = "target.region";
     /**
      * Header Version Byte.
      */
