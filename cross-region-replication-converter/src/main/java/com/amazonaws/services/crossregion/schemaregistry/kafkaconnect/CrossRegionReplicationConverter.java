@@ -55,7 +55,8 @@ public class CrossRegionReplicationConverter implements Converter {
     @Override
     public void configure(Map<String, ?> configs, boolean isKey) {
         this.isKey = isKey;
-        //TODO: Support credentialProvider passed on by the user
+        // TODO: Support credentialProvider passed on by the user
+        // https://github.com/awslabs/aws-glue-schema-registry/issues/293
         credentialsProvider = DefaultCredentialsProvider.builder().build();
 
         // Put the source and target regions into configurations respectively
@@ -85,6 +86,8 @@ public class CrossRegionReplicationConverter implements Converter {
             byte[] deserializedBytes = deserializer.getData(bytes);
             Schema deserializedSchema = deserializer.getSchema(bytes);
             //The registry is decided by the configuration in the target region , schema name is the same as the source region
+            // TODO: Prefix topic name with source cluster alias
+            // https://github.com/awslabs/aws-glue-schema-registry/issues/294
             return serializer.encode(topic, deserializedSchema, deserializedBytes);
 
         } catch (SerializationException | AWSSchemaRegistryException e){
