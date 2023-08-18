@@ -44,7 +44,7 @@ public class GlueSchemaRegistryConfiguration {
     private AWSSchemaRegistryConstants.COMPRESSION compressionType = AWSSchemaRegistryConstants.COMPRESSION.NONE;
     private String endPoint;
     private String region;
-    // TODO: Remove configs that are not useful non replication use-cases.
+    // TODO: Remove configs that are not useful non replication use-cases
     // https://github.com/awslabs/aws-glue-schema-registry/issues/292
     private String sourceEndPoint;
     private String sourceRegion;
