@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -104,11 +105,27 @@ public class GlueSchemaRegistryConfigurationTest {
     }
 
     /**
+     * Tests configuration for region value via default AWS region provider chain
+     */
+    @Test
+    public void testBuildConfig_regionConfigsSuppliedUsingAwsProvider_thenUseDefaultAwsRegionProviderChain() {
+        Map<String, Object> configWithoutRegion = new HashMap<>();
+        configWithoutRegion.put(AWSSchemaRegistryConstants.AWS_ENDPOINT, "https://test/");
+        System.setProperty("aws.region", "us-west-2");
+
+        GlueSchemaRegistryConfiguration glueSchemaRegistryConfiguration = new GlueSchemaRegistryConfiguration(configWithoutRegion);
+
+        assertEquals("us-west-2", glueSchemaRegistryConfiguration.getRegion());
+
+        System.clearProperty("aws.region");
+    }
+
+    /**
      * Tests configuration for region value
      */
     @Test
     public void testBuildConfig_withRegionConfig_Instantiates() {
-        assertNotNull(new GlueSchemaRegistryConfiguration("us-west-1"));
+        assertDoesNotThrow(() -> new GlueSchemaRegistryConfiguration("us-west-1"));
     }
 
     /**

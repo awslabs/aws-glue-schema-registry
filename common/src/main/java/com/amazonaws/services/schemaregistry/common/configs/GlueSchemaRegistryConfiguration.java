@@ -25,6 +25,8 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.EnumUtils;
+import software.amazon.awssdk.core.exception.SdkClientException;
+import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 import software.amazon.awssdk.services.glue.model.Compatibility;
 
 import java.net.URI;
@@ -150,7 +152,15 @@ public class GlueSchemaRegistryConfiguration {
         if (isPresent(configs, AWSSchemaRegistryConstants.AWS_REGION)) {
             this.region = String.valueOf(configs.get(AWSSchemaRegistryConstants.AWS_REGION));
         } else {
-            throw new AWSSchemaRegistryException("Region is not defined in the properties");
+            try {
+                this.region = DefaultAwsRegionProviderChain
+                    .builder()
+                    .build()
+                    .getRegion()
+                    .id();
+            } catch (SdkClientException ex) {
+                throw new AWSSchemaRegistryException("Region is not defined in the properties", ex);
+            }
         }
     }
 
