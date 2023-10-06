@@ -70,3 +70,6 @@ GlueSchemaRegistryKafkaSerializer/GlueSchemaRegistryKafkaDeserializer.
 ## Release 1.1.16
 * Upgraded Wire version
 * Excluded some transitive dependencies that are having vulnerabilities
+
+## Release 1.1.17
+* Upgrage kafka dependencies version
