@@ -84,7 +84,7 @@
         <aws.sdk.v1.version>1.12.151</aws.sdk.v1.version>
         <kafka.scala.version>2.12</kafka.scala.version>
         <kafka.version>3.6.0</kafka.version>
-        <avro.version>1.11.1</avro.version>
+        <avro.version>1.11.3</avro.version>
         <mbknor.jsonschema.converter.version>1.0.39</mbknor.jsonschema.converter.version>
         <everit.json.schema.version>1.14.2</everit.json.schema.version>
         <classgraph.version>4.8.120</classgraph.version>
