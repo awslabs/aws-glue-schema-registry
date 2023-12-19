@@ -20,7 +20,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>${parent.groupId}</groupId>
-    <artifactId>schema-registry-integration-tests</artifactId>
+    <artifactId>schema-registry-integration-tests_2.12</artifactId>
     <version>${parent.version}</version>
     <name>AWS Glue Schema Registry Integration Tests</name>
     <description>The AWS Glue Schema Registry tests would do a sanity check for the schema registry library.
@@ -30,7 +30,7 @@
 
     <parent>
         <groupId>software.amazon.glue</groupId>
-        <artifactId>schema-registry-parent</artifactId>
+        <artifactId>schema-registry-parent_2.12</artifactId>
         <version>1.1.17</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
@@ -63,12 +63,12 @@
     <dependencies>
         <dependency>
             <groupId>software.amazon.glue</groupId>
-            <artifactId>schema-registry-serde</artifactId>
+            <artifactId>schema-registry-serde_2.12</artifactId>
             <version>${parent.version}</version>
         </dependency>
         <dependency>
             <groupId>software.amazon.glue</groupId>
-            <artifactId>schema-registry-kafkastreams-serde</artifactId>
+            <artifactId>schema-registry-kafkastreams-serde_2.12</artifactId>
             <version>${parent.version}</version>
         </dependency>
         <dependency>
@@ -102,7 +102,7 @@
         </dependency>
         <dependency>
             <groupId>org.apache.kafka</groupId>
-            <artifactId>kafka_${kafka.scala.version}</artifactId>
+            <artifactId>kafka_${scala.binary.version}</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.kafka</groupId>
@@ -184,7 +184,7 @@
         <!-- Dependency on test jar for test data -->
         <dependency>
             <groupId>software.amazon.glue</groupId>
-            <artifactId>schema-registry-serde</artifactId>
+            <artifactId>schema-registry-serde_2.12</artifactId>
             <version>${parent.version}</version>
             <type>test-jar</type>
             <scope>test</scope>

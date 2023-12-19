@@ -21,13 +21,13 @@
 
     <parent>
         <groupId>software.amazon.glue</groupId>
-        <artifactId>schema-registry-parent</artifactId>
+        <artifactId>schema-registry-parent_2.12</artifactId>
         <version>1.1.17</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
     <groupId>${parent.groupId}</groupId>
-    <artifactId>protobuf-kafkaconnect-converter</artifactId>
+    <artifactId>protobuf-kafkaconnect-converter_2.12</artifactId>
     <version>${parent.version}</version>
     <name>AWS Glue Schema Registry Kafka Connect Converter for Protobuf</name>
     <description>The AWS Glue Schema Registry Kafka Connect Converter enables Java developers to easily integrate
@@ -63,7 +63,7 @@
     <dependencies>
         <dependency>
             <groupId>${parent.groupId}</groupId>
-            <artifactId>schema-registry-serde</artifactId>
+            <artifactId>schema-registry-serde_2.12</artifactId>
             <version>${parent.version}</version>
         </dependency>
         <dependency>

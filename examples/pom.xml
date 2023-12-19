@@ -20,7 +20,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>${parent.groupId}</groupId>
-    <artifactId>schema-registry-examples</artifactId>
+    <artifactId>schema-registry-examples_2.12</artifactId>
     <version>${parent.version}</version>
     <name>AWS Glue Schema Registry examples</name>
     <description>The AWS Glue Schema examples has sample code for using Schema Registry with different applications.
@@ -30,7 +30,7 @@
 
     <parent>
         <groupId>software.amazon.glue</groupId>
-        <artifactId>schema-registry-parent</artifactId>
+        <artifactId>schema-registry-parent_2.12</artifactId>
         <version>1.1.17</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
@@ -70,7 +70,7 @@
         </dependency>
         <dependency>
             <groupId>${parent.groupId}</groupId>
-            <artifactId>schema-registry-serde</artifactId>
+            <artifactId>schema-registry-serde_2.12</artifactId>
             <version>${parent.version}</version>
         </dependency>
         <dependency>

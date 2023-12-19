@@ -20,7 +20,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>${parent.groupId}</groupId>
-    <artifactId>schema-registry-serde-msk-iam</artifactId>
+    <artifactId>schema-registry-serde-msk-iam_2.12</artifactId>
     <name>AWS Glue Schema Registry Serializer Deserializer with MSK IAM Authentication client</name>
     <description>The AWS Glue Schema Registry Serializer/Deserializer enables Java developers to easily integrate
         their Apache Kafka and AWS Kinesis applications with AWS Glue Schema Registry. MSK IAM Authentication client allows
@@ -32,7 +32,7 @@
 
     <parent>
         <groupId>software.amazon.glue</groupId>
-        <artifactId>schema-registry-parent</artifactId>
+        <artifactId>schema-registry-parent_2.12</artifactId>
         <version>1.1.17</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
@@ -68,7 +68,7 @@
         </dependency>
         <dependency>
             <groupId>${parent.groupId}</groupId>
-            <artifactId>schema-registry-serde</artifactId>
+            <artifactId>schema-registry-serde_2.12</artifactId>
             <version>${parent.version}</version>
         </dependency>
     </dependencies>
