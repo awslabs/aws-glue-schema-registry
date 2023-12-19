@@ -21,13 +21,13 @@
 
     <parent>
         <groupId>software.amazon.glue</groupId>
-        <artifactId>schema-registry-parent</artifactId>
+        <artifactId>schema-registry-parent_2.12</artifactId>
         <version>1.1.17</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
     <groupId>${parent.groupId}</groupId>
-    <artifactId>schema-registry-common</artifactId>
+    <artifactId>schema-registry-common_2.12</artifactId>
     <version>${parent.version}</version>
     <name>AWS Glue Schema Registry common</name>
     <description>The AWS Glue Schema Common is the common package used by AWS Glue Schema Registry Library and has
@@ -67,7 +67,7 @@
         </dependency>
         <dependency>
             <groupId>${parent.groupId}</groupId>
-            <artifactId>schema-registry-build-tools</artifactId>
+            <artifactId>schema-registry-build-tools_2.12</artifactId>
             <version>${parent.version}</version>
         </dependency>
         <dependency>
