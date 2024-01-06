@@ -59,7 +59,7 @@ public class GlueSchemaRegistryConfiguration {
     private Map<String, String> metadata;
     private String secondaryDeserializer;
     private URI proxyUrl;
-    private SimpleModule javaTimeModule;
+    private String javaTimeModuleClass;
 
     /**
      * Name of the application using the serializer/deserializer.
@@ -329,13 +329,18 @@ public class GlueSchemaRegistryConfiguration {
     private void validateAndSetJavaTimeModule(Map<String, ?> configs) {
         if (isPresent(configs, AWSSchemaRegistryConstants.REGISTER_JAVA_TIME_MODULE)) {
             String moduleClassName = String.valueOf(configs.get(AWSSchemaRegistryConstants.REGISTER_JAVA_TIME_MODULE));
-            try {
-                Class<?> moduleClass = Class.forName(moduleClassName);
-                this.javaTimeModule = (SimpleModule) moduleClass.getConstructor().newInstance();
-            } catch (Exception e) {
-                String message = String.format("Invalid JavaTimeModule specified: %s", moduleClassName);
-                throw new AWSSchemaRegistryException(message, e);
-            }
+            this.javaTimeModuleClass = moduleClassName;
+            loadJavaTimeModule();
+        }
+    }
+
+    public SimpleModule loadJavaTimeModule() {
+        try {
+            Class<?> moduleClass = Class.forName(this.javaTimeModuleClass);
+            return (SimpleModule) moduleClass.getConstructor().newInstance();
+        } catch (Exception e) {
+            String message = String.format("Invalid JavaTimeModule specified: %s", this.javaTimeModuleClass);
+            throw new AWSSchemaRegistryException(message, e);
         }
     }
 

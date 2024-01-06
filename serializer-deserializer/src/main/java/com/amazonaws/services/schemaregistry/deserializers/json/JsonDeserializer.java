@@ -20,6 +20,7 @@ import com.amazonaws.services.schemaregistry.deserializers.GlueSchemaRegistryDes
 import com.amazonaws.services.schemaregistry.exception.AWSSchemaRegistryException;
 import com.amazonaws.services.schemaregistry.serializers.json.JsonDataWithSchema;
 import com.amazonaws.services.schemaregistry.common.Schema;
+import com.amazonaws.services.schemaregistry.utils.json.ObjectMapperUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -60,22 +61,7 @@ public class JsonDeserializer implements GlueSchemaRegistryDataFormatDeserialize
     public JsonDeserializer(GlueSchemaRegistryConfiguration configs) {
         this.schemaRegistrySerDeConfigs = configs;
         JsonNodeFactory jsonNodeFactory = JsonNodeFactory.withExactBigDecimals(true);
-        this.objectMapper = new ObjectMapper();
-        this.objectMapper.setNodeFactory(jsonNodeFactory);
-        if (configs != null) {
-            if (!CollectionUtils.isEmpty(configs.getJacksonSerializationFeatures())) {
-                configs.getJacksonSerializationFeatures()
-                        .forEach(this.objectMapper::enable);
-            }
-            if (!CollectionUtils.isEmpty(configs.getJacksonDeserializationFeatures())) {
-                configs.getJacksonDeserializationFeatures()
-                        .forEach(this.objectMapper::enable);
-            }
-            if (configs.getJavaTimeModule() != null) {
-                this.objectMapper.registerModule(configs.getJavaTimeModule());
-                this.objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-            }
-        }
+        this.objectMapper = ObjectMapperUtils.create(configs, jsonNodeFactory);
     }
 
     /**
