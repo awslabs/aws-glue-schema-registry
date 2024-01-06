@@ -20,6 +20,7 @@ import com.amazonaws.services.schemaregistry.exception.AWSSchemaRegistryExceptio
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.kjetland.jackson.jsonSchema.JsonSchemaGenerator;
 import lombok.Builder;
@@ -62,6 +63,10 @@ public class JsonSerializer implements GlueSchemaRegistryDataFormatSerializer {
             if (!CollectionUtils.isEmpty(configs.getJacksonDeserializationFeatures())) {
                 configs.getJacksonDeserializationFeatures()
                         .forEach(this.objectMapper::enable);
+            }
+            if (configs.getJavaTimeModule() != null) {
+                this.objectMapper.registerModule(configs.getJavaTimeModule());
+                this.objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
             }
         }
         this.jsonSchemaGenerator = new JsonSchemaGenerator(this.objectMapper);

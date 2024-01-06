@@ -22,6 +22,7 @@ import com.amazonaws.services.schemaregistry.utils.GlueSchemaRegistryUtils;
 import com.amazonaws.services.schemaregistry.utils.ProtobufMessageType;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.EnumUtils;
@@ -58,6 +59,7 @@ public class GlueSchemaRegistryConfiguration {
     private Map<String, String> metadata;
     private String secondaryDeserializer;
     private URI proxyUrl;
+    private SimpleModule javaTimeModule;
 
     /**
      * Name of the application using the serializer/deserializer.
@@ -104,6 +106,7 @@ public class GlueSchemaRegistryConfiguration {
         validateAndSetUserAgent(configs);
         validateAndSetSecondaryDeserializer(configs);
         validateAndSetProxyUrl(configs);
+        validateAndSetJavaTimeModule(configs);
     }
 
     private void validateAndSetSecondaryDeserializer(Map<String, ?> configs) {
@@ -319,6 +322,19 @@ public class GlueSchemaRegistryConfiguration {
                         .collect(Collectors.toList());
             } else {
                 throw new AWSSchemaRegistryException("Jackson Deserialization features should be a list");
+            }
+        }
+    }
+
+    private void validateAndSetJavaTimeModule(Map<String, ?> configs) {
+        if (isPresent(configs, AWSSchemaRegistryConstants.REGISTER_JAVA_TIME_MODULE)) {
+            String moduleClassName = String.valueOf(configs.get(AWSSchemaRegistryConstants.REGISTER_JAVA_TIME_MODULE));
+            try {
+                Class<?> moduleClass = Class.forName(moduleClassName);
+                this.javaTimeModule = (SimpleModule) moduleClass.getConstructor().newInstance();
+            } catch (Exception e) {
+                String message = String.format("Invalid JavaTimeModule specified: %s", moduleClassName);
+                throw new AWSSchemaRegistryException(message, e);
             }
         }
     }

@@ -173,6 +173,13 @@ public final class AWSSchemaRegistryConstants {
     public static final String USER_AGENT_APP = "userAgentApp";
 
     /**
+     * Jackson Java Time Module to use for handling Java 8 Date/Time.
+     * By default, no module is registered.
+     * Ex: com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
+     */
+    public static final String REGISTER_JAVA_TIME_MODULE = "registerJavaTimeModule";
+
+    /**
      * Private constructor to avoid initialization of the class.
      */
 

@@ -22,7 +22,9 @@ import com.amazonaws.services.schemaregistry.serializers.json.JsonDataWithSchema
 import com.amazonaws.services.schemaregistry.common.Schema;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
@@ -32,6 +34,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
 
 /**
@@ -67,6 +70,10 @@ public class JsonDeserializer implements GlueSchemaRegistryDataFormatDeserialize
             if (!CollectionUtils.isEmpty(configs.getJacksonDeserializationFeatures())) {
                 configs.getJacksonDeserializationFeatures()
                         .forEach(this.objectMapper::enable);
+            }
+            if (configs.getJavaTimeModule() != null) {
+                this.objectMapper.registerModule(configs.getJavaTimeModule());
+                this.objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
             }
         }
     }

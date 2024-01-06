@@ -32,11 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Unit tests for testing configuration elements.
@@ -409,5 +405,22 @@ public class GlueSchemaRegistryConfigurationTest {
         props.put(AWSSchemaRegistryConstants.PROXY_URL, "http:// proxy.url: 8080");
         Exception exception = assertThrows(AWSSchemaRegistryException.class, () -> new GlueSchemaRegistryConfiguration(props));
         assertEquals("Proxy URL property is not a valid URL: "+proxy, exception.getMessage());
+    }
+
+    @Test
+    public void testBuildConfig_defaultJavaTimeModule_succeeds() {
+        Properties props = createTestProperties();
+        GlueSchemaRegistryConfiguration glueSchemaRegistryConfiguration = new GlueSchemaRegistryConfiguration(props);
+        assertNull(glueSchemaRegistryConfiguration.getJavaTimeModule());
+    }
+
+    @Test
+    public void testBuildConfig_javaTimeModuleEnabledWithoutDependency_throwException() {
+        Properties props = createTestProperties();
+        String moduleClassName = "com.fasterxml.jackson.datatype.jsr310.JavaTimeModule";
+        props.put(AWSSchemaRegistryConstants.REGISTER_JAVA_TIME_MODULE, moduleClassName);
+        Exception exception = assertThrows(AWSSchemaRegistryException.class, () -> new GlueSchemaRegistryConfiguration(props));
+        String message = String.format("Invalid JavaTimeModule specified: %s", moduleClassName);
+        assertEquals(message, exception.getMessage());
     }
 }

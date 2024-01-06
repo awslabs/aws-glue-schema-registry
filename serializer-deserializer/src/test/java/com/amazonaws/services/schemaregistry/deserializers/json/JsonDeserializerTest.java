@@ -26,7 +26,7 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class JsonDeserializerTest {
-    private JsonDeserializer jsonDeserializer = new JsonDeserializer(null);
+    private JsonDeserializer defaultJsonDeserializer = new JsonDeserializer(null);
 
     @Test
     public void testDeserialize_nullArgs_throwsException() {
@@ -42,8 +42,10 @@ public class JsonDeserializerTest {
 
         Schema testSchema = new Schema(testSchemaDefinition, DataFormat.JSON.name(), "testJson");
 
-        assertThrows(IllegalArgumentException.class, () -> jsonDeserializer.deserialize(null, testSchema));
-        assertThrows(IllegalArgumentException.class, () -> jsonDeserializer.deserialize(ByteBuffer.wrap(testBytes),
+        assertThrows(IllegalArgumentException.class, () -> defaultJsonDeserializer.deserialize(null, testSchema));
+        assertThrows(IllegalArgumentException.class, () -> defaultJsonDeserializer.deserialize(ByteBuffer.wrap(testBytes),
                                                                                         null));
     }
+
+
 }
