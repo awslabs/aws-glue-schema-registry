@@ -496,7 +496,7 @@ public class GlueSchemaRegistryKinesisIntegrationTest {
             byte[] serializedBytes = dataFormatSerializer.serialize(record);
 
             putFutures.add(producer.addUserRecord(streamName, Long.toString(timestamp.toEpochMilli()), null,
-                                                  ByteBuffer.wrap(serializedBytes), gsrSchema));
+                                                  ByteBuffer.wrap(serializedBytes), null, gsrSchema));
         }
 
         String shardId = null;

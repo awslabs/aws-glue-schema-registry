@@ -1,6 +1,5 @@
 package com.amazonaws.services.schemaregistry.utils.json;
 
-
 import com.amazonaws.services.schemaregistry.common.configs.GlueSchemaRegistryConfiguration;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -9,9 +8,10 @@ import org.apache.commons.collections4.CollectionUtils;
 
 public class ObjectMapperUtils {
 
-    public static ObjectMapper create(GlueSchemaRegistryConfiguration configs, JsonNodeFactory jsonNodeFactory) {
+    public static ObjectMapper create(GlueSchemaRegistryConfiguration configs) {
         ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.setNodeFactory(jsonNodeFactory);
+        objectMapper.setNodeFactory(JsonNodeFactory.withExactBigDecimals(true));
+
         if (configs != null) {
             if (!CollectionUtils.isEmpty(configs.getJacksonSerializationFeatures())) {
                 configs.getJacksonSerializationFeatures()

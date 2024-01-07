@@ -21,15 +21,12 @@ import com.amazonaws.services.schemaregistry.utils.json.ObjectMapperUtils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.kjetland.jackson.jsonSchema.JsonSchemaGenerator;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections4.CollectionUtils;
 
 import java.nio.charset.StandardCharsets;
 
@@ -53,8 +50,7 @@ public class JsonSerializer implements GlueSchemaRegistryDataFormatSerializer {
     @Builder
     public JsonSerializer(GlueSchemaRegistryConfiguration configs) {
         this.schemaRegistrySerDeConfigs = configs;
-        JsonNodeFactory jsonNodeFactory = JsonNodeFactory.withExactBigDecimals(true);
-        this.objectMapper = ObjectMapperUtils.create(configs, jsonNodeFactory);
+        this.objectMapper = ObjectMapperUtils.create(configs);
         this.jsonSchemaGenerator = new JsonSchemaGenerator(this.objectMapper);
     }
 

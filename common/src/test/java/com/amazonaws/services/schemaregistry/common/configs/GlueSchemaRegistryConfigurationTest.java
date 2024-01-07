@@ -411,7 +411,7 @@ public class GlueSchemaRegistryConfigurationTest {
     public void testBuildConfig_defaultJavaTimeModule_succeeds() {
         Properties props = createTestProperties();
         GlueSchemaRegistryConfiguration glueSchemaRegistryConfiguration = new GlueSchemaRegistryConfiguration(props);
-        assertNull(glueSchemaRegistryConfiguration.getJavaTimeModule());
+        assertNull(glueSchemaRegistryConfiguration.loadJavaTimeModule());
     }
 
     @Test
