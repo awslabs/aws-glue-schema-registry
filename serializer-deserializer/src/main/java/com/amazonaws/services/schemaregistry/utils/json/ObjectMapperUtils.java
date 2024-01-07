@@ -22,8 +22,8 @@ public class ObjectMapperUtils {
                         .forEach(objectMapper::enable);
             }
             if (configs.getJavaTimeModuleClass() != null) {
-                objectMapper.registerModule(configs.loadJavaTimeModule());
                 objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+                objectMapper.registerModule(configs.loadJavaTimeModule());
             }
         }
 

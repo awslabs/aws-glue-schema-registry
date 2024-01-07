@@ -330,13 +330,12 @@ public class GlueSchemaRegistryConfiguration {
         if (isPresent(configs, AWSSchemaRegistryConstants.REGISTER_JAVA_TIME_MODULE)) {
             String moduleClassName = String.valueOf(configs.get(AWSSchemaRegistryConstants.REGISTER_JAVA_TIME_MODULE));
             this.javaTimeModuleClass = moduleClassName;
-            loadJavaTimeModule();
         }
     }
 
     public SimpleModule loadJavaTimeModule() {
         try {
-            Class<?> moduleClass = Class.forName(this.javaTimeModuleClass);
+            Class<?> moduleClass = Class.forName(this.getJavaTimeModuleClass());
             return (SimpleModule) moduleClass.getConstructor().newInstance();
         } catch (Exception e) {
             String message = String.format("Invalid JavaTimeModule specified: %s", this.javaTimeModuleClass);

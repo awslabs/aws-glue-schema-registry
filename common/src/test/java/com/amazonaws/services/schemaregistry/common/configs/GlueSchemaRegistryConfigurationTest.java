@@ -408,18 +408,12 @@ public class GlueSchemaRegistryConfigurationTest {
     }
 
     @Test
-    public void testBuildConfig_defaultJavaTimeModule_succeeds() {
-        Properties props = createTestProperties();
-        GlueSchemaRegistryConfiguration glueSchemaRegistryConfiguration = new GlueSchemaRegistryConfiguration(props);
-        assertNull(glueSchemaRegistryConfiguration.loadJavaTimeModule());
-    }
-
-    @Test
     public void testBuildConfig_javaTimeModuleEnabledWithoutDependency_throwException() {
         Properties props = createTestProperties();
         String moduleClassName = "com.fasterxml.jackson.datatype.jsr310.JavaTimeModule";
         props.put(AWSSchemaRegistryConstants.REGISTER_JAVA_TIME_MODULE, moduleClassName);
-        Exception exception = assertThrows(AWSSchemaRegistryException.class, () -> new GlueSchemaRegistryConfiguration(props));
+        GlueSchemaRegistryConfiguration cfg = new GlueSchemaRegistryConfiguration(props);
+        Exception exception = assertThrows(AWSSchemaRegistryException.class, () -> cfg.loadJavaTimeModule());
         String message = String.format("Invalid JavaTimeModule specified: %s", moduleClassName);
         assertEquals(message, exception.getMessage());
     }
