@@ -1,32 +1,20 @@
 package com.amazonaws.services.schemaregistry.utils.json;
 
 import com.amazonaws.services.schemaregistry.common.configs.GlueSchemaRegistryConfiguration;
+import com.amazonaws.services.schemaregistry.exception.AWSSchemaRegistryException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import org.apache.commons.collections4.CollectionUtils;
 
 public class ObjectMapperUtils {
 
     public static ObjectMapper create(GlueSchemaRegistryConfiguration configs) {
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.setNodeFactory(JsonNodeFactory.withExactBigDecimals(true));
-
-        if (configs != null) {
-            if (!CollectionUtils.isEmpty(configs.getJacksonSerializationFeatures())) {
-                configs.getJacksonSerializationFeatures()
-                        .forEach(objectMapper::enable);
-            }
-            if (!CollectionUtils.isEmpty(configs.getJacksonDeserializationFeatures())) {
-                configs.getJacksonDeserializationFeatures()
-                        .forEach(objectMapper::enable);
-            }
-            if (configs.getJavaTimeModuleClass() != null) {
-                objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-                objectMapper.registerModule(configs.loadJavaTimeModule());
-            }
+        try {
+            Class<?> moduleClass = Class.forName(configs.getObjectMapperFactory());
+            ObjectMapperFactory factory = (ObjectMapperFactory) moduleClass.getConstructor().newInstance();
+            return factory.newInstance(configs);
+        } catch (Exception e) {
+            String message = String.format("Failed to instantiate ObjectMapperFactory: %s",
+                    configs.getObjectMapperFactory());
+            throw new AWSSchemaRegistryException(message, e);
         }
-
-        return objectMapper;
     }
 }

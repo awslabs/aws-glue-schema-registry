@@ -60,6 +60,7 @@ public class GlueSchemaRegistryConfiguration {
     private String secondaryDeserializer;
     private URI proxyUrl;
     private String javaTimeModuleClass;
+    private String objectMapperFactory = "com.amazonaws.services.schemaregistry.utils.json.DefaultObjectMapperFactory";
 
     /**
      * Name of the application using the serializer/deserializer.
@@ -330,6 +331,12 @@ public class GlueSchemaRegistryConfiguration {
         if (isPresent(configs, AWSSchemaRegistryConstants.REGISTER_JAVA_TIME_MODULE)) {
             String moduleClassName = String.valueOf(configs.get(AWSSchemaRegistryConstants.REGISTER_JAVA_TIME_MODULE));
             this.javaTimeModuleClass = moduleClassName;
+        }
+    }
+
+    private void validateAndSetObjectMapperFactory(Map<String, ?> configs) {
+        if (isPresent(configs, AWSSchemaRegistryConstants.OBJECT_MAPPER_FACTORY)) {
+            this.objectMapperFactory = String.valueOf(configs.get(AWSSchemaRegistryConstants.OBJECT_MAPPER_FACTORY));
         }
     }
 

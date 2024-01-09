@@ -180,6 +180,12 @@ public final class AWSSchemaRegistryConstants {
     public static final String REGISTER_JAVA_TIME_MODULE = "registerJavaTimeModule";
 
     /**
+     * Factory for creating custom Jackson ObjectMapper instances for use in handling JSON.
+     * Default: com.amazonaws.services.schemaregistry.utils.json.DefaultObjectMapperFactory
+     */
+    public static final String OBJECT_MAPPER_FACTORY = "objectMapperFactory";
+
+    /**
      * Private constructor to avoid initialization of the class.
      */
 

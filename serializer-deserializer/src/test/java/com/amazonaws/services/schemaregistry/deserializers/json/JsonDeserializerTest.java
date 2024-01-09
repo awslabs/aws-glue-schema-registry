@@ -14,6 +14,7 @@
  */
 package com.amazonaws.services.schemaregistry.deserializers.json;
 
+import com.amazonaws.services.schemaregistry.common.configs.GlueSchemaRegistryConfiguration;
 import org.junit.jupiter.api.Test;
 
 import java.nio.ByteBuffer;
@@ -26,10 +27,10 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class JsonDeserializerTest {
-    private JsonDeserializer defaultJsonDeserializer = new JsonDeserializer(null);
 
     @Test
     public void testDeserialize_nullArgs_throwsException() {
+        JsonDeserializer defaultJsonDeserializer = new JsonDeserializer(new GlueSchemaRegistryConfiguration("us-west-1"));
         String testSchemaDefinition = "{\"$id\":\"https://example.com/geographical-location.schema.json\","
                                       + "\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"title\":\"Longitude "
                                       + "and Latitude Values\",\"description\":\"A geographical coordinate.\","
