@@ -18,6 +18,8 @@ package com.amazonaws.services.schemaregistry.common.configs;
 import com.amazonaws.services.schemaregistry.exception.AWSSchemaRegistryException;
 import com.amazonaws.services.schemaregistry.utils.AWSSchemaRegistryConstants;
 import com.amazonaws.services.schemaregistry.utils.AvroRecordType;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -434,5 +436,27 @@ public class GlueSchemaRegistryConfigurationTest {
         props.put(AWSSchemaRegistryConstants.OBJECT_MAPPER_FACTORY, factoryClass);
         GlueSchemaRegistryConfiguration cfg = new GlueSchemaRegistryConfiguration(props);
         assertEquals(factoryClass, cfg.getObjectMapperFactory());
+    }
+
+    @Test
+    public void testBuildConfig_jacksonSerializationFeatures_succeeds() {
+        Properties props = createTestProperties();
+        List<String> features = new ArrayList<>();
+        features.add(SerializationFeature.INDENT_OUTPUT.toString());
+        features.add(SerializationFeature.WRAP_EXCEPTIONS.toString());
+        props.put(AWSSchemaRegistryConstants.JACKSON_SERIALIZATION_FEATURES, features);
+        GlueSchemaRegistryConfiguration cfg = new GlueSchemaRegistryConfiguration(props);
+        assertEquals(cfg.getJacksonSerializationFeatures().size(), 2);
+    }
+
+    @Test
+    public void testBuildConfig_jacksonDeserializationFeatures_succeeds() {
+        Properties props = createTestProperties();
+        List<String> features = new ArrayList<>();
+        features.add(DeserializationFeature.WRAP_EXCEPTIONS.toString());
+        features.add(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES.toString());
+        props.put(AWSSchemaRegistryConstants.JACKSON_DESERIALIZATION_FEATURES, features);
+        GlueSchemaRegistryConfiguration cfg = new GlueSchemaRegistryConfiguration(props);
+        assertEquals(cfg.getJacksonDeserializationFeatures().size(), 2);
     }
 }
