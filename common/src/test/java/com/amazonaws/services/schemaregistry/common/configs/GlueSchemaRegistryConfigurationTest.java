@@ -408,6 +408,15 @@ public class GlueSchemaRegistryConfigurationTest {
     }
 
     @Test
+    public void testBuildConfig_javaTimeModuleEnabledMock_succeeds() {
+        Properties props = createTestProperties();
+        String moduleClassName = "com.amazonaws.services.schemaregistry.common.configs.TestableSimpleModule";
+        props.put(AWSSchemaRegistryConstants.REGISTER_JAVA_TIME_MODULE, moduleClassName);
+        GlueSchemaRegistryConfiguration cfg = new GlueSchemaRegistryConfiguration(props);
+        assertNotNull(cfg.loadJavaTimeModule());
+    }
+
+    @Test
     public void testBuildConfig_javaTimeModuleEnabledWithoutDependency_throwException() {
         Properties props = createTestProperties();
         String moduleClassName = "com.fasterxml.jackson.datatype.jsr310.JavaTimeModule";
@@ -416,5 +425,14 @@ public class GlueSchemaRegistryConfigurationTest {
         Exception exception = assertThrows(AWSSchemaRegistryException.class, () -> cfg.loadJavaTimeModule());
         String message = String.format("Invalid JavaTimeModule specified: %s", moduleClassName);
         assertEquals(message, exception.getMessage());
+    }
+
+    @Test
+    public void testBuildConfig_specifyObjectMapperFactory_succeeds() {
+        Properties props = createTestProperties();
+        String factoryClass = "com.amazonaws.services.schemaregistry.common.configs.TestableSimpleModule"; // could be any string
+        props.put(AWSSchemaRegistryConstants.OBJECT_MAPPER_FACTORY, factoryClass);
+        GlueSchemaRegistryConfiguration cfg = new GlueSchemaRegistryConfiguration(props);
+        assertEquals(factoryClass, cfg.getObjectMapperFactory());
     }
 }
