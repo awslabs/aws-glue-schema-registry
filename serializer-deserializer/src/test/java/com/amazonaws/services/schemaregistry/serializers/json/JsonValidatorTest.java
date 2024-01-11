@@ -13,8 +13,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class JsonValidatorTest {
-    private JsonValidator validator = new JsonValidator();
     private ObjectMapper mapper = new ObjectMapper();
+    private JsonValidator validator = new JsonValidator(mapper);
+
     private String stringSchema = "{\n"
             + "  \"$schema\": \"http://json-schema.org/draft-07/schema#\",\n"
             + "  \"description\": \"String schema\",\n"

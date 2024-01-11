@@ -35,7 +35,7 @@ import java.nio.charset.StandardCharsets;
  */
 @Slf4j
 public class JsonSerializer implements GlueSchemaRegistryDataFormatSerializer {
-    private static final JsonValidator JSON_VALIDATOR = new JsonValidator();
+    private final JsonValidator jsonValidator;
     private final JsonSchemaGenerator jsonSchemaGenerator;
     private final ObjectMapper objectMapper;
     @Getter
@@ -51,6 +51,7 @@ public class JsonSerializer implements GlueSchemaRegistryDataFormatSerializer {
     public JsonSerializer(GlueSchemaRegistryConfiguration configs) {
         this.schemaRegistrySerDeConfigs = configs;
         this.objectMapper = ObjectMapperUtils.create(configs);
+        this.jsonValidator = new JsonValidator(this.objectMapper);
         this.jsonSchemaGenerator = new JsonSchemaGenerator(this.objectMapper);
     }
 
@@ -67,7 +68,7 @@ public class JsonSerializer implements GlueSchemaRegistryDataFormatSerializer {
 
         final JsonNode dataNode = getDataNode(data);
         final JsonNode schemaNode = getSchemaNode(data);
-        JSON_VALIDATOR.validateDataWithSchema(schemaNode, dataNode);
+        jsonValidator.validateDataWithSchema(schemaNode, dataNode);
 
         bytes = writeBytes(dataNode);
         return bytes;
@@ -169,6 +170,6 @@ public class JsonSerializer implements GlueSchemaRegistryDataFormatSerializer {
     public void validate(Object jsonDataWithSchema) {
         JsonNode schemaNode = getSchemaNode(jsonDataWithSchema);
         JsonNode dataNode = getDataNode(jsonDataWithSchema);
-        JSON_VALIDATOR.validateDataWithSchema(schemaNode, dataNode);
+        jsonValidator.validateDataWithSchema(schemaNode, dataNode);
     }
 }

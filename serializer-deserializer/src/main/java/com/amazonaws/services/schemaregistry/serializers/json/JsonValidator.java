@@ -30,6 +30,13 @@ import java.io.InputStream;
  * Json validator
  */
 public class JsonValidator {
+
+    private final ObjectMapper mapper;
+
+    public JsonValidator(ObjectMapper mapper) {
+        this.mapper = mapper;
+    }
+
     /**
      * Validates data against JsonSchema
      * @param schemaNode
@@ -37,7 +44,7 @@ public class JsonValidator {
      */
     public void validateDataWithSchema(JsonNode schemaNode, JsonNode dataNode) {
         try {
-            ObjectMapper mapper = new ObjectMapper();
+//            ObjectMapper mapper = new ObjectMapper();
             JSONObject rawSchema = new JSONObject(mapper.writeValueAsString(schemaNode));
             Schema schema = SchemaLoader.load(rawSchema, new ReferenceDisabledSchemaClient());
 
