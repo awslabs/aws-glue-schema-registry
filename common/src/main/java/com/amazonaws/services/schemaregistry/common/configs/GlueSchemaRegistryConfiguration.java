@@ -108,6 +108,7 @@ public class GlueSchemaRegistryConfiguration {
         validateAndSetSecondaryDeserializer(configs);
         validateAndSetProxyUrl(configs);
         validateAndSetJavaTimeModule(configs);
+        validateAndSetObjectMapperFactory(configs);
     }
 
     private void validateAndSetSecondaryDeserializer(Map<String, ?> configs) {
