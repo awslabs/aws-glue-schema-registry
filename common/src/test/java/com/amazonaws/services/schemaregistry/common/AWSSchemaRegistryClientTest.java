@@ -32,25 +32,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.services.glue.GlueClient;
-import software.amazon.awssdk.services.glue.model.CreateSchemaRequest;
-import software.amazon.awssdk.services.glue.model.CreateSchemaResponse;
-import software.amazon.awssdk.services.glue.model.DataFormat;
-import software.amazon.awssdk.services.glue.model.EntityNotFoundException;
-import software.amazon.awssdk.services.glue.model.GetSchemaByDefinitionRequest;
-import software.amazon.awssdk.services.glue.model.GetSchemaByDefinitionResponse;
-import software.amazon.awssdk.services.glue.model.GetSchemaVersionRequest;
-import software.amazon.awssdk.services.glue.model.GetSchemaVersionResponse;
-import software.amazon.awssdk.services.glue.model.GetTagsRequest;
-import software.amazon.awssdk.services.glue.model.GetTagsResponse;
-import software.amazon.awssdk.services.glue.model.MetadataKeyValuePair;
-import software.amazon.awssdk.services.glue.model.PutSchemaVersionMetadataRequest;
-import software.amazon.awssdk.services.glue.model.PutSchemaVersionMetadataResponse;
-import software.amazon.awssdk.services.glue.model.QuerySchemaVersionMetadataRequest;
-import software.amazon.awssdk.services.glue.model.QuerySchemaVersionMetadataResponse;
-import software.amazon.awssdk.services.glue.model.RegisterSchemaVersionRequest;
-import software.amazon.awssdk.services.glue.model.RegisterSchemaVersionResponse;
-import software.amazon.awssdk.services.glue.model.RegistryId;
-import software.amazon.awssdk.services.glue.model.SchemaId;
+import software.amazon.awssdk.services.glue.model.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -691,6 +673,18 @@ public class AWSSchemaRegistryClientTest {
 
         String expectedMsg = String.format("Query schema tags:: Call failed while querying tags for schema = %s", testSchemaName);
         assertEquals(expectedMsg, awsSchemaRegistryException.getMessage());
+    }
+
+    @Test
+    public void testCreateSchema_existingSchema_throwsAlreadyExistsException() throws NoSuchFieldException, IllegalAccessException {
+        String testSchemaName = "test-schema";
+        String testSchemaDefinition = "test-schema-definition";
+        awsSchemaRegistryClient = configureAWSSchemaRegistryClientWithSerdeConfig(awsSchemaRegistryClient,
+                glueSchemaRegistryConfiguration);
+
+        when(mockGlueClient.createSchema(any(CreateSchemaRequest.class))).thenThrow(AlreadyExistsException.create("Already exists", null));
+
+        assertThrows(AWSSchemaRegistryException.class, () -> awsSchemaRegistryClient.createSchema(testSchemaName, DataFormat.AVRO.toString(), testSchemaDefinition, getMetadata()));
     }
 
     private Map<String, String> getMetadata() {
