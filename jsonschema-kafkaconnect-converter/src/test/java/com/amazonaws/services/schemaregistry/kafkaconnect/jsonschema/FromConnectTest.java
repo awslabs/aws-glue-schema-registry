@@ -57,7 +57,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 public class FromConnectTest {
     private static final JsonNodeFactory JSON_NODE_FACTORY = TypeConverter.JSON_NODE_FACTORY;
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-    private static final JsonValidator JSON_VALIDATOR = new JsonValidator();
+    private static final JsonValidator JSON_VALIDATOR = new JsonValidator(OBJECT_MAPPER);
 
     private ConnectSchemaToJsonSchemaConverter connectSchemaToJsonSchemaConverter;
     private ConnectValueToJsonNodeConverter connectValueToJsonNodeConverter;

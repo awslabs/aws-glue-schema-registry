@@ -17,17 +17,16 @@ package com.amazonaws.services.schemaregistry.serializers.json;
 import com.amazonaws.services.schemaregistry.common.GlueSchemaRegistryDataFormatSerializer;
 import com.amazonaws.services.schemaregistry.common.configs.GlueSchemaRegistryConfiguration;
 import com.amazonaws.services.schemaregistry.exception.AWSSchemaRegistryException;
+import com.amazonaws.services.schemaregistry.utils.json.ObjectMapperUtils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.kjetland.jackson.jsonSchema.JsonSchemaGenerator;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections4.CollectionUtils;
 
 import java.nio.charset.StandardCharsets;
 
@@ -36,7 +35,7 @@ import java.nio.charset.StandardCharsets;
  */
 @Slf4j
 public class JsonSerializer implements GlueSchemaRegistryDataFormatSerializer {
-    private static final JsonValidator JSON_VALIDATOR = new JsonValidator();
+    private final JsonValidator jsonValidator;
     private final JsonSchemaGenerator jsonSchemaGenerator;
     private final ObjectMapper objectMapper;
     @Getter
@@ -51,19 +50,8 @@ public class JsonSerializer implements GlueSchemaRegistryDataFormatSerializer {
     @Builder
     public JsonSerializer(GlueSchemaRegistryConfiguration configs) {
         this.schemaRegistrySerDeConfigs = configs;
-        JsonNodeFactory jsonNodeFactory = JsonNodeFactory.withExactBigDecimals(true);
-        this.objectMapper = new ObjectMapper();
-        this.objectMapper.setNodeFactory(jsonNodeFactory);
-        if (configs != null) {
-            if (!CollectionUtils.isEmpty(configs.getJacksonSerializationFeatures())) {
-                configs.getJacksonSerializationFeatures()
-                        .forEach(this.objectMapper::enable);
-            }
-            if (!CollectionUtils.isEmpty(configs.getJacksonDeserializationFeatures())) {
-                configs.getJacksonDeserializationFeatures()
-                        .forEach(this.objectMapper::enable);
-            }
-        }
+        this.objectMapper = ObjectMapperUtils.create(configs);
+        this.jsonValidator = new JsonValidator(this.objectMapper);
         this.jsonSchemaGenerator = new JsonSchemaGenerator(this.objectMapper);
     }
 
@@ -80,7 +68,7 @@ public class JsonSerializer implements GlueSchemaRegistryDataFormatSerializer {
 
         final JsonNode dataNode = getDataNode(data);
         final JsonNode schemaNode = getSchemaNode(data);
-        JSON_VALIDATOR.validateDataWithSchema(schemaNode, dataNode);
+        jsonValidator.validateDataWithSchema(schemaNode, dataNode);
 
         bytes = writeBytes(dataNode);
         return bytes;
@@ -182,6 +170,6 @@ public class JsonSerializer implements GlueSchemaRegistryDataFormatSerializer {
     public void validate(Object jsonDataWithSchema) {
         JsonNode schemaNode = getSchemaNode(jsonDataWithSchema);
         JsonNode dataNode = getDataNode(jsonDataWithSchema);
-        JSON_VALIDATOR.validateDataWithSchema(schemaNode, dataNode);
+        jsonValidator.validateDataWithSchema(schemaNode, dataNode);
     }
 }

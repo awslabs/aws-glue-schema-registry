@@ -18,6 +18,8 @@ package com.amazonaws.services.schemaregistry.common.configs;
 import com.amazonaws.services.schemaregistry.exception.AWSSchemaRegistryException;
 import com.amazonaws.services.schemaregistry.utils.AWSSchemaRegistryConstants;
 import com.amazonaws.services.schemaregistry.utils.AvroRecordType;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -32,11 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Unit tests for testing configuration elements.
@@ -409,5 +407,56 @@ public class GlueSchemaRegistryConfigurationTest {
         props.put(AWSSchemaRegistryConstants.PROXY_URL, "http:// proxy.url: 8080");
         Exception exception = assertThrows(AWSSchemaRegistryException.class, () -> new GlueSchemaRegistryConfiguration(props));
         assertEquals("Proxy URL property is not a valid URL: "+proxy, exception.getMessage());
+    }
+
+    @Test
+    public void testBuildConfig_javaTimeModuleEnabledMock_succeeds() {
+        Properties props = createTestProperties();
+        String moduleClassName = "com.amazonaws.services.schemaregistry.common.configs.TestableSimpleModule";
+        props.put(AWSSchemaRegistryConstants.REGISTER_JAVA_TIME_MODULE, moduleClassName);
+        GlueSchemaRegistryConfiguration cfg = new GlueSchemaRegistryConfiguration(props);
+        assertNotNull(cfg.loadJavaTimeModule());
+    }
+
+    @Test
+    public void testBuildConfig_javaTimeModuleEnabledWithoutDependency_throwException() {
+        Properties props = createTestProperties();
+        String moduleClassName = "com.fasterxml.jackson.datatype.jsr310.JavaTimeModule";
+        props.put(AWSSchemaRegistryConstants.REGISTER_JAVA_TIME_MODULE, moduleClassName);
+        GlueSchemaRegistryConfiguration cfg = new GlueSchemaRegistryConfiguration(props);
+        Exception exception = assertThrows(AWSSchemaRegistryException.class, () -> cfg.loadJavaTimeModule());
+        String message = String.format("Invalid JavaTimeModule specified: %s", moduleClassName);
+        assertEquals(message, exception.getMessage());
+    }
+
+    @Test
+    public void testBuildConfig_specifyObjectMapperFactory_succeeds() {
+        Properties props = createTestProperties();
+        String factoryClass = "com.amazonaws.services.schemaregistry.common.configs.TestableSimpleModule"; // could be any string
+        props.put(AWSSchemaRegistryConstants.OBJECT_MAPPER_FACTORY, factoryClass);
+        GlueSchemaRegistryConfiguration cfg = new GlueSchemaRegistryConfiguration(props);
+        assertEquals(factoryClass, cfg.getObjectMapperFactory());
+    }
+
+    @Test
+    public void testBuildConfig_jacksonSerializationFeatures_succeeds() {
+        Properties props = createTestProperties();
+        List<String> features = new ArrayList<>();
+        features.add(SerializationFeature.INDENT_OUTPUT.toString());
+        features.add(SerializationFeature.WRAP_EXCEPTIONS.toString());
+        props.put(AWSSchemaRegistryConstants.JACKSON_SERIALIZATION_FEATURES, features);
+        GlueSchemaRegistryConfiguration cfg = new GlueSchemaRegistryConfiguration(props);
+        assertEquals(cfg.getJacksonSerializationFeatures().size(), 2);
+    }
+
+    @Test
+    public void testBuildConfig_jacksonDeserializationFeatures_succeeds() {
+        Properties props = createTestProperties();
+        List<String> features = new ArrayList<>();
+        features.add(DeserializationFeature.WRAP_EXCEPTIONS.toString());
+        features.add(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES.toString());
+        props.put(AWSSchemaRegistryConstants.JACKSON_DESERIALIZATION_FEATURES, features);
+        GlueSchemaRegistryConfiguration cfg = new GlueSchemaRegistryConfiguration(props);
+        assertEquals(cfg.getJacksonDeserializationFeatures().size(), 2);
     }
 }

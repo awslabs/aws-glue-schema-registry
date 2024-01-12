@@ -202,6 +202,26 @@ The recommended way to use the AWS Glue Schema Registry Library for Java is to c
 
 ```
 
+### Jackson Support for Java 8 Date Types in JSON
+
+To support Java 8 Dates in JSON add the [Jackson JSR310 Datatype](https://mvnrepository.com/artifact/com.fasterxml.jackson.datatype/jackson-datatype-jsr310) dependency to implementing project class path.
+
+For example, in a Maven based project include the latest dependency.
+
+```xml
+<dependency>
+    <groupId>com.fasterxml.jackson.datatype</groupId>
+    <artifactId>jackson-datatype-jsr310</artifactId>
+    <version>2.16.1</version>
+</dependency>
+```
+
+Then add the following configuration property to specify the fully qualified class path to the JavaTimeModule like so.
+
+```java
+properties.put(AWSSchemaRegistryConstants.REGISTER_JAVA_TIME_MODULE, "com.fasterxml.jackson.datatype.jsr310.JavaTimeModule");
+```
+
 #### Producer for Kafka with PROTOBUF format
 
 ```java

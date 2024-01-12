@@ -22,6 +22,7 @@ import com.amazonaws.services.schemaregistry.utils.GlueSchemaRegistryUtils;
 import com.amazonaws.services.schemaregistry.utils.ProtobufMessageType;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.EnumUtils;
@@ -58,6 +59,8 @@ public class GlueSchemaRegistryConfiguration {
     private Map<String, String> metadata;
     private String secondaryDeserializer;
     private URI proxyUrl;
+    private String javaTimeModuleClass;
+    private String objectMapperFactory = "com.amazonaws.services.schemaregistry.utils.json.DefaultObjectMapperFactory";
 
     /**
      * Name of the application using the serializer/deserializer.
@@ -104,6 +107,8 @@ public class GlueSchemaRegistryConfiguration {
         validateAndSetUserAgent(configs);
         validateAndSetSecondaryDeserializer(configs);
         validateAndSetProxyUrl(configs);
+        validateAndSetJavaTimeModule(configs);
+        validateAndSetObjectMapperFactory(configs);
     }
 
     private void validateAndSetSecondaryDeserializer(Map<String, ?> configs) {
@@ -320,6 +325,29 @@ public class GlueSchemaRegistryConfiguration {
             } else {
                 throw new AWSSchemaRegistryException("Jackson Deserialization features should be a list");
             }
+        }
+    }
+
+    private void validateAndSetJavaTimeModule(Map<String, ?> configs) {
+        if (isPresent(configs, AWSSchemaRegistryConstants.REGISTER_JAVA_TIME_MODULE)) {
+            String moduleClassName = String.valueOf(configs.get(AWSSchemaRegistryConstants.REGISTER_JAVA_TIME_MODULE));
+            this.javaTimeModuleClass = moduleClassName;
+        }
+    }
+
+    private void validateAndSetObjectMapperFactory(Map<String, ?> configs) {
+        if (isPresent(configs, AWSSchemaRegistryConstants.OBJECT_MAPPER_FACTORY)) {
+            this.objectMapperFactory = String.valueOf(configs.get(AWSSchemaRegistryConstants.OBJECT_MAPPER_FACTORY));
+        }
+    }
+
+    public SimpleModule loadJavaTimeModule() {
+        try {
+            Class<?> moduleClass = Class.forName(this.getJavaTimeModuleClass());
+            return (SimpleModule) moduleClass.getConstructor().newInstance();
+        } catch (Exception e) {
+            String message = String.format("Invalid JavaTimeModule specified: %s", this.javaTimeModuleClass);
+            throw new AWSSchemaRegistryException(message, e);
         }
     }
 

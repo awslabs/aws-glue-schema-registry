@@ -20,16 +20,15 @@ import com.amazonaws.services.schemaregistry.deserializers.GlueSchemaRegistryDes
 import com.amazonaws.services.schemaregistry.exception.AWSSchemaRegistryException;
 import com.amazonaws.services.schemaregistry.serializers.json.JsonDataWithSchema;
 import com.amazonaws.services.schemaregistry.common.Schema;
+import com.amazonaws.services.schemaregistry.utils.json.ObjectMapperUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections4.CollectionUtils;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -56,19 +55,7 @@ public class JsonDeserializer implements GlueSchemaRegistryDataFormatDeserialize
     @Builder
     public JsonDeserializer(GlueSchemaRegistryConfiguration configs) {
         this.schemaRegistrySerDeConfigs = configs;
-        JsonNodeFactory jsonNodeFactory = JsonNodeFactory.withExactBigDecimals(true);
-        this.objectMapper = new ObjectMapper();
-        this.objectMapper.setNodeFactory(jsonNodeFactory);
-        if (configs != null) {
-            if (!CollectionUtils.isEmpty(configs.getJacksonSerializationFeatures())) {
-                configs.getJacksonSerializationFeatures()
-                        .forEach(this.objectMapper::enable);
-            }
-            if (!CollectionUtils.isEmpty(configs.getJacksonDeserializationFeatures())) {
-                configs.getJacksonDeserializationFeatures()
-                        .forEach(this.objectMapper::enable);
-            }
-        }
+        this.objectMapper = ObjectMapperUtils.create(configs);
     }
 
     /**
