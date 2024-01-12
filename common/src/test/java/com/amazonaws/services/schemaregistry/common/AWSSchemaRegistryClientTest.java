@@ -50,10 +50,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class AWSSchemaRegistryClientTest {
@@ -682,9 +679,22 @@ public class AWSSchemaRegistryClientTest {
         awsSchemaRegistryClient = configureAWSSchemaRegistryClientWithSerdeConfig(awsSchemaRegistryClient,
                 glueSchemaRegistryConfiguration);
 
-        when(mockGlueClient.createSchema(any(CreateSchemaRequest.class))).thenThrow(AlreadyExistsException.create("Already exists", null));
+        AWSSchemaRegistryClient awsSchemaRegistryClientSpy = spy(awsSchemaRegistryClient);
+        AlreadyExistsException ex = AlreadyExistsException.builder().message("Already exists").build();
+        when(mockGlueClient.createSchema(any(CreateSchemaRequest.class))).thenThrow(ex);
 
-        assertThrows(AWSSchemaRegistryException.class, () -> awsSchemaRegistryClient.createSchema(testSchemaName, DataFormat.AVRO.toString(), testSchemaDefinition, getMetadata()));
+        UUID expectedId = UUID.randomUUID();
+        String expectedDataFormat = DataFormat.AVRO.toString();
+        Map<String, String> expectedMetadata = getMetadata();
+        doReturn(expectedId).when(awsSchemaRegistryClientSpy).registerSchemaVersion(
+                testSchemaDefinition,
+                testSchemaName,
+                expectedDataFormat,
+                expectedMetadata
+        );
+
+        UUID actualId = awsSchemaRegistryClientSpy.createSchema(testSchemaName, expectedDataFormat, testSchemaDefinition, expectedMetadata);
+        assertEquals(expectedId, actualId);
     }
 
     private Map<String, String> getMetadata() {
