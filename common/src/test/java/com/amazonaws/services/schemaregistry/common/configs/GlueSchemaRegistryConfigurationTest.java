@@ -97,6 +97,7 @@ public class GlueSchemaRegistryConfigurationTest {
     public void testBuildConfig_noRegionConfigsSupplied_throwsException() {
         Map<String, Object> configWithoutRegion = new HashMap<>();
         configWithoutRegion.put(AWSSchemaRegistryConstants.AWS_ENDPOINT, "https://test/");
+        System.setProperty("aws.profile", "");
 
         Exception exception = assertThrows(AWSSchemaRegistryException.class,
                 () -> new GlueSchemaRegistryConfiguration(configWithoutRegion));
