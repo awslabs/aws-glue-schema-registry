@@ -80,10 +80,10 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <glue.schema.registry.groupId>software.amazon.glue</glue.schema.registry.groupId>
-        <aws.sdk.v2.version>2.18.4</aws.sdk.v2.version>
-        <aws.sdk.v1.version>1.12.151</aws.sdk.v1.version>
+        <aws.sdk.v2.version>2.22.12</aws.sdk.v2.version>
+        <aws.sdk.v1.version>1.12.633</aws.sdk.v1.version>
         <kafka.scala.version>2.12</kafka.scala.version>
-        <kafka.version>3.6.0</kafka.version>
+        <kafka.version>3.6.1</kafka.version>
         <avro.version>1.11.3</avro.version>
         <mbknor.jsonschema.converter.version>1.0.39</mbknor.jsonschema.converter.version>
         <everit.json.schema.version>1.14.2</everit.json.schema.version>
@@ -105,16 +105,16 @@
         <hamcrest.version>1.1</hamcrest.version>
         <!--  LATEST KCL Does not work with LocalStack yet, remove once new version works -->
         <kinesis.client.version>2.2.9</kinesis.client.version>
-        <kinesis.producer.version>LATEST</kinesis.producer.version>
+        <!--  LATEST KPL will cause integration test failure in Linux environment, update once we find a way to address the issue -->
+        <kinesis.producer.version>0.15.8</kinesis.producer.version>
         <junit.platform.commons.version>1.6.2</junit.platform.commons.version>
         <junit.platform.surefire.version>1.3.2</junit.platform.surefire.version>
         <guava.version>32.0.0-jre</guava.version>
         <commons.lang3.version>3.8.1</commons.lang3.version>
         <commons.cli.version>1.2</commons.cli.version>
         <awaitility.version>3.0.0</awaitility.version>
-        <localstack.utils>0.2.11</localstack.utils>
         <protobuf.java.version>3.19.6</protobuf.java.version>
-        <localstack.utils>0.2.11</localstack.utils>
+        <localstack.utils>0.2.23</localstack.utils>
         <aws.msk.iam.auth>1.1.5</aws.msk.iam.auth>
     </properties>
 
