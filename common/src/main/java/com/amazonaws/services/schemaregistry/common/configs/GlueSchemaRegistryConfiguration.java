@@ -36,6 +36,8 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
+import static java.util.stream.Collectors.toMap;
+
 /**
  * Glue Schema Registry Configuration entries.
  */
@@ -65,8 +67,8 @@ public class GlueSchemaRegistryConfiguration {
      */
     private String userAgentApp = "default";
 
-    private List<SerializationFeature> jacksonSerializationFeatures;
-    private List<DeserializationFeature> jacksonDeserializationFeatures;
+    private Map<SerializationFeature, Boolean> jacksonSerializationFeatures;
+    private Map<DeserializationFeature, Boolean> jacksonDeserializationFeatures;
 
     public GlueSchemaRegistryConfiguration(String region) {
         Map<String, Object> config = new HashMap<>();
@@ -297,12 +299,12 @@ public class GlueSchemaRegistryConfiguration {
 
     private void validateAndSetJacksonSerializationFeatures(Map<String, ?> configs) {
         if (isPresent(configs, AWSSchemaRegistryConstants.JACKSON_SERIALIZATION_FEATURES)) {
-            if (configs.get(AWSSchemaRegistryConstants.JACKSON_SERIALIZATION_FEATURES) instanceof List) {
-                List<String> serialzationFeatures =
-                        (List<String>) configs.get(AWSSchemaRegistryConstants.JACKSON_SERIALIZATION_FEATURES);
-                this.jacksonSerializationFeatures = serialzationFeatures.stream()
-                        .map(sf -> SerializationFeature.valueOf(sf))
-                        .collect(Collectors.toList());
+                if (configs.get(AWSSchemaRegistryConstants.JACKSON_SERIALIZATION_FEATURES) instanceof Map) {
+                    Map<String, Boolean> serializationFeatures =
+                            (Map<String, Boolean>) configs.get(AWSSchemaRegistryConstants.JACKSON_SERIALIZATION_FEATURES);
+                    this.jacksonSerializationFeatures = serializationFeatures.entrySet()
+                            .stream()
+                            .collect(toMap(x -> SerializationFeature.valueOf(x.getKey()), Map.Entry::getValue));
             } else {
                 throw new AWSSchemaRegistryException("Jackson Serialization features should be a list");
             }
@@ -311,12 +313,12 @@ public class GlueSchemaRegistryConfiguration {
 
     private void validateAndSetJacksonDeserializationFeatures(Map<String, ?> configs) {
         if (isPresent(configs, AWSSchemaRegistryConstants.JACKSON_DESERIALIZATION_FEATURES)) {
-            if (configs.get(AWSSchemaRegistryConstants.JACKSON_DESERIALIZATION_FEATURES) instanceof List) {
-                List<String> deserialzationFeatures =
-                        (List<String>) configs.get(AWSSchemaRegistryConstants.JACKSON_DESERIALIZATION_FEATURES);
-                this.jacksonDeserializationFeatures = deserialzationFeatures.stream()
-                        .map(dsf -> DeserializationFeature.valueOf(dsf))
-                        .collect(Collectors.toList());
+            if (configs.get(AWSSchemaRegistryConstants.JACKSON_DESERIALIZATION_FEATURES) instanceof Map) {
+                Map<String, Boolean> deserializationFeatures =
+                        (Map<String, Boolean>) configs.get(AWSSchemaRegistryConstants.JACKSON_DESERIALIZATION_FEATURES);
+                this.jacksonDeserializationFeatures = deserializationFeatures.entrySet()
+                        .stream()
+                        .collect(toMap(x -> DeserializationFeature.valueOf(x.getKey()), Map.Entry::getValue));
             } else {
                 throw new AWSSchemaRegistryException("Jackson Deserialization features should be a list");
             }

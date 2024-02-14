@@ -14,6 +14,7 @@
  */
 package com.amazonaws.services.schemaregistry.deserializers.json;
 
+import com.amazonaws.services.schemaregistry.common.configs.GlueSchemaRegistryConfiguration;
 import org.junit.jupiter.api.Test;
 
 import java.nio.ByteBuffer;
@@ -21,15 +22,21 @@ import java.nio.charset.StandardCharsets;
 import com.amazonaws.services.schemaregistry.common.Schema;
 import software.amazon.awssdk.services.glue.model.DataFormat;
 
-import java.util.UUID;
+import java.util.HashMap;
+import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static com.amazonaws.services.schemaregistry.utils.AWSSchemaRegistryConstants.AWS_REGION;
+import static com.amazonaws.services.schemaregistry.utils.AWSSchemaRegistryConstants.JACKSON_DESERIALIZATION_FEATURES;
+import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES;
+import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
+import static java.util.Collections.singletonMap;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class JsonDeserializerTest {
-    private JsonDeserializer jsonDeserializer = new JsonDeserializer(null);
 
     @Test
     public void testDeserialize_nullArgs_throwsException() {
+        JsonDeserializer jsonDeserializer = new JsonDeserializer(null);
         String testSchemaDefinition = "{\"$id\":\"https://example.com/geographical-location.schema.json\","
                                       + "\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"title\":\"Longitude "
                                       + "and Latitude Values\",\"description\":\"A geographical coordinate.\","
@@ -45,5 +52,29 @@ public class JsonDeserializerTest {
         assertThrows(IllegalArgumentException.class, () -> jsonDeserializer.deserialize(null, testSchema));
         assertThrows(IllegalArgumentException.class, () -> jsonDeserializer.deserialize(ByteBuffer.wrap(testBytes),
                                                                                         null));
+    }
+
+    @Test
+    public void testDeserialize_overridesDeserializationFeatureToFalse() {
+        Map<String, Object> config = new HashMap<>();
+        config.put(JACKSON_DESERIALIZATION_FEATURES, singletonMap(FAIL_ON_UNKNOWN_PROPERTIES.name(), false));
+        config.put(AWS_REGION, "us-east-1");
+
+        GlueSchemaRegistryConfiguration glueSchemaRegistryConfiguration = new GlueSchemaRegistryConfiguration(config);
+        JsonDeserializer jsonDeserializer = new JsonDeserializer(glueSchemaRegistryConfiguration);
+
+        assertFalse(jsonDeserializer.getObjectMapper().isEnabled(FAIL_ON_UNKNOWN_PROPERTIES));
+    }
+
+    @Test
+    public void testDeserialize_overridesDeserializationFeatureToTrue() {
+        Map<String, Object> config = new HashMap<>();
+        config.put(JACKSON_DESERIALIZATION_FEATURES, singletonMap(FAIL_ON_NULL_FOR_PRIMITIVES.name(), true));
+        config.put(AWS_REGION, "us-east-1");
+
+        GlueSchemaRegistryConfiguration glueSchemaRegistryConfiguration = new GlueSchemaRegistryConfiguration(config);
+        JsonDeserializer jsonDeserializer = new JsonDeserializer(glueSchemaRegistryConfiguration);
+
+        assertTrue(jsonDeserializer.getObjectMapper().isEnabled(FAIL_ON_NULL_FOR_PRIMITIVES));
     }
 }
