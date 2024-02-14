@@ -31,7 +31,11 @@ import static com.amazonaws.services.schemaregistry.utils.AWSSchemaRegistryConst
 import static com.fasterxml.jackson.databind.SerializationFeature.FAIL_ON_SELF_REFERENCES;
 import static com.fasterxml.jackson.databind.SerializationFeature.WRITE_SELF_REFERENCES_AS_NULL;
 import static java.util.Collections.singletonMap;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class JsonSerializerTest {

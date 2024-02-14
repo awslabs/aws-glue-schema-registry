@@ -31,7 +31,6 @@ import software.amazon.awssdk.services.glue.model.Compatibility;
 
 import java.net.URI;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Collectors;
@@ -299,12 +298,12 @@ public class GlueSchemaRegistryConfiguration {
 
     private void validateAndSetJacksonSerializationFeatures(Map<String, ?> configs) {
         if (isPresent(configs, AWSSchemaRegistryConstants.JACKSON_SERIALIZATION_FEATURES)) {
-                if (configs.get(AWSSchemaRegistryConstants.JACKSON_SERIALIZATION_FEATURES) instanceof Map) {
-                    Map<String, Boolean> serializationFeatures =
-                            (Map<String, Boolean>) configs.get(AWSSchemaRegistryConstants.JACKSON_SERIALIZATION_FEATURES);
-                    this.jacksonSerializationFeatures = serializationFeatures.entrySet()
-                            .stream()
-                            .collect(toMap(x -> SerializationFeature.valueOf(x.getKey()), Map.Entry::getValue));
+            if (configs.get(AWSSchemaRegistryConstants.JACKSON_SERIALIZATION_FEATURES) instanceof Map) {
+                Map<String, Boolean> serializationFeatures =
+                        (Map<String, Boolean>) configs.get(AWSSchemaRegistryConstants.JACKSON_SERIALIZATION_FEATURES);
+                this.jacksonSerializationFeatures = serializationFeatures.entrySet()
+                        .stream()
+                        .collect(toMap(x -> SerializationFeature.valueOf(x.getKey()), Map.Entry::getValue));
             } else {
                 throw new AWSSchemaRegistryException("Jackson Serialization features should be a list");
             }

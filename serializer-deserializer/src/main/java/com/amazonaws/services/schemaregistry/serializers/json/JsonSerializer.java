@@ -56,7 +56,7 @@ public class JsonSerializer implements GlueSchemaRegistryDataFormatSerializer {
         this.objectMapper = new ObjectMapper();
         this.objectMapper.setNodeFactory(jsonNodeFactory);
         if (configs != null) {
-            if (configs.getJacksonSerializationFeatures() != null && !configs.getJacksonSerializationFeatures().isEmpty()) { // todo why do we check for deserialization features for a serializer
+            if (configs.getJacksonSerializationFeatures() != null && !configs.getJacksonSerializationFeatures().isEmpty()) {
                 configs.getJacksonSerializationFeatures()
                         .forEach(this::overrideObjectMapperFeature);
             }
