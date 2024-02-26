@@ -94,7 +94,13 @@
         </dependency>
         <dependency>
             <groupId>com.amazonaws</groupId>
-            <artifactId>amazon-kinesis-producer</artifactId>
+	    <artifactId>amazon-kinesis-producer</artifactId>
+	    <exclusions>
+       	        <exclusion>
+		    <groupId>software.amazon.ion</groupId>
+		    <artifactId>ion-java</artifactId>
+	 	</exclusion>
+	    </exclusions>
         </dependency>
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
