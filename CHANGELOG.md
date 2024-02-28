@@ -78,3 +78,6 @@ GlueSchemaRegistryKafkaSerializer/GlueSchemaRegistryKafkaDeserializer.
 * Add a dummy class in the serializer-deserializer-msk-iam module for javadoc and source jar generation
 * Upgraded Avro and Json dependencies version
 * Upgraded AWS SDK v1 and v2 versions to fix vulnerabilities
+
+## Release 1.1.19
+* Upgraded dependency versions to remove ION dependencies
