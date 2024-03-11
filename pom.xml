@@ -81,7 +81,6 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <glue.schema.registry.groupId>software.amazon.glue</glue.schema.registry.groupId>
         <aws.sdk.v2.version>2.22.12</aws.sdk.v2.version>
-        <aws.sdk.v1.version>1.12.660</aws.sdk.v1.version>
         <kafka.scala.version>2.12</kafka.scala.version>
         <kafka.version>3.6.1</kafka.version>
         <avro.version>1.11.3</avro.version>
@@ -251,11 +250,6 @@
                 <groupId>com.github.erosb</groupId>
                 <artifactId>everit-json-schema</artifactId>
                 <version>${everit.json.schema.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.amazonaws</groupId>
-                <artifactId>aws-java-sdk-kinesis</artifactId>
-                <version>${aws.sdk.v1.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.dataformat</groupId>
