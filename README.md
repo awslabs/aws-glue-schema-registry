@@ -635,6 +635,32 @@ repository for the latest support: [Avro SerializationSchema and Deserialization
             properties);
     DataStream<GenericRecord> stream = env.addSource(consumer);
 ```
- 
+## Tag-Based Schema Version Lookup
+We have introduced a tag-based lookup feature to efficiently retrieve schema versions in AWS Glue. This allows for faster retrieval of schema versions by utilizing metadata tags associated with the schemas.
+
+How it works:
+When a schema is registered, it can be tagged with metadata.
+During retrieval, if the schema version isn't found in the cache, the system will attempt to find the schema using the specified metadata tags provided by
+tagBasedLookupKeyName and tagBasedLookupKeyValue parameter. 
+
+This reduces the need for extensive lookups, optimizing the schema retrieval process.
+Configuration:
+To enable tag-based lookup:
+
+Set useTagBasedLookup to true in your configuration.
+
+Use tagBasedLookupKeyName and tagBasedLookupKeyValue to search for schema version in the scheams with the following tags
+if tagBasedLookupKeyName is tagLookUp and  tagBasedLookupKeyValue is yes, then this needs to be stored at the schema level.
+![img.png](images/schema_level_tag.png)
+
+Provide the metadataTagKeyName with original schema version uuid, which will be used as the lookup key.
+![img.png](images/schema_version_tag.png)
+
+![img.png](images/schema_version_key.png)
+
+
+Please note that proper and correct tagging of schemas is essential for this feature to work efficiently.
+
+
  ## Security issue notifications
 If you discover a potential security issue in this project we ask that you notify AWS/Amazon Security via our [vulnerability reporting page](http://aws.amazon.com/security/vulnerability-reporting/). Please do **not** create a public github issue.
