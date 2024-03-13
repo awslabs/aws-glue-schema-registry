@@ -45,7 +45,7 @@ public class GlueSchemaRegistrySerializerFactory {
                                                               @NonNull GlueSchemaRegistryConfiguration glueSchemaRegistryConfig) {
         switch (dataFormat) {
             case AVRO:
-                this.serializerMap.computeIfAbsent(dataFormat, key -> new AvroSerializer());
+                this.serializerMap.computeIfAbsent(dataFormat, key -> new AvroSerializer(glueSchemaRegistryConfig));
 
                 log.debug("Returning Avro serializer instance from GlueSchemaRegistrySerializerFactory");
                 return this.serializerMap.get(dataFormat);
