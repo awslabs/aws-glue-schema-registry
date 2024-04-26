@@ -116,6 +116,7 @@
         <protobuf.java.version>3.19.6</protobuf.java.version>
         <localstack.utils>0.2.23</localstack.utils>
         <aws.msk.iam.auth>2.0.3</aws.msk.iam.auth>
+        <org.json.version>20231013</org.json.version>
     </properties>
 
     <dependencyManagement>
@@ -251,6 +252,13 @@
                 <groupId>com.github.erosb</groupId>
                 <artifactId>everit-json-schema</artifactId>
                 <version>${everit.json.schema.version}</version>
+                <!-- Temporary fix until library is updated -->
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.json</groupId>
+                        <artifactId>json</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>com.amazonaws</groupId>
@@ -359,7 +367,7 @@
             <dependency>
                 <groupId>org.json</groupId>
                 <artifactId>json</artifactId>
-                <version>20231013</version>
+                <version>${org.json.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
