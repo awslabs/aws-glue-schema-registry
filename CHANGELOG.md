@@ -81,3 +81,6 @@ GlueSchemaRegistryKafkaSerializer/GlueSchemaRegistryKafkaDeserializer.
 
 ## Release 1.1.19
 * Upgraded dependency versions to remove ION dependencies
+
+## Release 1.1.20
+* Upgrade the dependency version to remove commons:compress dependency
