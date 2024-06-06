@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax3;
+
+message Metadata {
+  string metadata_id = 1;
+  oneof status {
+    string registered = 2;
+    string unregistered = 3;
+  }
+}
+
+message Event {
+  .com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax3.Metadata metadata = 1;
+  string event_id = 2;
+}
