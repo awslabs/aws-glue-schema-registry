@@ -699,7 +699,7 @@ public class ToConnectTestDataGenerator {
                 .build();
     }
 
-    public static List<Message> getOneofProtobufMessagesMetro() {
+    public static List<Message> getNestedOneofProtobufMessages() {
         return Arrays.asList(
                 NestedOneofTypeSyntax3.Event.newBuilder()
                         .setEventId("123123")
@@ -710,16 +710,16 @@ public class ToConnectTestDataGenerator {
         );
     }
 
-    public static Schema getOneOfSchemaMetro(String packageName) {
+    public static Schema getNestedOneOfSchema(String packageName) {
         return createConnectSchema(
                "Event",
-               getOneOfTypeMetro(packageName),
+               getNestedOneOfType(packageName),
                ImmutableMap.of(PROTOBUF_PACKAGE, packageName)
         );
     }
 
-    public static Struct getOneOfTypeDataMetro(String packageName) {
-        final Schema connectSchema = getOneOfSchemaMetro(packageName);
+    public static Struct getNestedOneOfTypeData(String packageName) {
+        final Schema connectSchema = getNestedOneOfSchema(packageName);
         final Struct connectData = new Struct(connectSchema);
 
         connectData
@@ -735,7 +735,7 @@ public class ToConnectTestDataGenerator {
         return connectData;
     }
 
-    private static Map<String, Schema> getOneOfTypeMetro(String packageName) {
+    private static Map<String, Schema> getNestedOneOfType(String packageName) {
         final SchemaBuilder metadataBuilder = SchemaBuilder.struct().name(getFullName(packageName, "Metadata"))
                 .field("metadata_id", SchemaBuilder.string().parameter(PROTOBUF_TAG, "1").optional().build())
                 .field("status", SchemaBuilder.struct().name(getFullName(packageName, "status"))
