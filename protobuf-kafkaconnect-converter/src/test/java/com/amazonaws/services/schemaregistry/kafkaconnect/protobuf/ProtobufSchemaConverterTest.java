@@ -147,6 +147,9 @@ public class ProtobufSchemaConverterTest {
             Arguments.of(ToConnectTestDataGenerator.getOneofProtobufMessages().get(0),
                 ToConnectTestDataGenerator.getOneofSchema(PACKAGE_NAME),
                 ToConnectTestDataGenerator.getOneofTypeData(PACKAGE_NAME)),
+            Arguments.of(ToConnectTestDataGenerator.getOneofProtobufMessagesMetro().get(0),
+                ToConnectTestDataGenerator.getOneOfSchemaMetro(PACKAGE_NAME),
+                ToConnectTestDataGenerator.getOneOfTypeDataMetro(PACKAGE_NAME)),
             Arguments.of(ToConnectTestDataGenerator.getAllTypesProtobufMessages().get(0),
                 ToConnectTestDataGenerator.getAllTypesSchema(PACKAGE_NAME),
                 ToConnectTestDataGenerator.getAllTypesData(PACKAGE_NAME))

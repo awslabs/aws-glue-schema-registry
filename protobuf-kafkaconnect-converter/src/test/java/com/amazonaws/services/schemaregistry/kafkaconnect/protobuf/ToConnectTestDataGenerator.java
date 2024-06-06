@@ -27,6 +27,7 @@ import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax3.ArrayTyp
 import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax3.MapTypeSyntax3;
 import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax3.NestedTypeSyntax3;
 import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax3.OneofTypeSyntax3;
+import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax3.Metro;
 import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax3.PrimitiveTypesSyntax3;
 import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax2.EnumTypeSyntax2;
 import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax3.EnumTypeSyntax3;
@@ -46,11 +47,7 @@ import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.data.Decimal;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.CommonTestHelper.createConnectSchema;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_PACKAGE;
@@ -699,6 +696,57 @@ public class ToConnectTestDataGenerator {
                         .field("shipped", SchemaBuilder.bool().parameter(PROTOBUF_TAG, "2").optional().build())
                         .parameter("protobuf.type", "oneof")
                         .optional().build())
+                .build();
+    }
+
+    public static List<Message> getOneofProtobufMessagesMetro() {
+        return Arrays.asList(
+                Metro.HardwareEvent.newBuilder()
+                        .setEventId("123123")
+                        .setSourceMeta(Metro.SourceMetadata.newBuilder()
+                                .setSourceId("abc")
+                                .setRegistered("yessir").build())
+                        .build()
+        );
+    }
+
+    public static Schema getOneOfSchemaMetro(String packageName) {
+        return createConnectSchema(
+               "HardwareEvent",
+               getOneOfTypeMetro(packageName),
+               ImmutableMap.of(PROTOBUF_PACKAGE, packageName)
+        );
+    }
+
+    public static Struct getOneOfTypeDataMetro(String packageName) {
+        final Schema connectSchema = getOneOfSchemaMetro(packageName);
+        final Struct connectData = new Struct(connectSchema);
+
+        connectData
+                .put("source_meta",
+                        new Struct(connectSchema.field("source_meta").schema())
+                        .put("source_id", "hi")
+                        .put("source",
+                                new Struct(connectSchema.field("source_meta").schema().field("source").schema())
+                                .put("registered", "yup")
+                        )
+                )
+                .put("event_id", "hello");
+        return connectData;
+    }
+
+    private static Map<String, Schema> getOneOfTypeMetro(String packageName) {
+        final SchemaBuilder sourceMetadataBuilder = SchemaBuilder.struct().name(getFullName(packageName, "SourceMetadata"))
+                .field("source_id", SchemaBuilder.string().parameter(PROTOBUF_TAG, "1").optional().build())
+                .field("source", SchemaBuilder.struct().name(getFullName(packageName, "source"))
+                        .field("registered", SchemaBuilder.string().parameter(PROTOBUF_TAG, "2").optional().build())
+                        .field("unregistered", SchemaBuilder.string().parameter(PROTOBUF_TAG, "3").optional().build())
+                        .parameter("protobuf.type", "oneof")
+                );
+
+        return ImmutableMap.<String, Schema> builder()
+                .put("source_meta", sourceMetadataBuilder.parameter(PROTOBUF_TAG, "1").build())
+                .put("event_id", SchemaBuilder.string().name("event_id").parameter(PROTOBUF_TAG, "2").build())
                 .build();
     }
 

@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax3;
+
+message SourceMetadata {
+  string source_id = 1;
+  oneof source {
+    string registered = 2;
+    string unregistered = 3;
+  }
+}
+
+message HardwareEvent {
+  .com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax3.SourceMetadata source_meta = 1;
+  string event_id = 2;
+}
