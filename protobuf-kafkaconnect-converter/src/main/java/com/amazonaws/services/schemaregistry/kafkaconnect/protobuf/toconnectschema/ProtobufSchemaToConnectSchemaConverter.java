@@ -74,7 +74,7 @@ public class ProtobufSchemaToConnectSchemaConverter {
         for (final Descriptors.FieldDescriptor fieldDescriptor : fieldDescriptorList) {
             if (fieldDescriptor.getRealContainingOneof() != null) {
                 Descriptors.OneofDescriptor oneofDescriptor = fieldDescriptor.getRealContainingOneof();
-                if (!builder.fields().stream().anyMatch(field -> field.name().equals(oneofDescriptor.getName()))) {
+                if (builder.fields().stream().noneMatch(field -> field.name().equals(oneofDescriptor.getName()))) {
                     builder.field(oneofDescriptor.getName(), toConnectSchemaForOneOfField(oneofDescriptor));
                 }
             } else {
