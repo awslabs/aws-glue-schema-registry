@@ -616,7 +616,10 @@ public class ToConnectTestDataGenerator {
         final Struct connectData = new Struct(connectSchema);
 
         connectData
-                .put("address", new Struct(connectSchema.field("address").schema()).put("street", "8th").put("zipcode", 98121))
+                .put("address",
+                        new Struct(connectSchema.field("address").schema())
+                                .put("street", "8th")
+                                .put("zipcode", 98121))
                 .put("status", "VALID")
                 .put("customer", new Struct(connectSchema.field("customer").schema()).put("name", "joe"))
                 .put("mapping", ImmutableMap.of("hello", true))
@@ -700,12 +703,13 @@ public class ToConnectTestDataGenerator {
     }
 
     public static List<Message> getNestedOneofProtobufMessages() {
+        NestedOneofTypeSyntax3.Metadata metadata = NestedOneofTypeSyntax3.Metadata.newBuilder()
+                .setMetadataId("hi")
+                .setRegistered("yup")
+                .build();
         return Arrays.asList(
                 NestedOneofTypeSyntax3.Event.newBuilder()
-                        .setMetadata(NestedOneofTypeSyntax3.Metadata.newBuilder()
-                                .setMetadataId("hi")
-                                .setRegistered("yup")
-                                .build())
+                        .setMetadata(metadata)
                         .setEventId("123123")
                         .build()
         );
@@ -738,9 +742,9 @@ public class ToConnectTestDataGenerator {
 
     private static Map<String, Schema> getNestedOneOfType(String packageName) {
         final SchemaBuilder metadataBuilder = SchemaBuilder.struct().name(getFullName(packageName, "Metadata"))
-                .field("metadata_id", SchemaBuilder.string().parameter(PROTOBUF_TAG, "1").optional().build())
+                .field("metadata_id", SchemaBuilder.string().parameter(PROTOBUF_TAG, "1").build())
                 .field("status", SchemaBuilder.struct()
-                        .name(getFullName(packageName, "status"))
+                        .name("status")
                         .field("registered", SchemaBuilder.string().parameter(PROTOBUF_TAG, "2").optional().build())
                         .field("unregistered", SchemaBuilder.string().parameter(PROTOBUF_TAG, "3").optional().build())
                         .parameter("protobuf.type", "oneof")

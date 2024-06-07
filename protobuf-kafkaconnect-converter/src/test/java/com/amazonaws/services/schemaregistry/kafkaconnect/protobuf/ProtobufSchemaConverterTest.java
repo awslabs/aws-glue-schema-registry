@@ -48,6 +48,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -188,6 +189,7 @@ public class ProtobufSchemaConverterTest {
             protobufSchemaConverter.toConnectData(TOPIC_NAME, serializedData);
 
         SchemaAndValue expectedSchemaAndValue = new SchemaAndValue(connectSchema, connectData);
+
         assertEquals(expectedSchemaAndValue, schemaAndValue);
     }
 
