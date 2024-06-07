@@ -43,7 +43,15 @@ import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromco
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_TYPE;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.PROTOBUF_PACKAGE;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterConstants.DECIMAL_DEFAULT_SCALE;
-import static com.google.protobuf.Descriptors.FieldDescriptor.Type.*;
+import static com.google.protobuf.Descriptors.FieldDescriptor.Type.FIXED32;
+import static com.google.protobuf.Descriptors.FieldDescriptor.Type.FIXED64;
+import static com.google.protobuf.Descriptors.FieldDescriptor.Type.SFIXED32;
+import static com.google.protobuf.Descriptors.FieldDescriptor.Type.SFIXED64;
+import static com.google.protobuf.Descriptors.FieldDescriptor.Type.SINT32;
+import static com.google.protobuf.Descriptors.FieldDescriptor.Type.SINT64;
+import static com.google.protobuf.Descriptors.FieldDescriptor.Type.UINT32;
+import static com.google.protobuf.Descriptors.FieldDescriptor.Type.UINT64;
+import static com.google.protobuf.Descriptors.FieldDescriptor.Type.ENUM;
 
 /**
  * Converts the Protobuf schema to Connect schemas.

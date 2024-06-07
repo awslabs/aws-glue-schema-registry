@@ -187,7 +187,6 @@ public class ProtobufSchemaConverterTest {
             protobufSchemaConverter.toConnectData(TOPIC_NAME, serializedData);
 
         SchemaAndValue expectedSchemaAndValue = new SchemaAndValue(connectSchema, connectData);
-
         assertEquals(expectedSchemaAndValue, schemaAndValue);
     }
 
