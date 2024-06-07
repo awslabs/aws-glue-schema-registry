@@ -702,10 +702,11 @@ public class ToConnectTestDataGenerator {
     public static List<Message> getNestedOneofProtobufMessages() {
         return Arrays.asList(
                 NestedOneofTypeSyntax3.Event.newBuilder()
-                        .setEventId("123123")
                         .setMetadata(NestedOneofTypeSyntax3.Metadata.newBuilder()
-                                .setMetadataId("abc")
-                                .setRegistered("yessir").build())
+                                .setMetadataId("hi")
+                                .setRegistered("yup")
+                                .build())
+                        .setEventId("123123")
                         .build()
         );
     }
@@ -731,22 +732,25 @@ public class ToConnectTestDataGenerator {
                                 .put("registered", "yup")
                         )
                 )
-                .put("event_id", "hello");
+                .put("event_id", "123123");
         return connectData;
     }
 
     private static Map<String, Schema> getNestedOneOfType(String packageName) {
         final SchemaBuilder metadataBuilder = SchemaBuilder.struct().name(getFullName(packageName, "Metadata"))
                 .field("metadata_id", SchemaBuilder.string().parameter(PROTOBUF_TAG, "1").optional().build())
-                .field("status", SchemaBuilder.struct().name(getFullName(packageName, "status"))
+                .field("status", SchemaBuilder.struct()
+                        .name(getFullName(packageName, "status"))
                         .field("registered", SchemaBuilder.string().parameter(PROTOBUF_TAG, "2").optional().build())
                         .field("unregistered", SchemaBuilder.string().parameter(PROTOBUF_TAG, "3").optional().build())
                         .parameter("protobuf.type", "oneof")
+                        .optional()
+                        .build()
                 );
 
         return ImmutableMap.<String, Schema> builder()
                 .put("metadata", metadataBuilder.parameter(PROTOBUF_TAG, "1").build())
-                .put("event_id", SchemaBuilder.string().name("event_id").parameter(PROTOBUF_TAG, "2").build())
+                .put("event_id", SchemaBuilder.string().parameter(PROTOBUF_TAG, "2").build())
                 .build();
     }
 
