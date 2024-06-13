@@ -1,10 +1,17 @@
-version: '2'
-
 services:
   zookeeper:
     image: 'public.ecr.aws/bitnami/zookeeper:latest'
     ports:
-      - '2181:2182'
+      - '2181'
+    container_name: local_zk
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+  
+  zookeeper2:
+    image: 'public.ecr.aws/bitnami/zookeeper:latest'
+    ports:
+      - '2181'
+    container_name: local_zk2
     environment:
       - ALLOW_ANONYMOUS_LOGIN=yes
 
@@ -21,6 +28,24 @@ services:
       - KAFKA_LISTENERS=PLAINTEXT://0.0.0.0:9092
       - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://localhost:9092
       - ALLOW_PLAINTEXT_LISTENER=yes
+      - KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE=true
+
+  kafka-target:
+    image: 'public.ecr.aws/bitnami/kafka:2.8'
+    ports:
+      - '9093:9093'
+    links:
+      - zookeeper
+    container_name: local_kafka_target
+    environment:
+      - KAFKA_BROKER_ID=2
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper2:2181
+      - ALLOW_PLAINTEXT_LISTENER=yes
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CLIENT:PLAINTEXT,EXTERNAL:PLAINTEXT
+      - KAFKA_CFG_LISTENERS=CLIENT://:9092,EXTERNAL://:9093
+      - KAFKA_CFG_ADVERTISED_LISTENERS=CLIENT://kafka-target:9092,EXTERNAL://localhost:9093
+      - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=CLIENT
+      - KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE=true
 
   localstack:
     container_name: "${LOCALSTACK_DOCKER_NAME-localstack_main}"
