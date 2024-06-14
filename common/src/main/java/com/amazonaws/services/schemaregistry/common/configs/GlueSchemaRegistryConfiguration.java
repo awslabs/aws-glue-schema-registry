@@ -46,6 +46,12 @@ public class GlueSchemaRegistryConfiguration {
     private AWSSchemaRegistryConstants.COMPRESSION compressionType = AWSSchemaRegistryConstants.COMPRESSION.NONE;
     private String endPoint;
     private String region;
+    // TODO: Remove configs that are not useful non replication use-cases
+    // https://github.com/awslabs/aws-glue-schema-registry/issues/292
+    private String sourceEndPoint;
+    private String sourceRegion;
+    private String targetEndPoint;
+    private String targetRegion;
     private long timeToLiveMillis = 24 * 60 * 60 * 1000L;
     private int cacheSize = 200;
     private AvroRecordType avroRecordType;
@@ -89,7 +95,11 @@ public class GlueSchemaRegistryConfiguration {
 
     private void buildSchemaRegistryConfigs(Map<String, ?> configs) {
         validateAndSetAWSRegion(configs);
+        validateAndSetAWSSourceRegion(configs);
+        validateAndSetAWSTargetRegion(configs);
         validateAndSetAWSEndpoint(configs);
+        validateAndSetAWSSourceEndpoint(configs);
+        validateAndSetAWSTargetEndpoint(configs);
         validateAndSetRegistryName(configs);
         validateAndSetDescription(configs);
         validateAndSetAvroRecordType(configs);
@@ -164,6 +174,20 @@ public class GlueSchemaRegistryConfiguration {
         }
     }
 
+    private void validateAndSetAWSSourceRegion(Map<String, ?> configs) {
+        if (isPresent(configs, AWSSchemaRegistryConstants.AWS_SOURCE_REGION)) {
+            this.sourceRegion = String.valueOf(configs.get(AWSSchemaRegistryConstants.AWS_SOURCE_REGION));
+        }
+    }
+
+    private void validateAndSetAWSTargetRegion(Map<String, ?> configs) {
+        if (isPresent(configs, AWSSchemaRegistryConstants.AWS_TARGET_REGION)) {
+            this.targetRegion = String.valueOf(configs.get(AWSSchemaRegistryConstants.AWS_TARGET_REGION));
+        } else {
+            this.targetRegion = String.valueOf(configs.get(AWSSchemaRegistryConstants.AWS_REGION));
+        }
+    }
+
     private void validateAndSetCompatibility(Map<String, ?> configs) {
         if (isPresent(configs, AWSSchemaRegistryConstants.COMPATIBILITY_SETTING)) {
             this.compatibilitySetting = Compatibility.fromValue(
@@ -196,15 +220,29 @@ public class GlueSchemaRegistryConfiguration {
         }
     }
 
+    private void validateAndSetAWSSourceEndpoint(Map<String, ?> configs) {
+        if (isPresent(configs, AWSSchemaRegistryConstants.AWS_SOURCE_ENDPOINT)) {
+            this.sourceEndPoint = String.valueOf(configs.get(AWSSchemaRegistryConstants.AWS_SOURCE_ENDPOINT));
+        }
+    }
+
+    private void validateAndSetAWSTargetEndpoint(Map<String, ?> configs) {
+        if (isPresent(configs, AWSSchemaRegistryConstants.AWS_TARGET_ENDPOINT)) {
+            this.targetEndPoint = String.valueOf(configs.get(AWSSchemaRegistryConstants.AWS_TARGET_ENDPOINT));
+        } else {
+            this.targetEndPoint = String.valueOf(configs.get(AWSSchemaRegistryConstants.AWS_ENDPOINT));
+        }
+    }
+
     private void validateAndSetProxyUrl(Map<String, ?> configs) {
         if (isPresent(configs, AWSSchemaRegistryConstants.PROXY_URL)) {
-    		String value = (String) configs.get(AWSSchemaRegistryConstants.PROXY_URL);
-    		try {
-    			this.proxyUrl = URI.create(value);
-    		} catch (IllegalArgumentException e) {
-        		String message = String.format("Proxy URL property is not a valid URL: %s", value);
-        		throw new AWSSchemaRegistryException(message, e);
-        	}
+                String value = (String) configs.get(AWSSchemaRegistryConstants.PROXY_URL);
+                try {
+                        this.proxyUrl = URI.create(value);
+                } catch (IllegalArgumentException e) {
+                        String message = String.format("Proxy URL property is not a valid URL: %s", value);
+                        throw new AWSSchemaRegistryException(message, e);
+                }
         }
     }
 

@@ -31,6 +31,22 @@ public final class AWSSchemaRegistryConstants {
      */
     public static final String AWS_REGION = "region";
     /**
+     * TODO: CR_GSR: AWS source endpoint to use while initializing the client for service.
+     */
+    public static final String AWS_SOURCE_ENDPOINT = "source.endpoint";
+    /**
+     * TODO: CR_GSR: AWS source region to use while initializing the client for service.
+     */
+    public static final String AWS_SOURCE_REGION = "source.region";
+    /**
+     * AWS target endpoint to use while initializing the client for service.
+     */
+    public static final String AWS_TARGET_ENDPOINT = "target.endpoint";
+    /**
+     * AWS target region to use while initializing the client for service.
+     */
+    public static final String AWS_TARGET_REGION = "target.region";
+    /**
      * Header Version Byte.
      */
     public static final byte HEADER_VERSION_BYTE = (byte) 3;

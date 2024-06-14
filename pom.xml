@@ -74,6 +74,7 @@
         <module>integration-tests</module>
         <module>jsonschema-kafkaconnect-converter</module>
         <module>protobuf-kafkaconnect-converter</module>
+        <module>cross-region-replication-converter</module>
     </modules>
 
     <properties>
