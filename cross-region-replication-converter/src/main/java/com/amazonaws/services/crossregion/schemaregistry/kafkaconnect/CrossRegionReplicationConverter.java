@@ -4,18 +4,16 @@ import com.amazonaws.services.schemaregistry.common.Schema;
 import com.amazonaws.services.schemaregistry.common.configs.GlueSchemaRegistryConfiguration;
 import com.amazonaws.services.schemaregistry.deserializers.GlueSchemaRegistryDeserializerImpl;
 import com.amazonaws.services.schemaregistry.exception.AWSSchemaRegistryException;
+import com.amazonaws.services.schemaregistry.exception.GlueSchemaRegistryIncompatibleDataException;
 import com.amazonaws.services.schemaregistry.serializers.GlueSchemaRegistrySerializerImpl;
 import com.amazonaws.services.schemaregistry.utils.AWSSchemaRegistryConstants;
-
 import lombok.Data;
-
 import org.apache.kafka.common.errors.SerializationException;
 import org.apache.kafka.connect.data.*;
 import org.apache.kafka.connect.errors.DataException;
 import org.apache.kafka.connect.storage.Converter;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
-
 import java.util.HashMap;
 import java.util.Map;
 
@@ -63,17 +61,17 @@ public class CrossRegionReplicationConverter implements Converter {
         Map<String, Object> sourceConfigs = new HashMap<>(configs);
         Map<String, Object> targetConfigs = new HashMap<>(configs);
 
-        if (configs.get(AWSSchemaRegistryConstants.AWS_SOURCE_REGION) == null){
+
+        if (configs.get(AWSSchemaRegistryConstants.AWS_SOURCE_REGION) == null) {
             throw new DataException("Source Region is not provided.");
-        }
-        else if (configs.get(AWSSchemaRegistryConstants.AWS_TARGET_REGION) == null && configs.get(AWSSchemaRegistryConstants.AWS_REGION) == null){
+        } else if (configs.get(AWSSchemaRegistryConstants.AWS_TARGET_REGION) == null && configs.get(AWSSchemaRegistryConstants.AWS_REGION) == null) {
             throw new DataException("Target Region is not provided.");
         }
 
         sourceConfigs.put(AWSSchemaRegistryConstants.AWS_REGION, configs.get(AWSSchemaRegistryConstants.AWS_SOURCE_REGION));
         targetConfigs.put(AWSSchemaRegistryConstants.AWS_REGION, configs.get(AWSSchemaRegistryConstants.AWS_TARGET_REGION));
 
-        serializer   = new GlueSchemaRegistrySerializerImpl(credentialsProvider, new GlueSchemaRegistryConfiguration(targetConfigs));
+        serializer = new GlueSchemaRegistrySerializerImpl(credentialsProvider, new GlueSchemaRegistryConfiguration(targetConfigs));
         deserializer = new GlueSchemaRegistryDeserializerImpl(credentialsProvider, new GlueSchemaRegistryConfiguration(sourceConfigs));
     }
 
@@ -90,7 +88,12 @@ public class CrossRegionReplicationConverter implements Converter {
             // https://github.com/awslabs/aws-glue-schema-registry/issues/294
             return serializer.encode(topic, deserializedSchema, deserializedBytes);
 
-        } catch (SerializationException | AWSSchemaRegistryException e){
+        }  catch(GlueSchemaRegistryIncompatibleDataException ex) {
+            //This exception is raised when the header bytes don't have schema id, version byte or compression byte
+            //This determines the data doesn't have schema information in it, so the actual message is returned.
+            return bytes;
+        }
+        catch (SerializationException | AWSSchemaRegistryException e) {
             throw new DataException("Converting Kafka Connect data to byte[] failed due to serialization/deserialization error: ", e);
         }
     }
