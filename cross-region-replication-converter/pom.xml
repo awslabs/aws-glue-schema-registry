@@ -20,7 +20,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>${parent.groupId}</groupId>
-    <artifactId>schema-registry-cross-region-kafkaconnect-converter</artifactId>
+    <artifactId>cross-region-replication-converter</artifactId>
     <version>${parent.version}</version>
     <name>AWS Cross Region Glue Schema Registry Kafka Connect Schema Replication Converter</name>
     <description>The AWS Glue Schema Registry Kafka Connect Converter enables Java developers to easily replicate
