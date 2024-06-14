@@ -1,10 +1,9 @@
 package com.amazonaws.services.crossregion.schemaregistry.kafkaconnect;
 
 import com.amazonaws.services.schemaregistry.common.Schema;
-import com.amazonaws.services.schemaregistry.deserializers.GlueSchemaRegistryDeserializationFacade;
 import com.amazonaws.services.schemaregistry.deserializers.GlueSchemaRegistryDeserializerImpl;
 import com.amazonaws.services.schemaregistry.exception.AWSSchemaRegistryException;
-import com.amazonaws.services.schemaregistry.serializers.GlueSchemaRegistrySerializationFacade;
+import com.amazonaws.services.schemaregistry.exception.GlueSchemaRegistryIncompatibleDataException;
 import com.amazonaws.services.schemaregistry.serializers.GlueSchemaRegistrySerializerImpl;
 import com.amazonaws.services.schemaregistry.utils.AWSSchemaRegistryConstants;
 import com.amazonaws.services.schemaregistry.utils.AvroRecordType;
@@ -28,8 +27,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
  * Unit tests for testing RegisterSchema class.
@@ -153,14 +151,7 @@ public class CrossRegionReplicationConverterTest {
      */
     @Test
     public void testConverter_fromConnectData_avroSchema_succeeds() {
-        String schemaDefinition = """
-                        {"namespace": "com.amazonaws.services.schemaregistry.serializers.avro",
-                            "type": "record",
-                            "name": "payment",
-                            "fields": [
-                                {"name": "id", "type": "string"},
-                                {"name": "id_6", "type": "double"}
-                            ]}""";
+        String schemaDefinition = "{\"namespace\":\"com.amazonaws.services.schemaregistry.serializers.avro\",\"type\":\"record\",\"name\":\"payment\",\"fields\":[{\"name\":\"id\",\"type\":\"string\"},{\"name\":\"id_6\",\"type\":\"double\"}]}";
         Schema testSchema = new Schema(schemaDefinition, DataFormat.AVRO.name(), testTopic);
         Struct expected = createStructRecord();
         doReturn(genericBytes).
@@ -223,6 +214,16 @@ public class CrossRegionReplicationConverterTest {
         doReturn(ENCODED_DATA)
                 .when(serializer).encode(testTopic, testSchema, genericBytes);
         assertEquals(converter.fromConnectData(testTopic, expected.schema(), jsonBytes), ENCODED_DATA);
+    }
+
+    /**
+     * Test Converter when message without schema is replicated.
+     */
+    @Test
+    public void testConverter_fromConnectData_noSchema_succeeds() {
+        Struct expected = createStructRecord();
+        when(deserializer.getData(genericBytes)).thenThrow(new GlueSchemaRegistryIncompatibleDataException("No schema in message"));
+        assertEquals(converter.fromConnectData(testTopic, expected.schema(), genericBytes), genericBytes);
     }
 
     /**
