@@ -48,7 +48,7 @@ services:
       - ALLOW_PLAINTEXT_LISTENER=yes
       - SOURCE=kafka:29092
       - DESTINATION=kafka-target:29092
-      - TOPICS=customer
+      - TOPICS=^SchemaRegistryTests.*
       - ACLS_ENABLED=false
     volumes:
       - glue-schema-registry-plugins:/opt/plugins
@@ -76,6 +76,6 @@ volumes:
     driver: local
     driver_opts:
       type: none
-      device: /Users/rakssubh/Workspace/aws-gsr-subham
+      device: ../
       o: bind
 
