@@ -52,6 +52,7 @@ services:
       - ACLS_ENABLED=false
     volumes:
       - glue-schema-registry-plugins:/opt/plugins
+      - "${HOME}/.aws/:/.aws:ro"
     depends_on:
       - kafka
       - kafka-target

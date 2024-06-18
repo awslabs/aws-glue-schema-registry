@@ -220,11 +220,6 @@ public class KafkaHelper {
         log.info("Start consuming from cluster {} with bootstrap {} ...", clusterArn, bootstrapBrokers);
 
         consumer.subscribe(Collections.singleton(topic));
-        System.out.println("=======================================================");
-        System.out.println("=======================================================");
-        System.out.println("TOPICS TO READ FROM: " + topic);
-        System.out.println("=======================================================");
-        System.out.println("=======================================================");
         List<ConsumerRecord<String, T>> consumerRecords = new ArrayList<>();
         final long now = System.currentTimeMillis();
         while (System.currentTimeMillis() - now < CONSUMER_RUNTIME.toMillis()) {
