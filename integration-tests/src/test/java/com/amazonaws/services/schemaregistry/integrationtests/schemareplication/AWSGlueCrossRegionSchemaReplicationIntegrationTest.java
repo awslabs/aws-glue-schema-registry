@@ -105,7 +105,7 @@ public class AWSGlueCrossRegionSchemaReplicationIntegrationTest {
 
         //Delay added to allow MM2 copy the data to destination cluster
         //before consuming the records from the destination cluster
-        Thread.sleep(60000);
+        Thread.sleep(8000);
 
         ConsumerProperties consumerProperties = ConsumerProperties.builder()
                 .topicName(String.format("%s.%s",SRC_CLUSTER_ALIAS, topic))
@@ -149,7 +149,7 @@ public class AWSGlueCrossRegionSchemaReplicationIntegrationTest {
 
         //Delay added to allow MM2 copy the data to destination cluster
         //before consuming the records from the destination cluster
-        Thread.sleep(3000);
+        Thread.sleep(8000);
 
         ConsumerProperties.ConsumerPropertiesBuilder consumerPropertiesBuilder = ConsumerProperties.builder()
                 .topicName(String.format("%s.%s",SRC_CLUSTER_ALIAS, topic));
