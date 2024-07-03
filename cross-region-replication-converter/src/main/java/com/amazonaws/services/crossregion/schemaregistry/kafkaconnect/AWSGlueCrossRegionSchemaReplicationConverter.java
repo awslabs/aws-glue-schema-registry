@@ -18,7 +18,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Data
-public class CrossRegionReplicationConverter implements Converter {
+public class AWSGlueCrossRegionSchemaReplicationConverter implements Converter {
 
     private AwsCredentialsProvider credentialsProvider;
     private GlueSchemaRegistryDeserializerImpl deserializer;
@@ -28,14 +28,14 @@ public class CrossRegionReplicationConverter implements Converter {
     /**
      * Constructor used by Kafka Connect user.
      */
-    public CrossRegionReplicationConverter(){};
+    public AWSGlueCrossRegionSchemaReplicationConverter(){};
 
     /**
      * Constructor accepting AWSCredentialsProvider.
      *
      * @param credentialsProvider AWSCredentialsProvider instance.
      */
-    public CrossRegionReplicationConverter(
+    public AWSGlueCrossRegionSchemaReplicationConverter(
             AwsCredentialsProvider credentialsProvider,
             GlueSchemaRegistryDeserializerImpl deserializerImpl,
             GlueSchemaRegistrySerializerImpl serializerImpl) {

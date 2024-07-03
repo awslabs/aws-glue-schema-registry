@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.amazonaws.services.schemaregistry.integrationtests.schema_replication;
+package com.amazonaws.services.schemaregistry.integrationtests.schemareplication;
 
 public class LocalKafkaClusterHelper implements KafkaClusterHelper {
     private static final String FAKE_CLUSTER_ARN = "FAKE_CLUSTER_ARN";

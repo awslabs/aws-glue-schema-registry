@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.amazonaws.services.schemaregistry.integrationtests.schema_replication;
+package com.amazonaws.services.schemaregistry.integrationtests.schemareplication;
 
 public interface KafkaClusterHelper {
     String getOrCreateCluster();

@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.amazonaws.services.schemaregistry.integrationtests.schema_replication;
+package com.amazonaws.services.schemaregistry.integrationtests.schemareplication;
 
 import com.amazonaws.services.schemaregistry.integrationtests.properties.GlueSchemaRegistryConnectionProperties;
 import lombok.Builder;
@@ -20,15 +20,9 @@ import lombok.Getter;
 
 @Builder
 @Getter
-public class ProducerProperties implements GlueSchemaRegistryConnectionProperties {
+public class ConsumerProperties implements GlueSchemaRegistryConnectionProperties {
     private String topicName;
-    private String schemaName;
-    private String dataFormat;
-    private String compatibilityType;
-    private String autoRegistrationEnabled;
-    // Streaming properties
-    private String inputTopic;
-    private String outputTopic;
-    private String recordType; // required only for AVRO or Protobuf case
+    private String avroRecordType;
+    private String protobufMessageType;
 }
 

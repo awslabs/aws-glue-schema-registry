@@ -22,7 +22,6 @@ import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.services.glue.model.DataFormat;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -35,7 +34,7 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 
-public class CrossRegionReplicationConverterTest {
+public class AWSGlueCrossRegionSchemaReplicationConverterTest {
     @Mock
     private AwsCredentialsProvider credProvider;
     @Mock

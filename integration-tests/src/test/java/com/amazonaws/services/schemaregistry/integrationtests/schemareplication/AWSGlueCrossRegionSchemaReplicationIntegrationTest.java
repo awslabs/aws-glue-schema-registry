@@ -12,19 +12,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.amazonaws.services.schemaregistry.integrationtests.schema_replication;
+package com.amazonaws.services.schemaregistry.integrationtests.schemareplication;
 
-import com.amazonaws.services.schemaregistry.deserializers.protobuf.ProtobufClassName;
 import com.amazonaws.services.schemaregistry.integrationtests.generators.*;
 import com.amazonaws.services.schemaregistry.integrationtests.properties.GlueSchemaRegistryConnectionProperties;
-import com.amazonaws.services.schemaregistry.serializers.json.JsonDataWithSchema;
-import com.amazonaws.services.schemaregistry.utils.AWSSchemaRegistryConstants;
 import com.amazonaws.services.schemaregistry.utils.AvroRecordType;
 import com.amazonaws.services.schemaregistry.utils.ProtobufMessageType;
 import com.google.protobuf.DynamicMessage;
 import com.google.protobuf.Message;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.avro.generic.GenericRecord;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -33,7 +29,6 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
@@ -62,7 +57,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * The test class for schema replication related tests for Glue Schema Registry
  */
 @Slf4j
-public class GlueSchemaRegistrySchemaReplicationIntegrationTest {
+public class AWSGlueCrossRegionSchemaReplicationIntegrationTest {
     private static final String SRC_CLUSTER_ALIAS = "src";
     private static final String TOPIC_NAME_PREFIX = "SchemaRegistryTests";
     private static final String SCHEMA_REGISTRY_SRC_ENDPOINT_OVERRIDE = GlueSchemaRegistryConnectionProperties.SRC_ENDPOINT;
@@ -110,7 +105,7 @@ public class GlueSchemaRegistrySchemaReplicationIntegrationTest {
 
         //Delay added to allow MM2 copy the data to destination cluster
         //before consuming the records from the destination cluster
-        Thread.sleep(5000);
+        Thread.sleep(60000);
 
         ConsumerProperties consumerProperties = ConsumerProperties.builder()
                 .topicName(String.format("%s.%s",SRC_CLUSTER_ALIAS, topic))
