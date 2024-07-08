@@ -1,6 +1,7 @@
 package com.amazonaws.services.crossregion.schemaregistry.kafkaconnect;
 
 import com.amazonaws.services.schemaregistry.common.Schema;
+import com.amazonaws.services.schemaregistry.common.SchemaV2;
 import com.amazonaws.services.schemaregistry.common.configs.GlueSchemaRegistryConfiguration;
 import com.amazonaws.services.schemaregistry.deserializers.GlueSchemaRegistryDeserializerImpl;
 import com.amazonaws.services.schemaregistry.exception.AWSSchemaRegistryException;
@@ -82,11 +83,12 @@ public class AWSGlueCrossRegionSchemaReplicationConverter implements Converter {
 
         try {
             byte[] deserializedBytes = deserializer.getData(bytes);
-            Schema deserializedSchema = deserializer.getSchema(bytes);
+            SchemaV2 deserializedSchema = deserializer.getSchemaV2(bytes);
+            System.out.println("COMPATIBILITY MODE #1:" + deserializedSchema.getCompatibilityMode());
             //The registry is decided by the configuration in the target region , schema name is the same as the source region
             // TODO: Prefix topic name with source cluster alias
             // https://github.com/awslabs/aws-glue-schema-registry/issues/294
-            return serializer.encode(topic, deserializedSchema, deserializedBytes);
+            return serializer.encodeV2(topic, deserializedSchema, deserializedBytes);
 
         }  catch(GlueSchemaRegistryIncompatibleDataException ex) {
             //This exception is raised when the header bytes don't have schema id, version byte or compression byte

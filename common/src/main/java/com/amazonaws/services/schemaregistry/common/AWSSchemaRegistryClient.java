@@ -36,26 +36,7 @@ import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.glue.GlueClient;
 import software.amazon.awssdk.services.glue.GlueClientBuilder;
-import software.amazon.awssdk.services.glue.model.AlreadyExistsException;
-import software.amazon.awssdk.services.glue.model.CreateSchemaRequest;
-import software.amazon.awssdk.services.glue.model.CreateSchemaResponse;
-import software.amazon.awssdk.services.glue.model.DataFormat;
-import software.amazon.awssdk.services.glue.model.GetSchemaByDefinitionRequest;
-import software.amazon.awssdk.services.glue.model.GetSchemaByDefinitionResponse;
-import software.amazon.awssdk.services.glue.model.GetSchemaVersionRequest;
-import software.amazon.awssdk.services.glue.model.GetSchemaVersionResponse;
-import software.amazon.awssdk.services.glue.model.GetTagsRequest;
-import software.amazon.awssdk.services.glue.model.GetTagsResponse;
-import software.amazon.awssdk.services.glue.model.GlueRequest;
-import software.amazon.awssdk.services.glue.model.MetadataKeyValuePair;
-import software.amazon.awssdk.services.glue.model.PutSchemaVersionMetadataRequest;
-import software.amazon.awssdk.services.glue.model.PutSchemaVersionMetadataResponse;
-import software.amazon.awssdk.services.glue.model.QuerySchemaVersionMetadataRequest;
-import software.amazon.awssdk.services.glue.model.QuerySchemaVersionMetadataResponse;
-import software.amazon.awssdk.services.glue.model.RegisterSchemaVersionRequest;
-import software.amazon.awssdk.services.glue.model.RegisterSchemaVersionResponse;
-import software.amazon.awssdk.services.glue.model.RegistryId;
-import software.amazon.awssdk.services.glue.model.SchemaId;
+import software.amazon.awssdk.services.glue.model.*;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -193,6 +174,35 @@ public class AWSSchemaRegistryClient {
         }
     }
 
+    public GetSchemaResponse getSchemaResponse(@NonNull SchemaId schemaId)
+            throws AWSSchemaRegistryException {
+        GetSchemaResponse schemaResponse = null;
+
+        try {
+            schemaResponse = client.getSchema(getSchemaRequest(schemaId));
+            validateSchemaResponse(schemaResponse, schemaId);
+        } catch (Exception e) {
+            String errorMessage = String.format("Failed to get schema Id = %s", schemaId);
+            throw new AWSSchemaRegistryException(errorMessage, e);
+        }
+
+        return schemaResponse;
+    }
+
+    private GetSchemaRequest getSchemaRequest(SchemaId schemaId) {
+        GetSchemaRequest getSchemaRequest = GetSchemaRequest.builder()
+                .schemaId(schemaId)
+                .build();
+        return getSchemaRequest;
+    }
+
+    private void validateSchemaResponse(GetSchemaResponse schemaResponse, SchemaId schemaId) {
+        if (schemaResponse == null || schemaResponse.compatibility() == null) {
+            String message = String.format("Schema is not present for the schema id = %s", schemaId);
+            throw new AWSSchemaRegistryException(message);
+        }
+    }
+
     private UUID returnSchemaVersionIdIfAvailable(GetSchemaByDefinitionResponse response) {
         if (response.schemaVersionId() != null
                 && response.statusAsString().equals(AWSSchemaRegistryConstants.SchemaVersionStatus.AVAILABLE.toString())) {
@@ -258,6 +268,46 @@ public class AWSSchemaRegistryClient {
             String errorMessage = String.format(
                     "Create schema :: Call failed when creating the schema with the schema registry for"
                     + " schema name = %s", schemaName);
+            throw new AWSSchemaRegistryException(errorMessage, e);
+        }
+
+        putSchemaVersionMetadata(schemaVersionId, metadata);
+
+        return schemaVersionId;
+    }
+
+
+
+    /**
+     * Create a schema using the Glue client and return the response object
+     * @param schemaName Schema Name
+     * @param dataFormat Data Format
+     * @param schemaDefinition Schema Definition
+     * @param compatibility Schema Compatibility mode
+     * @param metadata schema version metadata
+     * @return           CreateSchemaResponse object
+     * @throws AWSSchemaRegistryException on any error during the schema creation
+     */
+    public UUID createSchemaV2(String schemaName,
+                             String dataFormat,
+                             String schemaDefinition,
+                             Compatibility compatibility,
+                             Map<String, String> metadata) throws AWSSchemaRegistryException {
+        UUID schemaVersionId = null;
+        try {
+            log.info("Auto Creating schema with schemaName: {} and schemaDefinition : {}", schemaName,
+                    schemaDefinition);
+            CreateSchemaResponse createSchemaResponse =
+                    client.createSchema(getCreateSchemaRequestObjectV2(schemaName, dataFormat, schemaDefinition, compatibility));
+            schemaVersionId = UUID.fromString(createSchemaResponse.schemaVersionId());
+        } catch (AlreadyExistsException e) {
+            log.warn("Schema is already created, this could be caused by multiple producers racing to "
+                    + "auto-create schema.");
+            schemaVersionId = registerSchemaVersion(schemaDefinition, schemaName, dataFormat, metadata);
+        } catch (Exception e) {
+            String errorMessage = String.format(
+                    "Create schema :: Call failed when creating the schema with the schema registry for"
+                            + " schema name = %s", schemaName);
             throw new AWSSchemaRegistryException(errorMessage, e);
         }
 
@@ -338,6 +388,19 @@ public class AWSSchemaRegistryClient {
                 .schemaName(schemaName)
                 .schemaDefinition(schemaDefinition)
                 .compatibility(glueSchemaRegistryConfiguration.getCompatibilitySetting())
+                .tags(glueSchemaRegistryConfiguration.getTags())
+                .build();
+    }
+
+    private CreateSchemaRequest getCreateSchemaRequestObjectV2(String schemaName, String dataFormat, String schemaDefinition, Compatibility compatibility) {
+        return CreateSchemaRequest
+                .builder()
+                .dataFormat(DataFormat.valueOf(dataFormat))
+                .description(glueSchemaRegistryConfiguration.getDescription())
+                .registryId(RegistryId.builder().registryName(glueSchemaRegistryConfiguration.getRegistryName()).build())
+                .schemaName(schemaName)
+                .schemaDefinition(schemaDefinition)
+                .compatibility(compatibility)
                 .tags(glueSchemaRegistryConfiguration.getTags())
                 .build();
     }

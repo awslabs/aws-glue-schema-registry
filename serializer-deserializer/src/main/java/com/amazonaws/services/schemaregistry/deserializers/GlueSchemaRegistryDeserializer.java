@@ -15,6 +15,7 @@
 package com.amazonaws.services.schemaregistry.deserializers;
 
 import com.amazonaws.services.schemaregistry.common.Schema;
+import com.amazonaws.services.schemaregistry.common.SchemaV2;
 
 /**
  * Entry point to deserialization capabilities of Glue Schema Registry client library.
@@ -38,6 +39,15 @@ public interface GlueSchemaRegistryDeserializer {
      * @return schema {@link Schema} A Schema object representing the schema information.
      */
     Schema getSchema(byte[] data);
+
+    /**
+     * Returns the schema encoded in the byte array by Glue Schema Registry serializer.
+     * The schema returned is administered by Glue Schema Registry.
+     *
+     * @param data byte[] Schema Registry encoded byte array.
+     * @return schema {@link SchemaV2} A Schema object representing the schema information.
+     */
+    SchemaV2 getSchemaV2(byte[] data);
 
     /**
      * Determines if the given byte array can be deserialized by Glue Schema Registry deserializer.

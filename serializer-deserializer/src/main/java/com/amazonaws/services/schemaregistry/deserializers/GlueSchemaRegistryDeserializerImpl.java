@@ -15,6 +15,7 @@
 package com.amazonaws.services.schemaregistry.deserializers;
 
 import com.amazonaws.services.schemaregistry.common.Schema;
+import com.amazonaws.services.schemaregistry.common.SchemaV2;
 import com.amazonaws.services.schemaregistry.common.configs.GlueSchemaRegistryConfiguration;
 import com.google.common.annotations.VisibleForTesting;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
@@ -65,6 +66,16 @@ public class GlueSchemaRegistryDeserializerImpl implements GlueSchemaRegistryDes
     @Override
     public Schema getSchema(final byte[] data) {
         return glueSchemaRegistryDeserializationFacade.getSchema(data);
+    }
+
+    /**
+     * {@inheritDoc}
+     * @param data byte[] Schema Registry encoded byte array.
+     * @return schema {@link SchemaV2} A Schema object representing the schema information along with compatibility mode.
+     */
+    @Override
+    public SchemaV2 getSchemaV2(final byte[] data) {
+        return glueSchemaRegistryDeserializationFacade.getSchemaV2(data);
     }
 
     /**
