@@ -92,8 +92,6 @@ public class GlueSchemaRegistrySerializationFacade {
         Compatibility compatibility = serializerInput.getCompatibility();
         String dataFormat = serializerInput.getDataFormat();
 
-        System.out.println("COMPATIBILITY MODE #3:" + compatibility);
-
         Map<String, String> metadata = constructSchemaVersionMetadata(transportName);
 
         UUID schemaVersionId =
@@ -158,8 +156,6 @@ public class GlueSchemaRegistrySerializationFacade {
                         DataFormat.valueOf(dataFormat), glueSchemaRegistryConfiguration);
         //Ensures the data bytes conform to schema definition for data formats like JSON.
         dataFormatSerializer.validate(schemaDefinition, data);
-
-        System.out.println("COMPATIBILITY MODE #2:" + schema.getCompatibilityMode());
 
         UUID schemaVersionId = getOrRegisterSchemaVersionV2(AWSSerializerInput.builder()
                 .schemaDefinition(schemaDefinition)

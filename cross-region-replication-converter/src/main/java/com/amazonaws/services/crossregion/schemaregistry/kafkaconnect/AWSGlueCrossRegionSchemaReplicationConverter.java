@@ -84,7 +84,7 @@ public class AWSGlueCrossRegionSchemaReplicationConverter implements Converter {
         try {
             byte[] deserializedBytes = deserializer.getData(bytes);
             SchemaV2 deserializedSchema = deserializer.getSchemaV2(bytes);
-            System.out.println("COMPATIBILITY MODE #1:" + deserializedSchema.getCompatibilityMode());
+
             //The registry is decided by the configuration in the target region , schema name is the same as the source region
             // TODO: Prefix topic name with source cluster alias
             // https://github.com/awslabs/aws-glue-schema-registry/issues/294
