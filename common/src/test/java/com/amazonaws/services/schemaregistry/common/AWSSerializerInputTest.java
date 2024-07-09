@@ -1,6 +1,8 @@
 package com.amazonaws.services.schemaregistry.common;
 
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.services.glue.model.Compatibility;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
@@ -29,5 +31,31 @@ public class AWSSerializerInputTest {
 
         assertNull(awsSerializerInput.getSchemaName());
         assertEquals(DEFAULT_TRANSPORT_NAME, awsSerializerInput.getTransportName());
+    }
+
+    @Test
+    public void testBuilder_withSchemaNameAndTransportNameAndCompatibility_objectBuildSuccessfully() {
+        AWSSerializerInput awsSerializerInput = AWSSerializerInput.builder()
+                .transportName(TRANSPORT_NAME)
+                .schemaName(SCHEMA_NAME)
+                .compatibility(Compatibility.FORWARD_ALL)
+                .build();
+
+        assertEquals(SCHEMA_NAME, awsSerializerInput.getSchemaName());
+        assertEquals(Compatibility.FORWARD_ALL, awsSerializerInput.getCompatibility());
+        assertEquals(TRANSPORT_NAME, awsSerializerInput.getTransportName());
+    }
+
+    @Test
+    public void testBuilder_withNullSchemaNameAndNullTransportNameAndNullCompatibility_objectBuildSuccessfully() {
+        AWSSerializerInput awsSerializerInput = AWSSerializerInput.builder()
+                .transportName(null)
+                .schemaName(null)
+                .compatibility(null)
+                .build();
+
+        assertNull(awsSerializerInput.getSchemaName());
+        assertEquals(DEFAULT_TRANSPORT_NAME, awsSerializerInput.getTransportName());
+        assertEquals(Compatibility.BACKWARD, awsSerializerInput.getCompatibility());
     }
 }

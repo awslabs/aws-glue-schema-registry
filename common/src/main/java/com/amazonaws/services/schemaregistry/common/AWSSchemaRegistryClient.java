@@ -197,7 +197,7 @@ public class AWSSchemaRegistryClient {
     }
 
     private void validateSchemaResponse(GetSchemaResponse schemaResponse, SchemaId schemaId) {
-        if (schemaResponse == null || schemaResponse.compatibility() == null) {
+        if (schemaResponse == null) {
             String message = String.format("Schema is not present for the schema id = %s", schemaId);
             throw new AWSSchemaRegistryException(message);
         }

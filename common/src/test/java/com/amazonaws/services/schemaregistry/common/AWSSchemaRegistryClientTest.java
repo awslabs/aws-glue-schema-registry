@@ -32,25 +32,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.services.glue.GlueClient;
-import software.amazon.awssdk.services.glue.model.CreateSchemaRequest;
-import software.amazon.awssdk.services.glue.model.CreateSchemaResponse;
-import software.amazon.awssdk.services.glue.model.DataFormat;
-import software.amazon.awssdk.services.glue.model.EntityNotFoundException;
-import software.amazon.awssdk.services.glue.model.GetSchemaByDefinitionRequest;
-import software.amazon.awssdk.services.glue.model.GetSchemaByDefinitionResponse;
-import software.amazon.awssdk.services.glue.model.GetSchemaVersionRequest;
-import software.amazon.awssdk.services.glue.model.GetSchemaVersionResponse;
-import software.amazon.awssdk.services.glue.model.GetTagsRequest;
-import software.amazon.awssdk.services.glue.model.GetTagsResponse;
-import software.amazon.awssdk.services.glue.model.MetadataKeyValuePair;
-import software.amazon.awssdk.services.glue.model.PutSchemaVersionMetadataRequest;
-import software.amazon.awssdk.services.glue.model.PutSchemaVersionMetadataResponse;
-import software.amazon.awssdk.services.glue.model.QuerySchemaVersionMetadataRequest;
-import software.amazon.awssdk.services.glue.model.QuerySchemaVersionMetadataResponse;
-import software.amazon.awssdk.services.glue.model.RegisterSchemaVersionRequest;
-import software.amazon.awssdk.services.glue.model.RegisterSchemaVersionResponse;
-import software.amazon.awssdk.services.glue.model.RegistryId;
-import software.amazon.awssdk.services.glue.model.SchemaId;
+import software.amazon.awssdk.services.glue.model.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -86,6 +68,7 @@ public class AWSSchemaRegistryClientTest {
     private Map<String, String> testTags;
 
     private static final UUID SCHEMA_ID_FOR_TESTING = UUID.fromString("b7b4a7f0-9c96-4e4a-a687-fb5de9ef0c63");
+    private static final String SCHEMA_ARN_FOR_TESTING = "test-schema-arn";
     public static final String AVRO_USER_SCHEMA_FILE = "src/test/java/resources/avro/user.avsc";
 
     @BeforeEach
@@ -291,6 +274,31 @@ public class AWSSchemaRegistryClientTest {
         assertEquals(SCHEMA_ID_FOR_TESTING.toString(), awsSchemaRegistryClient.getSchemaVersionResponse(SCHEMA_ID_FOR_TESTING.toString()).schemaVersionId());
     }
 
+    @Test
+    public void testGetSchemaResponse_nullSchemaId_throwsException() {
+        Assertions.assertThrows(IllegalArgumentException.class , () ->  awsSchemaRegistryClient
+                .getSchemaResponse(null));
+    }
+
+    @Test
+    public void testGetSchemaResponse_setSchemaId_returnsSchemaResponse() {
+        GetSchemaResponse getSchemaResponse = GetSchemaResponse.builder().schemaArn(SCHEMA_ARN_FOR_TESTING).build();
+        SchemaId schemaId = SchemaId.builder().schemaArn(SCHEMA_ARN_FOR_TESTING).build();
+        GetSchemaRequest getSchemaRequest = GetSchemaRequest.builder().schemaId(schemaId).build();
+        when(mockGlueClient.getSchema(getSchemaRequest)).thenReturn(getSchemaResponse);
+
+        assertEquals(SCHEMA_ARN_FOR_TESTING, awsSchemaRegistryClient.getSchemaResponse(schemaId).schemaArn());
+    }
+
+    @Test
+    public void testGetSchemaResponse_nullSchemaResponse_throwsException() {
+        SchemaId schemaId = SchemaId.builder().schemaArn(SCHEMA_ARN_FOR_TESTING).build();
+        GetSchemaRequest getSchemaRequest = GetSchemaRequest.builder().schemaId(schemaId).build();
+        when(mockGlueClient.getSchema(getSchemaRequest)).thenReturn(null);
+
+        Assertions.assertThrows(AWSSchemaRegistryException.class , () ->  awsSchemaRegistryClient.getSchemaResponse(schemaId));
+    }
+
 
     private Map<String, String> getConfigsWithAutoRegistrationSetting(boolean autoRegistrationSetting) {
         Map<String, String> localConfigs = new HashMap<>();
@@ -367,6 +375,63 @@ public class AWSSchemaRegistryClientTest {
 
         try {
             awsSchemaRegistryClient.createSchema(schemaName, dataFormatName, userSchemaDefinition, getMetadata());
+        } catch (Exception e) {
+            assertEquals(EntityNotFoundException.class, e.getCause().getClass());
+            assertEquals(AWSSchemaRegistryException.class, e.getClass());
+            String expectedErrorMessage = "Create schema :: Call failed when creating the schema with the schema registry for schema name = " + schemaName;
+            assertEquals(expectedErrorMessage, e.getMessage());
+        }
+    }
+
+    @Test
+    public void testCreateSchemaV2_schemaNameWithDataFormat_returnsResponseSuccessfully() throws NoSuchFieldException, IllegalAccessException {
+        awsSchemaRegistryClient = configureAWSSchemaRegistryClientWithSerdeConfig(awsSchemaRegistryClient, glueSchemaRegistryConfiguration);
+        Compatibility SCHEMA_COMPATIBILITY_MODE = Compatibility.FORWARD_ALL;
+        String schemaName = configs.get(AWSSchemaRegistryConstants.SCHEMA_NAME).toString();
+        String dataFormatName = DataFormat.AVRO.name();
+        String schemaVersionId = UUID.randomUUID().toString();
+
+        CreateSchemaResponse createSchemaResponse = CreateSchemaResponse.builder()
+                .schemaName(schemaName)
+                .dataFormat(dataFormatName)
+                .schemaVersionId(schemaVersionId)
+                .build();
+        CreateSchemaRequest createSchemaRequest = CreateSchemaRequest.builder()
+                .dataFormat(DataFormat.AVRO)
+                .description(glueSchemaRegistryConfiguration.getDescription())
+                .schemaName(schemaName)
+                .schemaDefinition(userSchemaDefinition)
+                .compatibility(SCHEMA_COMPATIBILITY_MODE)
+                .tags(glueSchemaRegistryConfiguration.getTags())
+                .registryId(RegistryId.builder().registryName(glueSchemaRegistryConfiguration.getRegistryName()).build())
+                .build();
+
+        when(mockGlueClient.createSchema(createSchemaRequest)).thenReturn(createSchemaResponse);
+        assertEquals(UUID.fromString(schemaVersionId), awsSchemaRegistryClient
+                .createSchemaV2(schemaName, dataFormatName, userSchemaDefinition, SCHEMA_COMPATIBILITY_MODE, getMetadata()));
+    }
+
+    @Test
+    public void testCreateSchemaV2_clientExceptionResponse_returnsAWSSchemaRegistryException() throws NoSuchFieldException, IllegalAccessException {
+        awsSchemaRegistryClient = configureAWSSchemaRegistryClientWithSerdeConfig(awsSchemaRegistryClient,
+                glueSchemaRegistryConfiguration);
+        Compatibility SCHEMA_COMPATIBILITY_MODE = Compatibility.FORWARD_ALL;
+        String schemaName = configs.get(AWSSchemaRegistryConstants.SCHEMA_NAME).toString();
+        String dataFormatName = DataFormat.AVRO.name();
+        CreateSchemaRequest createSchemaRequest = CreateSchemaRequest.builder()
+                .dataFormat(DataFormat.AVRO)
+                .description(glueSchemaRegistryConfiguration.getDescription())
+                .schemaName(schemaName)
+                .schemaDefinition(userSchemaDefinition)
+                .compatibility(SCHEMA_COMPATIBILITY_MODE)
+                .tags(glueSchemaRegistryConfiguration.getTags())
+                .registryId(RegistryId.builder().registryName(glueSchemaRegistryConfiguration.getRegistryName()).build())
+                .build();
+
+        when(mockGlueClient.createSchema(createSchemaRequest)).thenThrow(EntityNotFoundException.class);
+
+        try {
+            awsSchemaRegistryClient.createSchemaV2(schemaName, dataFormatName, userSchemaDefinition, SCHEMA_COMPATIBILITY_MODE, getMetadata());
         } catch (Exception e) {
             assertEquals(EntityNotFoundException.class, e.getCause().getClass());
             assertEquals(AWSSchemaRegistryException.class, e.getClass());
