@@ -116,7 +116,8 @@ cleanUpConnectFiles() {
 cleanUpDockerResources || true
 # Start Kafka using docker command asynchronously
 docker-compose up --no-attach localstack &
-sleep 10
+## Pause to allow docker build to complete
+sleep 60
 ## Run mvn tests for Kafka, Kinesis Platforms and Schema Replication
 cd .. && mvn --file integration-tests/pom.xml verify -Psurefire -X && cd integration-tests
 cleanUpDockerResources

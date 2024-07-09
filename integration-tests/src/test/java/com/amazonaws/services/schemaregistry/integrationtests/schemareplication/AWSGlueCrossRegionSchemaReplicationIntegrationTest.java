@@ -60,7 +60,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @Slf4j
 public class AWSGlueCrossRegionSchemaReplicationIntegrationTest {
     private static final String SRC_CLUSTER_ALIAS = "src";
-    private static final String TOPIC_NAME_PREFIX = "SchemaRegistryTests";
+    private static final String TOPIC_NAME_PREFIX = "SchemaReplicationTests";
     private static final String SCHEMA_REGISTRY_SRC_ENDPOINT_OVERRIDE = GlueSchemaRegistryConnectionProperties.SRC_ENDPOINT;
     private static final String SCHEMA_REGISTRY_DEST_ENDPOINT_OVERRIDE = GlueSchemaRegistryConnectionProperties.DEST_ENDPOINT;
     private static final String SRC_REGION = GlueSchemaRegistryConnectionProperties.SRC_REGION;

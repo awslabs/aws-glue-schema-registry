@@ -48,7 +48,7 @@ services:
       - ALLOW_PLAINTEXT_LISTENER=yes
       - SOURCE=kafka:29092
       - DESTINATION=kafka-target:29092
-      - TOPICS=^SchemaRegistryTests.*
+      - TOPICS=^SchemaReplicationTests.*
       - ACLS_ENABLED=false
       - AWS_PROFILE=default
     volumes:
