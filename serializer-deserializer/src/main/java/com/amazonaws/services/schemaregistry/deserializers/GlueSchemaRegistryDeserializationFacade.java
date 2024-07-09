@@ -95,6 +95,7 @@ public class GlueSchemaRegistryDeserializationFacade implements Closeable {
 
         this.deserializerFactory = new GlueSchemaRegistryDeserializerFactory();
         this.cache = initializeCache();
+        this.cacheV2 = initializeCacheV2();
     }
 
     private LoadingCache<UUID, Schema> initializeCache() {

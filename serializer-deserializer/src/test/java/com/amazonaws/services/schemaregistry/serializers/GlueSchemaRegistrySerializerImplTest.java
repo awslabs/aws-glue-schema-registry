@@ -15,6 +15,7 @@
 package com.amazonaws.services.schemaregistry.serializers;
 
 import com.amazonaws.services.schemaregistry.common.Schema;
+import com.amazonaws.services.schemaregistry.common.SchemaV2;
 import com.amazonaws.services.schemaregistry.common.configs.GlueSchemaRegistryConfiguration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -22,6 +23,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
+import software.amazon.awssdk.services.glue.model.Compatibility;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -43,6 +45,7 @@ public class GlueSchemaRegistrySerializerImplTest {
     private final static byte[] ENCODED_DATA = new byte[] { 8, 9, 12, 83, 82 };
     private final static byte[] USER_DATA = new byte[] { 12, 83, 82 };
     private final static Schema SCHEMA_REGISTRY_SCHEMA = new Schema("{}", "AVRO", "schemaFoo");
+    private final static SchemaV2 SCHEMA_REGISTRY_SCHEMAV2 = new SchemaV2("{}", "AVRO", "schemaFoo", Compatibility.FORWARD);
 
     @BeforeEach
     void setUp() {
@@ -73,6 +76,16 @@ public class GlueSchemaRegistrySerializerImplTest {
             .when(glueSchemaRegistrySerializationFacade).encode(TRANSPORT_NAME, SCHEMA_REGISTRY_SCHEMA, USER_DATA);
 
         byte [] actual = glueSchemaRegistrySerializer.encode(TRANSPORT_NAME, SCHEMA_REGISTRY_SCHEMA, USER_DATA);
+
+        assertEquals(ENCODED_DATA, actual);
+    }
+
+    @Test
+    public void getSchemaV2_WhenASchemaV2IsPassed_EncodesIntoSchemaRegistryMessage() {
+        doReturn(ENCODED_DATA)
+                .when(glueSchemaRegistrySerializationFacade).encodeV2(TRANSPORT_NAME, SCHEMA_REGISTRY_SCHEMAV2, USER_DATA);
+
+        byte [] actual = glueSchemaRegistrySerializer.encodeV2(TRANSPORT_NAME, SCHEMA_REGISTRY_SCHEMAV2, USER_DATA);
 
         assertEquals(ENCODED_DATA, actual);
     }

@@ -14,12 +14,7 @@
  */
 package com.amazonaws.services.schemaregistry.deserializers;
 
-import com.amazonaws.services.schemaregistry.common.AWSDeserializerInput;
-import com.amazonaws.services.schemaregistry.common.AWSSchemaRegistryClient;
-import com.amazonaws.services.schemaregistry.common.AWSSerializerInput;
-import com.amazonaws.services.schemaregistry.common.GlueSchemaRegistryDataFormatDeserializer;
-import com.amazonaws.services.schemaregistry.common.Schema;
-import com.amazonaws.services.schemaregistry.common.SchemaByDefinitionFetcher;
+import com.amazonaws.services.schemaregistry.common.*;
 import com.amazonaws.services.schemaregistry.common.configs.GlueSchemaRegistryConfiguration;
 import com.amazonaws.services.schemaregistry.exception.AWSSchemaRegistryException;
 import com.amazonaws.services.schemaregistry.exception.GlueSchemaRegistryIncompatibleDataException;
@@ -55,9 +50,7 @@ import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
-import software.amazon.awssdk.services.glue.model.Compatibility;
-import software.amazon.awssdk.services.glue.model.DataFormat;
-import software.amazon.awssdk.services.glue.model.GetSchemaVersionResponse;
+import software.amazon.awssdk.services.glue.model.*;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -793,6 +786,88 @@ public class GlueSchemaRegistryDeserializationFacadeTest {
     }
 
     /**
+     * Tests the deserialization case where retrieved schema data is stored in cacheV2
+     */
+    @Test
+    public void testDeserializer_retrieveSchemaRegistryMetadata_MetadataIsCached_withSchemaV2() throws InterruptedException {
+
+        String dataFormat = DataFormat.AVRO.name();
+        String inputSchemaDefinition = userSchemaDefinition;
+        UUID schemaVersionId = USER_SCHEMA_VERSION_ID;
+
+        configs.put(AWSSchemaRegistryConstants.COMPRESSION_TYPE, AWSSchemaRegistryConstants.COMPRESSION.NONE.name());
+        configs.put(AWSSchemaRegistryConstants.AVRO_RECORD_TYPE, AvroRecordType.GENERIC_RECORD.name());
+
+        byte[] serializedData = createSerializedDataV2(genericUserAvroRecord, DataFormat.valueOf(dataFormat), inputSchemaDefinition, schemaVersionId, Compatibility.FORWARD);
+
+        GetSchemaVersionResponse schemaVersionResponse = GetSchemaVersionResponse.builder()
+                .schemaDefinition(inputSchemaDefinition)
+                .dataFormat(dataFormat)
+                .schemaArn(TEST_SCHEMA_ARN)
+                .build();
+
+        GetSchemaResponse schemaResponse = GetSchemaResponse.builder()
+                .schemaArn(schemaVersionResponse.schemaArn())
+                .compatibility(Compatibility.FORWARD)
+                .build();
+
+        //Mock to return success and failures.
+        when(mockSchemaRegistryClient.getSchemaVersionResponse(Mockito.eq(schemaVersionId.toString())))
+                .thenReturn(schemaVersionResponse)
+                .thenReturn(schemaVersionResponse)
+                .thenThrow(new RuntimeException("Service outage"))
+                .thenReturn(schemaVersionResponse);
+
+        //Mock to return success and failures.
+        when(mockSchemaRegistryClient.getSchemaResponse(Mockito.any()))
+                .thenReturn(schemaResponse)
+                .thenThrow(new RuntimeException("Service outage"))
+                .thenReturn(schemaResponse);
+
+        GlueSchemaRegistryDeserializationFacade glueSchemaRegistryDeserializationFacade =
+                createGSRDeserializationFacade(mockSchemaRegistryClient);
+
+        LoadingCache<UUID, SchemaV2> cacheV2 = glueSchemaRegistryDeserializationFacade.cacheV2;
+
+        //Make sure cache is empty to start with.
+        assertEquals(0, cacheV2.size());
+
+        assertDoesNotThrow(
+                () -> glueSchemaRegistryDeserializationFacade.getSchemaV2(serializedData));
+
+        //Ensure cache only one value as desired.
+        assertEquals(1, cacheV2.size());
+
+        Map.Entry<UUID, Schema> cacheEntry = (Map.Entry<UUID, Schema>) cacheV2.asMap().entrySet().toArray()[0];
+        SchemaV2 expectedSchema = new SchemaV2(inputSchemaDefinition, dataFormat, "test_schema", Compatibility.FORWARD);
+
+        //Verify cache contents.
+        assertEquals(schemaVersionId, cacheEntry.getKey());
+        assertEquals(expectedSchema, cacheEntry.getValue());
+
+        //Expire cacheV2.
+        cacheV2.refresh(schemaVersionId);
+
+        //Failed service call shouldn't result in exceptions.
+        assertDoesNotThrow(
+                () -> glueSchemaRegistryDeserializationFacade.getSchemaV2(serializedData));
+        assertEquals(1, cacheV2.size());
+
+        //Subsequent calls shouldn't fail either.
+        assertDoesNotThrow(
+                () -> glueSchemaRegistryDeserializationFacade.getSchemaV2(serializedData));
+        assertDoesNotThrow(
+                () -> glueSchemaRegistryDeserializationFacade.getSchemaV2(serializedData));
+
+        verify(mockSchemaRegistryClient, times(2)).getSchemaVersionResponse(Mockito.eq(schemaVersionId.toString()));
+        verify(mockSchemaRegistryClient, times(2)).getSchemaResponse(Mockito.any());
+
+        configs.remove(AWSSchemaRegistryConstants.COMPRESSION_TYPE);
+        configs.remove(AWSSchemaRegistryConstants.AVRO_RECORD_TYPE);
+    }
+
+
+    /**
      * Tests invoking close method.
      */
     @Test
@@ -835,6 +910,27 @@ public class GlueSchemaRegistryDeserializationFacadeTest {
                                                                     Mockito.eq(TEST_SCHEMA_NAME),
                                                                     Mockito.eq(dataFormat.name()),
                                                                     Mockito.anyMap())).thenReturn(schemaVersionId);
+        return serializationFacade.serialize(dataFormat, objectToSerialize, schemaVersionId);
+    }
+
+    /**
+     * Helper method to serialize data for testing de-serialization.
+     */
+    private byte[] createSerializedDataV2(Object objectToSerialize,
+                                        DataFormat dataFormat,
+                                        String schemaDefinition,
+                                        UUID schemaVersionId,
+                                        Compatibility compatibility) {
+        GlueSchemaRegistrySerializationFacade serializationFacade = GlueSchemaRegistrySerializationFacade.builder()
+                .credentialProvider(this.mockDefaultCredProvider)
+                .configs(configs)
+                .schemaByDefinitionFetcher(this.mockSchemaByDefinitionFetcher)
+                .build();
+        when(mockSchemaByDefinitionFetcher.getORRegisterSchemaVersionIdV2(Mockito.eq(schemaDefinition),
+                Mockito.eq(TEST_SCHEMA_NAME),
+                Mockito.eq(dataFormat.name()),
+                Mockito.eq(compatibility),
+                Mockito.anyMap())).thenReturn(schemaVersionId);
         return serializationFacade.serialize(dataFormat, objectToSerialize, schemaVersionId);
     }
 
