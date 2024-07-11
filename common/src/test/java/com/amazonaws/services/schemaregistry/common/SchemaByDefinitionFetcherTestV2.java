@@ -11,28 +11,29 @@ import software.amazon.awssdk.services.glue.GlueClient;
 import software.amazon.awssdk.services.glue.model.*;
 
 import java.lang.reflect.Field;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 public class SchemaByDefinitionFetcherTestV2 {
     private static final UUID SCHEMA_ID_FOR_TESTING = UUID.fromString("f8b4a7f0-9c96-4e4a-a687-fb5de9ef0c63");
+    private static final UUID SCHEMA_ID_FOR_TESTING2 = UUID.fromString("310153e9-9a54-4b12-a513-a23fc543ed2f");
     private AWSSchemaRegistryClient awsSchemaRegistryClient;
     private SchemaByDefinitionFetcher schemaByDefinitionFetcher;
 
     private GlueClient mockGlueClient;
     private String userSchemaDefinition;
+    private String userSchemaDefinition2;
 
     @BeforeEach
     void setUp() {
         mockGlueClient = mock(GlueClient.class);
-        awsSchemaRegistryClient = new AWSSchemaRegistryClient(mockGlueClient);
+        awsSchemaRegistryClient = new AWSSchemaRegistryClient(mockGlueClient, mockGlueClient);
         GlueSchemaRegistryConfiguration config = new GlueSchemaRegistryConfiguration(getConfigsWithAutoRegistrationSetting(true));
         schemaByDefinitionFetcher = new SchemaByDefinitionFetcher(awsSchemaRegistryClient, config);
         userSchemaDefinition = "{Some-avro-schema}";
+        userSchemaDefinition2 = "{Some-avro-schema-v2}";
     }
 
     @Test
@@ -43,10 +44,27 @@ public class SchemaByDefinitionFetcherTestV2 {
         String registryName = configs.get(AWSSchemaRegistryConstants.REGISTRY_NAME);
         String dataFormatName = DataFormat.AVRO.name();
 
+        Long schemaVersionNumber = 1L;
+        SchemaId requestSchemaId = SchemaId.builder().schemaName(schemaName).registryName(registryName).build();
+
         GlueSchemaRegistryConfiguration glueSchemaRegistryConfiguration = new GlueSchemaRegistryConfiguration(configs);
         awsSchemaRegistryClient = configureAWSSchemaRegistryClientWithSerdeConfig(awsSchemaRegistryClient,
             glueSchemaRegistryConfiguration);
 
+        mockGetSchemaByDefinition_SchemaVersionNotFoundMsg(schemaName, registryName);
+        mockRegisterSchemaVersion(schemaVersionNumber, requestSchemaId);
+        mockGetSchemaVersions(schemaVersionNumber, 2L);
+
+        schemaByDefinitionFetcher = new SchemaByDefinitionFetcher(awsSchemaRegistryClient, glueSchemaRegistryConfiguration);
+
+        UUID schemaVersionId =
+            schemaByDefinitionFetcher
+                .getORRegisterSchemaVersionIdV2(userSchemaDefinition, schemaName, dataFormatName, Compatibility.FORWARD, getMetadata());
+
+        assertEquals(SCHEMA_ID_FOR_TESTING, schemaVersionId);
+    }
+
+    private void mockGetSchemaByDefinition_SchemaVersionNotFoundMsg(String schemaName, String registryName) {
         GetSchemaByDefinitionRequest getSchemaByDefinitionRequest = awsSchemaRegistryClient
             .buildGetSchemaByDefinitionRequest(userSchemaDefinition, schemaName, registryName);
 
@@ -56,10 +74,9 @@ public class SchemaByDefinitionFetcherTestV2 {
         AWSSchemaRegistryException awsSchemaRegistryException = new AWSSchemaRegistryException(entityNotFoundException);
 
         when(mockGlueClient.getSchemaByDefinition(getSchemaByDefinitionRequest)).thenThrow(awsSchemaRegistryException);
+    }
 
-        Long schemaVersionNumber = 1L;
-        SchemaId requestSchemaId = SchemaId.builder().schemaName(schemaName).registryName(registryName).build();
-
+    private void mockRegisterSchemaVersion(Long schemaVersionNumber, SchemaId requestSchemaId) {
         RegisterSchemaVersionRequest registerSchemaVersionRequest = RegisterSchemaVersionRequest.builder()
             .schemaDefinition(userSchemaDefinition)
             .schemaId(requestSchemaId)
@@ -70,24 +87,6 @@ public class SchemaByDefinitionFetcherTestV2 {
             .build();
         when(mockGlueClient.registerSchemaVersion(registerSchemaVersionRequest))
             .thenReturn(registerSchemaVersionResponse);
-
-        GetSchemaVersionRequest getSchemaVersionRequest = GetSchemaVersionRequest.builder()
-            .schemaVersionId(SCHEMA_ID_FOR_TESTING.toString())
-            .build();
-        GetSchemaVersionResponse getSchemaVersionResponse = GetSchemaVersionResponse.builder()
-            .schemaVersionId(SCHEMA_ID_FOR_TESTING.toString())
-            .schemaDefinition(userSchemaDefinition)
-            .status(AWSSchemaRegistryConstants.SchemaVersionStatus.AVAILABLE.toString())
-            .build();
-        when(mockGlueClient.getSchemaVersion(getSchemaVersionRequest)).thenReturn(getSchemaVersionResponse);
-
-        schemaByDefinitionFetcher = new SchemaByDefinitionFetcher(awsSchemaRegistryClient, glueSchemaRegistryConfiguration);
-
-        UUID schemaVersionId =
-            schemaByDefinitionFetcher
-                .getORRegisterSchemaVersionIdV2(userSchemaDefinition, schemaName, dataFormatName, Compatibility.FORWARD, getMetadata());
-
-        assertEquals(SCHEMA_ID_FOR_TESTING, schemaVersionId);
     }
 
     @Test
@@ -126,18 +125,7 @@ public class SchemaByDefinitionFetcherTestV2 {
         awsSchemaRegistryClient =
             configureAWSSchemaRegistryClientWithSerdeConfig(awsSchemaRegistryClient, awsSchemaRegistrySerDeConfigs);
 
-        GetSchemaByDefinitionRequest getSchemaByDefinitionRequest = awsSchemaRegistryClient
-            .buildGetSchemaByDefinitionRequest(userSchemaDefinition, schemaName, registryName);
-
-        GetSchemaByDefinitionResponse getSchemaByDefinitionResponse =
-            GetSchemaByDefinitionResponse
-                .builder()
-                .schemaVersionId(SCHEMA_ID_FOR_TESTING.toString())
-                .status(software.amazon.awssdk.services.glue.model.SchemaVersionStatus.AVAILABLE)
-                .build();
-
-        when(mockGlueClient.getSchemaByDefinition(getSchemaByDefinitionRequest))
-            .thenReturn(getSchemaByDefinitionResponse);
+        mockGetSchemaByDefinition(schemaName, registryName);
 
         schemaByDefinitionFetcher = new SchemaByDefinitionFetcher(awsSchemaRegistryClient, awsSchemaRegistrySerDeConfigs);
 
@@ -146,6 +134,21 @@ public class SchemaByDefinitionFetcherTestV2 {
                 .getORRegisterSchemaVersionIdV2(userSchemaDefinition, schemaName, dataFormatName, Compatibility.FORWARD, getMetadata());
 
         assertEquals(SCHEMA_ID_FOR_TESTING, schemaVersionId);
+    }
+
+    private void mockGetSchemaByDefinition(String schemaName, String registryName) {
+        GetSchemaByDefinitionRequest getSchemaByDefinitionRequest = awsSchemaRegistryClient
+            .buildGetSchemaByDefinitionRequest(userSchemaDefinition, schemaName, registryName);
+
+        GetSchemaByDefinitionResponse getSchemaByDefinitionResponse =
+            GetSchemaByDefinitionResponse
+                .builder()
+                .schemaVersionId(SCHEMA_ID_FOR_TESTING.toString())
+                .status(SchemaVersionStatus.AVAILABLE)
+                .build();
+
+        when(mockGlueClient.getSchemaByDefinition(getSchemaByDefinitionRequest))
+            .thenReturn(getSchemaByDefinitionResponse);
     }
 
     @Test
@@ -160,13 +163,7 @@ public class SchemaByDefinitionFetcherTestV2 {
         awsSchemaRegistryClient =
             configureAWSSchemaRegistryClientWithSerdeConfig(awsSchemaRegistryClient, awsSchemaRegistrySerDeConfigs);
 
-        GetSchemaByDefinitionRequest getSchemaByDefinitionRequest = awsSchemaRegistryClient
-            .buildGetSchemaByDefinitionRequest(userSchemaDefinition, schemaName, registryName);
-
-        AWSSchemaRegistryException awsSchemaRegistryException =
-            new AWSSchemaRegistryException(new RuntimeException("Unknown"));
-
-        when(mockGlueClient.getSchemaByDefinition(getSchemaByDefinitionRequest)).thenThrow(awsSchemaRegistryException);
+        mockGetSchemaByDefinition_ThrowException(schemaName, registryName);
 
         schemaByDefinitionFetcher = new SchemaByDefinitionFetcher(awsSchemaRegistryClient, awsSchemaRegistrySerDeConfigs);
 
@@ -177,6 +174,16 @@ public class SchemaByDefinitionFetcherTestV2 {
             exception.getMessage().contains("Exception occurred while fetching or registering schema definition"));
     }
 
+    private void mockGetSchemaByDefinition_ThrowException(String schemaName, String registryName) {
+        GetSchemaByDefinitionRequest getSchemaByDefinitionRequest = awsSchemaRegistryClient
+            .buildGetSchemaByDefinitionRequest(userSchemaDefinition, schemaName, registryName);
+
+        AWSSchemaRegistryException awsSchemaRegistryException =
+            new AWSSchemaRegistryException(new RuntimeException("Unknown"));
+
+        when(mockGlueClient.getSchemaByDefinition(getSchemaByDefinitionRequest)).thenThrow(awsSchemaRegistryException);
+    }
+
     @Test
     public void testGetORRegisterSchemaVersionIdV2_schemaNotPresent_autoCreatesSchema() throws Exception {
         Map<String, String> configs = getConfigsWithAutoRegistrationSetting(true);
@@ -184,11 +191,96 @@ public class SchemaByDefinitionFetcherTestV2 {
         String schemaName = configs.get(AWSSchemaRegistryConstants.SCHEMA_NAME);
         String registryName = configs.get(AWSSchemaRegistryConstants.REGISTRY_NAME);
         String dataFormatName = DataFormat.AVRO.name();
+        Long schemaVersionNumber = 1L;
+        Long schemaVersionNumber2 = 2L;
 
         GlueSchemaRegistryConfiguration glueSchemaRegistryConfiguration = new GlueSchemaRegistryConfiguration(configs);
         awsSchemaRegistryClient = configureAWSSchemaRegistryClientWithSerdeConfig(awsSchemaRegistryClient,
             glueSchemaRegistryConfiguration);
 
+        mockGetSchemaByDefinition_SchemaNotFoundMsg(schemaName, registryName);
+        mockListSchemaVersions(schemaName, registryName, schemaVersionNumber, schemaVersionNumber2);
+        mockCreateSchema(schemaName, dataFormatName, glueSchemaRegistryConfiguration);
+        mockGetSchemaVersions(schemaVersionNumber, schemaVersionNumber2);
+        mockQuerySchemaVersionMetadata();
+        mockRegisterSchemaVersion2(schemaName, registryName, schemaVersionNumber);
+
+        schemaByDefinitionFetcher = new SchemaByDefinitionFetcher(awsSchemaRegistryClient, glueSchemaRegistryConfiguration);
+
+        UUID schemaVersionId = schemaByDefinitionFetcher
+            .getORRegisterSchemaVersionIdV2(userSchemaDefinition, schemaName, dataFormatName, Compatibility.FORWARD, getMetadata());
+
+        assertEquals(SCHEMA_ID_FOR_TESTING, schemaVersionId);
+    }
+
+    @Test
+    public void testGetORRegisterSchemaVersionIdV2_schemaNotPresent_autoCreatesSchemaAndRegisterSchemaVersions_retrieveFromCache() throws Exception {
+        Map<String, String> configs = getConfigsWithAutoRegistrationSetting(true);
+
+        String schemaName = configs.get(AWSSchemaRegistryConstants.SCHEMA_NAME);
+        String registryName = configs.get(AWSSchemaRegistryConstants.REGISTRY_NAME);
+        String dataFormatName = DataFormat.AVRO.name();
+        Long schemaVersionNumber = 1L;
+        Long schemaVersionNumber2 = 2L;
+
+        GlueSchemaRegistryConfiguration glueSchemaRegistryConfiguration = new GlueSchemaRegistryConfiguration(configs);
+        awsSchemaRegistryClient = configureAWSSchemaRegistryClientWithSerdeConfig(awsSchemaRegistryClient,
+                glueSchemaRegistryConfiguration);
+
+        GetSchemaByDefinitionRequest getSchemaByDefinitionRequest = mockGetSchemaByDefinition_SchemaNotFoundMsg(schemaName, registryName);
+        mockListSchemaVersions(schemaName, registryName, schemaVersionNumber, schemaVersionNumber2);
+        mockCreateSchema(schemaName, dataFormatName, glueSchemaRegistryConfiguration);
+        mockGetSchemaVersions(schemaVersionNumber, schemaVersionNumber2);
+        mockQuerySchemaVersionMetadata();
+        mockRegisterSchemaVersion2(schemaName, registryName, schemaVersionNumber);
+
+        schemaByDefinitionFetcher = new SchemaByDefinitionFetcher(awsSchemaRegistryClient, glueSchemaRegistryConfiguration);
+
+        LoadingCache<SchemaV2, UUID> cacheV2 = schemaByDefinitionFetcher.schemaDefinitionToVersionCacheV2;
+
+        SchemaV2 expectedSchema = new SchemaV2(userSchemaDefinition, dataFormatName, schemaName, Compatibility.FORWARD);
+        SchemaV2 expectedSchema2 = new SchemaV2(userSchemaDefinition2, dataFormatName, schemaName, Compatibility.FORWARD);
+
+        //Ensure cache is empty to start with.
+        assertEquals(0, cacheV2.size());
+
+        //First call will create schema and register other schema versions
+        schemaByDefinitionFetcher.getORRegisterSchemaVersionIdV2(userSchemaDefinition, schemaName, dataFormatName, Compatibility.FORWARD, getMetadata());
+
+        //Ensure cache is populated
+        assertEquals(2, cacheV2.size());
+
+        //Ensure corresponding UUID matches with schema
+        assertEquals(SCHEMA_ID_FOR_TESTING, cacheV2.get(expectedSchema));
+        assertEquals(SCHEMA_ID_FOR_TESTING2, cacheV2.get(expectedSchema2));
+
+        //Second call will be served from cache
+        schemaByDefinitionFetcher.getORRegisterSchemaVersionIdV2(userSchemaDefinition, schemaName, dataFormatName, Compatibility.FORWARD, getMetadata());
+
+        //Third call will be served from cache
+        schemaByDefinitionFetcher.getORRegisterSchemaVersionIdV2(userSchemaDefinition2, schemaName, dataFormatName, Compatibility.FORWARD, getMetadata());
+
+        //Ensure cache is populated
+        assertEquals(2, cacheV2.size());
+
+        //Ensure only 1 call happened.
+        verify(mockGlueClient, times(1)).getSchemaByDefinition(getSchemaByDefinitionRequest);
+    }
+
+    private void mockRegisterSchemaVersion2(String schemaName, String registryName, Long schemaVersionNumber) {
+        RegisterSchemaVersionRequest registerSchemaVersionRequest = RegisterSchemaVersionRequest.builder()
+                .schemaDefinition(userSchemaDefinition2)
+                .schemaId(SchemaId.builder().schemaName(schemaName).registryName(registryName).build())
+                .build();
+        RegisterSchemaVersionResponse registerSchemaVersionResponse = RegisterSchemaVersionResponse.builder()
+                .schemaVersionId(SCHEMA_ID_FOR_TESTING2.toString())
+                .versionNumber(schemaVersionNumber)
+                .status(SchemaVersionStatus.AVAILABLE)
+                .build();
+        when(mockGlueClient.registerSchemaVersion(registerSchemaVersionRequest)).thenReturn(registerSchemaVersionResponse);
+    }
+
+    private GetSchemaByDefinitionRequest mockGetSchemaByDefinition_SchemaNotFoundMsg(String schemaName, String registryName) {
         GetSchemaByDefinitionRequest getSchemaByDefinitionRequest = awsSchemaRegistryClient
             .buildGetSchemaByDefinitionRequest(userSchemaDefinition, schemaName, registryName);
 
@@ -199,6 +291,63 @@ public class SchemaByDefinitionFetcherTestV2 {
 
         when(mockGlueClient.getSchemaByDefinition(getSchemaByDefinitionRequest)).thenThrow(awsSchemaRegistryException);
 
+        return getSchemaByDefinitionRequest;
+    }
+
+    private void mockQuerySchemaVersionMetadata() {
+        QuerySchemaVersionMetadataRequest querySchemaVersionMetadataRequest = QuerySchemaVersionMetadataRequest.builder()
+                .schemaVersionId(SCHEMA_ID_FOR_TESTING.toString())
+                .build();
+
+        QuerySchemaVersionMetadataResponse querySchemaVersionMetadataResponse = QuerySchemaVersionMetadataResponse
+                .builder()
+                .schemaVersionId(SCHEMA_ID_FOR_TESTING.toString())
+                .metadataInfoMap(new HashMap<>())
+                .build();
+
+        QuerySchemaVersionMetadataRequest querySchemaVersionMetadataRequest2 = QuerySchemaVersionMetadataRequest.builder()
+                .schemaVersionId(SCHEMA_ID_FOR_TESTING2.toString())
+                .build();
+
+        QuerySchemaVersionMetadataResponse querySchemaVersionMetadataResponse2 = QuerySchemaVersionMetadataResponse
+                .builder()
+                .schemaVersionId(SCHEMA_ID_FOR_TESTING2.toString())
+                .metadataInfoMap(new HashMap<>())
+                .build();
+
+        when(mockGlueClient.querySchemaVersionMetadata(querySchemaVersionMetadataRequest)).thenReturn(querySchemaVersionMetadataResponse);
+        when(mockGlueClient.querySchemaVersionMetadata(querySchemaVersionMetadataRequest2)).thenReturn(querySchemaVersionMetadataResponse2);
+    }
+
+    private void mockGetSchemaVersions(Long schemaVersionNumber, Long schemaVersionNumber2) {
+        GetSchemaVersionRequest getSchemaVersionRequest = GetSchemaVersionRequest.builder()
+                .schemaVersionId(SCHEMA_ID_FOR_TESTING.toString()).build();
+
+        GetSchemaVersionResponse getSchemaVersionResponse = GetSchemaVersionResponse.builder()
+                .schemaDefinition(userSchemaDefinition)
+                .versionNumber(schemaVersionNumber)
+                .schemaVersionId(SCHEMA_ID_FOR_TESTING.toString())
+                .dataFormat(DataFormat.AVRO)
+                .status(SchemaVersionStatus.AVAILABLE)
+                .build();
+
+        when(mockGlueClient.getSchemaVersion(getSchemaVersionRequest)).thenReturn(getSchemaVersionResponse);
+
+        GetSchemaVersionRequest getSchemaVersionRequest2 = GetSchemaVersionRequest.builder()
+                .schemaVersionId(SCHEMA_ID_FOR_TESTING2.toString()).build();
+
+        GetSchemaVersionResponse getSchemaVersionResponse2 = GetSchemaVersionResponse.builder()
+                .schemaDefinition(userSchemaDefinition2)
+                .versionNumber(schemaVersionNumber2)
+                .schemaVersionId(SCHEMA_ID_FOR_TESTING2.toString())
+                .dataFormat(DataFormat.AVRO)
+                .status(SchemaVersionStatus.AVAILABLE)
+                .build();
+
+        when(mockGlueClient.getSchemaVersion(getSchemaVersionRequest2)).thenReturn(getSchemaVersionResponse2);
+    }
+
+    private void mockCreateSchema(String schemaName, String dataFormatName, GlueSchemaRegistryConfiguration glueSchemaRegistryConfiguration) {
         CreateSchemaResponse createSchemaResponse = CreateSchemaResponse.builder()
             .schemaName(schemaName)
             .dataFormat(dataFormatName)
@@ -215,13 +364,32 @@ public class SchemaByDefinitionFetcherTestV2 {
             .build();
 
         when(mockGlueClient.createSchema(createSchemaRequest)).thenReturn(createSchemaResponse);
+    }
 
-        schemaByDefinitionFetcher = new SchemaByDefinitionFetcher(awsSchemaRegistryClient, glueSchemaRegistryConfiguration);
+    private void mockListSchemaVersions(String schemaName, String registryName, Long schemaVersionNumber, Long schemaVersionNumber2) {
+        ListSchemaVersionsResponse listSchemaVersionsResponse = ListSchemaVersionsResponse.builder()
+                .schemas(SchemaVersionListItem.
+                            builder().
+                            schemaArn("test/"+ schemaName).
+                            schemaVersionId(SCHEMA_ID_FOR_TESTING.toString()).
+                            versionNumber(schemaVersionNumber).
+                            status("CREATED").
+                            build(),
+                        SchemaVersionListItem.
+                            builder().
+                            schemaArn("test/"+ schemaName).
+                            schemaVersionId(SCHEMA_ID_FOR_TESTING2.toString()).
+                            versionNumber(schemaVersionNumber2).
+                            status("CREATED").
+                            build()
+                        )
+                .nextToken(null)
+                .build();
+        ListSchemaVersionsRequest listSchemaVersionsRequest = ListSchemaVersionsRequest.builder()
+                .schemaId(SchemaId.builder().schemaName(schemaName).registryName(registryName).build())
+                .build();
 
-        UUID schemaVersionId = schemaByDefinitionFetcher
-            .getORRegisterSchemaVersionIdV2(userSchemaDefinition, schemaName, dataFormatName, Compatibility.FORWARD, getMetadata());
-
-        assertEquals(SCHEMA_ID_FOR_TESTING, schemaVersionId);
+        when(mockGlueClient.listSchemaVersions(listSchemaVersionsRequest)).thenReturn(listSchemaVersionsResponse);
     }
 
     @Test
@@ -238,15 +406,7 @@ public class SchemaByDefinitionFetcherTestV2 {
             configureAWSSchemaRegistryClientWithSerdeConfig(awsSchemaRegistryClient,
                 glueSchemaRegistryConfiguration);
 
-        GetSchemaByDefinitionRequest getSchemaByDefinitionRequest = awsSchemaRegistryClient
-            .buildGetSchemaByDefinitionRequest(userSchemaDefinition, schemaName, registryName);
-
-
-        EntityNotFoundException entityNotFoundException =
-            EntityNotFoundException.builder().message(AWSSchemaRegistryConstants.SCHEMA_NOT_FOUND_MSG).build();
-        AWSSchemaRegistryException awsSchemaRegistryException = new AWSSchemaRegistryException(entityNotFoundException);
-
-        when(mockGlueClient.getSchemaByDefinition(getSchemaByDefinitionRequest)).thenThrow(awsSchemaRegistryException);
+        mockGetSchemaByDefinition_SchemaNotFoundMsg(schemaName, registryName);
 
         schemaByDefinitionFetcher = new SchemaByDefinitionFetcher(awsSchemaRegistryClient, glueSchemaRegistryConfiguration);
 
@@ -265,18 +425,7 @@ public class SchemaByDefinitionFetcherTestV2 {
         String dataFormatName = DataFormat.AVRO.name();
         GlueSchemaRegistryConfiguration glueSchemaRegistryConfiguration = new GlueSchemaRegistryConfiguration(configs);
 
-        GetSchemaByDefinitionRequest getSchemaByDefinitionRequest = awsSchemaRegistryClient
-            .buildGetSchemaByDefinitionRequest(userSchemaDefinition, schemaName, registryName);
-
-        GetSchemaByDefinitionResponse getSchemaByDefinitionResponse =
-            GetSchemaByDefinitionResponse
-                .builder()
-                .schemaVersionId(SCHEMA_ID_FOR_TESTING.toString())
-                .status(software.amazon.awssdk.services.glue.model.SchemaVersionStatus.AVAILABLE)
-                .build();
-
-        when(mockGlueClient.getSchemaByDefinition(getSchemaByDefinitionRequest))
-            .thenReturn(getSchemaByDefinitionResponse);
+        GetSchemaByDefinitionRequest getSchemaByDefinitionRequest = mockGetSchemaByDefinition_RetrieveFromCache(schemaName, registryName);
 
         awsSchemaRegistryClient = configureAWSSchemaRegistryClientWithSerdeConfig(awsSchemaRegistryClient, glueSchemaRegistryConfiguration);
         schemaByDefinitionFetcher = new SchemaByDefinitionFetcher(awsSchemaRegistryClient, glueSchemaRegistryConfiguration);
@@ -304,6 +453,22 @@ public class SchemaByDefinitionFetcherTestV2 {
 
         //Ensure only 1 call happened.
         verify(mockGlueClient, times(1)).getSchemaByDefinition(getSchemaByDefinitionRequest);
+    }
+
+    private GetSchemaByDefinitionRequest mockGetSchemaByDefinition_RetrieveFromCache(String schemaName, String registryName) {
+        GetSchemaByDefinitionRequest getSchemaByDefinitionRequest = awsSchemaRegistryClient
+            .buildGetSchemaByDefinitionRequest(userSchemaDefinition, schemaName, registryName);
+
+        GetSchemaByDefinitionResponse getSchemaByDefinitionResponse =
+            GetSchemaByDefinitionResponse
+                .builder()
+                .schemaVersionId(SCHEMA_ID_FOR_TESTING.toString())
+                .status(SchemaVersionStatus.AVAILABLE)
+                .build();
+
+        when(mockGlueClient.getSchemaByDefinition(getSchemaByDefinitionRequest))
+            .thenReturn(getSchemaByDefinitionResponse);
+        return getSchemaByDefinitionRequest;
     }
 
     @Test
@@ -370,6 +535,7 @@ public class SchemaByDefinitionFetcherTestV2 {
         localConfigs.put(AWSSchemaRegistryConstants.AWS_REGION, "us-west-2");
         localConfigs.put(AWSSchemaRegistryConstants.SCHEMA_NAME, "User-Topic");
         localConfigs.put(AWSSchemaRegistryConstants.REGISTRY_NAME, "User-Topic");
+        localConfigs.put(AWSSchemaRegistryConstants.SOURCE_REGISTRY_NAME, "User-Topic");
         localConfigs.put(AWSSchemaRegistryConstants.SCHEMA_AUTO_REGISTRATION_SETTING,
             String.valueOf(autoRegistrationSetting));
         return localConfigs;

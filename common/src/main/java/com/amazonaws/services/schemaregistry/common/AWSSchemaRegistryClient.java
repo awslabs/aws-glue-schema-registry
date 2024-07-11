@@ -334,10 +334,7 @@ public class AWSSchemaRegistryClient {
             //Get list of all schema versions
             List<SchemaVersionListItem> schemaVersionList = getSchemaVersions(schemaName);
 
-            schemaVersionList.forEach(x -> System.out.println("SCHEMA VERSION NO: " + x.versionNumber().toString()));
-
-            int idx = 0;
-            while (idx < schemaVersionList.size()){
+            for (int idx = 0; idx < schemaVersionList.size(); idx++){
                 //Get details of each schema versions
                 GetSchemaVersionResponse getSchemaVersionResponse =
                         sourceRegistryClient.getSchemaVersion(getSchemaVersionRequest(
@@ -373,8 +370,6 @@ public class AWSSchemaRegistryClient {
 
                 //Create a map of schema and schemaVersionId
                 schemaWithVersionId.put(schema, schemaVersionId);
-
-                idx++;
             }
         } catch (AlreadyExistsException e) {
             log.warn("Schema is already created, this could be caused by multiple producers racing to "
