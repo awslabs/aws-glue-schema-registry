@@ -89,7 +89,27 @@ public class AWSGlueCrossRegionSchemaReplicationConverterTest {
     }
 
     /**
-     * Test for Converter when source region config is not provided.
+     * Test for Converter when source registry config is not provided.
+     */
+    @Test
+    public void testConverter_sourceRegistryNotProvided_throwsException(){
+        converter = new AWSGlueCrossRegionSchemaReplicationConverter();
+        Exception exception = assertThrows(DataException.class, () -> converter.configure(getNoSourceRegistryProperties(), false));
+        assertEquals("Source Registry is not provided.", exception.getMessage());
+    }
+
+    /**
+     * Test for Converter when source endpoint config is not provided.
+     */
+    @Test
+    public void testConverter_sourceEndpointNotProvided_throwsException(){
+        converter = new AWSGlueCrossRegionSchemaReplicationConverter();
+        Exception exception = assertThrows(DataException.class, () -> converter.configure(getNoSourceEndpointProperties(), false));
+        assertEquals("Source Endpoint is not provided.", exception.getMessage());
+    }
+
+    /**
+     * Test for Converter when target region config is not provided.
      */
     @Test
     public void testConverter_targetRegionNotProvided_throwsException(){
@@ -99,12 +119,32 @@ public class AWSGlueCrossRegionSchemaReplicationConverterTest {
     }
 
     /**
-     * Test for Converter when source region config is not provided.
+     * Test for Converter when source registry config is not provided.
      */
     @Test
-    public void testConverter_targetRegionReplacedByRegion_Succeeds(){
+    public void testConverter_targetRegistryNotProvided_throwsException(){
         converter = new AWSGlueCrossRegionSchemaReplicationConverter();
-        converter.configure(getTargetRegionReplacedProperties(), false);
+        Exception exception = assertThrows(DataException.class, () -> converter.configure(getNoTargetRegistryProperties(), false));
+        assertEquals("Target Registry is not provided.", exception.getMessage());
+    }
+
+    /**
+     * Test for Converter when source endpoint config is not provided.
+     */
+    @Test
+    public void testConverter_targetEndpointNotProvided_throwsException(){
+        converter = new AWSGlueCrossRegionSchemaReplicationConverter();
+        Exception exception = assertThrows(DataException.class, () -> converter.configure(getNoTargetEndpointProperties(), false));
+        assertEquals("Target Endpoint is not provided.", exception.getMessage());
+    }
+
+    /**
+     * Test for Converter when no target specific config is provided
+     */
+    @Test
+    public void testConverter_noTargetDetails_Succeeds(){
+        converter = new AWSGlueCrossRegionSchemaReplicationConverter();
+        converter.configure(getPropertiesNoTargetDetails(), false);
         assertNotNull(converter.getSerializer());
     }
 
@@ -291,9 +331,69 @@ public class AWSGlueCrossRegionSchemaReplicationConverterTest {
 
         props.put(AWSSchemaRegistryConstants.AWS_REGION, "us-east-1");
         props.put(AWSSchemaRegistryConstants.AWS_TARGET_REGION, "us-east-1");
+
+        return props;
+    }
+
+    /**
+     * To create a map of configurations without source registry.
+     *
+     * @return a map of configurations
+     */
+    private Map<String, Object> getNoSourceRegistryProperties() {
+        Map<String, Object> props = new HashMap<>();
+
+        props.put(AWSSchemaRegistryConstants.AWS_SOURCE_REGION, "us-east-1");
+        props.put(AWSSchemaRegistryConstants.AWS_TARGET_REGION, "us-east-1");
+
+        return props;
+    }
+
+    /**
+     * To create a map of configurations without target registry.
+     *
+     * @return a map of configurations
+     */
+    private Map<String, Object> getNoTargetRegistryProperties() {
+        Map<String, Object> props = new HashMap<>();
+
+        props.put(AWSSchemaRegistryConstants.AWS_SOURCE_REGION, "us-east-1");
+        props.put(AWSSchemaRegistryConstants.AWS_TARGET_REGION, "us-east-1");
+        props.put(AWSSchemaRegistryConstants.SOURCE_REGISTRY_NAME, "default-registry");
+
+        return props;
+    }
+
+    /**
+     * To create a map of configurations without source endpoint.
+     *
+     * @return a map of configurations
+     */
+    private Map<String, Object> getNoSourceEndpointProperties() {
+        Map<String, Object> props = new HashMap<>();
+
+        props.put(AWSSchemaRegistryConstants.AWS_REGION, "us-east-1");
+        props.put(AWSSchemaRegistryConstants.AWS_SOURCE_REGION, "us-west-2");
+        props.put(AWSSchemaRegistryConstants.SOURCE_REGISTRY_NAME, "default-registry");
+        props.put(AWSSchemaRegistryConstants.REGISTRY_NAME, "default-registry");
         props.put(AWSSchemaRegistryConstants.AWS_ENDPOINT, "https://test");
-        props.put(AWSSchemaRegistryConstants.SCHEMA_AUTO_REGISTRATION_SETTING, true);
-        props.put(AWSSchemaRegistryConstants.AVRO_RECORD_TYPE, AvroRecordType.GENERIC_RECORD.getName());
+
+        return props;
+    }
+
+    /**
+     * To create a map of configurations without source endpoint.
+     *
+     * @return a map of configurations
+     */
+    private Map<String, Object> getNoTargetEndpointProperties() {
+        Map<String, Object> props = new HashMap<>();
+
+        props.put(AWSSchemaRegistryConstants.AWS_REGION, "us-east-1");
+        props.put(AWSSchemaRegistryConstants.AWS_SOURCE_REGION, "us-west-2");
+        props.put(AWSSchemaRegistryConstants.SOURCE_REGISTRY_NAME, "default-registry");
+        props.put(AWSSchemaRegistryConstants.REGISTRY_NAME, "default-registry");
+        props.put(AWSSchemaRegistryConstants.AWS_SOURCE_ENDPOINT, "https://test");
 
         return props;
     }
@@ -307,26 +407,25 @@ public class AWSGlueCrossRegionSchemaReplicationConverterTest {
         Map<String, Object> props = new HashMap<>();
 
         props.put(AWSSchemaRegistryConstants.AWS_SOURCE_REGION, "us-west-2");
-        props.put(AWSSchemaRegistryConstants.AWS_ENDPOINT, "https://test");
-        props.put(AWSSchemaRegistryConstants.SCHEMA_AUTO_REGISTRATION_SETTING, true);
-        props.put(AWSSchemaRegistryConstants.AVRO_RECORD_TYPE, AvroRecordType.GENERIC_RECORD.getName());
 
         return props;
     }
 
     /**
-     * To create a map of configurations without target region, but is replaced by the provided region config.
+     * To create a map of configurations without target region, target endpoint and target registry name
+     * but is replaced by the provided region, endpoint and registry name config.
      *
      * @return a map of configurations
      */
-    private Map<String, Object> getTargetRegionReplacedProperties() {
+    private Map<String, Object> getPropertiesNoTargetDetails() {
         Map<String, Object> props = new HashMap<>();
 
         props.put(AWSSchemaRegistryConstants.AWS_REGION, "us-east-1");
         props.put(AWSSchemaRegistryConstants.AWS_SOURCE_REGION, "us-west-2");
+        props.put(AWSSchemaRegistryConstants.SOURCE_REGISTRY_NAME, "default-registry");
+        props.put(AWSSchemaRegistryConstants.REGISTRY_NAME, "default-registry");
         props.put(AWSSchemaRegistryConstants.AWS_ENDPOINT, "https://test");
-        props.put(AWSSchemaRegistryConstants.SCHEMA_AUTO_REGISTRATION_SETTING, true);
-        props.put(AWSSchemaRegistryConstants.AVRO_RECORD_TYPE, AvroRecordType.GENERIC_RECORD.getName());
+        props.put(AWSSchemaRegistryConstants.AWS_SOURCE_ENDPOINT, "https://test");
 
         return props;
     }
@@ -341,20 +440,18 @@ public class AWSGlueCrossRegionSchemaReplicationConverterTest {
 
         props.put(AWSSchemaRegistryConstants.AWS_SOURCE_REGION, "us-west-2");
         props.put(AWSSchemaRegistryConstants.AWS_TARGET_REGION, "us-east-1");
-        props.put(AWSSchemaRegistryConstants.REGISTRY_NAME, "default-registry");
-        props.put(AWSSchemaRegistryConstants.SCHEMA_NAME, "test_schema");
+        props.put(AWSSchemaRegistryConstants.SOURCE_REGISTRY_NAME, "default-registry");
+        props.put(AWSSchemaRegistryConstants.TARGET_REGISTRY_NAME, "default-registry");
         props.put(AWSSchemaRegistryConstants.AWS_ENDPOINT, "https://test");
         props.put(AWSSchemaRegistryConstants.AWS_SOURCE_ENDPOINT, "https://test");
-        props.put(AWSSchemaRegistryConstants.SCHEMA_AUTO_REGISTRATION_SETTING, true);
-        props.put(AWSSchemaRegistryConstants.AVRO_RECORD_TYPE, AvroRecordType.GENERIC_RECORD.getName());
 
         return props;
     }
 
     /**
-     * To create a Connect Struct record.
+     * To create Connect Struct record.
      *
-     * @return a Connect Struct
+     * @return Connect Struct
      */
     private Struct createStructRecord() {
         org.apache.kafka.connect.data.Schema schema = SchemaBuilder.struct()

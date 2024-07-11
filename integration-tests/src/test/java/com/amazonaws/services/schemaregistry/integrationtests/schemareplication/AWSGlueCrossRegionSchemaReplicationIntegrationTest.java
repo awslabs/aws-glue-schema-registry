@@ -14,7 +14,6 @@
  */
 package com.amazonaws.services.schemaregistry.integrationtests.schemareplication;
 
-import com.amazonaws.services.crossregion.schemaregistry.kafkaconnect.AWSGlueCrossRegionSchemaReplicationConverter;
 import com.amazonaws.services.schemaregistry.common.configs.GlueSchemaRegistryConfiguration;
 import com.amazonaws.services.schemaregistry.deserializers.GlueSchemaRegistryDeserializerImpl;
 import com.amazonaws.services.schemaregistry.integrationtests.generators.*;
@@ -185,62 +184,62 @@ public class AWSGlueCrossRegionSchemaReplicationIntegrationTest {
         log.info("Finished test for producing/consuming {} messages via Kafka.", dataFormat.name());
     }
 
-    @ParameterizedTest
-    @MethodSource("testArgumentsProvider")
-    @Disabled
-    public void testProduceConsumeWithSchemaRegistryForAllThreeDataFormatsWithConverter(final DataFormat dataFormat,
-                                                                           final AvroRecordType avroRecordType,
-                                                                           final Compatibility compatibility) throws Exception {
-        log.info("Starting the test for producing and consuming {} messages via Kafka ...", dataFormat.name());
-        final Pair<String, KafkaHelper> srcKafkaHelperPair = createAndGetKafkaHelper(TOPIC_NAME_PREFIX_CONVERTER);
-        String topic = srcKafkaHelperPair.getKey();
-        KafkaHelper srcKafkaHelper = srcKafkaHelperPair.getValue();
-
-        TestDataGenerator testDataGenerator = testDataGeneratorFactory.getInstance(
-                TestDataGeneratorType.valueOf(dataFormat, avroRecordType, compatibility));
-        List<?> records = testDataGenerator.createRecords();
-
-        String schemaName = String.format("%s-%s", topic, dataFormat.name());
-        schemasToCleanUp.add(schemaName);
-
-        ProducerProperties producerProperties = ProducerProperties.builder()
-                .topicName(topic)
-                .schemaName(schemaName)
-                .dataFormat(dataFormat.name())
-                .compatibilityType(compatibility.name())
-                .autoRegistrationEnabled("true")
-                .build();
-
-        List<ProducerRecord<String, Object>> producerRecords =
-                srcKafkaHelper.doProduceRecords(producerProperties, records);
-
-        ConsumerProperties.ConsumerPropertiesBuilder consumerPropertiesBuilder = ConsumerProperties.builder()
-                .topicName(topic);
-
-        consumerPropertiesBuilder.protobufMessageType(ProtobufMessageType.DYNAMIC_MESSAGE.getName());
-        consumerPropertiesBuilder.avroRecordType(avroRecordType.getName()); // Only required for the case of AVRO
-
-        List<ConsumerRecord<String, byte[]>> consumerRecords = srcKafkaHelper.doConsumeRecordsWithByteArrayDeserializer(consumerPropertiesBuilder.build());
-
-        AWSGlueCrossRegionSchemaReplicationConverter converter = new AWSGlueCrossRegionSchemaReplicationConverter();
-        converter.configure(getTestProperties(), false);
-        GlueSchemaRegistryDeserializerImpl deserializer = new GlueSchemaRegistryDeserializerImpl(
-                DefaultCredentialsProvider.builder().build(),
-                new GlueSchemaRegistryConfiguration(getTestProperties()));
-
-        List<String> consumerRecordsSerialized = new ArrayList<>();
-
-        for (ConsumerRecord<String, byte[]> record: consumerRecords) {
-            byte[] serializedData = converter.fromConnectData(topic, null, record.value());
-            byte[] deserializedData = deserializer.getData(serializedData);
-            String str = new String(deserializedData, StandardCharsets.UTF_8);
-
-            consumerRecordsSerialized.add(str);
-        }
-
-        assertRecordsEqualityV2(producerRecords, consumerRecordsSerialized);
-        log.info("Finished test for producing/consuming {} messages via Kafka.", dataFormat.name());
-    }
+//    @ParameterizedTest
+//    @MethodSource("testArgumentsProvider")
+//    @Disabled
+//    public void testProduceConsumeWithSchemaRegistryForAllThreeDataFormatsWithConverter(final DataFormat dataFormat,
+//                                                                           final AvroRecordType avroRecordType,
+//                                                                           final Compatibility compatibility) throws Exception {
+//        log.info("Starting the test for producing and consuming {} messages via Kafka ...", dataFormat.name());
+//        final Pair<String, KafkaHelper> srcKafkaHelperPair = createAndGetKafkaHelper(TOPIC_NAME_PREFIX_CONVERTER);
+//        String topic = srcKafkaHelperPair.getKey();
+//        KafkaHelper srcKafkaHelper = srcKafkaHelperPair.getValue();
+//
+//        TestDataGenerator testDataGenerator = testDataGeneratorFactory.getInstance(
+//                TestDataGeneratorType.valueOf(dataFormat, avroRecordType, compatibility));
+//        List<?> records = testDataGenerator.createRecords();
+//
+//        String schemaName = String.format("%s-%s", topic, dataFormat.name());
+//        schemasToCleanUp.add(schemaName);
+//
+//        ProducerProperties producerProperties = ProducerProperties.builder()
+//                .topicName(topic)
+//                .schemaName(schemaName)
+//                .dataFormat(dataFormat.name())
+//                .compatibilityType(compatibility.name())
+//                .autoRegistrationEnabled("true")
+//                .build();
+//
+//        List<ProducerRecord<String, Object>> producerRecords =
+//                srcKafkaHelper.doProduceRecords(producerProperties, records);
+//
+//        ConsumerProperties.ConsumerPropertiesBuilder consumerPropertiesBuilder = ConsumerProperties.builder()
+//                .topicName(topic);
+//
+//        consumerPropertiesBuilder.protobufMessageType(ProtobufMessageType.DYNAMIC_MESSAGE.getName());
+//        consumerPropertiesBuilder.avroRecordType(avroRecordType.getName()); // Only required for the case of AVRO
+//
+//        List<ConsumerRecord<String, byte[]>> consumerRecords = srcKafkaHelper.doConsumeRecordsWithByteArrayDeserializer(consumerPropertiesBuilder.build());
+//
+//        AWSGlueCrossRegionSchemaReplicationConverter converter = new AWSGlueCrossRegionSchemaReplicationConverter();
+//        converter.configure(getTestProperties(), false);
+//        GlueSchemaRegistryDeserializerImpl deserializer = new GlueSchemaRegistryDeserializerImpl(
+//                DefaultCredentialsProvider.builder().build(),
+//                new GlueSchemaRegistryConfiguration(getTestProperties()));
+//
+//        List<String> consumerRecordsSerialized = new ArrayList<>();
+//
+//        for (ConsumerRecord<String, byte[]> record: consumerRecords) {
+//            byte[] serializedData = converter.fromConnectData(topic, null, record.value());
+//            byte[] deserializedData = deserializer.getData(serializedData);
+//            String str = new String(deserializedData, StandardCharsets.UTF_8);
+//
+//            consumerRecordsSerialized.add(str);
+//        }
+//
+//        assertRecordsEqualityV2(producerRecords, consumerRecordsSerialized);
+//        log.info("Finished test for producing/consuming {} messages via Kafka.", dataFormat.name());
+//    }
 
     private Map<String, Object> getTestProperties() {
         Map<String, Object> props = new HashMap<>();

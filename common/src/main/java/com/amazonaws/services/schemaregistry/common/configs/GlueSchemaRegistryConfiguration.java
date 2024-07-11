@@ -189,8 +189,9 @@ public class GlueSchemaRegistryConfiguration {
     private void validateAndSetAWSTargetRegion(Map<String, ?> configs) {
         if (isPresent(configs, AWSSchemaRegistryConstants.AWS_TARGET_REGION)) {
             this.targetRegion = String.valueOf(configs.get(AWSSchemaRegistryConstants.AWS_TARGET_REGION));
+            this.region = String.valueOf(configs.get(AWSSchemaRegistryConstants.AWS_TARGET_REGION));
         } else {
-            this.targetRegion = String.valueOf(configs.get(AWSSchemaRegistryConstants.AWS_REGION));
+            this.targetRegion = this.region;
         }
     }
 
@@ -223,16 +224,15 @@ public class GlueSchemaRegistryConfiguration {
     private void validateAndSetSourceRegistryName(Map<String, ?> configs) {
         if (isPresent(configs, AWSSchemaRegistryConstants.SOURCE_REGISTRY_NAME)) {
             this.sourceRegistryName = String.valueOf(configs.get(AWSSchemaRegistryConstants.SOURCE_REGISTRY_NAME));
-        } else {
-            this.sourceRegistryName = AWSSchemaRegistryConstants.SOURCE_REGISTRY_NAME;
         }
     }
 
     private void validateAndSetTargetRegistryName(Map<String, ?> configs) {
         if (isPresent(configs, AWSSchemaRegistryConstants.TARGET_REGISTRY_NAME)) {
             this.targetRegistryName = String.valueOf(configs.get(AWSSchemaRegistryConstants.TARGET_REGISTRY_NAME));
+            this.registryName = String.valueOf(configs.get(AWSSchemaRegistryConstants.TARGET_REGISTRY_NAME));
         } else {
-            this.targetRegistryName = AWSSchemaRegistryConstants.TARGET_REGISTRY_NAME;
+            this.targetRegistryName = this.registryName;
         }
     }
 
@@ -259,6 +259,7 @@ public class GlueSchemaRegistryConfiguration {
     private void validateAndSetAWSTargetEndpoint(Map<String, ?> configs) {
         if (isPresent(configs, AWSSchemaRegistryConstants.AWS_TARGET_ENDPOINT)) {
             this.targetEndPoint = String.valueOf(configs.get(AWSSchemaRegistryConstants.AWS_TARGET_ENDPOINT));
+            this.endPoint = String.valueOf(configs.get(AWSSchemaRegistryConstants.AWS_TARGET_ENDPOINT));
         } else {
             this.targetEndPoint = String.valueOf(configs.get(AWSSchemaRegistryConstants.AWS_ENDPOINT));
         }
