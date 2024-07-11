@@ -15,6 +15,8 @@ import org.apache.kafka.connect.errors.DataException;
 import org.apache.kafka.connect.storage.Converter;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
+
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -67,10 +69,25 @@ public class AWSGlueCrossRegionSchemaReplicationConverter implements Converter {
             throw new DataException("Source Region is not provided.");
         } else if (configs.get(AWSSchemaRegistryConstants.AWS_TARGET_REGION) == null && configs.get(AWSSchemaRegistryConstants.AWS_REGION) == null) {
             throw new DataException("Target Region is not provided.");
+        } else if (configs.get(AWSSchemaRegistryConstants.SOURCE_REGISTRY_NAME) == null) {
+            throw new DataException("Source Registry is not provided.");
+        } else if (configs.get(AWSSchemaRegistryConstants.TARGET_REGISTRY_NAME) == null && configs.get(AWSSchemaRegistryConstants.REGISTRY_NAME) == null) {
+            throw new DataException("Target Registry is not provided.");
+        } else if (configs.get(AWSSchemaRegistryConstants.AWS_SOURCE_ENDPOINT) == null) {
+            throw new DataException("Source Endpoint is not provided.");
+        } else if (configs.get(AWSSchemaRegistryConstants.AWS_TARGET_ENDPOINT) == null) {
+            throw new DataException("Target Endpoint is not provided.");
         }
 
         sourceConfigs.put(AWSSchemaRegistryConstants.AWS_REGION, configs.get(AWSSchemaRegistryConstants.AWS_SOURCE_REGION));
-        targetConfigs.put(AWSSchemaRegistryConstants.AWS_REGION, configs.get(AWSSchemaRegistryConstants.AWS_TARGET_REGION));
+        sourceConfigs.put(AWSSchemaRegistryConstants.AWS_ENDPOINT, configs.get(AWSSchemaRegistryConstants.AWS_SOURCE_ENDPOINT));
+        if (configs.get(AWSSchemaRegistryConstants.AWS_TARGET_REGION) != null) {
+            targetConfigs.put(AWSSchemaRegistryConstants.AWS_REGION, configs.get(AWSSchemaRegistryConstants.AWS_TARGET_REGION));
+        }
+        if (configs.get(AWSSchemaRegistryConstants.TARGET_REGISTRY_NAME) != null) {
+            targetConfigs.put(AWSSchemaRegistryConstants.REGISTRY_NAME, configs.get(AWSSchemaRegistryConstants.TARGET_REGISTRY_NAME));
+        }
+        targetConfigs.put(AWSSchemaRegistryConstants.SCHEMA_AUTO_REGISTRATION_SETTING, true);
 
         serializer = new GlueSchemaRegistrySerializerImpl(credentialsProvider, new GlueSchemaRegistryConfiguration(targetConfigs));
         deserializer = new GlueSchemaRegistryDeserializerImpl(credentialsProvider, new GlueSchemaRegistryConfiguration(sourceConfigs));
@@ -84,7 +101,7 @@ public class AWSGlueCrossRegionSchemaReplicationConverter implements Converter {
         try {
             byte[] deserializedBytes = deserializer.getData(bytes);
             SchemaV2 deserializedSchema = deserializer.getSchemaV2(bytes);
-            
+
             return serializer.encodeV2(topic, deserializedSchema, deserializedBytes);
 
         }  catch(GlueSchemaRegistryIncompatibleDataException ex) {

@@ -12,8 +12,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import software.amazon.awssdk.services.glue.model.Compatibility;
 
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -113,8 +112,6 @@ public class SchemaByDefinitionFetcher {
         return schemaVersionId;
     }
 
-
-
     /**
      * Get Schema Version ID by following below steps :
      * <p>
@@ -143,6 +140,7 @@ public class SchemaByDefinitionFetcher {
             @NonNull Compatibility compatibility,
             @NonNull Map<String, String> metadata) throws AWSSchemaRegistryException {
         UUID schemaVersionId;
+        Map<SchemaV2, UUID> schemaWithVersionId;
         final SchemaV2 schema = new SchemaV2(schemaDefinition, dataFormat, schemaName, compatibility);
 
         try {
@@ -158,14 +156,24 @@ public class SchemaByDefinitionFetcher {
                 }
                 schemaVersionId =
                         awsSchemaRegistryClient.registerSchemaVersion(schemaDefinition, schemaName, dataFormat, metadata);
+                schemaDefinitionToVersionCacheV2.put(schema, schemaVersionId);
             } else if (exceptionCauseMessage.contains(AWSSchemaRegistryConstants.SCHEMA_NOT_FOUND_MSG)) {
                 if (!glueSchemaRegistryConfiguration.isSchemaAutoRegistrationEnabled()) {
                     throw new AWSSchemaRegistryException(AWSSchemaRegistryConstants.AUTO_REGISTRATION_IS_DISABLED_MSG,
                             schemaRegistryException);
                 }
 
-                schemaVersionId =
+                //When schema is not created in the target, create the schema in target and
+                // register all the existing schema version from the source schema to the target in the same order.
+                schemaWithVersionId =
                         awsSchemaRegistryClient.createSchemaV2(schemaName, dataFormat, schemaDefinition, compatibility, metadata);
+
+                //Cache all the schema versions for a Glue Schema Registry schema
+                schemaWithVersionId.entrySet()
+                                .stream()
+                                .forEach(item -> {
+                                    schemaDefinitionToVersionCacheV2.put(item.getKey(), item.getValue());
+                                });
             } else {
                 String msg =
                         String.format(
@@ -173,8 +181,8 @@ public class SchemaByDefinitionFetcher {
                                 schemaDefinition, schemaName);
                 throw new AWSSchemaRegistryException(msg, schemaRegistryException);
             }
-            schemaDefinitionToVersionCacheV2.put(schema, schemaVersionId);
         }
+        schemaVersionId = schemaDefinitionToVersionCacheV2.get(schema);
         return schemaVersionId;
     }
 

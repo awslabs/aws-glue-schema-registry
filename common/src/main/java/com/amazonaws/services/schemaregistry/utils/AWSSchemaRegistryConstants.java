@@ -15,6 +15,7 @@
 
 package com.amazonaws.services.schemaregistry.utils;
 
+import software.amazon.awssdk.services.glue.endpoints.internal.Value;
 import software.amazon.awssdk.services.glue.model.Compatibility;
 
 public final class AWSSchemaRegistryConstants {
@@ -46,6 +47,14 @@ public final class AWSSchemaRegistryConstants {
      * AWS target region to use while initializing the client for service.
      */
     public static final String AWS_TARGET_REGION = "target.region";
+    /**
+     * Number of schema versions to replicate from source to target
+     */
+    public static final String REPLICATE_SCHEMA_VERSION_COUNT = "replicateSchemaVersionCount";
+    /**
+     * Default number of schema versions to replicate from source to target
+     */
+    public static final Integer DEFAULT_REPLICATE_SCHEMA_VERSION_COUNT = 10;
     /**
      * Header Version Byte.
      */
@@ -120,6 +129,14 @@ public final class AWSSchemaRegistryConstants {
      * Default registry name if not passed by the client.
      */
     public static final String DEFAULT_REGISTRY_NAME = "default-registry";
+    /**
+     * Source Registry Name.
+     */
+    public static final String SOURCE_REGISTRY_NAME = "source.registry.name";
+    /**
+     * Target Registry Name.
+     */
+    public static final String TARGET_REGISTRY_NAME = "target.registry.name";
     /**
      * Compatibility setting, will be helpful at the time of schema evolution.
      */

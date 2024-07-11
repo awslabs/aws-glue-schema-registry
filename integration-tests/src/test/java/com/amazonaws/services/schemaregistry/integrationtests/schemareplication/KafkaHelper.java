@@ -104,39 +104,11 @@ public class KafkaHelper {
      * @return
      */
     public int doConsume(final ConsumerProperties consumerProperties) {
-        final Properties properties = getKafkaConsumerProperties(consumerProperties);
+        final Properties properties = getKafkaConsumerProperties(consumerProperties, true);
         properties.put("key.deserializer", StringDeserializer.class.getName());
         properties.put("value.deserializer", StringDeserializer.class.getName());
         final KafkaConsumer<String, String> consumer = new KafkaConsumer<>(properties);
         return consumeRecords(consumer, consumerProperties.getTopicName()).size();
-    }
-
-    /**
-     * Helper function to produce test AVRO records for Streams
-     *
-     * @param producerProperties producerProperties
-     * @throws Exception
-     */
-    public List<ProducerRecord<String, Object>> doProduceAvroRecordsSerde(final ProducerProperties producerProperties,
-                                                                          final List<?> records) throws Exception {
-        Properties properties = getProducerProperties(producerProperties);
-        final Producer<String, Object> producer =
-                new KafkaProducer<>(properties, new StringSerializer(),
-                                    new GlueSchemaRegistryKafkaSerializer(getMapFromPropertiesFile(properties)));
-        return produceRecords(producer, producerProperties, records);
-    }
-
-    /**
-     * Helper function to consume test AVRO records for Streams
-     *
-     * @param consumerProperties consumerProperties
-     * @return
-     */
-    public List<ConsumerRecord<String, Object>> doConsumeAvroRecordsSerde(final ConsumerProperties consumerProperties) {
-        Properties properties = getConsumerProperties(consumerProperties);
-        KafkaConsumer<String, Object> consumer = new KafkaConsumer<>(properties, new StringDeserializer(),
-                new GlueSchemaRegistryKafkaDeserializer(getMapFromPropertiesFile(properties)));
-        return consumeRecords(consumer, consumerProperties.getTopicName());
     }
 
     /**
@@ -161,13 +133,27 @@ public class KafkaHelper {
      * @param
      */
     public <T> List<ConsumerRecord<String, T>> doConsumeRecords(final ConsumerProperties consumerProperties) {
-        Properties properties = getConsumerProperties(consumerProperties);
+        Properties properties = getConsumerProperties(consumerProperties, true);
         properties.put("key.deserializer", StringDeserializer.class.getName());
         properties.put("value.deserializer", GlueSchemaRegistryKafkaDeserializer.class.getName());
 
-        properties.forEach((k, v) -> System.out.println(k + ":" + v));
         final KafkaConsumer<String, T> consumer = new KafkaConsumer<>(properties);
         return consumeRecords(consumer, consumerProperties.getTopicName());
+    }
+
+    /**
+     * Helper function to test consumption of records using ByteArrayDeserializer
+     *
+     * @param
+     * @return
+     */
+    public <T> List<ConsumerRecord<String, byte[]>> doConsumeRecordsWithByteArrayDeserializer(final ConsumerProperties consumerProperties) {
+        Properties properties = getConsumerProperties(consumerProperties, false);
+        properties.put("key.deserializer", org.apache.kafka.common.serialization.ByteArrayDeserializer.class.getName());
+        properties.put("value.deserializer", org.apache.kafka.common.serialization.ByteArrayDeserializer.class.getName());
+
+        final KafkaConsumer<String, byte[]> consumer = new KafkaConsumer<>(properties);
+        return consumeRecordsAsByteArray(consumer, consumerProperties.getTopicName());
     }
 
     /**
@@ -224,38 +210,23 @@ public class KafkaHelper {
         return consumerRecords;
     }
 
-    /**
-     * Helper function to produce test AVRO records in multithreaded manner
-     *
-     * @param producerProperties producerProperties
-     * @return
-     */
-    public <T> List<ProducerRecord<String, T>> doProduceRecordsMultithreaded(final ProducerProperties producerProperties,
-                                                                             final List<?> records) throws Exception {
-        Properties properties = getProducerProperties(producerProperties);
-        properties.put("key.serializer", StringSerializer.class.getName());
-        properties.put("value.serializer", GlueSchemaRegistryKafkaSerializer.class.getName());
+    private List<ConsumerRecord<String, byte[]>> consumeRecordsAsByteArray(final KafkaConsumer<String, byte[]> consumer,
+                                                               final String topic) {
+        log.info("Start consuming from cluster {} with bootstrap {} ...", clusterArn, bootstrapBrokers);
 
-        int numberOfThreads = 4;
-        List<CompletableFuture<Void>> futures = new ArrayList<>();
-        List<ProducerRecord<String, T>> producerRecords = new ArrayList<>();
-
-        for (int i = 0; i < numberOfThreads; i++) {
-            futures.add(CompletableFuture.runAsync(() -> {
-                Producer<String, T> producer = new KafkaProducer<>(properties);
-                try {
-                    producerRecords.addAll(produceRecords(producer, producerProperties, records));
-                } catch (Exception e) {
-                    throw new CompletionException(e);
-                }
-            }));
+        consumer.subscribe(Collections.singleton(topic));
+        List<ConsumerRecord<String, byte[]>> consumerRecords = new ArrayList<>();
+        final long now = System.currentTimeMillis();
+        while (System.currentTimeMillis() - now < CONSUMER_RUNTIME.toMillis()) {
+            final ConsumerRecords<String, byte[]> recordsReceived = consumer.poll(Duration.ofMillis(CONSUMER_RUNTIME.toMillis()));
+            for (final ConsumerRecord<String, byte[]> record : recordsReceived) {
+                consumerRecords.add(record);
+            }
         }
 
-        CompletableFuture<Void> future =
-                CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()]));
-
-        future.get();
-        return producerRecords;
+        consumer.close();
+        log.info("Finished consuming messages via Kafka.");
+        return consumerRecords;
     }
 
     private Properties getProducerProperties(final ProducerProperties producerProperties) {
@@ -277,18 +248,21 @@ public class KafkaHelper {
         return properties;
     }
 
-    private Properties getConsumerProperties(final ConsumerProperties consumerProperties) {
-        Properties properties = getKafkaConsumerProperties(consumerProperties);
+    private Properties getConsumerProperties(final ConsumerProperties consumerProperties, boolean shouldAddRegistryDetails) {
+        Properties properties = getKafkaConsumerProperties(consumerProperties, shouldAddRegistryDetails);
         return properties;
     }
 
-    private Properties getKafkaConsumerProperties(final ConsumerProperties consumerProperties) {
+    private Properties getKafkaConsumerProperties(final ConsumerProperties consumerProperties, boolean shouldAddRegistryDetails) {
         Properties properties = new Properties();
         properties.put("bootstrap.servers", bootstrapBrokers);
         properties.put("group.id", UUID.randomUUID().toString());
         properties.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-        properties.put(AWSSchemaRegistryConstants.AWS_ENDPOINT, consumerProperties.DEST_ENDPOINT);
-        properties.put(AWSSchemaRegistryConstants.AWS_REGION, consumerProperties.DEST_REGION);
+
+        if (shouldAddRegistryDetails) {
+            properties.put(AWSSchemaRegistryConstants.AWS_ENDPOINT, consumerProperties.DEST_ENDPOINT);
+            properties.put(AWSSchemaRegistryConstants.AWS_REGION, consumerProperties.DEST_REGION);
+        }
 
         if(consumerProperties.getAvroRecordType() != null) {
             properties.put(AWSSchemaRegistryConstants.AVRO_RECORD_TYPE, consumerProperties.getAvroRecordType());

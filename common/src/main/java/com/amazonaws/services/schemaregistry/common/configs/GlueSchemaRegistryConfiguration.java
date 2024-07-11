@@ -57,6 +57,9 @@ public class GlueSchemaRegistryConfiguration {
     private AvroRecordType avroRecordType;
     private ProtobufMessageType protobufMessageType;
     private String registryName;
+    private String sourceRegistryName;
+    private String targetRegistryName;
+    private int replicateSchemaVersionCount;
     private Compatibility compatibilitySetting;
     private String description;
     private boolean schemaAutoRegistrationEnabled = false;
@@ -101,6 +104,9 @@ public class GlueSchemaRegistryConfiguration {
         validateAndSetAWSSourceEndpoint(configs);
         validateAndSetAWSTargetEndpoint(configs);
         validateAndSetRegistryName(configs);
+        validateAndSetSourceRegistryName(configs);
+        validateAndSetTargetRegistryName(configs);
+        validateAndSetReplicateSchemaVersionCount(configs);
         validateAndSetDescription(configs);
         validateAndSetAvroRecordType(configs);
         validateAndSetProtobufMessageType(configs);
@@ -211,6 +217,30 @@ public class GlueSchemaRegistryConfiguration {
             this.registryName = String.valueOf(configs.get(AWSSchemaRegistryConstants.REGISTRY_NAME));
         } else {
             this.registryName = AWSSchemaRegistryConstants.DEFAULT_REGISTRY_NAME;
+        }
+    }
+
+    private void validateAndSetSourceRegistryName(Map<String, ?> configs) {
+        if (isPresent(configs, AWSSchemaRegistryConstants.SOURCE_REGISTRY_NAME)) {
+            this.sourceRegistryName = String.valueOf(configs.get(AWSSchemaRegistryConstants.SOURCE_REGISTRY_NAME));
+        } else {
+            this.sourceRegistryName = AWSSchemaRegistryConstants.SOURCE_REGISTRY_NAME;
+        }
+    }
+
+    private void validateAndSetTargetRegistryName(Map<String, ?> configs) {
+        if (isPresent(configs, AWSSchemaRegistryConstants.TARGET_REGISTRY_NAME)) {
+            this.targetRegistryName = String.valueOf(configs.get(AWSSchemaRegistryConstants.TARGET_REGISTRY_NAME));
+        } else {
+            this.targetRegistryName = AWSSchemaRegistryConstants.TARGET_REGISTRY_NAME;
+        }
+    }
+
+    private void validateAndSetReplicateSchemaVersionCount(Map<String, ?> configs) {
+        if (isPresent(configs, AWSSchemaRegistryConstants.REPLICATE_SCHEMA_VERSION_COUNT)) {
+            this.replicateSchemaVersionCount = Integer.valueOf(configs.get(AWSSchemaRegistryConstants.REPLICATE_SCHEMA_VERSION_COUNT).toString());
+        } else {
+            this.replicateSchemaVersionCount = AWSSchemaRegistryConstants.DEFAULT_REPLICATE_SCHEMA_VERSION_COUNT;
         }
     }
 
