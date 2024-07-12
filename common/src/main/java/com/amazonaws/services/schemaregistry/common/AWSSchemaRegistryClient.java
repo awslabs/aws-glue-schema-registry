@@ -474,7 +474,6 @@ public class AWSSchemaRegistryClient {
         try {
             RegisterSchemaVersionResponse registerSchemaVersionResponse =
                     client.registerSchemaVersion(getRegisterSchemaVersionRequest(schemaDefinition, schemaName));
-
             log.info("Registered the schema version with schema version id = {} and with version number = {} and "
                      + "status {}", registerSchemaVersionResponse.schemaVersionId(),
                      registerSchemaVersionResponse.versionNumber(), registerSchemaVersionResponse.statusAsString());
