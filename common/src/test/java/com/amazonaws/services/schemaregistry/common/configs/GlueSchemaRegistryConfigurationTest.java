@@ -412,7 +412,6 @@ public class GlueSchemaRegistryConfigurationTest {
         GlueSchemaRegistryConfiguration glueSchemaRegistryConfiguration = new GlueSchemaRegistryConfiguration(props);
 
         assertEquals(expectedRegistryName, glueSchemaRegistryConfiguration.getTargetRegistryName());
-        assertEquals(expectedRegistryName, glueSchemaRegistryConfiguration.getRegistryName());
     }
 
     /**
@@ -439,7 +438,6 @@ public class GlueSchemaRegistryConfigurationTest {
         GlueSchemaRegistryConfiguration glueSchemaRegistryConfiguration = new GlueSchemaRegistryConfiguration(props);
 
         assertEquals(expectedEndpoint, glueSchemaRegistryConfiguration.getTargetEndPoint());
-        assertEquals(expectedEndpoint, glueSchemaRegistryConfiguration.getEndPoint());
     }
 
     /**
@@ -492,7 +490,6 @@ public class GlueSchemaRegistryConfigurationTest {
         GlueSchemaRegistryConfiguration glueSchemaRegistryConfiguration = new GlueSchemaRegistryConfiguration(props);
 
         assertEquals(expectedRegion, glueSchemaRegistryConfiguration.getTargetRegion());
-        assertEquals(expectedRegion, glueSchemaRegistryConfiguration.getRegion());
     }
 
     /**

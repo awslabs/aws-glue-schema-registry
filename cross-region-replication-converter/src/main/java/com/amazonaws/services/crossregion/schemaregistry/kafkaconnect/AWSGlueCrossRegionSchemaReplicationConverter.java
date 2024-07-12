@@ -76,6 +76,16 @@ public class AWSGlueCrossRegionSchemaReplicationConverter implements Converter {
             sourceConfigs.put(AWSSchemaRegistryConstants.REGISTRY_NAME, configs.get(AWSSchemaRegistryConstants.SOURCE_REGISTRY_NAME));
         }
 
+        if (configs.get(AWSSchemaRegistryConstants.AWS_TARGET_REGION) != null) {
+            targetConfigs.put(AWSSchemaRegistryConstants.AWS_REGION, configs.get(AWSSchemaRegistryConstants.AWS_TARGET_REGION));
+        }
+        if (configs.get(AWSSchemaRegistryConstants.TARGET_REGISTRY_NAME) != null) {
+            targetConfigs.put(AWSSchemaRegistryConstants.REGISTRY_NAME, configs.get(AWSSchemaRegistryConstants.TARGET_REGISTRY_NAME));
+        }
+        if (configs.get(AWSSchemaRegistryConstants.AWS_TARGET_ENDPOINT) != null) {
+            targetConfigs.put(AWSSchemaRegistryConstants.AWS_ENDPOINT, configs.get(AWSSchemaRegistryConstants.AWS_TARGET_ENDPOINT));
+        }
+
         targetConfigs.put(AWSSchemaRegistryConstants.SCHEMA_AUTO_REGISTRATION_SETTING, true);
 
 

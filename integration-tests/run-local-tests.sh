@@ -115,7 +115,7 @@ cleanUpConnectFiles() {
 
 cleanUpDockerResources || true
 # Start Kafka using docker command asynchronously
-docker-compose up --no-attach localstack &
+docker compose up --no-attach localstack &
 ## Pause to allow docker build to complete
 sleep 60
 ## Run mvn tests for Kafka, Kinesis Platforms and Schema Replication
@@ -132,7 +132,7 @@ downloadMongoDBConnector
 copyGSRConverters
 
 runConnectTests() {
-    docker-compose up --no-attach localstack &
+    docker compose up --no-attach localstack &
     setUpMongoDBLocal
     startKafkaConnectTasks ${1}
     echo "Waiting for Sink task to pick up data.."
