@@ -67,6 +67,7 @@ public class GlueSchemaRegistryConfiguration {
     private Map<String, String> metadata;
     private String secondaryDeserializer;
     private URI proxyUrl;
+    private boolean synchroniseExistingSchema = false;
 
     /**
      * Name of the application using the serializer/deserializer.

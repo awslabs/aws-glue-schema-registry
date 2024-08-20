@@ -322,12 +322,12 @@ public class AWSSchemaRegistryClient {
      * @return           Map of SchemaV2 with VersionIds
      * @throws AWSSchemaRegistryException on any error during the schema creation
      */
-    public Map<SchemaV2, UUID> createSchemaV2(String schemaName,
-                                     String dataFormat,
-                                     String schemaDefinition,
-                                     Compatibility compatibility,
-                                     Map<String, String> metadata) throws AWSSchemaRegistryException {
-        Map<SchemaV2, UUID> schemaWithVersionId = new HashMap<>();
+    public Map<Schema, UUID> createSchemaAndRegisterAllSchemaVersions(String schemaName,
+                                              String dataFormat,
+                                              String schemaDefinition,
+                                              Compatibility compatibility,
+                                              Map<String, String> metadata) throws AWSSchemaRegistryException {
+        Map<Schema, UUID> schemaWithVersionId = new HashMap<>();
         UUID schemaVersionId;
 
         try {
@@ -366,7 +366,7 @@ public class AWSSchemaRegistryClient {
                             schemaNameFromArn, getSchemaVersionResponse.dataFormat().toString(), metadataInfo);
                 }
 
-                SchemaV2 schema = new SchemaV2(getSchemaVersionResponse.schemaDefinition(), getSchemaVersionResponse.dataFormat().toString(), schemaNameFromArn, compatibility);
+                Schema schema = new Schema(getSchemaVersionResponse.schemaDefinition(), getSchemaVersionResponse.dataFormat().toString(), schemaNameFromArn);
 
                 //Create a map of schema and schemaVersionId
                 schemaWithVersionId.put(schema, schemaVersionId);
@@ -375,7 +375,7 @@ public class AWSSchemaRegistryClient {
             log.warn("Schema is already created, this could be caused by multiple producers racing to "
                     + "auto-create schema.");
             schemaVersionId = registerSchemaVersion(schemaDefinition, schemaName, dataFormat, metadata);
-            SchemaV2 schema = new SchemaV2(schemaDefinition, dataFormat, schemaName, compatibility);
+            Schema schema = new Schema(schemaDefinition, dataFormat, schemaName);
             schemaWithVersionId.put(schema, schemaVersionId);
             putSchemaVersionMetadata(schemaVersionId, metadata);
 

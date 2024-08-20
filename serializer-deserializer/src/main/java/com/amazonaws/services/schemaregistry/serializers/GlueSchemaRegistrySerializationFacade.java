@@ -14,7 +14,12 @@
  */
 package com.amazonaws.services.schemaregistry.serializers;
 
-import com.amazonaws.services.schemaregistry.common.*;
+import com.amazonaws.services.schemaregistry.common.AWSSchemaRegistryClient;
+import com.amazonaws.services.schemaregistry.common.AWSSchemaRegistryGlueClientRetryPolicyHelper;
+import com.amazonaws.services.schemaregistry.common.AWSSerializerInput;
+import com.amazonaws.services.schemaregistry.common.GlueSchemaRegistryDataFormatSerializer;
+import com.amazonaws.services.schemaregistry.common.Schema;
+import com.amazonaws.services.schemaregistry.common.SchemaByDefinitionFetcher;
 import com.amazonaws.services.schemaregistry.common.configs.GlueSchemaRegistryConfiguration;
 import com.amazonaws.services.schemaregistry.exception.AWSSchemaRegistryException;
 import com.amazonaws.services.schemaregistry.utils.AWSSchemaRegistryConstants;
@@ -23,7 +28,6 @@ import lombok.NonNull;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
-import software.amazon.awssdk.services.glue.model.Compatibility;
 import software.amazon.awssdk.services.glue.model.DataFormat;
 
 import java.util.HashMap;
@@ -84,22 +88,6 @@ public class GlueSchemaRegistrySerializationFacade {
         return schemaVersionId;
     }
 
-    @SneakyThrows
-    public UUID getOrRegisterSchemaVersionV2(@NonNull AWSSerializerInput serializerInput) {
-        String schemaDefinition = serializerInput.getSchemaDefinition();
-        String schemaName = serializerInput.getSchemaName();
-        String transportName = serializerInput.getTransportName();
-        Compatibility compatibility = serializerInput.getCompatibility();
-        String dataFormat = serializerInput.getDataFormat();
-
-        Map<String, String> metadata = constructSchemaVersionMetadata(transportName);
-
-        UUID schemaVersionId =
-                schemaByDefinitionFetcher.getORRegisterSchemaVersionIdV2(schemaDefinition, schemaName, dataFormat,
-                        compatibility, metadata);
-        return schemaVersionId;
-    }
-
     private Map<String, String> constructSchemaVersionMetadata(String transportName) {
         Map<String, String> metadata = new HashMap<>();
         metadata.put(AWSSchemaRegistryConstants.TRANSPORT_METADATA_KEY, transportName);
@@ -140,30 +128,6 @@ public class GlueSchemaRegistrySerializationFacade {
                                                                   .dataFormat(dataFormat)
                                                                   .transportName(transportName)
                                                                   .build());
-
-        return serializationDataEncoder.write(data, schemaVersionId);
-    }
-
-    public byte[] encodeV2(String transportName,
-                         SchemaV2 schema,
-                         byte[] data) {
-        final String dataFormat = schema.getDataFormat();
-        final String schemaDefinition = schema.getSchemaDefinition();
-        final String schemaName = schema.getSchemaName();
-
-        GlueSchemaRegistryDataFormatSerializer dataFormatSerializer =
-                glueSchemaRegistrySerializerFactory.getInstance(
-                        DataFormat.valueOf(dataFormat), glueSchemaRegistryConfiguration);
-        //Ensures the data bytes conform to schema definition for data formats like JSON.
-        dataFormatSerializer.validate(schemaDefinition, data);
-
-        UUID schemaVersionId = getOrRegisterSchemaVersionV2(AWSSerializerInput.builder()
-                .schemaDefinition(schemaDefinition)
-                .schemaName(schemaName)
-                .dataFormat(dataFormat)
-                .transportName(transportName)
-                .compatibility(schema.getCompatibilityMode())
-                .build());
 
         return serializationDataEncoder.write(data, schemaVersionId);
     }

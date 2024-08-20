@@ -15,11 +15,9 @@
 package com.amazonaws.services.schemaregistry.serializers;
 
 import com.amazonaws.services.schemaregistry.common.Schema;
-import com.amazonaws.services.schemaregistry.common.SchemaV2;
 import com.amazonaws.services.schemaregistry.common.configs.GlueSchemaRegistryConfiguration;
 import com.google.common.annotations.VisibleForTesting;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
-import software.amazon.awssdk.services.glue.model.Compatibility;
 
 import javax.annotation.Nullable;
 
@@ -82,28 +80,6 @@ public class GlueSchemaRegistrySerializerImpl implements GlueSchemaRegistrySeria
             transportName,
             schema,
             data
-        );
-    }
-
-    /**
-     * Converts the given data byte array to be Glue Schema Registry compatible byte array.
-     * If the auto-registration setting is turned on, a new schema definitions will be automatically registered.
-     * Note that the encoded byte array can only be decoded by a
-     * Glue Schema Registry de-serializer ({@link com.amazonaws.services.schemaregistry.deserializers.GlueSchemaRegistryDeserializer}
-     *
-     * @param transportName {@link String} Name of the transport channel for the message.
-     *                                    This will be used to add metadata to schema.
-     *                                    If null, "default-stream" will be used.
-     * @param schema {@link SchemaV2} A schema object.
-     * @param data byte array of data that needs to be encoded.
-     * @return Encoded Glue Schema Registry compatible byte array.
-     */
-    @Override
-    public byte[] encodeV2(@Nullable String transportName, SchemaV2 schema, byte[] data) {
-        return glueSchemaRegistrySerializationFacade.encodeV2(
-                transportName,
-                schema,
-                data
         );
     }
 }

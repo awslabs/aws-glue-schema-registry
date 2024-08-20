@@ -1,7 +1,6 @@
 package com.amazonaws.services.schemaregistry.deserializers;
 
 import com.amazonaws.services.schemaregistry.common.Schema;
-import com.amazonaws.services.schemaregistry.common.SchemaV2;
 import com.amazonaws.services.schemaregistry.common.configs.GlueSchemaRegistryConfiguration;
 import com.amazonaws.services.schemaregistry.utils.AWSSchemaRegistryConstants;
 import com.google.common.collect.ImmutableMap;
@@ -11,16 +10,14 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
-import software.amazon.awssdk.services.glue.model.Compatibility;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.UUID;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.doReturn;
 
@@ -35,7 +32,6 @@ public class GlueSchemaRegistryDeserializerImplTest {
     private static final String REGION = "us-west-2";
     private final static byte[] ENCODED_DATA = new byte[] { 8, 9, 12, 83, 82 };
     private final static Schema SCHEMA_REGISTRY_SCHEMA = new Schema("{}", "AVRO", "schemaFoo");
-    private final static SchemaV2 SCHEMA_REGISTRY_SCHEMAV2 = new SchemaV2("{}", "AVRO", "schemaFoo", Compatibility.FORWARD);
     private final Map<String, Object> config =
         ImmutableMap.of(
             AWSSchemaRegistryConstants.AWS_REGION, REGION
@@ -76,16 +72,6 @@ public class GlueSchemaRegistryDeserializerImplTest {
         Schema actual = glueSchemaRegistryDeserializer.getSchema(ENCODED_DATA);
 
         assertEquals(SCHEMA_REGISTRY_SCHEMA, actual);
-    }
-
-    @Test
-    public void getSchemaV2_WhenValidSchemaRegistryEncodedBytesAreSent_ReturnsSchema() {
-        doReturn(SCHEMA_REGISTRY_SCHEMAV2)
-                .when(glueSchemaRegistryDeserializationFacade).getSchemaV2(ENCODED_DATA);
-
-        SchemaV2 actual = glueSchemaRegistryDeserializer.getSchemaV2(ENCODED_DATA);
-
-        assertEquals(SCHEMA_REGISTRY_SCHEMAV2, actual);
     }
 
     @Test

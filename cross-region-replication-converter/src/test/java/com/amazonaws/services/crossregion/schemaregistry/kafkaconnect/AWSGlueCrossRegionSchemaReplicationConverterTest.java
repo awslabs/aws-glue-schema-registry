@@ -1,16 +1,13 @@
 package com.amazonaws.services.crossregion.schemaregistry.kafkaconnect;
 
 import com.amazonaws.services.schemaregistry.common.Schema;
-import com.amazonaws.services.schemaregistry.common.SchemaV2;
 import com.amazonaws.services.schemaregistry.deserializers.GlueSchemaRegistryDeserializerImpl;
 import com.amazonaws.services.schemaregistry.exception.AWSSchemaRegistryException;
 import com.amazonaws.services.schemaregistry.exception.GlueSchemaRegistryIncompatibleDataException;
 import com.amazonaws.services.schemaregistry.serializers.GlueSchemaRegistrySerializerImpl;
 import com.amazonaws.services.schemaregistry.utils.AWSSchemaRegistryConstants;
-import com.amazonaws.services.schemaregistry.utils.AvroRecordType;
-
-import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.data.SchemaBuilder;
+import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.errors.DataException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -20,15 +17,18 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
-import software.amazon.awssdk.services.glue.model.Compatibility;
 import software.amazon.awssdk.services.glue.model.DataFormat;
 
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.when;
 
 /**
  * Unit tests for testing RegisterSchema class.
@@ -162,13 +162,13 @@ public class AWSGlueCrossRegionSchemaReplicationConverterTest {
      */
     @Test
     public void testConverter_fromConnectData_serializer_avroSchema_throwsException() {
-        SchemaV2 SCHEMA_REGISTRY_SCHEMA = new SchemaV2("{}", DataFormat.AVRO.name(), "schemaFoo", Compatibility.FORWARD);
+        Schema SCHEMA_REGISTRY_SCHEMA = new Schema("{}", DataFormat.AVRO.name(), "schemaFoo");
         Struct expected = createStructRecord();
         doReturn(USER_DATA)
                 .when(deserializer).getData(genericBytes);
         doReturn(SCHEMA_REGISTRY_SCHEMA)
-                .when(deserializer).getSchemaV2(genericBytes);
-        when(serializer.encodeV2(testTopic, SCHEMA_REGISTRY_SCHEMA, USER_DATA)).thenThrow(new AWSSchemaRegistryException());
+                .when(deserializer).getSchema(genericBytes);
+        when(serializer.encode(testTopic, SCHEMA_REGISTRY_SCHEMA, USER_DATA)).thenThrow(new AWSSchemaRegistryException());
         assertThrows(DataException.class, () -> converter.fromConnectData(testTopic, expected.schema(), genericBytes));
     }
 
@@ -177,13 +177,13 @@ public class AWSGlueCrossRegionSchemaReplicationConverterTest {
      */
     @Test
     public void testConverter_fromConnectData_deserializer_avroSchema_throwsException() {
-        SchemaV2 SCHEMA_REGISTRY_SCHEMA = new SchemaV2("{}", DataFormat.AVRO.name(), "schemaFoo", Compatibility.BACKWARD);
+        Schema SCHEMA_REGISTRY_SCHEMA = new Schema("{}", DataFormat.AVRO.name(), "schemaFoo");
         Struct expected = createStructRecord();
         when((deserializer).getData(genericBytes)).thenThrow(new AWSSchemaRegistryException());
         doReturn(SCHEMA_REGISTRY_SCHEMA)
-                .when(deserializer).getSchemaV2(genericBytes);
+                .when(deserializer).getSchema(genericBytes);
         doReturn(ENCODED_DATA)
-                .when(serializer).encodeV2(null, SCHEMA_REGISTRY_SCHEMA, USER_DATA);
+                .when(serializer).encode(null, SCHEMA_REGISTRY_SCHEMA, USER_DATA);
         assertThrows(DataException.class, () -> converter.fromConnectData(testTopic, expected.schema(), genericBytes));
     }
 
@@ -193,14 +193,14 @@ public class AWSGlueCrossRegionSchemaReplicationConverterTest {
     @Test
     public void testConverter_fromConnectData_avroSchema_succeeds() {
         String schemaDefinition = "{\"namespace\":\"com.amazonaws.services.schemaregistry.serializers.avro\",\"type\":\"record\",\"name\":\"payment\",\"fields\":[{\"name\":\"id\",\"type\":\"string\"},{\"name\":\"id_6\",\"type\":\"double\"}]}";
-        SchemaV2 testSchema = new SchemaV2(schemaDefinition, DataFormat.AVRO.name(), testTopic, Compatibility.FORWARD);
+        Schema testSchema = new Schema(schemaDefinition, DataFormat.AVRO.name(), testTopic);
         Struct expected = createStructRecord();
         doReturn(genericBytes).
                 when(deserializer).getData(avroBytes);
         doReturn(testSchema).
-                when(deserializer).getSchemaV2(avroBytes);
+                when(deserializer).getSchema(avroBytes);
         doReturn(ENCODED_DATA)
-                .when(serializer).encodeV2(testTopic, testSchema, genericBytes);
+                .when(serializer).encode(testTopic, testSchema, genericBytes);
         assertEquals(converter.fromConnectData(testTopic, expected.schema(), avroBytes), ENCODED_DATA);
     }
 
@@ -209,13 +209,13 @@ public class AWSGlueCrossRegionSchemaReplicationConverterTest {
      */
     @Test
     public void testConverter_fromConnectData_serializer_jsonSchema_throwsException() {
-        SchemaV2 SCHEMA_REGISTRY_SCHEMA = new SchemaV2("{}", DataFormat.JSON.name(), "schemaFoo", Compatibility.BACKWARD);
+        Schema SCHEMA_REGISTRY_SCHEMA = new Schema("{}", DataFormat.JSON.name(), "schemaFoo");
         Struct expected = createStructRecord();
         doReturn(USER_DATA)
                 .when(deserializer).getData(genericBytes);
         doReturn(SCHEMA_REGISTRY_SCHEMA)
-                .when(deserializer).getSchemaV2(genericBytes);
-        when(serializer.encodeV2(testTopic, SCHEMA_REGISTRY_SCHEMA, USER_DATA)).thenThrow(new AWSSchemaRegistryException());
+                .when(deserializer).getSchema(genericBytes);
+        when(serializer.encode(testTopic, SCHEMA_REGISTRY_SCHEMA, USER_DATA)).thenThrow(new AWSSchemaRegistryException());
         assertThrows(DataException.class, () -> converter.fromConnectData(testTopic, expected.schema(), genericBytes));
     }
 
@@ -224,13 +224,13 @@ public class AWSGlueCrossRegionSchemaReplicationConverterTest {
      */
     @Test
     public void testConverter_fromConnectData_deserializer_jsonSchema_throwsException() {
-        SchemaV2 SCHEMA_REGISTRY_SCHEMA = new SchemaV2("{}", DataFormat.JSON.name(), "schemaFoo", Compatibility.BACKWARD);
+        Schema SCHEMA_REGISTRY_SCHEMA = new Schema("{}", DataFormat.JSON.name(), "schemaFoo");
         Struct expected = createStructRecord();
         when((deserializer).getData(genericBytes)).thenThrow(new AWSSchemaRegistryException());
         doReturn(SCHEMA_REGISTRY_SCHEMA)
-                .when(deserializer).getSchemaV2(genericBytes);
+                .when(deserializer).getSchema(genericBytes);
         doReturn(ENCODED_DATA)
-                .when(serializer).encodeV2("schemaFoo", SCHEMA_REGISTRY_SCHEMA, USER_DATA);
+                .when(serializer).encode("schemaFoo", SCHEMA_REGISTRY_SCHEMA, USER_DATA);
         assertThrows(DataException.class, () -> converter.fromConnectData(testTopic, expected.schema(), genericBytes));
     }
 
@@ -246,14 +246,14 @@ public class AWSGlueCrossRegionSchemaReplicationConverterTest {
                 + "\"properties\":{\"latitude\":{\"type\":\"number\",\"minimum\":-90,"
                 + "\"maximum\":90},\"longitude\":{\"type\":\"number\",\"minimum\":-180,"
                 + "\"maximum\":180}},\"additionalProperties\":false}";
-        SchemaV2 testSchema = new SchemaV2(testSchemaDefinition, DataFormat.JSON.name(), testTopic, Compatibility.BACKWARD);
+        Schema testSchema = new Schema(testSchemaDefinition, DataFormat.JSON.name(), testTopic);
         Struct expected = createStructRecord();
         doReturn(genericBytes).
                 when(deserializer).getData(jsonBytes);
         doReturn(testSchema).
-                when(deserializer).getSchemaV2(jsonBytes);
+                when(deserializer).getSchema(jsonBytes);
         doReturn(ENCODED_DATA)
-                .when(serializer).encodeV2(testTopic, testSchema, genericBytes);
+                .when(serializer).encode(testTopic, testSchema, genericBytes);
         assertEquals(converter.fromConnectData(testTopic, expected.schema(), jsonBytes), ENCODED_DATA);
     }
 
@@ -272,13 +272,13 @@ public class AWSGlueCrossRegionSchemaReplicationConverterTest {
      */
     @Test
     public void testConverter_fromConnectData_serializer_protobufSchema_throwsException() {
-        SchemaV2 SCHEMA_REGISTRY_SCHEMA = new SchemaV2("{}", DataFormat.PROTOBUF.name(), "schemaFoo", Compatibility.FORWARD);
+        Schema SCHEMA_REGISTRY_SCHEMA = new Schema("{}", DataFormat.PROTOBUF.name(), "schemaFoo");
         Struct expected = createStructRecord();
         doReturn(USER_DATA)
                 .when(deserializer).getData(genericBytes);
         doReturn(SCHEMA_REGISTRY_SCHEMA)
-                .when(deserializer).getSchemaV2(genericBytes);
-        when(serializer.encodeV2(testTopic, SCHEMA_REGISTRY_SCHEMA, USER_DATA)).thenThrow(new AWSSchemaRegistryException());
+                .when(deserializer).getSchema(genericBytes);
+        when(serializer.encode(testTopic, SCHEMA_REGISTRY_SCHEMA, USER_DATA)).thenThrow(new AWSSchemaRegistryException());
         assertThrows(DataException.class, () -> converter.fromConnectData(testTopic, expected.schema(), genericBytes));
     }
 
@@ -287,13 +287,13 @@ public class AWSGlueCrossRegionSchemaReplicationConverterTest {
      */
     @Test
     public void testConverter_fromConnectData_deserializer_protobufSchema_throwsException() {
-        SchemaV2 SCHEMA_REGISTRY_SCHEMA = new SchemaV2("{}", DataFormat.PROTOBUF.name(), "schemaFoo", Compatibility.FORWARD);
+        Schema SCHEMA_REGISTRY_SCHEMA = new Schema("{}", DataFormat.PROTOBUF.name(), "schemaFoo");
         Struct expected = createStructRecord();
         when((deserializer).getData(genericBytes)).thenThrow(new AWSSchemaRegistryException());
         doReturn(SCHEMA_REGISTRY_SCHEMA)
-                .when(deserializer).getSchemaV2(genericBytes);
+                .when(deserializer).getSchema(genericBytes);
         doReturn(ENCODED_DATA)
-                .when(serializer).encodeV2("schemaFoo", SCHEMA_REGISTRY_SCHEMA, USER_DATA);
+                .when(serializer).encode("schemaFoo", SCHEMA_REGISTRY_SCHEMA, USER_DATA);
         assertThrows(DataException.class, () -> converter.fromConnectData(testTopic, expected.schema(), genericBytes));
     }
 
@@ -302,14 +302,14 @@ public class AWSGlueCrossRegionSchemaReplicationConverterTest {
      */
     @Test
     public void getSchema_protobuf_succeeds(){
-        SchemaV2 testSchema = new SchemaV2("foo", DataFormat.PROTOBUF.name(), testTopic, Compatibility.FORWARD);
+        Schema testSchema = new Schema("foo", DataFormat.PROTOBUF.name(), testTopic);
         Struct expected = createStructRecord();
         doReturn(genericBytes).
                 when(deserializer).getData(protobufBytes);
         doReturn(testSchema).
-                when(deserializer).getSchemaV2(protobufBytes);
+                when(deserializer).getSchema(protobufBytes);
         doReturn(ENCODED_DATA)
-                .when(serializer).encodeV2(testTopic, testSchema, genericBytes);
+                .when(serializer).encode(testTopic, testSchema, genericBytes);
         assertEquals(converter.fromConnectData(testTopic, expected.schema(), protobufBytes), ENCODED_DATA);
     }
 

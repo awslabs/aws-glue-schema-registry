@@ -17,10 +17,9 @@ package com.amazonaws.services.schemaregistry.deserializers;
 import com.amazonaws.services.schemaregistry.common.AWSDeserializerInput;
 import com.amazonaws.services.schemaregistry.common.AWSSchemaRegistryClient;
 import com.amazonaws.services.schemaregistry.common.Schema;
-import com.amazonaws.services.schemaregistry.common.SchemaV2;
 import com.amazonaws.services.schemaregistry.common.configs.GlueSchemaRegistryConfiguration;
-import com.amazonaws.services.schemaregistry.exception.GlueSchemaRegistryIncompatibleDataException;
 import com.amazonaws.services.schemaregistry.exception.AWSSchemaRegistryException;
+import com.amazonaws.services.schemaregistry.exception.GlueSchemaRegistryIncompatibleDataException;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -34,9 +33,7 @@ import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.arns.Arn;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.services.glue.model.DataFormat;
-import software.amazon.awssdk.services.glue.model.GetSchemaResponse;
 import software.amazon.awssdk.services.glue.model.GetSchemaVersionResponse;
-import software.amazon.awssdk.services.glue.model.SchemaId;
 
 import java.io.Closeable;
 import java.nio.ByteBuffer;
@@ -62,9 +59,6 @@ public class GlueSchemaRegistryDeserializationFacade implements Closeable {
 
     @VisibleForTesting
     protected LoadingCache<UUID, Schema> cache;
-
-    @VisibleForTesting
-    protected LoadingCache<UUID, SchemaV2> cacheV2;
 
     /**
      * Constructor accepting various dependencies.
@@ -95,7 +89,6 @@ public class GlueSchemaRegistryDeserializationFacade implements Closeable {
 
         this.deserializerFactory = new GlueSchemaRegistryDeserializerFactory();
         this.cache = initializeCache();
-        this.cacheV2 = initializeCacheV2();
     }
 
     private LoadingCache<UUID, Schema> initializeCache() {
@@ -106,22 +99,12 @@ public class GlueSchemaRegistryDeserializationFacade implements Closeable {
                 .build(new GlueSchemaRegistryDeserializationCacheLoader());
     }
 
-
-    private LoadingCache<UUID, SchemaV2> initializeCacheV2() {
-        return CacheBuilder
-                .newBuilder()
-                .maximumSize(glueSchemaRegistryConfiguration.getCacheSize())
-                .refreshAfterWrite(glueSchemaRegistryConfiguration.getTimeToLiveMillis(), TimeUnit.MILLISECONDS)
-                .build(new GlueSchemaRegistryDeserializationCacheLoaderV2());
-    }
-
     public GlueSchemaRegistryDeserializationFacade(@NonNull GlueSchemaRegistryConfiguration configuration, @NonNull AwsCredentialsProvider credentialsProvider) {
         this.credentialsProvider = credentialsProvider;
         this.glueSchemaRegistryConfiguration = configuration;
         this.schemaRegistryClient = new AWSSchemaRegistryClient(credentialsProvider, this.glueSchemaRegistryConfiguration);
         this.deserializerFactory = new GlueSchemaRegistryDeserializerFactory();
         this.cache = initializeCache();
-        this.cacheV2 = initializeCacheV2();
     }
 
     /**
@@ -155,13 +138,6 @@ public class GlueSchemaRegistryDeserializationFacade implements Closeable {
     public Schema getSchema(@NonNull byte[] data) {
         ByteBuffer byteBuffer = ByteBuffer.wrap(data);
         AwsDeserializerSchema awsDeserializerSchema = getAwsDeserializerSchema(byteBuffer);
-
-        return awsDeserializerSchema.getSchema();
-    }
-
-    public SchemaV2 getSchemaV2(@NonNull byte[] data) {
-        ByteBuffer byteBuffer = ByteBuffer.wrap(data);
-        AwsDeserializerSchemaV2 awsDeserializerSchema = getAwsDeserializerSchemaV2(byteBuffer);
 
         return awsDeserializerSchema.getSchema();
     }
@@ -228,22 +204,6 @@ public class GlueSchemaRegistryDeserializationFacade implements Closeable {
     }
 
     /**
-     * Helper function to return schema version id and schema registry metadata
-     *
-     * @param buffer byte buffer to be de-serialized
-     * @return schema version id and schema registry metadata
-     */
-    private AwsDeserializerSchemaV2 getAwsDeserializerSchemaV2(@NonNull ByteBuffer buffer) {
-        // Validate the data
-        GlueSchemaRegistryDeserializerDataParser dataParser = GlueSchemaRegistryDeserializerDataParser.getInstance();
-
-        UUID schemaVersionId = dataParser.getSchemaVersionId(buffer);
-        SchemaV2 schema = retrieveSchemaRegistrySchemaV2(schemaVersionId);
-
-        return new AwsDeserializerSchemaV2(schemaVersionId, schema);
-    }
-
-    /**
      * Gets the schema details for the schema version id from the schema registry.
      *
      * @param schemaVersionId the schema version Id for the writer schema
@@ -255,27 +215,6 @@ public class GlueSchemaRegistryDeserializationFacade implements Closeable {
         Schema schema;
         try {
             schema = cache.get(schemaVersionId);
-        } catch (Exception e) {
-            throw new AWSSchemaRegistryException(e.getCause());
-        }
-
-        return schema;
-    }
-
-
-
-    /**
-     * Gets the schema details for the schema version id from the schema registry.
-     *
-     * @param schemaVersionId the schema version Id for the writer schema
-     * @return the SchemaV2 for the message
-     * @throws AWSSchemaRegistryException Exception when getting schema by Id from
-     *                                    schema registry client
-     */
-    private SchemaV2 retrieveSchemaRegistrySchemaV2(UUID schemaVersionId) throws AWSSchemaRegistryException {
-        SchemaV2 schema;
-        try {
-            schema = cacheV2.get(schemaVersionId);
         } catch (Exception e) {
             throw new AWSSchemaRegistryException(e.getCause());
         }
@@ -311,37 +250,12 @@ public class GlueSchemaRegistryDeserializationFacade implements Closeable {
         }
     }
 
-    @Data
-    private static class AwsDeserializerSchemaV2 {
-        private final UUID schemaVersionId;
-        private final SchemaV2 schema;
-
-        AwsDeserializerSchemaV2(UUID schemaVersionId, SchemaV2 schema) {
-            this.schemaVersionId = schemaVersionId;
-            this.schema = schema;
-        }
-    }
-
     private class GlueSchemaRegistryDeserializationCacheLoader extends CacheLoader<UUID, Schema> {
         @Override
         public Schema load(UUID schemaVersionId) {
             GetSchemaVersionResponse response =
                 schemaRegistryClient.getSchemaVersionResponse(schemaVersionId.toString());
             return new Schema(response.schemaDefinition(), response.dataFormat().name(), getSchemaName(response.schemaArn()));
-        }
-    }
-
-    private class GlueSchemaRegistryDeserializationCacheLoaderV2 extends CacheLoader<UUID, SchemaV2> {
-        @Override
-        public SchemaV2 load(UUID schemaVersionId) {
-            GetSchemaVersionResponse schemaVersionResponse = schemaRegistryClient.getSchemaVersionResponse(schemaVersionId.toString());
-            GetSchemaResponse schemaResponse = schemaRegistryClient.getSchemaResponse(SchemaId.builder()
-                                                                    .schemaArn(schemaVersionResponse.schemaArn())
-                                                                    .build());
-            return new SchemaV2(schemaVersionResponse.schemaDefinition(),
-                                schemaVersionResponse.dataFormat().name(),
-                                getSchemaName(schemaVersionResponse.schemaArn()),
-                                schemaResponse.compatibility());
         }
     }
 }

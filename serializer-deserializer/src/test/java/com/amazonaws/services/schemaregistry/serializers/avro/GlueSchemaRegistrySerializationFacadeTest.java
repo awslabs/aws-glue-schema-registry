@@ -52,7 +52,6 @@ import software.amazon.awssdk.services.glue.model.MetadataKeyValuePair;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -564,27 +563,6 @@ public class GlueSchemaRegistrySerializationFacadeTest extends GlueSchemaRegistr
     }
 
     /**
-     * Tests registerSchemaVersionV2 method of Serializer with metadata configuration
-     */
-    @ParameterizedTest
-    @MethodSource("testInvalidDataAndSchemaProvider")
-    public void testSerializer_registerSchemaVersionV2_withMetadataConfig_succeeds(DataFormat dataFormat,
-                                                                                 Object record) {
-        GlueSchemaRegistrySerializationFacade glueSerializationFacade =
-                createGlueSerializationFacade(configs, mockSchemaByDefinitionFetcher);
-        String schemaDefinition = glueSerializationFacade.getSchemaDefinition(dataFormat, record);
-        Map<String, String> metadata = getMetadata();
-        metadata.put(AWSSchemaRegistryConstants.TRANSPORT_METADATA_KEY, TRANSPORT_NAME);
-
-        when(mockSchemaByDefinitionFetcher.getORRegisterSchemaVersionIdV2(schemaDefinition, USER_SCHEMA, dataFormat.name(), Compatibility.FORWARD,
-                metadata)).thenReturn(SCHEMA_VERSION_ID_FOR_TESTING);
-
-        UUID schemaVersionId = glueSerializationFacade.getOrRegisterSchemaVersionV2(
-                prepareInputV2(schemaDefinition, USER_SCHEMA, dataFormat.name(), Compatibility.FORWARD));
-        assertEquals(SCHEMA_VERSION_ID_FOR_TESTING, schemaVersionId);
-    }
-
-    /**
      * Tests registerSchemaVersion method of Serializer without metadata configuration
      */
     @ParameterizedTest
@@ -649,52 +627,6 @@ public class GlueSchemaRegistrySerializationFacadeTest extends GlueSchemaRegistr
 
         UUID schemaVersionId = glueSchemaRegistrySerializationFacade.getOrRegisterSchemaVersion(
                 prepareInput(schemaDefinition, USER_SCHEMA, dataFormat.name()));
-        assertEquals(SCHEMA_VERSION_ID_FOR_TESTING, schemaVersionId);
-    }
-
-    /**
-     * Tests registerSchemaVersion method of Serializer when PutSchemaVersionMetadata API throws exception
-     */
-    @ParameterizedTest
-    @MethodSource("testInvalidDataAndSchemaProvider")
-    public void testSerializer_registerSchemaVersionV2_whenPutSchemaVersionMetadataThrowsException(DataFormat dataFormat,
-                                                                                                 Object record) {
-        GlueSchemaRegistryConfiguration glueSchemaRegistryConfiguration = new GlueSchemaRegistryConfiguration(configs);
-        AWSSchemaRegistryClient awsSchemaRegistryClient =
-                new AWSSchemaRegistryClient(cred, glueSchemaRegistryConfiguration);
-        AWSSchemaRegistryClient spyClient = spy(awsSchemaRegistryClient);
-        SchemaByDefinitionFetcher schemaByDefinitionFetcher = new SchemaByDefinitionFetcher(spyClient, glueSchemaRegistryConfiguration);
-
-        GlueSchemaRegistrySerializationFacade glueSchemaRegistrySerializationFacade =
-                createGlueSerializationFacade(configs, schemaByDefinitionFetcher);
-
-        String schemaDefinition = glueSchemaRegistrySerializationFacade.getSchemaDefinition(dataFormat, record);
-
-        Map<String, String> metadata = getMetadata();
-        metadata.put(AWSSchemaRegistryConstants.TRANSPORT_METADATA_KEY, TRANSPORT_NAME);
-
-        EntityNotFoundException entityNotFoundException = EntityNotFoundException.builder()
-                .message(AWSSchemaRegistryConstants.SCHEMA_VERSION_NOT_FOUND_MSG)
-                .build();
-        AWSSchemaRegistryException awsSchemaRegistryException = new AWSSchemaRegistryException(entityNotFoundException);
-        doThrow(awsSchemaRegistryException).when(spyClient)
-                .getSchemaVersionIdByDefinition(schemaDefinition, USER_SCHEMA, dataFormat.name());
-
-        GetSchemaVersionResponse getSchemaVersionResponse =
-                createGetSchemaVersionResponse(SCHEMA_VERSION_ID_FOR_TESTING, schemaDefinition, dataFormat.name());
-        doReturn(getSchemaVersionResponse).when(spyClient)
-                .registerSchemaVersion(schemaDefinition, USER_SCHEMA, dataFormat.name());
-
-        for (Map.Entry<String, String> entry : metadata.entrySet()) {
-            MetadataKeyValuePair metadataKeyValuePair = createMetadataKeyValuePair(entry);
-            doThrow(new AWSSchemaRegistryException("Put schema version metadata failed.")).when(spyClient)
-                    .putSchemaVersionMetadata(SCHEMA_VERSION_ID_FOR_TESTING, metadataKeyValuePair);
-        }
-        doNothing().when(spyClient)
-                .putSchemaVersionMetadata(SCHEMA_VERSION_ID_FOR_TESTING, metadata);
-
-        UUID schemaVersionId = glueSchemaRegistrySerializationFacade.getOrRegisterSchemaVersionV2(
-                prepareInputV2(schemaDefinition, USER_SCHEMA, dataFormat.name(), Compatibility.NONE));
         assertEquals(SCHEMA_VERSION_ID_FOR_TESTING, schemaVersionId);
     }
 
@@ -765,59 +697,6 @@ public class GlueSchemaRegistrySerializationFacadeTest extends GlueSchemaRegistr
                               AWSSchemaRegistryConstants.COMPRESSION.NONE, payload);
     }
 
-    /**
-     * Tests the encodeV2 method.
-     */
-    @ParameterizedTest
-    @MethodSource("testDataAndSchemaProvider")
-    public void testEncodeV2_WhenValidInputIsPassed_EncodesTheBytes(DataFormat dataFormat,
-                                                                  Object record) throws Exception {
-        GlueSchemaRegistryDataFormatSerializer glueSchemaRegistrySerializer =
-                glueSchemaRegistrySerializerFactory.getInstance(dataFormat,
-                        new GlueSchemaRegistryConfiguration(configs));
-
-        String schemaDefinition = glueSchemaRegistrySerializer.getSchemaDefinition(record);
-        byte[] payload = glueSchemaRegistrySerializer.serialize(record);
-
-        com.amazonaws.services.schemaregistry.common.SchemaV2 schema =
-                new com.amazonaws.services.schemaregistry.common.SchemaV2(schemaDefinition, dataFormat.name(), TEST_SCHEMA, Compatibility.FORWARD_ALL);
-
-        Map<String, String> metadata = getMetadata();
-        metadata.put(AWSSchemaRegistryConstants.TRANSPORT_METADATA_KEY, TRANSPORT_NAME);
-        when(mockSchemaByDefinitionFetcher.getORRegisterSchemaVersionIdV2(schemaDefinition, TEST_SCHEMA, dataFormat.name(), Compatibility.FORWARD_ALL,
-                metadata)).thenReturn(SCHEMA_VERSION_ID_FOR_TESTING);
-
-        GlueSchemaRegistrySerializationFacade glueSchemaRegistrySerializationFacade =
-                createGlueSerializationFacade(configs, mockSchemaByDefinitionFetcher);
-
-        //Test subject
-        byte[] serializedData =
-                glueSchemaRegistrySerializationFacade.encodeV2(TRANSPORT_NAME, schema, payload);
-
-        testForSerializedData(serializedData, SCHEMA_VERSION_ID_FOR_TESTING,
-                AWSSchemaRegistryConstants.COMPRESSION.NONE, payload);
-    }
-
-    @Test
-    public void testEncodeV2_WhenNonSchemaConformantDataIsPassed_ThrowsException() throws Exception {
-
-        JsonDataWithSchema jsonNonSchemaConformantRecord = RecordGenerator.createNonSchemaConformantJsonData();
-        String schemaDefinition = jsonNonSchemaConformantRecord.getSchema();
-        byte[] payload = jsonNonSchemaConformantRecord.getPayload().getBytes(StandardCharsets.UTF_8);
-
-        final DataFormat dataFormat = DataFormat.JSON;
-        com.amazonaws.services.schemaregistry.common.SchemaV2 schema =
-            new com.amazonaws.services.schemaregistry.common.SchemaV2(schemaDefinition, dataFormat.name(), TEST_SCHEMA, Compatibility.FORWARD);
-
-        GlueSchemaRegistrySerializationFacade glueSchemaRegistrySerializationFacade =
-            createGlueSerializationFacade(configs, mockSchemaByDefinitionFetcher);
-
-        //Test subject
-        Exception ex = assertThrows(AWSSchemaRegistryException.class,
-            () -> glueSchemaRegistrySerializationFacade.encodeV2(TRANSPORT_NAME, schema, payload));
-        assertEquals("JSON data validation against schema failed.", ex.getMessage());
-    }
-
     private AWSSerializerInput prepareInput(String schemaDefinition,
                                             String schemaName,
                                             String dataFormat) {
@@ -846,14 +725,6 @@ public class GlueSchemaRegistrySerializationFacadeTest extends GlueSchemaRegistr
                 createGlueSerializationFacade(configs, mockSchemaByDefinitionFetcher);
         Assertions.assertThrows(IllegalArgumentException.class,
                                 () -> glueSerializationFacade.getOrRegisterSchemaVersion(null));
-    }
-
-    @Test
-    public void testRegisterSchemaVersionV2_nullSerializerInput_throwsException() {
-        GlueSchemaRegistrySerializationFacade glueSerializationFacade =
-                createGlueSerializationFacade(configs, mockSchemaByDefinitionFetcher);
-        Assertions.assertThrows(IllegalArgumentException.class,
-                () -> glueSerializationFacade.getOrRegisterSchemaVersionV2(null));
     }
 
     private Map<String, String> getMetadata() {

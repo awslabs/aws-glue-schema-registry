@@ -15,7 +15,6 @@
 package com.amazonaws.services.schemaregistry.serializers;
 
 import com.amazonaws.services.schemaregistry.common.Schema;
-import com.amazonaws.services.schemaregistry.common.SchemaV2;
 import com.amazonaws.services.schemaregistry.common.configs.GlueSchemaRegistryConfiguration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -76,16 +75,6 @@ public class GlueSchemaRegistrySerializerImplTest {
             .when(glueSchemaRegistrySerializationFacade).encode(TRANSPORT_NAME, SCHEMA_REGISTRY_SCHEMA, USER_DATA);
 
         byte [] actual = glueSchemaRegistrySerializer.encode(TRANSPORT_NAME, SCHEMA_REGISTRY_SCHEMA, USER_DATA);
-
-        assertEquals(ENCODED_DATA, actual);
-    }
-
-    @Test
-    public void getSchemaV2_WhenASchemaV2IsPassed_EncodesIntoSchemaRegistryMessage() {
-        doReturn(ENCODED_DATA)
-                .when(glueSchemaRegistrySerializationFacade).encodeV2(TRANSPORT_NAME, SCHEMA_REGISTRY_SCHEMAV2, USER_DATA);
-
-        byte [] actual = glueSchemaRegistrySerializer.encodeV2(TRANSPORT_NAME, SCHEMA_REGISTRY_SCHEMAV2, USER_DATA);
 
         assertEquals(ENCODED_DATA, actual);
     }

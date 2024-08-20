@@ -1,7 +1,7 @@
 package com.amazonaws.services.crossregion.schemaregistry.kafkaconnect;
 
+import com.amazonaws.services.schemaregistry.common.AWSSchemaRegistryClient;
 import com.amazonaws.services.schemaregistry.common.Schema;
-import com.amazonaws.services.schemaregistry.common.SchemaV2;
 import com.amazonaws.services.schemaregistry.common.configs.GlueSchemaRegistryConfiguration;
 import com.amazonaws.services.schemaregistry.deserializers.GlueSchemaRegistryDeserializerImpl;
 import com.amazonaws.services.schemaregistry.exception.AWSSchemaRegistryException;
@@ -9,16 +9,21 @@ import com.amazonaws.services.schemaregistry.exception.GlueSchemaRegistryIncompa
 import com.amazonaws.services.schemaregistry.serializers.GlueSchemaRegistrySerializerImpl;
 import com.amazonaws.services.schemaregistry.utils.AWSSchemaRegistryConstants;
 import lombok.Data;
+import lombok.NonNull;
 import org.apache.kafka.common.errors.SerializationException;
-import org.apache.kafka.connect.data.*;
+import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.errors.DataException;
 import org.apache.kafka.connect.storage.Converter;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
+import software.amazon.awssdk.services.glue.model.Compatibility;
+import software.amazon.awssdk.services.glue.model.GetSchemaResponse;
+import software.amazon.awssdk.services.glue.model.SchemaId;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
+
 
 @Data
 public class AWSGlueCrossRegionSchemaReplicationConverter implements Converter {
@@ -27,6 +32,8 @@ public class AWSGlueCrossRegionSchemaReplicationConverter implements Converter {
     private GlueSchemaRegistryDeserializerImpl deserializer;
     private GlueSchemaRegistrySerializerImpl serializer;
     private boolean isKey;
+    private Map<String, Object> sourceConfigs;
+    private Map<String, Object> targetConfigs;
 
     /**
      * Constructor used by Kafka Connect user.
@@ -61,8 +68,8 @@ public class AWSGlueCrossRegionSchemaReplicationConverter implements Converter {
         credentialsProvider = DefaultCredentialsProvider.builder().build();
 
         // Put the source and target regions into configurations respectively
-        Map<String, Object> sourceConfigs = new HashMap<>(configs);
-        Map<String, Object> targetConfigs = new HashMap<>(configs);
+        sourceConfigs = new HashMap<>(configs);
+        targetConfigs = new HashMap<>(configs);
 
         validateRequiredConfigsIfPresent(configs);
 
@@ -100,10 +107,9 @@ public class AWSGlueCrossRegionSchemaReplicationConverter implements Converter {
 
         try {
             byte[] deserializedBytes = deserializer.getData(bytes);
-            SchemaV2 deserializedSchema = deserializer.getSchemaV2(bytes);
-
-            return serializer.encodeV2(topic, deserializedSchema, deserializedBytes);
-
+            Schema deserializedSchema = deserializer.getSchema(bytes);
+            createSchemaAndRegisterAllSchemaVersions(deserializedSchema);
+            return serializer.encode(topic, deserializedSchema, deserializedBytes);
         }  catch(GlueSchemaRegistryIncompatibleDataException ex) {
             //This exception is raised when the header bytes don't have schema id, version byte or compression byte
             //This determines the data doesn't have schema information in it, so the actual message is returned.
@@ -137,5 +143,35 @@ public class AWSGlueCrossRegionSchemaReplicationConverter implements Converter {
         } else if (configs.get(AWSSchemaRegistryConstants.AWS_TARGET_ENDPOINT) == null && configs.get(AWSSchemaRegistryConstants.AWS_ENDPOINT) == null) {
             throw new DataException("Target Endpoint is not provided.");
         }
+    }
+
+    public Map<Schema, UUID> createSchemaAndRegisterAllSchemaVersions(
+            @NonNull Schema schema) throws AWSSchemaRegistryException {
+        GlueSchemaRegistryConfiguration glueSchemaRegistryConfiguration = new GlueSchemaRegistryConfiguration(sourceConfigs);
+        AWSSchemaRegistryClient client = new AWSSchemaRegistryClient(credentialsProvider, glueSchemaRegistryConfiguration);
+
+        GetSchemaResponse schemaResponse = client.getSchemaResponse(SchemaId.builder()
+                .schemaName(schema.getSchemaName())
+                .registryName(glueSchemaRegistryConfiguration.getSourceRegistryName())
+                .build());
+
+        Compatibility compatibility = schemaResponse.compatibility();
+        glueSchemaRegistryConfiguration = new GlueSchemaRegistryConfiguration(targetConfigs);
+        client = new AWSSchemaRegistryClient(credentialsProvider, glueSchemaRegistryConfiguration);
+
+        //TODO: Make a schema call to get the compatibility mode
+        //TODO: Get all the metadata for the schema version
+
+        //Just register the schema, no need to cache them. when MM2 reads the data, will retrieve the schema and will cache it.
+        //When schema is not created in the target, create the schema in target and
+        //register all the existing schema version from the source schema to the target in the same order.
+        Map<Schema, UUID> schemaWithVersionId =
+                client.createSchemaAndRegisterAllSchemaVersions(schema.getSchemaName(),
+                        schema.getDataFormat(),
+                        schema.getSchemaDefinition(),
+                        compatibility,
+                        new HashMap<>());
+
+        return schemaWithVersionId;
     }
 }

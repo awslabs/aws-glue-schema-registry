@@ -84,12 +84,16 @@ public class AWSGlueCrossRegionSchemaReplicationIntegrationTest {
     private static Stream<Arguments> testArgumentsProvider() {
         Stream.Builder<Arguments> argumentBuilder = Stream.builder();
         for (DataFormat dataFormat : DataFormat.knownValues()) {
-            for (Compatibility compatibility : COMPATIBILITIES) {
-                for (AWSSchemaRegistryConstants.COMPRESSION compression :
-                        AWSSchemaRegistryConstants.COMPRESSION.values()) {
-                    argumentBuilder.add(Arguments.of(dataFormat, RECORD_TYPE, compatibility, compression));
+            //if (dataFormat == DataFormat.PROTOBUF) {
+                for (Compatibility compatibility : COMPATIBILITIES) {
+                    //if (compatibility == Compatibility.BACKWARD) {
+                        for (AWSSchemaRegistryConstants.COMPRESSION compression :
+                                AWSSchemaRegistryConstants.COMPRESSION.values()) {
+                            argumentBuilder.add(Arguments.of(dataFormat, RECORD_TYPE, compatibility, compression));
+                        }
+                    //}
                 }
-            }
+            //}
         }
         return argumentBuilder.build();
     }
