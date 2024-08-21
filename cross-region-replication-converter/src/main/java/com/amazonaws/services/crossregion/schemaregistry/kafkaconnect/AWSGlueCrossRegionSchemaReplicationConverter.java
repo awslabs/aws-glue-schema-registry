@@ -97,24 +97,24 @@ public class AWSGlueCrossRegionSchemaReplicationConverter implements Converter {
 
         validateRequiredConfigsIfPresent(configs);
 
-        if (configs.get(AWSSchemaRegistryConstants.AWS_SOURCE_REGION) != null) {
-            sourceConfigs.put(AWSSchemaRegistryConstants.AWS_REGION, configs.get(AWSSchemaRegistryConstants.AWS_SOURCE_REGION));
+        if (configs.get(SchemaReplicationSchemaRegistryConstants.AWS_SOURCE_REGION) != null) {
+            sourceConfigs.put(AWSSchemaRegistryConstants.AWS_REGION, configs.get(SchemaReplicationSchemaRegistryConstants.AWS_SOURCE_REGION));
         }
-        if (configs.get(AWSSchemaRegistryConstants.AWS_SOURCE_ENDPOINT) != null) {
-            sourceConfigs.put(AWSSchemaRegistryConstants.AWS_ENDPOINT, configs.get(AWSSchemaRegistryConstants.AWS_SOURCE_ENDPOINT));
+        if (configs.get(SchemaReplicationSchemaRegistryConstants.AWS_SOURCE_ENDPOINT) != null) {
+            sourceConfigs.put(AWSSchemaRegistryConstants.AWS_ENDPOINT, configs.get(SchemaReplicationSchemaRegistryConstants.AWS_SOURCE_ENDPOINT));
         }
-        if (configs.get(AWSSchemaRegistryConstants.SOURCE_REGISTRY_NAME) != null) {
-            sourceConfigs.put(AWSSchemaRegistryConstants.REGISTRY_NAME, configs.get(AWSSchemaRegistryConstants.SOURCE_REGISTRY_NAME));
+        if (configs.get(SchemaReplicationSchemaRegistryConstants.SOURCE_REGISTRY_NAME) != null) {
+            sourceConfigs.put(AWSSchemaRegistryConstants.REGISTRY_NAME, configs.get(SchemaReplicationSchemaRegistryConstants.SOURCE_REGISTRY_NAME));
         }
 
-        if (configs.get(AWSSchemaRegistryConstants.AWS_TARGET_REGION) != null) {
-            targetConfigs.put(AWSSchemaRegistryConstants.AWS_REGION, configs.get(AWSSchemaRegistryConstants.AWS_TARGET_REGION));
+        if (configs.get(SchemaReplicationSchemaRegistryConstants.AWS_TARGET_REGION) != null) {
+            targetConfigs.put(AWSSchemaRegistryConstants.AWS_REGION, configs.get(SchemaReplicationSchemaRegistryConstants.AWS_TARGET_REGION));
         }
-        if (configs.get(AWSSchemaRegistryConstants.TARGET_REGISTRY_NAME) != null) {
-            targetConfigs.put(AWSSchemaRegistryConstants.REGISTRY_NAME, configs.get(AWSSchemaRegistryConstants.TARGET_REGISTRY_NAME));
+        if (configs.get(SchemaReplicationSchemaRegistryConstants.TARGET_REGISTRY_NAME) != null) {
+            targetConfigs.put(AWSSchemaRegistryConstants.REGISTRY_NAME, configs.get(SchemaReplicationSchemaRegistryConstants.TARGET_REGISTRY_NAME));
         }
-        if (configs.get(AWSSchemaRegistryConstants.AWS_TARGET_ENDPOINT) != null) {
-            targetConfigs.put(AWSSchemaRegistryConstants.AWS_ENDPOINT, configs.get(AWSSchemaRegistryConstants.AWS_TARGET_ENDPOINT));
+        if (configs.get(SchemaReplicationSchemaRegistryConstants.AWS_TARGET_ENDPOINT) != null) {
+            targetConfigs.put(AWSSchemaRegistryConstants.AWS_ENDPOINT, configs.get(SchemaReplicationSchemaRegistryConstants.AWS_TARGET_ENDPOINT));
         }
 
         targetConfigs.put(AWSSchemaRegistryConstants.SCHEMA_AUTO_REGISTRATION_SETTING, true);
@@ -154,6 +154,22 @@ public class AWSGlueCrossRegionSchemaReplicationConverter implements Converter {
         }
     }
 
+    private void validateRequiredConfigsIfPresent(Map<String, ?> configs) {
+        if (configs.get(SchemaReplicationSchemaRegistryConstants.AWS_SOURCE_REGION) == null) {
+            throw new DataException("Source Region is not provided.");
+        } else if (configs.get(SchemaReplicationSchemaRegistryConstants.AWS_TARGET_REGION) == null && configs.get(AWSSchemaRegistryConstants.AWS_REGION) == null) {
+            throw new DataException("Target Region is not provided.");
+        } else if (configs.get(SchemaReplicationSchemaRegistryConstants.SOURCE_REGISTRY_NAME) == null) {
+            throw new DataException("Source Registry is not provided.");
+        } else if (configs.get(SchemaReplicationSchemaRegistryConstants.TARGET_REGISTRY_NAME) == null && configs.get(AWSSchemaRegistryConstants.REGISTRY_NAME) == null) {
+            throw new DataException("Target Registry is not provided.");
+        } else if (configs.get(SchemaReplicationSchemaRegistryConstants.AWS_SOURCE_ENDPOINT) == null) {
+            throw new DataException("Source Endpoint is not provided.");
+        } else if (configs.get(SchemaReplicationSchemaRegistryConstants.AWS_TARGET_ENDPOINT) == null && configs.get(AWSSchemaRegistryConstants.AWS_ENDPOINT) == null) {
+            throw new DataException("Target Endpoint is not provided.");
+        }
+    }
+
     /**
      * This method is not intended to be used for the CrossRegionReplicationConverter given it is integrated with a source connector
      *
@@ -161,22 +177,6 @@ public class AWSGlueCrossRegionSchemaReplicationConverter implements Converter {
     @Override
     public SchemaAndValue toConnectData(String topic, byte[] value) {
         throw new UnsupportedOperationException("This method is not supported");
-    }
-
-    private void validateRequiredConfigsIfPresent(Map<String, ?> configs) {
-        if (configs.get(AWSSchemaRegistryConstants.AWS_SOURCE_REGION) == null) {
-            throw new DataException("Source Region is not provided.");
-        } else if (configs.get(AWSSchemaRegistryConstants.AWS_TARGET_REGION) == null && configs.get(AWSSchemaRegistryConstants.AWS_REGION) == null) {
-            throw new DataException("Target Region is not provided.");
-        } else if (configs.get(AWSSchemaRegistryConstants.SOURCE_REGISTRY_NAME) == null) {
-            throw new DataException("Source Registry is not provided.");
-        } else if (configs.get(AWSSchemaRegistryConstants.TARGET_REGISTRY_NAME) == null && configs.get(AWSSchemaRegistryConstants.REGISTRY_NAME) == null) {
-            throw new DataException("Target Registry is not provided.");
-        } else if (configs.get(AWSSchemaRegistryConstants.AWS_SOURCE_ENDPOINT) == null) {
-            throw new DataException("Source Endpoint is not provided.");
-        } else if (configs.get(AWSSchemaRegistryConstants.AWS_TARGET_ENDPOINT) == null && configs.get(AWSSchemaRegistryConstants.AWS_ENDPOINT) == null) {
-            throw new DataException("Target Endpoint is not provided.");
-        }
     }
 
     public UUID createSchemaAndRegisterAllSchemaVersions(
@@ -222,7 +222,7 @@ public class AWSGlueCrossRegionSchemaReplicationConverter implements Converter {
         } catch(Exception ex) {
             try{
                 //Get list of all schema versions
-                List<SchemaVersionListItem> schemaVersionList = sourceClient.getSchemaVersions(schemaName);
+                List<SchemaVersionListItem> schemaVersionList = sourceClient.getSchemaVersions(schemaName, glueSchemaRegistryConfiguration.getReplicateSchemaVersionCount());
 
                 for (int idx = 0; idx < schemaVersionList.size(); idx++){
                     //Get details of each schema versions

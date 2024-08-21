@@ -331,7 +331,7 @@ public class AWSSchemaRegistryClient {
 
         try {
             //Get list of all schema versions
-            List<SchemaVersionListItem> schemaVersionList = getSchemaVersions(schemaName);
+            List<SchemaVersionListItem> schemaVersionList = getSchemaVersions(schemaName, 50);
 
             for (int idx = 0; idx < schemaVersionList.size(); idx++){
                 //Get details of each schema versions
@@ -388,7 +388,7 @@ public class AWSSchemaRegistryClient {
         return schemaWithVersionId;
     }
 
-    public List<SchemaVersionListItem> getSchemaVersions(String schemaName) {
+    public List<SchemaVersionListItem> getSchemaVersions(String schemaName, Integer replicateSchemaVersionCount) {
         ListSchemaVersionsRequest listSchemaVersionsRequest = getListSchemaVersionsRequest(schemaName);
         List<SchemaVersionListItem> schemaVersionList = new ArrayList<>();
         boolean done = false;
@@ -415,7 +415,7 @@ public class AWSSchemaRegistryClient {
         //and we need to maintain the ordering of versions
         Collections.sort(modifiableSchemaVersionList, Comparator.comparing(SchemaVersionListItem::versionNumber));
 
-        int replicateSchemaVersionCount = glueSchemaRegistryConfiguration.getReplicateSchemaVersionCount();
+        //int replicateSchemaVersionCount = glueSchemaRegistryConfiguration.getReplicateSchemaVersionCount();
 
         //Get the list of schema versions equal to the replicateSchemaVersionCount
         //If the list is smaller than replicateSchemaVersionCount, return the whole list.

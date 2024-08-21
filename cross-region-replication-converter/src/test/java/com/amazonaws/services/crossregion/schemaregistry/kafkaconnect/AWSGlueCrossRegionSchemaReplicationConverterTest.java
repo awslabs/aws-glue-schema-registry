@@ -330,7 +330,7 @@ public class AWSGlueCrossRegionSchemaReplicationConverterTest {
         Map<String, Object> props = new HashMap<>();
 
         props.put(AWSSchemaRegistryConstants.AWS_REGION, "us-east-1");
-        props.put(AWSSchemaRegistryConstants.AWS_TARGET_REGION, "us-east-1");
+        props.put(SchemaReplicationSchemaRegistryConstants.AWS_TARGET_REGION, "us-east-1");
 
         return props;
     }
@@ -343,8 +343,8 @@ public class AWSGlueCrossRegionSchemaReplicationConverterTest {
     private Map<String, Object> getNoSourceRegistryProperties() {
         Map<String, Object> props = new HashMap<>();
 
-        props.put(AWSSchemaRegistryConstants.AWS_SOURCE_REGION, "us-east-1");
-        props.put(AWSSchemaRegistryConstants.AWS_TARGET_REGION, "us-east-1");
+        props.put(SchemaReplicationSchemaRegistryConstants.AWS_SOURCE_REGION, "us-east-1");
+        props.put(SchemaReplicationSchemaRegistryConstants.AWS_TARGET_REGION, "us-east-1");
 
         return props;
     }
@@ -357,9 +357,9 @@ public class AWSGlueCrossRegionSchemaReplicationConverterTest {
     private Map<String, Object> getNoTargetRegistryProperties() {
         Map<String, Object> props = new HashMap<>();
 
-        props.put(AWSSchemaRegistryConstants.AWS_SOURCE_REGION, "us-east-1");
-        props.put(AWSSchemaRegistryConstants.AWS_TARGET_REGION, "us-east-1");
-        props.put(AWSSchemaRegistryConstants.SOURCE_REGISTRY_NAME, "default-registry");
+        props.put(SchemaReplicationSchemaRegistryConstants.AWS_SOURCE_REGION, "us-east-1");
+        props.put(SchemaReplicationSchemaRegistryConstants.AWS_TARGET_REGION, "us-east-1");
+        props.put(SchemaReplicationSchemaRegistryConstants.SOURCE_REGISTRY_NAME, "default-registry");
 
         return props;
     }
@@ -373,8 +373,8 @@ public class AWSGlueCrossRegionSchemaReplicationConverterTest {
         Map<String, Object> props = new HashMap<>();
 
         props.put(AWSSchemaRegistryConstants.AWS_REGION, "us-east-1");
-        props.put(AWSSchemaRegistryConstants.AWS_SOURCE_REGION, "us-west-2");
-        props.put(AWSSchemaRegistryConstants.SOURCE_REGISTRY_NAME, "default-registry");
+        props.put(SchemaReplicationSchemaRegistryConstants.AWS_SOURCE_REGION, "us-west-2");
+        props.put(SchemaReplicationSchemaRegistryConstants.SOURCE_REGISTRY_NAME, "default-registry");
         props.put(AWSSchemaRegistryConstants.REGISTRY_NAME, "default-registry");
         props.put(AWSSchemaRegistryConstants.AWS_ENDPOINT, "https://test");
 
@@ -390,10 +390,10 @@ public class AWSGlueCrossRegionSchemaReplicationConverterTest {
         Map<String, Object> props = new HashMap<>();
 
         props.put(AWSSchemaRegistryConstants.AWS_REGION, "us-east-1");
-        props.put(AWSSchemaRegistryConstants.AWS_SOURCE_REGION, "us-west-2");
-        props.put(AWSSchemaRegistryConstants.SOURCE_REGISTRY_NAME, "default-registry");
+        props.put(SchemaReplicationSchemaRegistryConstants.AWS_SOURCE_REGION, "us-west-2");
+        props.put(SchemaReplicationSchemaRegistryConstants.SOURCE_REGISTRY_NAME, "default-registry");
         props.put(AWSSchemaRegistryConstants.REGISTRY_NAME, "default-registry");
-        props.put(AWSSchemaRegistryConstants.AWS_SOURCE_ENDPOINT, "https://test");
+        props.put(SchemaReplicationSchemaRegistryConstants.AWS_SOURCE_ENDPOINT, "https://test");
 
         return props;
     }
@@ -406,7 +406,7 @@ public class AWSGlueCrossRegionSchemaReplicationConverterTest {
     private Map<String, Object> getNoTargetRegionProperties() {
         Map<String, Object> props = new HashMap<>();
 
-        props.put(AWSSchemaRegistryConstants.AWS_SOURCE_REGION, "us-west-2");
+        props.put(SchemaReplicationSchemaRegistryConstants.AWS_SOURCE_REGION, "us-west-2");
 
         return props;
     }
@@ -421,11 +421,11 @@ public class AWSGlueCrossRegionSchemaReplicationConverterTest {
         Map<String, Object> props = new HashMap<>();
 
         props.put(AWSSchemaRegistryConstants.AWS_REGION, "us-east-1");
-        props.put(AWSSchemaRegistryConstants.AWS_SOURCE_REGION, "us-west-2");
-        props.put(AWSSchemaRegistryConstants.SOURCE_REGISTRY_NAME, "default-registry");
+        props.put(SchemaReplicationSchemaRegistryConstants.AWS_SOURCE_REGION, "us-west-2");
+        props.put(SchemaReplicationSchemaRegistryConstants.SOURCE_REGISTRY_NAME, "default-registry");
         props.put(AWSSchemaRegistryConstants.REGISTRY_NAME, "default-registry");
         props.put(AWSSchemaRegistryConstants.AWS_ENDPOINT, "https://test");
-        props.put(AWSSchemaRegistryConstants.AWS_SOURCE_ENDPOINT, "https://test");
+        props.put(SchemaReplicationSchemaRegistryConstants.AWS_SOURCE_ENDPOINT, "https://test");
 
         return props;
     }
@@ -438,12 +438,12 @@ public class AWSGlueCrossRegionSchemaReplicationConverterTest {
     private Map<String, Object> getTestProperties() {
         Map<String, Object> props = new HashMap<>();
 
-        props.put(AWSSchemaRegistryConstants.AWS_SOURCE_REGION, "us-west-2");
-        props.put(AWSSchemaRegistryConstants.AWS_TARGET_REGION, "us-east-1");
-        props.put(AWSSchemaRegistryConstants.SOURCE_REGISTRY_NAME, "default-registry");
-        props.put(AWSSchemaRegistryConstants.TARGET_REGISTRY_NAME, "default-registry");
+        props.put(SchemaReplicationSchemaRegistryConstants.AWS_SOURCE_REGION, "us-west-2");
+        props.put(SchemaReplicationSchemaRegistryConstants.AWS_TARGET_REGION, "us-east-1");
+        props.put(SchemaReplicationSchemaRegistryConstants.SOURCE_REGISTRY_NAME, "default-registry");
+        props.put(SchemaReplicationSchemaRegistryConstants.TARGET_REGISTRY_NAME, "default-registry");
         props.put(AWSSchemaRegistryConstants.AWS_ENDPOINT, "https://test");
-        props.put(AWSSchemaRegistryConstants.AWS_SOURCE_ENDPOINT, "https://test");
+        props.put(SchemaReplicationSchemaRegistryConstants.AWS_SOURCE_ENDPOINT, "https://test");
 
         return props;
     }

@@ -15,6 +15,7 @@
 package com.amazonaws.services.schemaregistry.integrationtests.schemareplication;
 
 import com.amazonaws.services.crossregion.schemaregistry.kafkaconnect.AWSGlueCrossRegionSchemaReplicationConverter;
+import com.amazonaws.services.crossregion.schemaregistry.kafkaconnect.SchemaReplicationSchemaRegistryConstants;
 import com.amazonaws.services.schemaregistry.deserializers.GlueSchemaRegistryKafkaDeserializer;
 import com.amazonaws.services.schemaregistry.integrationtests.generators.*;
 import com.amazonaws.services.schemaregistry.integrationtests.properties.GlueSchemaRegistryConnectionProperties;
@@ -240,16 +241,16 @@ public class AWSGlueCrossRegionSchemaReplicationIntegrationTest {
     private Map<String, Object> getTestProperties() {
         Map<String, Object> props = new HashMap<>();
 
-        props.put(AWSSchemaRegistryConstants.AWS_SOURCE_REGION, "us-east-1");
-        props.put(AWSSchemaRegistryConstants.AWS_TARGET_REGION, "us-east-2");
+        props.put(SchemaReplicationSchemaRegistryConstants.AWS_SOURCE_REGION, "us-east-1");
+        props.put(SchemaReplicationSchemaRegistryConstants.AWS_TARGET_REGION, "us-east-2");
         props.put(AWSSchemaRegistryConstants.AWS_REGION, "us-east-2");
-        props.put(AWSSchemaRegistryConstants.SOURCE_REGISTRY_NAME, "default-registry");
-        props.put(AWSSchemaRegistryConstants.TARGET_REGISTRY_NAME, "default-registry");
+        props.put(SchemaReplicationSchemaRegistryConstants.SOURCE_REGISTRY_NAME, "default-registry");
+        props.put(SchemaReplicationSchemaRegistryConstants.TARGET_REGISTRY_NAME, "default-registry");
         props.put(AWSSchemaRegistryConstants.REGISTRY_NAME, "default-registry");
-        props.put(AWSSchemaRegistryConstants.AWS_SOURCE_ENDPOINT, "https://glue.us-east-1.amazonaws.com");
-        props.put(AWSSchemaRegistryConstants.AWS_TARGET_ENDPOINT, "https://glue.us-east-2.amazonaws.com");
+        props.put(SchemaReplicationSchemaRegistryConstants.AWS_SOURCE_ENDPOINT, "https://glue.us-east-1.amazonaws.com");
+        props.put(SchemaReplicationSchemaRegistryConstants.AWS_TARGET_ENDPOINT, "https://glue.us-east-2.amazonaws.com");
         props.put(AWSSchemaRegistryConstants.AWS_ENDPOINT, "https://glue.us-east-2.amazonaws.com");
-        props.put(AWSSchemaRegistryConstants.REPLICATE_SCHEMA_VERSION_COUNT, 100);
+        props.put(SchemaReplicationSchemaRegistryConstants.REPLICATE_SCHEMA_VERSION_COUNT, 100);
         props.put(AWSSchemaRegistryConstants.AVRO_RECORD_TYPE, AvroRecordType.GENERIC_RECORD.getName());
 
         return props;
