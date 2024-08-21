@@ -201,23 +201,6 @@ public class AWSSchemaRegistryClientTest {
         assertEquals(expectedMessage, awsSchemaRegistryException.getMessage());
     }
 
-    @Test
-    public void testConstructor_glueSourceClientBuilderWithMalformedUri_throwsException() throws URISyntaxException {
-        glueSchemaRegistryConfiguration = new GlueSchemaRegistryConfiguration(configs);
-        String validURL = "http://abc.com";
-        String invalidURL = "://abc:com";
-        glueSchemaRegistryConfiguration.setEndPoint(validURL);
-        glueSchemaRegistryConfiguration.setSourceEndPoint(invalidURL);
-        AwsCredentialsProvider mockAwsCredentialsProvider = mock(AwsCredentialsProvider.class);
-        AWSSchemaRegistryException awsSchemaRegistryException = Assertions.assertThrows(AWSSchemaRegistryException.class ,
-                () -> new AWSSchemaRegistryClient(mockAwsCredentialsProvider, glueSchemaRegistryConfiguration));
-        assertEquals(URISyntaxException.class, awsSchemaRegistryException.getCause().getClass());
-
-        String expectedMessage = String.format("Malformed uri, please pass the valid uri for creating the source registry client",
-                glueSchemaRegistryConfiguration.getSourceEndPoint());
-        assertEquals(expectedMessage, awsSchemaRegistryException.getMessage());
-    }
-
     /**
      * Tests positive case for querySchemaVersionMetadata by building request and response
      */

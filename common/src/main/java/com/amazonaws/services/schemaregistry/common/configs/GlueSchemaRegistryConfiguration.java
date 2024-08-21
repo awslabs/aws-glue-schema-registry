@@ -46,19 +46,11 @@ public class GlueSchemaRegistryConfiguration {
     private AWSSchemaRegistryConstants.COMPRESSION compressionType = AWSSchemaRegistryConstants.COMPRESSION.NONE;
     private String endPoint;
     private String region;
-    // TODO: Remove configs that are not useful non replication use-cases
-    // https://github.com/awslabs/aws-glue-schema-registry/issues/292
-    private String sourceEndPoint;
-    private String sourceRegion;
-    private String targetEndPoint;
-    private String targetRegion;
     private long timeToLiveMillis = 24 * 60 * 60 * 1000L;
     private int cacheSize = 200;
     private AvroRecordType avroRecordType;
     private ProtobufMessageType protobufMessageType;
     private String registryName;
-    private String sourceRegistryName;
-    private String targetRegistryName;
     private int replicateSchemaVersionCount;
     private Compatibility compatibilitySetting;
     private String description;
@@ -99,14 +91,8 @@ public class GlueSchemaRegistryConfiguration {
 
     private void buildSchemaRegistryConfigs(Map<String, ?> configs) {
         validateAndSetAWSRegion(configs);
-        validateAndSetAWSSourceRegion(configs);
-        validateAndSetAWSTargetRegion(configs);
         validateAndSetAWSEndpoint(configs);
-        validateAndSetAWSSourceEndpoint(configs);
-        validateAndSetAWSTargetEndpoint(configs);
         validateAndSetRegistryName(configs);
-        validateAndSetSourceRegistryName(configs);
-        validateAndSetTargetRegistryName(configs);
         validateAndSetReplicateSchemaVersionCount(configs);
         validateAndSetDescription(configs);
         validateAndSetAvroRecordType(configs);
@@ -181,20 +167,6 @@ public class GlueSchemaRegistryConfiguration {
         }
     }
 
-    private void validateAndSetAWSSourceRegion(Map<String, ?> configs) {
-        if (isPresent(configs, AWSSchemaRegistryConstants.AWS_SOURCE_REGION)) {
-            this.sourceRegion = String.valueOf(configs.get(AWSSchemaRegistryConstants.AWS_SOURCE_REGION));
-        }
-    }
-
-    private void validateAndSetAWSTargetRegion(Map<String, ?> configs) {
-        if (isPresent(configs, AWSSchemaRegistryConstants.AWS_TARGET_REGION)) {
-            this.targetRegion = String.valueOf(configs.get(AWSSchemaRegistryConstants.AWS_TARGET_REGION));
-        } else {
-            this.targetRegion = this.region;
-        }
-    }
-
     private void validateAndSetCompatibility(Map<String, ?> configs) {
         if (isPresent(configs, AWSSchemaRegistryConstants.COMPATIBILITY_SETTING)) {
             this.compatibilitySetting = Compatibility.fromValue(
@@ -221,20 +193,6 @@ public class GlueSchemaRegistryConfiguration {
         }
     }
 
-    private void validateAndSetSourceRegistryName(Map<String, ?> configs) {
-        if (isPresent(configs, AWSSchemaRegistryConstants.SOURCE_REGISTRY_NAME)) {
-            this.sourceRegistryName = String.valueOf(configs.get(AWSSchemaRegistryConstants.SOURCE_REGISTRY_NAME));
-        }
-    }
-
-    private void validateAndSetTargetRegistryName(Map<String, ?> configs) {
-        if (isPresent(configs, AWSSchemaRegistryConstants.TARGET_REGISTRY_NAME)) {
-            this.targetRegistryName = String.valueOf(configs.get(AWSSchemaRegistryConstants.TARGET_REGISTRY_NAME));
-        } else {
-            this.targetRegistryName = this.registryName;
-        }
-    }
-
     private void validateAndSetReplicateSchemaVersionCount(Map<String, ?> configs) {
         if (isPresent(configs, AWSSchemaRegistryConstants.REPLICATE_SCHEMA_VERSION_COUNT)) {
             this.replicateSchemaVersionCount = Integer.valueOf(configs.get(AWSSchemaRegistryConstants.REPLICATE_SCHEMA_VERSION_COUNT).toString());
@@ -246,20 +204,6 @@ public class GlueSchemaRegistryConfiguration {
     private void validateAndSetAWSEndpoint(Map<String, ?> configs) {
         if (isPresent(configs, AWSSchemaRegistryConstants.AWS_ENDPOINT)) {
             this.endPoint = String.valueOf(configs.get(AWSSchemaRegistryConstants.AWS_ENDPOINT));
-        }
-    }
-
-    private void validateAndSetAWSSourceEndpoint(Map<String, ?> configs) {
-        if (isPresent(configs, AWSSchemaRegistryConstants.AWS_SOURCE_ENDPOINT)) {
-            this.sourceEndPoint = String.valueOf(configs.get(AWSSchemaRegistryConstants.AWS_SOURCE_ENDPOINT));
-        }
-    }
-
-    private void validateAndSetAWSTargetEndpoint(Map<String, ?> configs) {
-        if (isPresent(configs, AWSSchemaRegistryConstants.AWS_TARGET_ENDPOINT)) {
-            this.targetEndPoint = String.valueOf(configs.get(AWSSchemaRegistryConstants.AWS_TARGET_ENDPOINT));
-        } else {
-            this.targetEndPoint = String.valueOf(configs.get(AWSSchemaRegistryConstants.AWS_ENDPOINT));
         }
     }
 
@@ -390,7 +334,7 @@ public class GlueSchemaRegistryConfiguration {
         }
     }
 
-    private boolean isPresent(Map<String, ?> configs,
+    public boolean isPresent(Map<String, ?> configs,
                               String key) {
         if (!GlueSchemaRegistryUtils.getInstance()
                 .checkIfPresentInMap(configs, key)) {

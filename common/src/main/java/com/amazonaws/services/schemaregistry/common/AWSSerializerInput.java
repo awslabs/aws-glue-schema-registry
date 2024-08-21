@@ -19,7 +19,6 @@ import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
-import software.amazon.awssdk.services.glue.model.Compatibility;
 
 /**
  * Encapsulates general inputs for serializer
@@ -40,7 +39,7 @@ public class AWSSerializerInput {
     private String transportName;
 
     @Builder
-    public AWSSerializerInput(String schemaDefinition, String schemaName, String dataFormat, String transportName, Compatibility compatibility) {
+    public AWSSerializerInput(String schemaDefinition, String schemaName, String dataFormat, String transportName) {
         this.schemaDefinition = schemaDefinition;
 
         if (transportName != null) {

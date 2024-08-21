@@ -707,18 +707,6 @@ public class GlueSchemaRegistrySerializationFacadeTest extends GlueSchemaRegistr
                 .build();
     }
 
-    private AWSSerializerInput prepareInputV2(String schemaDefinition,
-                                            String schemaName,
-                                            String dataFormat,
-                                            Compatibility compatibility) {
-        return AWSSerializerInput.builder()
-                .schemaDefinition(schemaDefinition)
-                .schemaName(schemaName)
-                .dataFormat(dataFormat)
-                .compatibility(compatibility)
-                .build();
-    }
-
     @Test
     public void testRegisterSchema_nullSerializerInput_throwsException() {
         GlueSchemaRegistrySerializationFacade glueSerializationFacade =

@@ -119,7 +119,7 @@ public class AWSGlueCrossRegionSchemaReplicationConverter implements Converter {
 
         targetConfigs.put(AWSSchemaRegistryConstants.SCHEMA_AUTO_REGISTRATION_SETTING, true);
 
-        GlueSchemaRegistryConfiguration glueSchemaRegistryConfiguration = new GlueSchemaRegistryConfiguration(targetConfigs);
+        SchemaReplicationGlueSchemaRegistryConfiguration glueSchemaRegistryConfiguration = new SchemaReplicationGlueSchemaRegistryConfiguration(targetConfigs);
         awsSchemaRegistryClient = new AWSSchemaRegistryClient(credentialsProvider, glueSchemaRegistryConfiguration);
 
         this.schemaDefinitionToVersionCache = CacheBuilder.newBuilder()
@@ -181,7 +181,7 @@ public class AWSGlueCrossRegionSchemaReplicationConverter implements Converter {
 
     public UUID createSchemaAndRegisterAllSchemaVersions(
             @NonNull Schema schema) throws AWSSchemaRegistryException, ExecutionException {
-        GlueSchemaRegistryConfiguration glueSchemaRegistryConfiguration = new GlueSchemaRegistryConfiguration(sourceConfigs);
+        SchemaReplicationGlueSchemaRegistryConfiguration glueSchemaRegistryConfiguration = new SchemaReplicationGlueSchemaRegistryConfiguration(sourceConfigs);
         AWSSchemaRegistryClient sourceClient = new AWSSchemaRegistryClient(credentialsProvider, glueSchemaRegistryConfiguration);
 
         GetSchemaResponse schemaResponse = sourceClient.getSchemaResponse(SchemaId.builder()
@@ -191,7 +191,7 @@ public class AWSGlueCrossRegionSchemaReplicationConverter implements Converter {
 
         Compatibility compatibility = schemaResponse.compatibility();
 
-        glueSchemaRegistryConfiguration = new GlueSchemaRegistryConfiguration(targetConfigs);
+        glueSchemaRegistryConfiguration = new SchemaReplicationGlueSchemaRegistryConfiguration(targetConfigs);
         glueSchemaRegistryConfiguration.setCompatibilitySetting(compatibility);
         AWSSchemaRegistryClient targetClient = new AWSSchemaRegistryClient(credentialsProvider, glueSchemaRegistryConfiguration);
 

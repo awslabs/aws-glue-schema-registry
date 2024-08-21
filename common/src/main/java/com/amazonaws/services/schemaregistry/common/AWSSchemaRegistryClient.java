@@ -36,12 +36,45 @@ import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.glue.GlueClient;
 import software.amazon.awssdk.services.glue.GlueClientBuilder;
-import software.amazon.awssdk.services.glue.model.*;
+import software.amazon.awssdk.services.glue.model.AlreadyExistsException;
+import software.amazon.awssdk.services.glue.model.Compatibility;
+import software.amazon.awssdk.services.glue.model.CreateSchemaRequest;
+import software.amazon.awssdk.services.glue.model.CreateSchemaResponse;
+import software.amazon.awssdk.services.glue.model.DataFormat;
+import software.amazon.awssdk.services.glue.model.GetSchemaByDefinitionRequest;
+import software.amazon.awssdk.services.glue.model.GetSchemaByDefinitionResponse;
+import software.amazon.awssdk.services.glue.model.GetSchemaRequest;
+import software.amazon.awssdk.services.glue.model.GetSchemaResponse;
+import software.amazon.awssdk.services.glue.model.GetSchemaVersionRequest;
+import software.amazon.awssdk.services.glue.model.GetSchemaVersionResponse;
+import software.amazon.awssdk.services.glue.model.GetTagsRequest;
+import software.amazon.awssdk.services.glue.model.GetTagsResponse;
+import software.amazon.awssdk.services.glue.model.GlueRequest;
+import software.amazon.awssdk.services.glue.model.ListSchemaVersionsRequest;
+import software.amazon.awssdk.services.glue.model.ListSchemaVersionsResponse;
+import software.amazon.awssdk.services.glue.model.MetadataInfo;
+import software.amazon.awssdk.services.glue.model.MetadataKeyValuePair;
+import software.amazon.awssdk.services.glue.model.PutSchemaVersionMetadataRequest;
+import software.amazon.awssdk.services.glue.model.PutSchemaVersionMetadataResponse;
+import software.amazon.awssdk.services.glue.model.QuerySchemaVersionMetadataRequest;
+import software.amazon.awssdk.services.glue.model.QuerySchemaVersionMetadataResponse;
+import software.amazon.awssdk.services.glue.model.RegisterSchemaVersionRequest;
+import software.amazon.awssdk.services.glue.model.RegisterSchemaVersionResponse;
+import software.amazon.awssdk.services.glue.model.RegistryId;
+import software.amazon.awssdk.services.glue.model.SchemaId;
+import software.amazon.awssdk.services.glue.model.SchemaVersionListItem;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.StringJoiner;
+import java.util.UUID;
 import java.util.regex.Pattern;
 
 /**
@@ -503,14 +536,14 @@ public class AWSSchemaRegistryClient {
         return ListSchemaVersionsRequest
                 .builder()
                 .nextToken(nextToken)
-                .schemaId(SchemaId.builder().schemaName(schemaName).registryName(glueSchemaRegistryConfiguration.getSourceRegistryName()).build())
+                .schemaId(SchemaId.builder().schemaName(schemaName).registryName(glueSchemaRegistryConfiguration.getRegistryName()).build())
                 .build();
     }
 
     private ListSchemaVersionsRequest getListSchemaVersionsRequest(String schemaName) {
         return ListSchemaVersionsRequest
                 .builder()
-                .schemaId(SchemaId.builder().schemaName(schemaName).registryName(glueSchemaRegistryConfiguration.getSourceRegistryName()).build())
+                .schemaId(SchemaId.builder().schemaName(schemaName).registryName(glueSchemaRegistryConfiguration.getRegistryName()).build())
                 .build();
     }
 
