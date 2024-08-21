@@ -54,7 +54,6 @@ public class AWSSchemaRegistryClient {
     private static final long MAX_WAIT_INTERVAL = 3000;
 
     private final GlueClient client;
-    private final GlueClient sourceRegistryClient;
     private GlueSchemaRegistryConfiguration glueSchemaRegistryConfiguration;
 
     /**
@@ -96,34 +95,6 @@ public class AWSSchemaRegistryClient {
             }
         }
         this.client = glueClientBuilder.build();
-
-        //When AWSGlueCrossRegionSchemaReplicationConverter is used
-        //source.registry.name, source.region and source.endpoint are required.
-        //So we need to create another GlueClient with source registry details to retrieve
-        //all schema versions from the source registry schema
-        GlueClientBuilder glueSourceClientBuilder = glueClientBuilder;
-        if (glueSchemaRegistryConfiguration.getSourceRegistryName() != null &&
-                glueSchemaRegistryConfiguration.getSourceRegion() != null &&
-                glueSchemaRegistryConfiguration.getSourceEndPoint() != null) {
-
-            glueSourceClientBuilder = GlueClient
-                    .builder()
-                    .credentialsProvider(credentialsProvider)
-                    .overrideConfiguration(overrideConfiguration)
-                    .httpClient(urlConnectionHttpClientBuilder.build())
-                    .region(Region.of(glueSchemaRegistryConfiguration.getSourceRegion()));
-
-            if (glueSchemaRegistryConfiguration.getSourceEndPoint() != null) {
-                try {
-                    glueSourceClientBuilder.endpointOverride(new URI(glueSchemaRegistryConfiguration.getSourceEndPoint()));
-                } catch (URISyntaxException e) {
-                    String message = String.format("Malformed uri, please pass the valid uri for creating the source registry client",
-                            glueSchemaRegistryConfiguration.getSourceEndPoint());
-                    throw new AWSSchemaRegistryException(message, e);
-                }
-            }
-        }
-        this.sourceRegistryClient = glueSourceClientBuilder.build();
     }
 
     /**
@@ -140,12 +111,6 @@ public class AWSSchemaRegistryClient {
 
     public AWSSchemaRegistryClient(@NonNull GlueClient glueClient) {
         this.client = glueClient;
-        this.sourceRegistryClient = null;
-    }
-
-    public AWSSchemaRegistryClient(@NonNull GlueClient glueClient, @NonNull GlueClient sourceRegistryClient) {
-        this.client = glueClient;
-        this.sourceRegistryClient = sourceRegistryClient;
     }
 
     /**
@@ -196,7 +161,7 @@ public class AWSSchemaRegistryClient {
         return schemaVersionResponse;
     }
 
-    private GetSchemaVersionRequest getSchemaVersionRequest(String schemaVersionId) {
+    public GetSchemaVersionRequest getSchemaVersionRequest(String schemaVersionId) {
         GetSchemaVersionRequest getSchemaVersionRequest = GetSchemaVersionRequest.builder()
                 .schemaVersionId(schemaVersionId).build();
         return getSchemaVersionRequest;
@@ -322,6 +287,7 @@ public class AWSSchemaRegistryClient {
      * @return           Map of SchemaV2 with VersionIds
      * @throws AWSSchemaRegistryException on any error during the schema creation
      */
+    //TODO: Remove this after importing the tests to converter
     public Map<Schema, UUID> createSchemaAndRegisterAllSchemaVersions(String schemaName,
                                               String dataFormat,
                                               String schemaDefinition,
@@ -337,7 +303,7 @@ public class AWSSchemaRegistryClient {
             for (int idx = 0; idx < schemaVersionList.size(); idx++){
                 //Get details of each schema versions
                 GetSchemaVersionResponse getSchemaVersionResponse =
-                        sourceRegistryClient.getSchemaVersion(getSchemaVersionRequest(
+                        client.getSchemaVersion(getSchemaVersionRequest(
                                 schemaVersionList.get(idx).schemaVersionId()));
 
                 String schemaNameFromArn = getSchemaNameFromArn(schemaVersionList.get(idx).schemaArn());
@@ -389,14 +355,14 @@ public class AWSSchemaRegistryClient {
         return schemaWithVersionId;
     }
 
-    private List<SchemaVersionListItem> getSchemaVersions(String schemaName) {
+    public List<SchemaVersionListItem> getSchemaVersions(String schemaName) {
         ListSchemaVersionsRequest listSchemaVersionsRequest = getListSchemaVersionsRequest(schemaName);
         List<SchemaVersionListItem> schemaVersionList = new ArrayList<>();
         boolean done = false;
 
         while(!done) {
             //Get list of schema versions from source registry
-            ListSchemaVersionsResponse listSchemaVersionsResponse = sourceRegistryClient.listSchemaVersions(listSchemaVersionsRequest);
+            ListSchemaVersionsResponse listSchemaVersionsResponse = client.listSchemaVersions(listSchemaVersionsRequest);
             schemaVersionList = listSchemaVersionsResponse.schemas();
 
             //Keep paginating till the end
@@ -426,11 +392,13 @@ public class AWSSchemaRegistryClient {
         return modifiableSchemaVersionList;
     }
 
+    //TODO: Remove this
     private String getSchemaNameFromArn(String schemaArn) {
         String[] tokens = schemaArn.split(Pattern.quote("/"));
         return tokens[tokens.length - 1];
     }
 
+    //TODO: Remove this
     private Map<String, String> getMetadataInfo(Map<String, MetadataInfo> metadataInfoMap) {
         Map<String, String> metadata = new HashMap<>();
         Iterator<Map.Entry<String, MetadataInfo>> iterator = metadataInfoMap.entrySet().iterator();
@@ -504,7 +472,7 @@ public class AWSSchemaRegistryClient {
                 .build();
     }
 
-    private CreateSchemaRequest getCreateSchemaRequestObject(String schemaName, String dataFormat, String schemaDefinition) {
+    public CreateSchemaRequest getCreateSchemaRequestObject(String schemaName, String dataFormat, String schemaDefinition) {
         return CreateSchemaRequest
                 .builder()
                 .dataFormat(DataFormat.valueOf(dataFormat))
@@ -517,7 +485,8 @@ public class AWSSchemaRegistryClient {
                 .build();
     }
 
-    private CreateSchemaRequest getCreateSchemaRequestObjectV2(String schemaName, String dataFormat, String schemaDefinition, Compatibility compatibility) {
+    //TODO: Remove this
+    public CreateSchemaRequest getCreateSchemaRequestObjectV2(String schemaName, String dataFormat, String schemaDefinition, Compatibility compatibility) {
         return CreateSchemaRequest
                 .builder()
                 .dataFormat(DataFormat.valueOf(dataFormat))
@@ -699,7 +668,7 @@ public class AWSSchemaRegistryClient {
     public QuerySchemaVersionMetadataResponse querySourceSchemaVersionMetadata(UUID schemaVersionId) {
         QuerySchemaVersionMetadataResponse response = null;
         try {
-            response = sourceRegistryClient.querySchemaVersionMetadata(createQuerySchemaVersionMetadataRequest(schemaVersionId));
+            response = client.querySchemaVersionMetadata(createQuerySchemaVersionMetadataRequest(schemaVersionId));
         } catch (Exception e) {
             String errorMessage = String.format("Query schema version metadata :: Call failed when query metadata for schema version id = %s",
                     schemaVersionId.toString());

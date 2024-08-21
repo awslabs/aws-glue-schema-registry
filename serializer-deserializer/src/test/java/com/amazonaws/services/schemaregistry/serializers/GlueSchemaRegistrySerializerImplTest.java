@@ -22,7 +22,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
-import software.amazon.awssdk.services.glue.model.Compatibility;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -44,7 +43,6 @@ public class GlueSchemaRegistrySerializerImplTest {
     private final static byte[] ENCODED_DATA = new byte[] { 8, 9, 12, 83, 82 };
     private final static byte[] USER_DATA = new byte[] { 12, 83, 82 };
     private final static Schema SCHEMA_REGISTRY_SCHEMA = new Schema("{}", "AVRO", "schemaFoo");
-    private final static SchemaV2 SCHEMA_REGISTRY_SCHEMAV2 = new SchemaV2("{}", "AVRO", "schemaFoo", Compatibility.FORWARD);
 
     @BeforeEach
     void setUp() {

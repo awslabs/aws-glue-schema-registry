@@ -14,7 +14,12 @@
  */
 package com.amazonaws.services.schemaregistry.deserializers;
 
-import com.amazonaws.services.schemaregistry.common.*;
+import com.amazonaws.services.schemaregistry.common.AWSDeserializerInput;
+import com.amazonaws.services.schemaregistry.common.AWSSchemaRegistryClient;
+import com.amazonaws.services.schemaregistry.common.AWSSerializerInput;
+import com.amazonaws.services.schemaregistry.common.GlueSchemaRegistryDataFormatDeserializer;
+import com.amazonaws.services.schemaregistry.common.Schema;
+import com.amazonaws.services.schemaregistry.common.SchemaByDefinitionFetcher;
 import com.amazonaws.services.schemaregistry.common.configs.GlueSchemaRegistryConfiguration;
 import com.amazonaws.services.schemaregistry.exception.AWSSchemaRegistryException;
 import com.amazonaws.services.schemaregistry.exception.GlueSchemaRegistryIncompatibleDataException;
@@ -50,7 +55,9 @@ import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
-import software.amazon.awssdk.services.glue.model.*;
+import software.amazon.awssdk.services.glue.model.Compatibility;
+import software.amazon.awssdk.services.glue.model.DataFormat;
+import software.amazon.awssdk.services.glue.model.GetSchemaVersionResponse;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;

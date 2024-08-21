@@ -39,9 +39,6 @@ public class AWSSerializerInput {
     @Getter
     private String transportName;
 
-    @Getter
-    private Compatibility compatibility;
-
     @Builder
     public AWSSerializerInput(String schemaDefinition, String schemaName, String dataFormat, String transportName, Compatibility compatibility) {
         this.schemaDefinition = schemaDefinition;
@@ -59,11 +56,5 @@ public class AWSSerializerInput {
         }
 
         this.dataFormat = dataFormat;
-
-        if (compatibility != null) {
-            this.compatibility = compatibility;
-        } else {
-            this.compatibility = Compatibility.BACKWARD;
-        }
     }
 }

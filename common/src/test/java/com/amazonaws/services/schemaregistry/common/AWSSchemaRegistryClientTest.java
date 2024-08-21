@@ -107,7 +107,7 @@ public class AWSSchemaRegistryClientTest {
     public static final String AVRO_USER_SCHEMA_FILE2 = "src/test/java/resources/avro/user2.avsc";
 
     public void setup() {
-        awsSchemaRegistryClient = new AWSSchemaRegistryClient(mockGlueClient, mockSourceRegistryGlueClient);
+        awsSchemaRegistryClient = new AWSSchemaRegistryClient(mockGlueClient);
 
         Schema.Parser parser = new Schema.Parser();
         try {
@@ -184,12 +184,6 @@ public class AWSSchemaRegistryClientTest {
     @Test
     public void testConstructor_nullGlueClient_throwsException() {
         Assertions.assertThrows(IllegalArgumentException.class , () -> new AWSSchemaRegistryClient(null));
-    }
-
-    @Test
-    public void testConstructor_nullSourceRegistryClient_throwsException() {
-        GlueClient mockglueClient = mock(GlueClient.class);
-        Assertions.assertThrows(IllegalArgumentException.class , () -> new AWSSchemaRegistryClient(mockglueClient, null));
     }
 
     @Test
