@@ -51,7 +51,6 @@ public class GlueSchemaRegistryConfiguration {
     private AvroRecordType avroRecordType;
     private ProtobufMessageType protobufMessageType;
     private String registryName;
-    private int replicateSchemaVersionCount;
     private Compatibility compatibilitySetting;
     private String description;
     private boolean schemaAutoRegistrationEnabled = false;
@@ -59,7 +58,6 @@ public class GlueSchemaRegistryConfiguration {
     private Map<String, String> metadata;
     private String secondaryDeserializer;
     private URI proxyUrl;
-    private boolean synchroniseExistingSchema = false;
 
     /**
      * Name of the application using the serializer/deserializer.
@@ -93,7 +91,6 @@ public class GlueSchemaRegistryConfiguration {
         validateAndSetAWSRegion(configs);
         validateAndSetAWSEndpoint(configs);
         validateAndSetRegistryName(configs);
-        validateAndSetReplicateSchemaVersionCount(configs);
         validateAndSetDescription(configs);
         validateAndSetAvroRecordType(configs);
         validateAndSetProtobufMessageType(configs);
@@ -190,14 +187,6 @@ public class GlueSchemaRegistryConfiguration {
             this.registryName = String.valueOf(configs.get(AWSSchemaRegistryConstants.REGISTRY_NAME));
         } else {
             this.registryName = AWSSchemaRegistryConstants.DEFAULT_REGISTRY_NAME;
-        }
-    }
-
-    private void validateAndSetReplicateSchemaVersionCount(Map<String, ?> configs) {
-        if (isPresent(configs, AWSSchemaRegistryConstants.REPLICATE_SCHEMA_VERSION_COUNT)) {
-            this.replicateSchemaVersionCount = Integer.valueOf(configs.get(AWSSchemaRegistryConstants.REPLICATE_SCHEMA_VERSION_COUNT).toString());
-        } else {
-            this.replicateSchemaVersionCount = AWSSchemaRegistryConstants.DEFAULT_REPLICATE_SCHEMA_VERSION_COUNT;
         }
     }
 

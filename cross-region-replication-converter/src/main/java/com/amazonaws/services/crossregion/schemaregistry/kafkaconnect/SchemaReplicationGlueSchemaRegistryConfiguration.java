@@ -18,6 +18,7 @@ public class SchemaReplicationGlueSchemaRegistryConfiguration  extends GlueSchem
     private String targetRegion;
     private String sourceRegistryName;
     private String targetRegistryName;
+    private int replicateSchemaVersionCount;
 
     public SchemaReplicationGlueSchemaRegistryConfiguration(Map<String, ?> configs) {
         super(configs);
@@ -31,6 +32,7 @@ public class SchemaReplicationGlueSchemaRegistryConfiguration  extends GlueSchem
         validateAndSetAWSTargetEndpoint(configs);
         validateAndSetSourceRegistryName(configs);
         validateAndSetTargetRegistryName(configs);
+        validateAndSetReplicateSchemaVersionCount(configs);
     }
 
     private void validateAndSetAWSSourceRegion(Map<String, ?> configs) {
@@ -72,6 +74,14 @@ public class SchemaReplicationGlueSchemaRegistryConfiguration  extends GlueSchem
             this.targetEndPoint = String.valueOf(configs.get(AWSSchemaRegistryConstants.AWS_TARGET_ENDPOINT));
         } else {
             this.targetEndPoint = this.getEndPoint();
+        }
+    }
+
+    private void validateAndSetReplicateSchemaVersionCount(Map<String, ?> configs) {
+        if (isPresent(configs, AWSSchemaRegistryConstants.REPLICATE_SCHEMA_VERSION_COUNT)) {
+            this.replicateSchemaVersionCount = Integer.valueOf(configs.get(AWSSchemaRegistryConstants.REPLICATE_SCHEMA_VERSION_COUNT).toString());
+        } else {
+            this.replicateSchemaVersionCount = AWSSchemaRegistryConstants.DEFAULT_REPLICATE_SCHEMA_VERSION_COUNT;
         }
     }
 }
