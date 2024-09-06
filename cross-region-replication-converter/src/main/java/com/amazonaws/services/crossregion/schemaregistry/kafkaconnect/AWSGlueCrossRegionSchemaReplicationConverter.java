@@ -2,7 +2,6 @@ package com.amazonaws.services.crossregion.schemaregistry.kafkaconnect;
 
 import com.amazonaws.services.schemaregistry.common.AWSSchemaRegistryClient;
 import com.amazonaws.services.schemaregistry.common.Schema;
-import com.amazonaws.services.schemaregistry.common.configs.GlueSchemaRegistryConfiguration;
 import com.amazonaws.services.schemaregistry.deserializers.GlueSchemaRegistryDeserializerImpl;
 import com.amazonaws.services.schemaregistry.exception.AWSSchemaRegistryException;
 import com.amazonaws.services.schemaregistry.exception.GlueSchemaRegistryIncompatibleDataException;
@@ -20,8 +19,10 @@ import org.apache.kafka.common.errors.SerializationException;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.errors.DataException;
 import org.apache.kafka.connect.storage.Converter;
+import org.jetbrains.annotations.NotNull;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
+import software.amazon.awssdk.services.glue.model.AlreadyExistsException;
 import software.amazon.awssdk.services.glue.model.Compatibility;
 import software.amazon.awssdk.services.glue.model.GetSchemaResponse;
 import software.amazon.awssdk.services.glue.model.GetSchemaVersionResponse;
@@ -50,9 +51,13 @@ public class AWSGlueCrossRegionSchemaReplicationConverter implements Converter {
     private boolean isKey;
     private Map<String, Object> sourceConfigs;
     private Map<String, Object> targetConfigs;
+    private SchemaReplicationGlueSchemaRegistryConfiguration targetGlueSchemaRegistryConfiguration;
+    private SchemaReplicationGlueSchemaRegistryConfiguration sourceGlueSchemaRegistryConfiguration;
 
     @NonNull
-    private AWSSchemaRegistryClient awsSchemaRegistryClient;
+    private AWSSchemaRegistryClient targetSchemaRegistryClient;
+    @NonNull
+    private AWSSchemaRegistryClient sourceSchemaRegistryClient;
 
     @NonNull
     @VisibleForTesting
@@ -119,16 +124,19 @@ public class AWSGlueCrossRegionSchemaReplicationConverter implements Converter {
 
         targetConfigs.put(AWSSchemaRegistryConstants.SCHEMA_AUTO_REGISTRATION_SETTING, true);
 
-        SchemaReplicationGlueSchemaRegistryConfiguration glueSchemaRegistryConfiguration = new SchemaReplicationGlueSchemaRegistryConfiguration(targetConfigs);
-        awsSchemaRegistryClient = new AWSSchemaRegistryClient(credentialsProvider, glueSchemaRegistryConfiguration);
+        targetGlueSchemaRegistryConfiguration = new SchemaReplicationGlueSchemaRegistryConfiguration(targetConfigs);
+        sourceGlueSchemaRegistryConfiguration = new SchemaReplicationGlueSchemaRegistryConfiguration(sourceConfigs);
+
+        targetSchemaRegistryClient = new AWSSchemaRegistryClient(credentialsProvider, targetGlueSchemaRegistryConfiguration);
+        sourceSchemaRegistryClient = new AWSSchemaRegistryClient(credentialsProvider, sourceGlueSchemaRegistryConfiguration);
 
         this.schemaDefinitionToVersionCache = CacheBuilder.newBuilder()
-                .maximumSize(glueSchemaRegistryConfiguration.getCacheSize())
-                .refreshAfterWrite(glueSchemaRegistryConfiguration.getTimeToLiveMillis(), TimeUnit.MILLISECONDS)
+                .maximumSize(targetGlueSchemaRegistryConfiguration.getCacheSize())
+                .refreshAfterWrite(targetGlueSchemaRegistryConfiguration.getTimeToLiveMillis(), TimeUnit.MILLISECONDS)
                 .build(new SchemaDefinitionToVersionCache());
 
-        serializer = new GlueSchemaRegistrySerializerImpl(credentialsProvider, new GlueSchemaRegistryConfiguration(targetConfigs));
-        deserializer = new GlueSchemaRegistryDeserializerImpl(credentialsProvider, new GlueSchemaRegistryConfiguration(sourceConfigs));
+        serializer = new GlueSchemaRegistrySerializerImpl(credentialsProvider, targetGlueSchemaRegistryConfiguration);
+        deserializer = new GlueSchemaRegistryDeserializerImpl(credentialsProvider, sourceGlueSchemaRegistryConfiguration);
     }
 
     @Override
@@ -179,106 +187,65 @@ public class AWSGlueCrossRegionSchemaReplicationConverter implements Converter {
         throw new UnsupportedOperationException("This method is not supported");
     }
 
-    public UUID createSchemaAndRegisterAllSchemaVersions(
+    @VisibleForTesting
+    private UUID createSchemaAndRegisterAllSchemaVersions(
             @NonNull Schema schema) throws AWSSchemaRegistryException, ExecutionException {
-        SchemaReplicationGlueSchemaRegistryConfiguration glueSchemaRegistryConfiguration = new SchemaReplicationGlueSchemaRegistryConfiguration(sourceConfigs);
-        AWSSchemaRegistryClient sourceClient = new AWSSchemaRegistryClient(credentialsProvider, glueSchemaRegistryConfiguration);
 
-        GetSchemaResponse schemaResponse = sourceClient.getSchemaResponse(SchemaId.builder()
-                .schemaName(schema.getSchemaName())
-                .registryName(glueSchemaRegistryConfiguration.getSourceRegistryName())
-                .build());
-
-        Compatibility compatibility = schemaResponse.compatibility();
-
-        glueSchemaRegistryConfiguration = new SchemaReplicationGlueSchemaRegistryConfiguration(targetConfigs);
-        glueSchemaRegistryConfiguration.setCompatibilitySetting(compatibility);
-        AWSSchemaRegistryClient targetClient = new AWSSchemaRegistryClient(credentialsProvider, glueSchemaRegistryConfiguration);
-
-        //TODO: Make a schema call to get the compatibility mode
-        //TODO: Get all the metadata for the schema version
-
-        //Just register the schema, no need to cache them. when MM2 reads the data, will retrieve the schema and will cache it.
-        //When schema is not created in the target, create the schema in target and
-        //register all the existing schema version from the source schema to the target in the same order.
-//        Map<Schema, UUID> schemaWithVersionId =
-//                multiRegionRegistryClient.getTargetClient().createSchemaAndRegisterAllSchemaVersions(schema.getSchemaName(),
-//                        schema.getDataFormat(),
-//                        schema.getSchemaDefinition(),
-//                        compatibility,
-//                        new HashMap<>());
-//
-//        return schemaWithVersionId;
-        Map<Schema, UUID> schemaWithVersionId = new HashMap<>();
-        String schemaName = schema.getSchemaName();
-        String schemaNameFromArn = "";
-        String schemaDefinition = "";
-        String dataFormat = schema.getDataFormat();
-        Map<String, String> metadataInfo = new HashMap<>();
         UUID schemaVersionId;
 
         try {
             return schemaDefinitionToVersionCache.get(schema);
         } catch(Exception ex) {
+            Map<Schema, UUID> schemaWithVersionId = new HashMap<>();
+            String schemaName = schema.getSchemaName();
+            String schemaNameFromArn = "";
+            String schemaDefinition = "";
+            String dataFormat = schema.getDataFormat();
+            Map<String, String> metadataInfo = new HashMap<>();
+            GetSchemaVersionResponse schemaVersionResponse = null;
+
+
+            //Get compatibility mode for each schema
+            Compatibility compatibility = getCompatibilityMode(schema);
+
+            targetGlueSchemaRegistryConfiguration.setCompatibilitySetting(compatibility);
+            targetSchemaRegistryClient = new AWSSchemaRegistryClient(credentialsProvider, targetGlueSchemaRegistryConfiguration);
+
             try{
                 //Get list of all schema versions
-                List<SchemaVersionListItem> schemaVersionList = sourceClient.getSchemaVersions(schemaName, glueSchemaRegistryConfiguration.getReplicateSchemaVersionCount());
+                List<SchemaVersionListItem> schemaVersionList = sourceSchemaRegistryClient.getSchemaVersions(schemaName, targetGlueSchemaRegistryConfiguration.getReplicateSchemaVersionCount());
 
                 for (int idx = 0; idx < schemaVersionList.size(); idx++){
                     //Get details of each schema versions
-                    GetSchemaVersionResponse getSchemaVersionResponse =
-                            sourceClient.getSchemaVersionResponse(schemaVersionList.get(idx).schemaVersionId());
+                    schemaVersionResponse =
+                            sourceSchemaRegistryClient.getSchemaVersionResponse(schemaVersionList.get(idx).schemaVersionId());
 
                     schemaNameFromArn = getSchemaNameFromArn(schemaVersionList.get(idx).schemaArn());
-                    schemaDefinition = getSchemaVersionResponse.schemaDefinition();
-                    dataFormat = getSchemaVersionResponse.dataFormat().toString();
+                    schemaDefinition = schemaVersionResponse.schemaDefinition();
 
                     //Get the metadata information for each version
-                    QuerySchemaVersionMetadataResponse querySchemaVersionMetadataResponse = sourceClient.querySchemaVersionMetadata(UUID.fromString(getSchemaVersionResponse.schemaVersionId()));
+                    QuerySchemaVersionMetadataResponse querySchemaVersionMetadataResponse = sourceSchemaRegistryClient.querySchemaVersionMetadata(UUID.fromString(schemaVersionResponse.schemaVersionId()));
                     metadataInfo = getMetadataInfo(querySchemaVersionMetadataResponse.metadataInfoMap());
-
                     //Create the schema with the first schema version
                     if (idx == 0) {
-                        log.info("Auto Creating schema with schemaName: {} and schemaDefinition : {}",
-                                schemaNameFromArn, getSchemaVersionResponse.schemaDefinition());
-
                         //Create the schema
-                        schemaVersionId = targetClient.createSchema(
-                                schemaNameFromArn,
-                                dataFormat,
-                                schemaDefinition, new HashMap<>()); //TODO: Get metadata of Schema
-
-                        //Add version metadata to the schema version
-                        targetClient.putSchemaVersionMetadata(schemaVersionId, metadataInfo);
+                        schemaVersionId = createSchema(schemaNameFromArn, schemaDefinition, dataFormat, metadataInfo, schemaVersionResponse);
                     } else {
                         //Register subsequent schema versions
-                        schemaVersionId = targetClient.registerSchemaVersion(getSchemaVersionResponse.schemaDefinition(),
+                        schemaVersionId = targetSchemaRegistryClient.registerSchemaVersion(schemaVersionResponse.schemaDefinition(),
                                 schemaNameFromArn, dataFormat, metadataInfo);
                     }
 
-                    Schema schemaVersionSchema = new Schema(getSchemaVersionResponse.schemaDefinition(), getSchemaVersionResponse.dataFormat().toString(), schemaNameFromArn);
-
-                    //Create a map of schema and schemaVersionId
-                    schemaWithVersionId.put(schemaVersionSchema, schemaVersionId);
-
-                    //Cache all the schema versions for a Glue Schema Registry schema
-                    schemaWithVersionId.entrySet()
-                            .stream()
-                            .forEach(item -> {
-                                schemaDefinitionToVersionCache.put(item.getKey(), item.getValue());
-                            });
+                    cacheAllSchemaVersions(schemaVersionId, schemaWithVersionId, schemaNameFromArn, schemaVersionResponse);
                 }
+
             }
-            //TODO: will there be a scenario where duplicate schema creation logic can hit when MM2 trying to sync with all schemas
-//            catch (AlreadyExistsException e) {
-//                log.warn("Schema is already created, this could be caused by multiple producers racing to "
-//                        + "auto-create schema.");
-//                schemaVersionId = targetClient.registerSchemaVersion(schemaDefinition, schemaName, dataFormat, metadataInfo);
-//                Schema schemaVersionSchema = new Schema(schemaDefinition, dataFormat, schemaName);
-//                schemaWithVersionId.put(schemaVersionSchema, schemaVersionId);
-//                targetClient.putSchemaVersionMetadata(schemaVersionId, metadataInfo);
-//
-//            }
+            catch (AlreadyExistsException e) {
+                log.warn("Schema is already created, this could be caused by multiple producers/MM2 racing to auto-create schema.");
+                schemaVersionId = targetSchemaRegistryClient.registerSchemaVersion(schemaDefinition, schemaName, dataFormat, metadataInfo);
+                cacheAllSchemaVersions(schemaVersionId, schemaWithVersionId, schemaNameFromArn, schemaVersionResponse);
+                targetSchemaRegistryClient.putSchemaVersionMetadata(schemaVersionId, metadataInfo);
+            }
             catch (Exception e) {
                 String errorMessage = String.format(
                         "Create schema :: Call failed when creating the schema with the schema registry for"
@@ -290,6 +257,44 @@ public class AWSGlueCrossRegionSchemaReplicationConverter implements Converter {
 
         schemaVersionId = schemaDefinitionToVersionCache.get(schema);
         return schemaVersionId;
+    }
+
+    private void cacheAllSchemaVersions(UUID schemaVersionId, Map<Schema, UUID> schemaWithVersionId, String schemaNameFromArn, GetSchemaVersionResponse getSchemaVersionResponse) {
+        Schema schemaVersionSchema = new Schema(getSchemaVersionResponse.schemaDefinition(), getSchemaVersionResponse.dataFormat().toString(), schemaNameFromArn);
+
+        //Create a map of schema and schemaVersionId
+        schemaWithVersionId.put(schemaVersionSchema, schemaVersionId);
+        //Cache all the schema versions for a Glue Schema Registry schema
+        schemaWithVersionId.entrySet()
+                .stream()
+                .forEach(item -> {
+                    schemaDefinitionToVersionCache.put(item.getKey(), item.getValue());
+                });
+    }
+
+    private UUID createSchema(String schemaNameFromArn, String schemaDefinition, String dataFormat, Map<String, String> metadataInfo, GetSchemaVersionResponse getSchemaVersionResponse) {
+        UUID schemaVersionId;
+        log.info("Auto Creating schema with schemaName: {} and schemaDefinition : {}",
+                schemaNameFromArn, getSchemaVersionResponse.schemaDefinition());
+
+        schemaVersionId = targetSchemaRegistryClient.createSchema(
+                schemaNameFromArn,
+                dataFormat,
+                schemaDefinition, new HashMap<>()); //TODO: Get metadata of Schema
+
+        //Add version metadata to the schema version
+        targetSchemaRegistryClient.putSchemaVersionMetadata(schemaVersionId, metadataInfo);
+        return schemaVersionId;
+    }
+
+    private Compatibility getCompatibilityMode(@NotNull Schema schema) {
+        GetSchemaResponse schemaResponse = sourceSchemaRegistryClient.getSchemaResponse(SchemaId.builder()
+                .schemaName(schema.getSchemaName())
+                .registryName(sourceGlueSchemaRegistryConfiguration.getSourceRegistryName())
+                .build());
+
+        Compatibility compatibility = schemaResponse.compatibility();
+        return compatibility;
     }
 
     private String getSchemaNameFromArn(String schemaArn) {
@@ -312,7 +317,7 @@ public class AWSGlueCrossRegionSchemaReplicationConverter implements Converter {
     private class SchemaDefinitionToVersionCache extends CacheLoader<Schema, UUID> {
         @Override
         public UUID load(Schema schema) {
-            return awsSchemaRegistryClient.getSchemaVersionIdByDefinition(
+            return targetSchemaRegistryClient.getSchemaVersionIdByDefinition(
                     schema.getSchemaDefinition(), schema.getSchemaName(), schema.getDataFormat());
         }
     }

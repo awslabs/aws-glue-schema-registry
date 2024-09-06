@@ -76,7 +76,7 @@ public class SchemaReplicationGlueSchemaRegistryConfiguration extends GlueSchema
 
     private void validateAndSetReplicateSchemaVersionCount(Map<String, ?> configs) {
         if (isPresent(configs, SchemaReplicationSchemaRegistryConstants.REPLICATE_SCHEMA_VERSION_COUNT)) {
-            this.replicateSchemaVersionCount = (int) configs.get(SchemaReplicationSchemaRegistryConstants.REPLICATE_SCHEMA_VERSION_COUNT);
+            this.replicateSchemaVersionCount = Integer.valueOf(configs.get(SchemaReplicationSchemaRegistryConstants.REPLICATE_SCHEMA_VERSION_COUNT).toString());
         } else {
             this.replicateSchemaVersionCount = SchemaReplicationSchemaRegistryConstants.DEFAULT_REPLICATE_SCHEMA_VERSION_COUNT;
         }

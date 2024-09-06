@@ -139,8 +139,6 @@ public class AWSSchemaRegistryClientTest {
         configs.put(AWSSchemaRegistryConstants.AWS_REGION, "us-west-2");
         configs.put(AWSSchemaRegistryConstants.SCHEMA_NAME, "User-Topic");
         configs.put(AWSSchemaRegistryConstants.REGISTRY_NAME, "User-Topic");
-        configs.put(AWSSchemaRegistryConstants.SOURCE_REGISTRY_NAME, "User-Topic");
-        configs.put(AWSSchemaRegistryConstants.AWS_SOURCE_REGION, "us-east-2");
         configs.put(AWSSchemaRegistryConstants.TAGS, testTags);
         glueSchemaRegistryConfiguration = new GlueSchemaRegistryConfiguration(configs);
     }
