@@ -26,6 +26,7 @@ import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax3.AllTypes
 import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax3.ArrayTypeSyntax3;
 import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax3.MapTypeSyntax3;
 import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax3.NestedTypeSyntax3;
+import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax3.NestedOneofTypeSyntax3;
 import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax3.OneofTypeSyntax3;
 import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax3.PrimitiveTypesSyntax3;
 import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax2.EnumTypeSyntax2;
@@ -619,7 +620,10 @@ public class ToConnectTestDataGenerator {
         final Struct connectData = new Struct(connectSchema);
 
         connectData
-                .put("address", new Struct(connectSchema.field("address").schema()).put("street", "8th").put("zipcode", 98121))
+                .put("address",
+                        new Struct(connectSchema.field("address").schema())
+                                .put("street", "8th")
+                                .put("zipcode", 98121))
                 .put("status", "VALID")
                 .put("customer", new Struct(connectSchema.field("customer").schema()).put("name", "joe"))
                 .put("mapping", ImmutableMap.of("hello", true))
@@ -699,6 +703,62 @@ public class ToConnectTestDataGenerator {
                         .field("shipped", SchemaBuilder.bool().parameter(PROTOBUF_TAG, "2").optional().build())
                         .parameter("protobuf.type", "oneof")
                         .optional().build())
+                .build();
+    }
+
+    public static List<Message> getNestedOneofProtobufMessages() {
+        NestedOneofTypeSyntax3.Metadata metadata = NestedOneofTypeSyntax3.Metadata.newBuilder()
+                .setMetadataId("hi")
+                .setRegistered("yup")
+                .build();
+        return Arrays.asList(
+                NestedOneofTypeSyntax3.Event.newBuilder()
+                        .setMetadata(metadata)
+                        .setEventId("123123")
+                        .build()
+        );
+    }
+
+    public static Schema getNestedOneOfSchema(String packageName) {
+        return createConnectSchema(
+               "Event",
+               getNestedOneOfType(packageName),
+               ImmutableMap.of(PROTOBUF_PACKAGE, packageName)
+        );
+    }
+
+    public static Struct getNestedOneOfTypeData(String packageName) {
+        final Schema connectSchema = getNestedOneOfSchema(packageName);
+        final Struct connectData = new Struct(connectSchema);
+
+        connectData
+                .put("metadata",
+                        new Struct(connectSchema.field("metadata").schema())
+                        .put("metadata_id", "hi")
+                        .put("status",
+                                new Struct(connectSchema.field("metadata").schema().field("status").schema())
+                                .put("registered", "yup")
+                        )
+                )
+                .put("event_id", "123123");
+        return connectData;
+    }
+
+    private static Map<String, Schema> getNestedOneOfType(String packageName) {
+        final SchemaBuilder metadataBuilder = SchemaBuilder.struct().name(getFullName(packageName, "Metadata"))
+                .field("metadata_id", SchemaBuilder.string().parameter(PROTOBUF_TAG, "1").build())
+                .field("status", SchemaBuilder.struct()
+                        .name("status")
+                        .field("registered", SchemaBuilder.string().parameter(PROTOBUF_TAG, "2").optional().build())
+                        .field("unregistered", SchemaBuilder.string().parameter(PROTOBUF_TAG, "3").optional().build())
+                        .parameter("protobuf.type", "oneof")
+                        .optional()
+                        .build()
+                );
+
+        return ImmutableMap.<String, Schema> builder()
+                .put("metadata", metadataBuilder.parameter(PROTOBUF_TAG, "1").build())
+                .put("event_id", SchemaBuilder.string().parameter(PROTOBUF_TAG, "2").build())
                 .build();
     }
 
