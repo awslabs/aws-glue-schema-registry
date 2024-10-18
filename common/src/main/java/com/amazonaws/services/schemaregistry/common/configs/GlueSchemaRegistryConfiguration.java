@@ -58,6 +58,11 @@ public class GlueSchemaRegistryConfiguration {
     private Map<String, String> metadata;
     private String secondaryDeserializer;
     private URI proxyUrl;
+    // for metadata based key lookup purpose
+    private boolean useTagBasedLookup; // this is to be initialized first
+    private String metadataTagKeyName;
+    private String tagBasedLookupKeyName;
+    private String tagBasedLookupKeyValue;
 
     /**
      * Name of the application using the serializer/deserializer.
@@ -104,6 +109,10 @@ public class GlueSchemaRegistryConfiguration {
         validateAndSetUserAgent(configs);
         validateAndSetSecondaryDeserializer(configs);
         validateAndSetProxyUrl(configs);
+        validateAndSetUseTagBasedLookup(configs);
+        validateAndSetMetadataTagKeyName(configs);
+        validateAndSetSchemaLookupTagKeyName(configs);
+        validateAndSetSchemaLookupTagKeyValue(configs);
     }
 
     private void validateAndSetSecondaryDeserializer(Map<String, ?> configs) {
@@ -142,7 +151,7 @@ public class GlueSchemaRegistryConfiguration {
         if (!EnumUtils.isValidEnum(AWSSchemaRegistryConstants.COMPRESSION.class, compressionType.toUpperCase())) {
             String errorMessage =
                     String.format("Invalid Compression type : %s, Accepted values are : %s", compressionType,
-                                  AWSSchemaRegistryConstants.COMPRESSION.values());
+                            AWSSchemaRegistryConstants.COMPRESSION.values());
             throw new AWSSchemaRegistryException(errorMessage);
         }
         return true;
@@ -319,6 +328,45 @@ public class GlueSchemaRegistryConfiguration {
                         .collect(Collectors.toList());
             } else {
                 throw new AWSSchemaRegistryException("Jackson Deserialization features should be a list");
+            }
+        }
+    }
+
+    private void validateAndSetUseTagBasedLookup(Map<String, ?> configs) {
+        if (isPresent(configs, "useTagBasedLookup")) {
+            this.useTagBasedLookup = Boolean.parseBoolean(configs.get("useTagBasedLookup").toString());
+        } else {
+            this.useTagBasedLookup = false; // default value
+        }
+    }
+
+    private void validateAndSetMetadataTagKeyName(Map<String, ?> configs) {
+        if (useTagBasedLookup) {
+            if (isPresent(configs, "metadataTagKeyName")) {
+                this.metadataTagKeyName = (String) configs.get("metadataTagKeyName");
+            } else {
+                throw new AWSSchemaRegistryException("Metadata tag key name is required when tag based schemaVersionId lookup is enabled");
+            }
+        }
+    }
+
+    private void validateAndSetSchemaLookupTagKeyName(Map<String, ?> configs) {
+        if (useTagBasedLookup) {
+            if (isPresent(configs, "schemaLookUpTagName")) {
+                this.tagBasedLookupKeyName = (String) configs.get("schemaLookUpTagName");
+            } else {
+                throw new AWSSchemaRegistryException("schemaLookUpTagName is required when tag based schemaVersionId lookup is enabled. Set this tag to reduce schema lookups");
+            }
+        }
+    }
+
+
+    private void validateAndSetSchemaLookupTagKeyValue(Map<String, ?> configs) {
+        if (useTagBasedLookup) {
+            if (isPresent(configs, "schemaLookUpTagValue")) {
+                this.tagBasedLookupKeyValue = (String) configs.get("schemaLookUpTagValue");
+            } else {
+                throw new AWSSchemaRegistryException("Metadata tag key name and value are used to reduce schame lookups");
             }
         }
     }
