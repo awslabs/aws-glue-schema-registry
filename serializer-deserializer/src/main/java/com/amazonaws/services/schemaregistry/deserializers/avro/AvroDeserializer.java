@@ -51,6 +51,9 @@ public class AvroDeserializer implements GlueSchemaRegistryDataFormatDeserialize
     @Setter
     private AvroRecordType avroRecordType;
 
+    @Setter
+    private boolean logicalTypesConversionEnabled;
+
     @NonNull
     @Getter
     @VisibleForTesting
@@ -65,6 +68,7 @@ public class AvroDeserializer implements GlueSchemaRegistryDataFormatDeserialize
     public AvroDeserializer(GlueSchemaRegistryConfiguration configs) {
         this.schemaRegistrySerDeConfigs = configs;
         this.avroRecordType = configs.getAvroRecordType();
+        this.logicalTypesConversionEnabled = configs.isLogicalTypesConversionEnabled();
         this.datumReaderCache =
             CacheBuilder
                 .newBuilder()
@@ -111,7 +115,7 @@ public class AvroDeserializer implements GlueSchemaRegistryDataFormatDeserialize
     private class DatumReaderCache extends CacheLoader<String, DatumReader<Object>> {
         @Override
         public DatumReader<Object> load(String schema) throws Exception {
-            return DatumReaderInstance.from(schema, avroRecordType);
+            return DatumReaderInstance.from(schema, avroRecordType, logicalTypesConversionEnabled);
         }
     }
 }
