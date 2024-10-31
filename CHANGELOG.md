@@ -87,3 +87,6 @@ GlueSchemaRegistryKafkaSerializer/GlueSchemaRegistryKafkaDeserializer.
 
 ## Release 1.1.21
 * Upgraded Avro dependencies version to fix vulnerabilities
+
+## Release 1.1.22
+* Upgraded protobuf dependencies version to fix vulnerabilities
