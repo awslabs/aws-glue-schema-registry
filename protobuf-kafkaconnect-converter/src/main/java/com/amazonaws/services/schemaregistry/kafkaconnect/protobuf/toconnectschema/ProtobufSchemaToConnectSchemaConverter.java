@@ -73,19 +73,23 @@ public class ProtobufSchemaToConnectSchemaConverter {
         builder.version(CONVERTER_VERSION);
         builder.parameter(PROTOBUF_PACKAGE, descriptor.getFile().getPackage());
 
+        processFieldDescriptors(builder, fieldDescriptorList);
+
+        return builder.build();
+    }
+
+    private void processFieldDescriptors(SchemaBuilder builder, List<Descriptors.FieldDescriptor> fieldDescriptorList) {
         for (final Descriptors.FieldDescriptor fieldDescriptor : fieldDescriptorList) {
             if (fieldDescriptor.getRealContainingOneof() != null) {
                 Descriptors.OneofDescriptor oneofDescriptor = fieldDescriptor.getRealContainingOneof();
-                if (!builder.fields().stream().anyMatch(field -> field.name().equals(oneofDescriptor.getName()))) {
+                if (builder.fields().stream().noneMatch(field -> field.name().equals(oneofDescriptor.getName()))) {
                     builder.field(oneofDescriptor.getName(), toConnectSchemaForOneOfField(oneofDescriptor));
                 }
-                continue;
+            } else {
+                final String fieldName = fieldDescriptor.getName();
+                builder.field(fieldName, toConnectSchemaForField(fieldDescriptor));
             }
-            final String fieldName = fieldDescriptor.getName();
-            builder.field(fieldName, toConnectSchemaForField(fieldDescriptor));
         }
-
-        return builder.build();
     }
 
     private Schema toConnectSchemaForField(final Descriptors.FieldDescriptor fieldDescriptor) {
@@ -204,9 +208,7 @@ public class ProtobufSchemaToConnectSchemaConverter {
 
                 String fullName = fieldDescriptor.getMessageType().getFullName();
                 schemaBuilder = SchemaBuilder.struct().name(fullName);
-                for (Descriptors.FieldDescriptor field : fieldDescriptor.getMessageType().getFields()) {
-                    schemaBuilder.field(field.getName(), toConnectSchemaForField(field));
-                }
+                processFieldDescriptors(schemaBuilder, fieldDescriptor.getMessageType().getFields());
                 break;
             }
             default:
