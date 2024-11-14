@@ -50,6 +50,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import static com.amazonaws.services.schemaregistry.utils.RecordGenerator.AVRO_USER_LOGICAL_TYPES_SCHEMA_FILE_PATH;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -87,6 +88,7 @@ public class AvroDeserializerTest {
     public void setup() {
         this.configs.put(AWSSchemaRegistryConstants.AWS_ENDPOINT, "https://test");
         this.configs.put(AWSSchemaRegistryConstants.AWS_REGION, "us-west-2");
+        this.configs.put(AWSSchemaRegistryConstants.LOGICAL_TYPES_CONVERSION_ENABLED, true);
         this.schemaRegistrySerDeConfigs = new GlueSchemaRegistryConfiguration(this.configs);
 
         MockitoAnnotations.initMocks(this);
@@ -287,6 +289,28 @@ public class AvroDeserializerTest {
 
         ByteBuffer serializedData = createBasicSerializedData(genericRecord, compressionType.name(), DataFormat.AVRO);
         org.apache.avro.Schema schema = SchemaLoader.loadAvroSchema(AVRO_USER_SCHEMA_FILE);
+        AvroDeserializer avroDeserializer = createAvroDeserializer(AvroRecordType.GENERIC_RECORD);
+
+        com.amazonaws.services.schemaregistry.common.Schema schemaObject = new com.amazonaws.services.schemaregistry.common.Schema(
+                schema.toString(), DataFormat.AVRO.name(), "testAvroSchema");
+
+        Object deserializedObject = avroDeserializer.deserialize(serializedData, schemaObject);
+        assertGenericRecord(genericRecord, deserializedObject);
+        //Assert the instance is getting cached.
+        assertEquals(1, avroDeserializer.getDatumReaderCache().size());
+    }
+
+    /**
+     * Test whether the serialized generic record with logical types can be de-serialized back to the
+     * generic record instance with conversions.
+     */
+    @ParameterizedTest
+    @EnumSource(AWSSchemaRegistryConstants.COMPRESSION.class)
+    public void testDeserialize_genericRecord_with_logicalTypes_equalsOriginal(AWSSchemaRegistryConstants.COMPRESSION compressionType) {
+        GenericRecord genericRecord = RecordGenerator.createGenericAvroRecordWithLogicalTypes();
+
+        ByteBuffer serializedData = createBasicSerializedData(genericRecord, compressionType.name(), DataFormat.AVRO);
+        org.apache.avro.Schema schema = SchemaLoader.loadAvroSchema(AVRO_USER_LOGICAL_TYPES_SCHEMA_FILE_PATH);
         AvroDeserializer avroDeserializer = createAvroDeserializer(AvroRecordType.GENERIC_RECORD);
 
         com.amazonaws.services.schemaregistry.common.Schema schemaObject = new com.amazonaws.services.schemaregistry.common.Schema(

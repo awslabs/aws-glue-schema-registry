@@ -68,6 +68,8 @@ public class GlueSchemaRegistryConfiguration {
     private List<SerializationFeature> jacksonSerializationFeatures;
     private List<DeserializationFeature> jacksonDeserializationFeatures;
 
+    private boolean logicalTypesConversionEnabled;
+
     public GlueSchemaRegistryConfiguration(String region) {
         Map<String, Object> config = new HashMap<>();
         config.put(AWSSchemaRegistryConstants.AWS_REGION, region);
@@ -104,6 +106,7 @@ public class GlueSchemaRegistryConfiguration {
         validateAndSetUserAgent(configs);
         validateAndSetSecondaryDeserializer(configs);
         validateAndSetProxyUrl(configs);
+        validateAndSetLogicalTypesConversionEnabled(configs);
     }
 
     private void validateAndSetSecondaryDeserializer(Map<String, ?> configs) {
@@ -127,6 +130,12 @@ public class GlueSchemaRegistryConfiguration {
     private void validateAndSetUserAgent(Map<String, ?> configs) {
         if (isPresent(configs, AWSSchemaRegistryConstants.USER_AGENT_APP)) {
             this.userAgentApp = (String) configs.get(AWSSchemaRegistryConstants.USER_AGENT_APP);
+        }
+    }
+
+    private void validateAndSetLogicalTypesConversionEnabled(Map<String, ?> configs) {
+        if (isPresent(configs, AWSSchemaRegistryConstants.LOGICAL_TYPES_CONVERSION_ENABLED)) {
+            this.logicalTypesConversionEnabled = (Boolean) configs.get(AWSSchemaRegistryConstants.LOGICAL_TYPES_CONVERSION_ENABLED);
         }
     }
 

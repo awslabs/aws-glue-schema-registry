@@ -1,0 +1,10 @@
+{
+  "namespace": "com.amazonaws.services.schemaregistry.serializers.avro",
+  "type": "record",
+  "name": "User4",
+  "fields": [
+      {"name": "name", "type": "string" },
+      {"name": "dateOfBirth", "type": { "type": "int", "logicalType": "date"} },
+      {"name": "age", "type": { "type": "bytes", "logicalType": "decimal", "precision": 12, "scale": 2 } }
+  ]
+}
