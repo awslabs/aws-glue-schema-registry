@@ -198,13 +198,13 @@ public class GlueSchemaRegistryConfiguration {
 
     private void validateAndSetProxyUrl(Map<String, ?> configs) {
         if (isPresent(configs, AWSSchemaRegistryConstants.PROXY_URL)) {
-    		String value = (String) configs.get(AWSSchemaRegistryConstants.PROXY_URL);
-    		try {
-    			this.proxyUrl = URI.create(value);
-    		} catch (IllegalArgumentException e) {
-        		String message = String.format("Proxy URL property is not a valid URL: %s", value);
-        		throw new AWSSchemaRegistryException(message, e);
-        	}
+                String value = (String) configs.get(AWSSchemaRegistryConstants.PROXY_URL);
+                try {
+                        this.proxyUrl = URI.create(value);
+                } catch (IllegalArgumentException e) {
+                        String message = String.format("Proxy URL property is not a valid URL: %s", value);
+                        throw new AWSSchemaRegistryException(message, e);
+                }
         }
     }
 
@@ -323,7 +323,7 @@ public class GlueSchemaRegistryConfiguration {
         }
     }
 
-    private boolean isPresent(Map<String, ?> configs,
+    public boolean isPresent(Map<String, ?> configs,
                               String key) {
         if (!GlueSchemaRegistryUtils.getInstance()
                 .checkIfPresentInMap(configs, key)) {
