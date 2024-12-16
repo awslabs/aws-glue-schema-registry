@@ -37,7 +37,6 @@ import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.glue.GlueClient;
 import software.amazon.awssdk.services.glue.GlueClientBuilder;
 import software.amazon.awssdk.services.glue.model.AlreadyExistsException;
-import software.amazon.awssdk.services.glue.model.Compatibility;
 import software.amazon.awssdk.services.glue.model.CreateSchemaRequest;
 import software.amazon.awssdk.services.glue.model.CreateSchemaResponse;
 import software.amazon.awssdk.services.glue.model.DataFormat;
@@ -52,7 +51,6 @@ import software.amazon.awssdk.services.glue.model.GetTagsResponse;
 import software.amazon.awssdk.services.glue.model.GlueRequest;
 import software.amazon.awssdk.services.glue.model.ListSchemaVersionsRequest;
 import software.amazon.awssdk.services.glue.model.ListSchemaVersionsResponse;
-import software.amazon.awssdk.services.glue.model.MetadataInfo;
 import software.amazon.awssdk.services.glue.model.MetadataKeyValuePair;
 import software.amazon.awssdk.services.glue.model.PutSchemaVersionMetadataRequest;
 import software.amazon.awssdk.services.glue.model.PutSchemaVersionMetadataResponse;
@@ -69,13 +67,10 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.StringJoiner;
 import java.util.UUID;
-import java.util.regex.Pattern;
 
 /**
  * Handles all the requests related to the schema management.
@@ -207,6 +202,14 @@ public class AWSSchemaRegistryClient {
         }
     }
 
+    /**
+     * Get Schema by passing the schema id.
+     * @param schemaId Schema Id
+     * @return          schema returns the schema corresponding to the
+     *                  schema id passed and null in case service is not able to found the
+     *                  schema corresponding to schema id.
+     * @throws AWSSchemaRegistryException on any error while fetching the schema
+     */
     public GetSchemaResponse getSchemaResponse(@NonNull SchemaId schemaId)
             throws AWSSchemaRegistryException {
         GetSchemaResponse schemaResponse = null;
@@ -309,85 +312,6 @@ public class AWSSchemaRegistryClient {
         return schemaVersionId;
     }
 
-    /**
-     * Create a schema in target registry using the Glue client and register the schema versions found in the source schema
-     * to the target schema in the same order. Also used to cache the schemas along with the version ids.
-     * @param schemaName Schema Name
-     * @param dataFormat Data Format
-     * @param schemaDefinition Schema Definition
-     * @param compatibility Schema Compatibility mode
-     * @param metadata schema version metadata
-     * @return           Map of SchemaV2 with VersionIds
-     * @throws AWSSchemaRegistryException on any error during the schema creation
-     */
-    //TODO: Remove this after importing the tests to converter
-    public Map<Schema, UUID> createSchemaAndRegisterAllSchemaVersions(String schemaName,
-                                              String dataFormat,
-                                              String schemaDefinition,
-                                              Compatibility compatibility,
-                                              Map<String, String> metadata) throws AWSSchemaRegistryException {
-        Map<Schema, UUID> schemaWithVersionId = new HashMap<>();
-        UUID schemaVersionId;
-
-        try {
-            //Get list of all schema versions
-            List<SchemaVersionListItem> schemaVersionList = getSchemaVersions(schemaName, 50);
-
-            for (int idx = 0; idx < schemaVersionList.size(); idx++){
-                //Get details of each schema versions
-                GetSchemaVersionResponse getSchemaVersionResponse =
-                        client.getSchemaVersion(getSchemaVersionRequest(
-                                schemaVersionList.get(idx).schemaVersionId()));
-
-                String schemaNameFromArn = getSchemaNameFromArn(schemaVersionList.get(idx).schemaArn());
-
-                //Get the metadata information for each version
-                QuerySchemaVersionMetadataResponse querySchemaVersionMetadataResponse = querySourceSchemaVersionMetadata(UUID.fromString(getSchemaVersionResponse.schemaVersionId()));
-                Map<String, String> metadataInfo = getMetadataInfo(querySchemaVersionMetadataResponse.metadataInfoMap());
-
-                //Create the schema with the first schema version
-                if (idx == 0) {
-                    log.info("Auto Creating schema with schemaName: {} and schemaDefinition : {}",
-                            schemaNameFromArn, getSchemaVersionResponse.schemaDefinition());
-
-                    //Create the schema
-                    CreateSchemaResponse createSchemaResponse = client.createSchema(getCreateSchemaRequestObjectV2(
-                            schemaNameFromArn,
-                            getSchemaVersionResponse.dataFormat().toString(),
-                            getSchemaVersionResponse.schemaDefinition(), compatibility));
-                    schemaVersionId = UUID.fromString(createSchemaResponse.schemaVersionId());
-
-                    //Add version metadata to the schema version
-                    putSchemaVersionMetadata(schemaVersionId, metadataInfo);
-                } else {
-                    //Register subsequent schema versions
-                    schemaVersionId = registerSchemaVersion(getSchemaVersionResponse.schemaDefinition(),
-                            schemaNameFromArn, getSchemaVersionResponse.dataFormat().toString(), metadataInfo);
-                }
-
-                Schema schema = new Schema(getSchemaVersionResponse.schemaDefinition(), getSchemaVersionResponse.dataFormat().toString(), schemaNameFromArn);
-
-                //Create a map of schema and schemaVersionId
-                schemaWithVersionId.put(schema, schemaVersionId);
-            }
-        } catch (AlreadyExistsException e) {
-            log.warn("Schema is already created, this could be caused by multiple producers racing to "
-                    + "auto-create schema.");
-            schemaVersionId = registerSchemaVersion(schemaDefinition, schemaName, dataFormat, metadata);
-            Schema schema = new Schema(schemaDefinition, dataFormat, schemaName);
-            schemaWithVersionId.put(schema, schemaVersionId);
-            putSchemaVersionMetadata(schemaVersionId, metadata);
-
-        } catch (Exception e) {
-            String errorMessage = String.format(
-                    "Create schema :: Call failed when creating the schema with the schema registry for"
-                            + " schema name = %s", schemaName);
-            throw new AWSSchemaRegistryException(errorMessage, e);
-        }
-
-        return schemaWithVersionId;
-    }
-
     public List<SchemaVersionListItem> getSchemaVersions(String schemaName, Integer replicateSchemaVersionCount) {
         ListSchemaVersionsRequest listSchemaVersionsRequest = getListSchemaVersionsRequest(schemaName);
         List<SchemaVersionListItem> schemaVersionList = new ArrayList<>();
@@ -423,24 +347,6 @@ public class AWSSchemaRegistryClient {
                 Math.min(replicateSchemaVersionCount, modifiableSchemaVersionList.size()));
 
         return modifiableSchemaVersionList;
-    }
-
-    //TODO: Remove this
-    private String getSchemaNameFromArn(String schemaArn) {
-        String[] tokens = schemaArn.split(Pattern.quote("/"));
-        return tokens[tokens.length - 1];
-    }
-
-    //TODO: Remove this
-    private Map<String, String> getMetadataInfo(Map<String, MetadataInfo> metadataInfoMap) {
-        Map<String, String> metadata = new HashMap<>();
-        Iterator<Map.Entry<String, MetadataInfo>> iterator = metadataInfoMap.entrySet().iterator();
-        while (iterator.hasNext()) {
-            Map.Entry<String, MetadataInfo> entry = iterator.next();
-            metadata.put(entry.getKey(), entry.getValue().metadataValue());
-        }
-
-        return metadata;
     }
 
     /**
@@ -514,20 +420,6 @@ public class AWSSchemaRegistryClient {
                 .schemaName(schemaName)
                 .schemaDefinition(schemaDefinition)
                 .compatibility(glueSchemaRegistryConfiguration.getCompatibilitySetting())
-                .tags(glueSchemaRegistryConfiguration.getTags())
-                .build();
-    }
-
-    //TODO: Remove this
-    public CreateSchemaRequest getCreateSchemaRequestObjectV2(String schemaName, String dataFormat, String schemaDefinition, Compatibility compatibility) {
-        return CreateSchemaRequest
-                .builder()
-                .dataFormat(DataFormat.valueOf(dataFormat))
-                .description(glueSchemaRegistryConfiguration.getDescription())
-                .registryId(RegistryId.builder().registryName(glueSchemaRegistryConfiguration.getRegistryName()).build())
-                .schemaName(schemaName)
-                .schemaDefinition(schemaDefinition)
-                .compatibility(compatibility)
                 .tags(glueSchemaRegistryConfiguration.getTags())
                 .build();
     }

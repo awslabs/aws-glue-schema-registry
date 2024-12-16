@@ -232,7 +232,6 @@ public class AWSGlueCrossRegionSchemaReplicationConverter implements Converter {
             Map<String, String> metadataInfo = new HashMap<>();
             GetSchemaVersionResponse schemaVersionResponse = null;
 
-
             //Get compatibility mode for each schema
             Compatibility compatibility = getCompatibilityMode(schema);
 
@@ -275,8 +274,7 @@ public class AWSGlueCrossRegionSchemaReplicationConverter implements Converter {
             }
             catch (Exception e) {
                 String errorMessage = String.format(
-                        "Exception occurred while fetching or registering schema definition = %s, schema name = %s "
-                                + " schema name = %s", schemaName);
+                        "Exception occurred while fetching or registering schema name = %s ", schemaName);
                 //TODO: Will this exception be ever thrown?
                 throw new AWSSchemaRegistryException(errorMessage, e);
             }
