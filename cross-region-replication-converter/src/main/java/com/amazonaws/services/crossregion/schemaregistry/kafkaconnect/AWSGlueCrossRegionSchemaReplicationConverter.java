@@ -85,6 +85,24 @@ public class AWSGlueCrossRegionSchemaReplicationConverter implements Converter {
     }
 
     /**
+     * Constructor accepting AWSSchemaRegistryClient.
+     *
+     * @param sourceSchemaRegistryClient AWSSchemaRegistryClient instance.
+     * @param targetSchemaRegistryClient AWSSchemaRegistryClient instance.
+     */
+    public AWSGlueCrossRegionSchemaReplicationConverter(
+            AWSSchemaRegistryClient sourceSchemaRegistryClient,
+            AWSSchemaRegistryClient targetSchemaRegistryClient,
+            GlueSchemaRegistryDeserializerImpl deserializerImpl,
+            GlueSchemaRegistrySerializerImpl serializerImpl) {
+
+        this.sourceSchemaRegistryClient = sourceSchemaRegistryClient;
+        this.targetSchemaRegistryClient = targetSchemaRegistryClient;
+        this.deserializer = deserializerImpl;
+        this.serializer = serializerImpl;
+    }
+
+    /**
      * Configure the Schema Replication Converter.
      * @param configs configuration elements for the converter
      * @param isKey true if key, false otherwise
@@ -94,7 +112,9 @@ public class AWSGlueCrossRegionSchemaReplicationConverter implements Converter {
         this.isKey = isKey;
         // TODO: Support credentialProvider passed on by the user
         // https://github.com/awslabs/aws-glue-schema-registry/issues/293
-        credentialsProvider = DefaultCredentialsProvider.builder().build();
+        if (credentialsProvider == null) {
+            credentialsProvider = DefaultCredentialsProvider.builder().build();
+        }
 
         // Put the source and target regions into configurations respectively
         sourceConfigs = new HashMap<>(configs);
@@ -127,16 +147,24 @@ public class AWSGlueCrossRegionSchemaReplicationConverter implements Converter {
         targetGlueSchemaRegistryConfiguration = new SchemaReplicationGlueSchemaRegistryConfiguration(targetConfigs);
         sourceGlueSchemaRegistryConfiguration = new SchemaReplicationGlueSchemaRegistryConfiguration(sourceConfigs);
 
-        targetSchemaRegistryClient = new AWSSchemaRegistryClient(credentialsProvider, targetGlueSchemaRegistryConfiguration);
-        sourceSchemaRegistryClient = new AWSSchemaRegistryClient(credentialsProvider, sourceGlueSchemaRegistryConfiguration);
-
         this.schemaDefinitionToVersionCache = CacheBuilder.newBuilder()
                 .maximumSize(targetGlueSchemaRegistryConfiguration.getCacheSize())
                 .refreshAfterWrite(targetGlueSchemaRegistryConfiguration.getTimeToLiveMillis(), TimeUnit.MILLISECONDS)
                 .build(new SchemaDefinitionToVersionCache());
 
-        serializer = new GlueSchemaRegistrySerializerImpl(credentialsProvider, targetGlueSchemaRegistryConfiguration);
-        deserializer = new GlueSchemaRegistryDeserializerImpl(credentialsProvider, sourceGlueSchemaRegistryConfiguration);
+        if (targetSchemaRegistryClient == null) {
+            targetSchemaRegistryClient = new AWSSchemaRegistryClient(credentialsProvider, targetGlueSchemaRegistryConfiguration);
+        }
+        if (sourceSchemaRegistryClient == null) {
+            sourceSchemaRegistryClient = new AWSSchemaRegistryClient(credentialsProvider, sourceGlueSchemaRegistryConfiguration);
+        }
+
+        if (serializer == null) {
+            serializer = new GlueSchemaRegistrySerializerImpl(credentialsProvider, targetGlueSchemaRegistryConfiguration);
+        }
+        if (deserializer == null) {
+            deserializer = new GlueSchemaRegistryDeserializerImpl(credentialsProvider, sourceGlueSchemaRegistryConfiguration);
+        }
     }
 
     @Override
@@ -188,7 +216,7 @@ public class AWSGlueCrossRegionSchemaReplicationConverter implements Converter {
     }
 
     @VisibleForTesting
-    private UUID createSchemaAndRegisterAllSchemaVersions(
+    UUID createSchemaAndRegisterAllSchemaVersions(
             @NonNull Schema schema) throws AWSSchemaRegistryException, ExecutionException {
 
         UUID schemaVersionId;
@@ -238,7 +266,6 @@ public class AWSGlueCrossRegionSchemaReplicationConverter implements Converter {
 
                     cacheAllSchemaVersions(schemaVersionId, schemaWithVersionId, schemaNameFromArn, schemaVersionResponse);
                 }
-
             }
             catch (AlreadyExistsException e) {
                 log.warn("Schema is already created, this could be caused by multiple producers/MM2 racing to auto-create schema.");
@@ -248,7 +275,7 @@ public class AWSGlueCrossRegionSchemaReplicationConverter implements Converter {
             }
             catch (Exception e) {
                 String errorMessage = String.format(
-                        "Create schema :: Call failed when creating the schema with the schema registry for"
+                        "Exception occurred while fetching or registering schema definition = %s, schema name = %s "
                                 + " schema name = %s", schemaName);
                 //TODO: Will this exception be ever thrown?
                 throw new AWSSchemaRegistryException(errorMessage, e);

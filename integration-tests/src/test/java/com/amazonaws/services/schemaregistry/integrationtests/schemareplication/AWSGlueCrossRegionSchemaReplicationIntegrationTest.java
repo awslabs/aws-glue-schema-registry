@@ -169,7 +169,7 @@ public class AWSGlueCrossRegionSchemaReplicationIntegrationTest {
 
         //Delay added to allow MM2 copy the data to destination cluster
         //before consuming the records from the destination cluster
-        Thread.sleep(10000);
+        Thread.sleep(15000);
 
         ConsumerProperties.ConsumerPropertiesBuilder consumerPropertiesBuilder = ConsumerProperties.builder()
                 .topicName(String.format("%s.%s",SRC_CLUSTER_ALIAS, topic));

@@ -52,6 +52,7 @@ import software.amazon.awssdk.services.glue.model.MetadataKeyValuePair;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -541,6 +542,8 @@ public class GlueSchemaRegistrySerializationFacadeTest extends GlueSchemaRegistr
         configs.remove(AWSSchemaRegistryConstants.DATA_FORMAT);
     }
 
+
+
     /**
      * Tests registerSchemaVersion method of Serializer with metadata configuration
      */
@@ -695,6 +698,26 @@ public class GlueSchemaRegistrySerializationFacadeTest extends GlueSchemaRegistr
 
         testForSerializedData(serializedData, SCHEMA_VERSION_ID_FOR_TESTING,
                               AWSSchemaRegistryConstants.COMPRESSION.NONE, payload);
+    }
+
+    @Test
+    public void testEncode_WhenNonSchemaConformantDataIsPassed_ThrowsException() throws Exception {
+
+        JsonDataWithSchema jsonNonSchemaConformantRecord = RecordGenerator.createNonSchemaConformantJsonData();
+        String schemaDefinition = jsonNonSchemaConformantRecord.getSchema();
+        byte[] payload = jsonNonSchemaConformantRecord.getPayload().getBytes(StandardCharsets.UTF_8);
+
+        final DataFormat dataFormat = DataFormat.JSON;
+        com.amazonaws.services.schemaregistry.common.Schema schema =
+            new com.amazonaws.services.schemaregistry.common.Schema(schemaDefinition, dataFormat.name(), TEST_SCHEMA);
+
+        GlueSchemaRegistrySerializationFacade glueSchemaRegistrySerializationFacade =
+            createGlueSerializationFacade(configs, mockSchemaByDefinitionFetcher);
+
+        //Test subject
+        Exception ex = assertThrows(AWSSchemaRegistryException.class,
+            () -> glueSchemaRegistrySerializationFacade.encode(TRANSPORT_NAME, schema, payload));
+        assertEquals("JSON data validation against schema failed.", ex.getMessage());
     }
 
     private AWSSerializerInput prepareInput(String schemaDefinition,
