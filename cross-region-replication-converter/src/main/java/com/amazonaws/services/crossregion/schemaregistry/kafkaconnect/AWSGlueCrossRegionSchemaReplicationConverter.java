@@ -31,6 +31,8 @@ import software.amazon.awssdk.services.glue.model.QuerySchemaVersionMetadataResp
 import software.amazon.awssdk.services.glue.model.SchemaId;
 import software.amazon.awssdk.services.glue.model.SchemaVersionListItem;
 
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -240,7 +242,7 @@ public class AWSGlueCrossRegionSchemaReplicationConverter implements Converter {
 
             try{
                 //Get list of all schema versions
-                List<SchemaVersionListItem> schemaVersionList = sourceSchemaRegistryClient.getSchemaVersions(schemaName, targetGlueSchemaRegistryConfiguration.getReplicateSchemaVersionCount());
+                List<SchemaVersionListItem> schemaVersionList = getSchemaVersionsOrderedByVersionNumber(schemaName, targetGlueSchemaRegistryConfiguration.getReplicateSchemaVersionCount());
 
                 for (int idx = 0; idx < schemaVersionList.size(); idx++){
                     //Get details of each schema versions
@@ -310,6 +312,23 @@ public class AWSGlueCrossRegionSchemaReplicationConverter implements Converter {
         //Add version metadata to the schema version
         targetSchemaRegistryClient.putSchemaVersionMetadata(schemaVersionId, metadataInfo);
         return schemaVersionId;
+    }
+
+    public List<SchemaVersionListItem> getSchemaVersionsOrderedByVersionNumber(String schemaName, Integer replicateSchemaVersionCount) {
+        //Copy the schemaVersionList to a new list as the existing list is not modifiable.
+        List<SchemaVersionListItem> modifiableSchemaVersionList = sourceSchemaRegistryClient.getSchemaVersions(schemaName);
+
+        //Sort the schemaVersionList based on versionNumber in ascending order.
+        //This is important as the item in the list are in random order
+        //and we need to maintain the ordering of versions
+        Collections.sort(modifiableSchemaVersionList, Comparator.comparing(SchemaVersionListItem::versionNumber));
+
+        //Get the list of schema versions equal to the replicateSchemaVersionCount
+        //If the list is smaller than replicateSchemaVersionCount, return the whole list.
+        modifiableSchemaVersionList = modifiableSchemaVersionList.subList(0,
+                Math.min(replicateSchemaVersionCount, modifiableSchemaVersionList.size()));
+
+        return modifiableSchemaVersionList;
     }
 
     private Compatibility getCompatibilityMode(@NotNull Schema schema) {
