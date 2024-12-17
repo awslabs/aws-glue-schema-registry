@@ -169,7 +169,7 @@ public class AWSGlueCrossRegionSchemaReplicationIntegrationTest {
 
         //Delay added to allow MM2 copy the data to destination cluster
         //before consuming the records from the destination cluster
-        Thread.sleep(15000);
+        Thread.sleep(30000);
 
         ConsumerProperties.ConsumerPropertiesBuilder consumerPropertiesBuilder = ConsumerProperties.builder()
                 .topicName(String.format("%s.%s",SRC_CLUSTER_ALIAS, topic));
@@ -178,7 +178,7 @@ public class AWSGlueCrossRegionSchemaReplicationIntegrationTest {
         consumerPropertiesBuilder.avroRecordType(avroRecordType.getName()); // Only required for the case of AVRO
 
         List<ConsumerRecord<String, Object>> consumerRecords = destKafkaHelper.doConsumeRecords(consumerPropertiesBuilder.build());
-
+        
         assertRecordsEquality(producerRecords, consumerRecords);
         log.info("Finished test for producing/consuming {} messages via Kafka.", dataFormat.name());
     }

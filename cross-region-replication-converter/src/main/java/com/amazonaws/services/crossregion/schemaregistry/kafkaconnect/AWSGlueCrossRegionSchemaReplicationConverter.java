@@ -31,6 +31,7 @@ import software.amazon.awssdk.services.glue.model.QuerySchemaVersionMetadataResp
 import software.amazon.awssdk.services.glue.model.SchemaId;
 import software.amazon.awssdk.services.glue.model.SchemaVersionListItem;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -179,12 +180,11 @@ public class AWSGlueCrossRegionSchemaReplicationConverter implements Converter {
             Schema deserializedSchema = deserializer.getSchema(bytes);
             createSchemaAndRegisterAllSchemaVersions(deserializedSchema);
             return serializer.encode(topic, deserializedSchema, deserializedBytes);
-        }  catch(GlueSchemaRegistryIncompatibleDataException ex) {
+        } catch (GlueSchemaRegistryIncompatibleDataException ex) {
             //This exception is raised when the header bytes don't have schema id, version byte or compression byte
             //This determines the data doesn't have schema information in it, so the actual message is returned.
             return bytes;
-        }
-        catch (SerializationException | AWSSchemaRegistryException e) {
+        } catch (SerializationException | AWSSchemaRegistryException e) {
             throw new DataException("Converting Kafka Connect data to byte[] failed due to serialization/deserialization error: ", e);
         } catch (ExecutionException e) {
             //TODO: Proper messaging and error handling
@@ -225,7 +225,7 @@ public class AWSGlueCrossRegionSchemaReplicationConverter implements Converter {
 
         try {
             return schemaDefinitionToVersionCache.get(schema);
-        } catch(Exception ex) {
+        } catch (Exception ex) {
             Map<Schema, UUID> schemaWithVersionId = new HashMap<>();
             String schemaName = schema.getSchemaName();
             String schemaNameFromArn = "";
@@ -240,11 +240,12 @@ public class AWSGlueCrossRegionSchemaReplicationConverter implements Converter {
             targetGlueSchemaRegistryConfiguration.setCompatibilitySetting(compatibility);
             targetSchemaRegistryClient = new AWSSchemaRegistryClient(credentialsProvider, targetGlueSchemaRegistryConfiguration);
 
-            try{
+            try {
+
                 //Get list of all schema versions
                 List<SchemaVersionListItem> schemaVersionList = getSchemaVersionsOrderedByVersionNumber(schemaName, targetGlueSchemaRegistryConfiguration.getReplicateSchemaVersionCount());
 
-                for (int idx = 0; idx < schemaVersionList.size(); idx++){
+                for (int idx = 0; idx < schemaVersionList.size(); idx++) {
                     //Get details of each schema versions
                     schemaVersionResponse =
                             sourceSchemaRegistryClient.getSchemaVersionResponse(schemaVersionList.get(idx).schemaVersionId());
@@ -267,16 +268,13 @@ public class AWSGlueCrossRegionSchemaReplicationConverter implements Converter {
 
                     cacheAllSchemaVersions(schemaVersionId, schemaWithVersionId, schemaNameFromArn, schemaVersionResponse);
                 }
-            }
-            catch (AlreadyExistsException e) {
+            } catch (AlreadyExistsException e) {
                 log.warn("Schema is already created, this could be caused by multiple producers/MM2 racing to auto-create schema.");
                 schemaVersionId = targetSchemaRegistryClient.registerSchemaVersion(schemaDefinition, schemaName, dataFormat, metadataInfo);
                 cacheAllSchemaVersions(schemaVersionId, schemaWithVersionId, schemaNameFromArn, schemaVersionResponse);
                 targetSchemaRegistryClient.putSchemaVersionMetadata(schemaVersionId, metadataInfo);
-            }
-            catch (Exception e) {
-                String errorMessage = String.format(
-                        "Exception occurred while fetching or registering schema name = %s ", schemaName);
+            } catch (Exception e) {
+                String errorMessage = String.format("Exception occurred while fetching or registering schema name = %s ", schemaName);
                 //TODO: Will this exception be ever thrown?
                 throw new AWSSchemaRegistryException(errorMessage, e);
             }
@@ -316,7 +314,8 @@ public class AWSGlueCrossRegionSchemaReplicationConverter implements Converter {
 
     public List<SchemaVersionListItem> getSchemaVersionsOrderedByVersionNumber(String schemaName, Integer replicateSchemaVersionCount) {
         //Copy the schemaVersionList to a new list as the existing list is not modifiable.
-        List<SchemaVersionListItem> modifiableSchemaVersionList = sourceSchemaRegistryClient.getSchemaVersions(schemaName);
+        List<SchemaVersionListItem> schemaVersionList = sourceSchemaRegistryClient.getSchemaVersions(schemaName);
+        List<SchemaVersionListItem> modifiableSchemaVersionList = new ArrayList<>(schemaVersionList);
 
         //Sort the schemaVersionList based on versionNumber in ascending order.
         //This is important as the item in the list are in random order

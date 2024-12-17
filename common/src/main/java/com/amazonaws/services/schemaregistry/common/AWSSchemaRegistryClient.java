@@ -321,7 +321,7 @@ public class AWSSchemaRegistryClient {
         List<SchemaVersionListItem> schemaVersionList = new ArrayList<>();
         boolean done = false;
         try {
-            while(!done) {
+            while (!done) {
                 //Get list of schema versions from source registry
                 ListSchemaVersionsResponse listSchemaVersionsResponse = client.listSchemaVersions(listSchemaVersionsRequest);
                 schemaVersionList = listSchemaVersionsResponse.schemas();
