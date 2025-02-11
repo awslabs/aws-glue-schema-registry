@@ -90,3 +90,6 @@ GlueSchemaRegistryKafkaSerializer/GlueSchemaRegistryKafkaDeserializer.
 
 ## Release 1.1.22
 * Upgraded protobuf dependencies version to fix vulnerabilities
+
+## Release 1.1.23
+* Upgraded json-schema dependencies version to fix vulnerabilities

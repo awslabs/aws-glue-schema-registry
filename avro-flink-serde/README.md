@@ -20,7 +20,7 @@ inside Amazon VPC.](https://docs.aws.amazon.com/kinesisanalytics/latest/java/vpc
   <dependency>
        <groupId>software.amazon.glue</groupId>
        <artifactId>schema-registry-flink-serde</artifactId>
-       <version>1.1.22/version>
+       <version>1.1.23/version>
   </dependency>
   ```
 ### Code Example
