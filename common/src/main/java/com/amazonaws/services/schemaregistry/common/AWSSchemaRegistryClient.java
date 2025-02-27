@@ -47,7 +47,11 @@ import software.amazon.awssdk.services.glue.model.GetSchemaVersionResponse;
 import software.amazon.awssdk.services.glue.model.GetTagsRequest;
 import software.amazon.awssdk.services.glue.model.GetTagsResponse;
 import software.amazon.awssdk.services.glue.model.GlueRequest;
+import software.amazon.awssdk.services.glue.model.GlueException;
 import software.amazon.awssdk.services.glue.model.MetadataKeyValuePair;
+import software.amazon.awssdk.services.glue.model.MetadataInfo;
+import software.amazon.awssdk.services.glue.model.ListSchemaVersionsResponse;
+import software.amazon.awssdk.services.glue.model.ListSchemaVersionsRequest;
 import software.amazon.awssdk.services.glue.model.PutSchemaVersionMetadataRequest;
 import software.amazon.awssdk.services.glue.model.PutSchemaVersionMetadataResponse;
 import software.amazon.awssdk.services.glue.model.QuerySchemaVersionMetadataRequest;
@@ -56,10 +60,17 @@ import software.amazon.awssdk.services.glue.model.RegisterSchemaVersionRequest;
 import software.amazon.awssdk.services.glue.model.RegisterSchemaVersionResponse;
 import software.amazon.awssdk.services.glue.model.RegistryId;
 import software.amazon.awssdk.services.glue.model.SchemaId;
+import software.amazon.awssdk.services.glue.model.SchemaVersionListItem;
+import software.amazon.awssdk.services.resourcegroupstaggingapi.ResourceGroupsTaggingApiClient;
+import software.amazon.awssdk.services.resourcegroupstaggingapi.model.GetResourcesRequest;
+import software.amazon.awssdk.services.resourcegroupstaggingapi.model.GetResourcesResponse;
+import software.amazon.awssdk.services.resourcegroupstaggingapi.model.TagFilter;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Map;
 import java.util.StringJoiner;
 import java.util.UUID;
 
@@ -74,6 +85,8 @@ public class AWSSchemaRegistryClient {
 
     private final GlueClient client;
     private GlueSchemaRegistryConfiguration glueSchemaRegistryConfiguration;
+
+    private ResourceGroupsTaggingApiClient taggingApiClient;
 
     /**
      * Create Amazon Schema Registry Client.
@@ -288,7 +301,7 @@ public class AWSSchemaRegistryClient {
      * @param schemaDefinition Schema Definition
      * @param schemaName       Schema Name
      * @param dataFormat       Data Format
-     * @return                 GetSchemaVersionResponse object.
+     * @return GetSchemaVersionResponse object.
      * @throws AWSSchemaRegistryException on any error during the registration and fetching of schema version
      */
     public GetSchemaVersionResponse registerSchemaVersion(String schemaDefinition, String schemaName, String dataFormat) throws AWSSchemaRegistryException {
@@ -567,6 +580,99 @@ public class AWSSchemaRegistryClient {
                 .forEach((key, value) -> userAgentSuffix.add(key + "/" + value));
 
             return userAgentSuffix.toString();
+        }
+    }
+    /**
+     * Retrieves an instance of the ResourceGroupsTaggingApiClient.
+     *
+     * <p>
+     * This method lazily initializes the taggingApiClient if it hasn't been created yet.
+     * If a proxy URL is provided in the glueSchemaRegistryConfiguration, the client is configured
+     * to use that proxy for its HTTP connections.
+     * </p>
+     *
+     * @return the ResourceGroupsTaggingApiClient instance
+     */
+
+    private ResourceGroupsTaggingApiClient getTaggingApiClient() {
+        if (taggingApiClient == null) {
+            UrlConnectionHttpClient.Builder urlConnectionHttpClientBuilder = UrlConnectionHttpClient.builder();
+
+            if (glueSchemaRegistryConfiguration.getProxyUrl() != null) {
+                log.debug("Creating http client using proxy {}", glueSchemaRegistryConfiguration.getProxyUrl().toString());
+                ProxyConfiguration proxy = ProxyConfiguration.builder().endpoint(glueSchemaRegistryConfiguration.getProxyUrl()).build();
+                urlConnectionHttpClientBuilder.proxyConfiguration(proxy);
+            }
+
+            taggingApiClient = ResourceGroupsTaggingApiClient.builder()
+                    .httpClient(urlConnectionHttpClientBuilder.build())
+                    .build();
+        }
+        return taggingApiClient;
+    }
+
+
+    /**
+     * Retrieve all schema ARNs based on the provided tag key and tag value.
+     * @param tagKey The tag key to look up.
+     * @param tagValue The tag value to match.
+     * @return List of schema ARNs
+     */
+    public List<String> getSchemasWithTag(String tagKey, String tagValue) {
+        ResourceGroupsTaggingApiClient taggingApiClient = getTaggingApiClient();
+        List<String> schemaArns = new ArrayList<>();
+
+        TagFilter tagFilter = TagFilter.builder()
+                .key(tagKey)
+                .values(tagValue)
+                .build();
+
+        GetResourcesRequest request = GetResourcesRequest.builder()
+                .tagFilters(tagFilter)
+                .build();
+
+        GetResourcesResponse response = taggingApiClient.getResources(request);
+
+        response.resourceTagMappingList().forEach(resourceTagMapping -> {
+            schemaArns.add(resourceTagMapping.resourceARN());
+        });
+
+        return schemaArns;
+    }
+
+
+    /**
+     * List all schema versions for a given schema name.
+     *
+     * @param schemaVersionIdTagKey tag key name, schemaId, schemaVersionId
+     * @return schemaVersionId matched with the tag key name
+     * @throws AWSSchemaRegistryException on any error during the listing of schema versions
+     */
+
+    public UUID filterSchemaVersionByTag(String schemaVersionIdTagKey, SchemaId schemaId, UUID schemaVersionId) {
+        try {
+            ListSchemaVersionsRequest listSchemaVersionsRequest = ListSchemaVersionsRequest.builder()
+                    .schemaId(schemaId)
+                    .build();
+
+            ListSchemaVersionsResponse listSchemaVersionsResponse = client.listSchemaVersions(listSchemaVersionsRequest);
+
+            for (SchemaVersionListItem schemaVersion : listSchemaVersionsResponse.schemas()) {
+                QuerySchemaVersionMetadataRequest metadataRequest = QuerySchemaVersionMetadataRequest.builder()
+                        .schemaVersionId(schemaVersion.schemaVersionId())
+                        .build();
+
+                QuerySchemaVersionMetadataResponse metadataResponse = client.querySchemaVersionMetadata(metadataRequest);
+                Map<String, MetadataInfo> metadataMap = metadataResponse.metadataInfoMap();
+                MetadataInfo schemaIdMetadata = metadataMap.get(schemaVersionIdTagKey);
+                if (schemaIdMetadata != null && schemaIdMetadata.metadataValue().equals(schemaVersionId.toString())) {
+                    return UUID.fromString(schemaVersion.schemaVersionId());
+                }
+            }
+            return null;
+        } catch (GlueException e) {
+            String errorMessage = "Error occurred while filtering schema version by tag: " + e.getMessage();
+            throw new RuntimeException(errorMessage, e);
         }
     }
 }
