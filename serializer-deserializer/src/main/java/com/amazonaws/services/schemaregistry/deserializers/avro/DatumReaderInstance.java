@@ -29,7 +29,7 @@ public class DatumReaderInstance {
      * @throws IllegalAccessException can be thrown readerClass.newInstance() from
      *                                java.lang.Class implementation
      */
-    public static DatumReader<Object> from(String writerSchemaDefinition, AvroRecordType avroRecordType)
+    public static DatumReader<Object> from(String writerSchemaDefinition, AvroRecordType avroRecordType, boolean logicalTypesConversionEnabled)
         throws InstantiationException, IllegalAccessException {
 
         Schema writerSchema = AVRO_UTILS.parseSchema(writerSchemaDefinition);
@@ -47,7 +47,11 @@ public class DatumReaderInstance {
             case GENERIC_RECORD:
                 log.debug("Using GenericDatumReader for de-serializing Avro message, schema: {})",
                     writerSchema.toString());
-                return new GenericDatumReader<>(writerSchema);
+                if (logicalTypesConversionEnabled) {
+                    return new GenericDatumReader<>(writerSchema, writerSchema, GenericDataWithLogicalTypesConversion.getInstance());
+                } else {
+                    return new GenericDatumReader<>(writerSchema);
+                }
 
             default:
                 String message = String.format("Unsupported AvroRecordType: %s",

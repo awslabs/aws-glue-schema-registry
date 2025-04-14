@@ -15,6 +15,7 @@
 package com.amazonaws.services.schemaregistry.serializers.avro;
 
 import com.amazonaws.services.schemaregistry.common.GlueSchemaRegistryDataFormatSerializer;
+import com.amazonaws.services.schemaregistry.common.configs.GlueSchemaRegistryConfiguration;
 import com.amazonaws.services.schemaregistry.exception.AWSSchemaRegistryException;
 import com.amazonaws.services.schemaregistry.utils.AVROUtils;
 import com.amazonaws.services.schemaregistry.utils.AvroRecordType;
@@ -45,12 +46,14 @@ import java.io.ByteArrayOutputStream;
 public class AvroSerializer implements GlueSchemaRegistryDataFormatSerializer {
     private AVROUtils avroUtils = AVROUtils.getInstance();
     private static final long MAX_DATUM_WRITER_CACHE_SIZE = 100;
+    private final boolean logicalTypesConversionEnabled;
 
     @NonNull
     @VisibleForTesting
     protected final LoadingCache<DatumWriterCacheKey, DatumWriter<Object>> datumWriterCache;
 
-    public AvroSerializer() {
+    public AvroSerializer(GlueSchemaRegistryConfiguration glueSchemaRegistryConfig) {
+        this.logicalTypesConversionEnabled = glueSchemaRegistryConfig.isLogicalTypesConversionEnabled();
         this.datumWriterCache =
             CacheBuilder
                 .newBuilder()
@@ -61,7 +64,7 @@ public class AvroSerializer implements GlueSchemaRegistryDataFormatSerializer {
     @Override
     public byte[] serialize(Object data) {
         byte[] bytes;
-        bytes = serialize(data, createDatumWriter(data));
+        bytes = serialize(data, createDatumWriter(data, logicalTypesConversionEnabled));
 
         return bytes;
     }
@@ -74,19 +77,19 @@ public class AvroSerializer implements GlueSchemaRegistryDataFormatSerializer {
      * @param object the Avro message
      * @return Avro datum writer for serialization
      */
-    private DatumWriter<Object> createDatumWriter(Object object) {
+    private DatumWriter<Object> createDatumWriter(Object object, boolean logicalTypesConversionEnabled) {
         org.apache.avro.Schema schema = AVROUtils.getInstance()
                 .getSchema(object);
         if (object instanceof SpecificRecord) {
             return getSpecificDatumWriter(schema);
         } else if (object instanceof GenericRecord) {
-            return getGenericDatumWriter(schema);
+            return getGenericDatumWriter(schema, logicalTypesConversionEnabled);
         } else if (object instanceof GenericData.EnumSymbol) {
-            return getGenericDatumWriter(schema);
+            return getGenericDatumWriter(schema, logicalTypesConversionEnabled);
         } else if (object instanceof GenericData.Array) {
-            return getGenericDatumWriter(schema);
+            return getGenericDatumWriter(schema, logicalTypesConversionEnabled);
         } else if (object instanceof GenericData.Fixed) {
-            return getGenericDatumWriter(schema);
+            return getGenericDatumWriter(schema, logicalTypesConversionEnabled);
         } else {
             String message =
                 String.format("Unsupported type passed for serialization: %s", object);
@@ -96,13 +99,13 @@ public class AvroSerializer implements GlueSchemaRegistryDataFormatSerializer {
 
     @SneakyThrows
     private DatumWriter<Object> getSpecificDatumWriter(Schema schema) {
-        DatumWriterCacheKey datumWriterCacheKey = new DatumWriterCacheKey(schema, AvroRecordType.SPECIFIC_RECORD);
+        DatumWriterCacheKey datumWriterCacheKey = new DatumWriterCacheKey(schema, AvroRecordType.SPECIFIC_RECORD, false);
         return datumWriterCache.get(datumWriterCacheKey);
     }
 
     @SneakyThrows
-    private DatumWriter<Object> getGenericDatumWriter(Schema schema) {
-        DatumWriterCacheKey datumWriterCacheKey = new DatumWriterCacheKey(schema, AvroRecordType.GENERIC_RECORD);
+    private DatumWriter<Object> getGenericDatumWriter(Schema schema, boolean logicalTypesConversionEnabled) {
+        DatumWriterCacheKey datumWriterCacheKey = new DatumWriterCacheKey(schema, AvroRecordType.GENERIC_RECORD, logicalTypesConversionEnabled);
         return datumWriterCache.get(datumWriterCacheKey);
     }
 
@@ -160,6 +163,7 @@ public class AvroSerializer implements GlueSchemaRegistryDataFormatSerializer {
         private final Schema schema;
         @NonNull
         private final AvroRecordType avroRecordType;
+        private final boolean logicalTypesConversionEnabled;
     }
 
     private static class DatumWriterCache extends CacheLoader<DatumWriterCacheKey, DatumWriter<Object>> {
@@ -167,7 +171,8 @@ public class AvroSerializer implements GlueSchemaRegistryDataFormatSerializer {
         public DatumWriter<Object> load(DatumWriterCacheKey datumWriterCacheKey) {
             Schema schema = datumWriterCacheKey.getSchema();
             AvroRecordType avroRecordType = datumWriterCacheKey.getAvroRecordType();
-            return DatumWriterInstance.get(schema, avroRecordType);
+            boolean logicalTypesConversionEnabled = datumWriterCacheKey.isLogicalTypesConversionEnabled();
+            return DatumWriterInstance.get(schema, avroRecordType, logicalTypesConversionEnabled);
         }
     }
 }
