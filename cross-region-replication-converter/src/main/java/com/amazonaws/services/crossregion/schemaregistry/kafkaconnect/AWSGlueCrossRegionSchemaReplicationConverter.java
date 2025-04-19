@@ -19,7 +19,6 @@ import org.apache.kafka.common.errors.SerializationException;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.errors.DataException;
 import org.apache.kafka.connect.storage.Converter;
-import org.jetbrains.annotations.NotNull;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.services.glue.model.AlreadyExistsException;
@@ -185,8 +184,7 @@ public class AWSGlueCrossRegionSchemaReplicationConverter implements Converter {
         } catch (SerializationException | AWSSchemaRegistryException e) {
             throw new DataException("Converting Kafka Connect data to byte[] failed due to serialization/deserialization error: ", e);
         } catch (ExecutionException e) {
-            //TODO: Proper messaging and error handling
-            throw new DataException("Converting Kafka Connect data to byte[] failed due to serialization/deserialization error: ", e);
+            throw new DataException("Unknown Error: ", e);
         }
     }
 
@@ -232,11 +230,17 @@ public class AWSGlueCrossRegionSchemaReplicationConverter implements Converter {
             Map<String, String> metadataInfo = new HashMap<>();
             GetSchemaVersionResponse schemaVersionResponse = null;
 
-            //Get compatibility mode for each schema
-            Compatibility compatibility = getCompatibilityMode(schema);
+            //Get compatibility mode and description for each schema
+            SchemaId schemaId = SchemaId.builder()
+                .schemaName(schema.getSchemaName())
+                .registryName(sourceGlueSchemaRegistryConfiguration.getSourceRegistryName())
+                .build();
+            GetSchemaResponse schemaResponse = sourceSchemaRegistryClient.getSchemaResponse(schemaId);
+            Compatibility compatibility = schemaResponse.compatibility();
+            String description = schemaResponse.description();
 
-            //TODO: Do we need description and other fields as well?
             targetGlueSchemaRegistryConfiguration.setCompatibilitySetting(compatibility);
+            targetGlueSchemaRegistryConfiguration.setDescription(description);
             targetSchemaRegistryClient.setGlueSchemaRegistryConfiguration(targetGlueSchemaRegistryConfiguration);
 
             try {
@@ -303,10 +307,8 @@ public class AWSGlueCrossRegionSchemaReplicationConverter implements Converter {
         schemaVersionId = targetSchemaRegistryClient.createSchema(
                 schemaNameFromArn,
                 dataFormat,
-                schemaDefinition, new HashMap<>()); //TODO: Get metadata of Schema
+                schemaDefinition, metadataInfo);
 
-        //Add version metadata to the schema version
-        targetSchemaRegistryClient.putSchemaVersionMetadata(schemaVersionId, metadataInfo);
         return schemaVersionId;
     }
 
@@ -326,16 +328,6 @@ public class AWSGlueCrossRegionSchemaReplicationConverter implements Converter {
                 Math.min(replicateSchemaVersionCount, modifiableSchemaVersionList.size()));
 
         return modifiableSchemaVersionList;
-    }
-
-    private Compatibility getCompatibilityMode(@NotNull Schema schema) {
-        GetSchemaResponse schemaResponse = sourceSchemaRegistryClient.getSchemaResponse(SchemaId.builder()
-                .schemaName(schema.getSchemaName())
-                .registryName(sourceGlueSchemaRegistryConfiguration.getSourceRegistryName())
-                .build());
-
-        Compatibility compatibility = schemaResponse.compatibility();
-        return compatibility;
     }
 
     private String getSchemaNameFromArn(String schemaArn) {

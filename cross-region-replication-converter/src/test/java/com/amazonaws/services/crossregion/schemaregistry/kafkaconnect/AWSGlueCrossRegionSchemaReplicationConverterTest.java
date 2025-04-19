@@ -572,7 +572,7 @@ public class AWSGlueCrossRegionSchemaReplicationConverterTest {
         sourceSchemaRegistryClient = configureAWSSchemaRegistryClientWithSerdeConfig(sourceSchemaRegistryClient, glueSchemaRegistryConfiguration);
         targetSchemaRegistryClient = configureAWSSchemaRegistryClientWithSerdeConfig(targetSchemaRegistryClient, glueSchemaRegistryConfiguration);
 
-        mockGetSchema(schemaName, registryName);
+        mockGetSchema(schemaName, registryName, glueSchemaRegistryConfiguration);
         mockCreateSchema(schemaName, dataFormatName, glueSchemaRegistryConfiguration);
         mockRegisterSchemaVersion(schemaVersionNumber, requestSchemaId);
         mockGetSchemaVersions(schemaVersionNumber, schemaVersionNumber2);
@@ -626,7 +626,7 @@ public class AWSGlueCrossRegionSchemaReplicationConverterTest {
         targetSchemaRegistryClient = configureAWSSchemaRegistryClientWithSerdeConfig(targetSchemaRegistryClient, glueSchemaRegistryConfiguration);
 
         GetSchemaByDefinitionRequest getSchemaByDefinitionRequest = getSchemaByDefinitionRequest(schemaName, registryName);
-        mockGetSchema(schemaName, registryName);
+        mockGetSchema(schemaName, registryName, glueSchemaRegistryConfiguration);
         mockCreateSchema(schemaName, dataFormatName, glueSchemaRegistryConfiguration);
         mockRegisterSchemaVersion(schemaVersionNumber, requestSchemaId);
         mockGetSchemaVersions(schemaVersionNumber, schemaVersionNumber2);
@@ -737,7 +737,7 @@ public class AWSGlueCrossRegionSchemaReplicationConverterTest {
         when(mockGlueClient.getSchemaVersion(getSchemaVersionRequest2)).thenReturn(getSchemaVersionResponse2);
     }
 
-    private void mockGetSchema(String schemaName, String registryName) {
+    private void mockGetSchema(String schemaName, String registryName, GlueSchemaRegistryConfiguration glueSchemaRegistryConfiguration) {
         GetSchemaRequest getSchemaRequest = GetSchemaRequest.builder()
                 .schemaId(SchemaId.builder().schemaName(schemaName).registryName(registryName).build())
                 .build();
@@ -748,6 +748,7 @@ public class AWSGlueCrossRegionSchemaReplicationConverterTest {
                 .dataFormat(DataFormat.AVRO)
                 .registryName(registryName)
                 .schemaStatus(SchemaStatus.AVAILABLE)
+                .description(glueSchemaRegistryConfiguration.getDescription())
                 .build();
 
         when(mockGlueClient.getSchema(getSchemaRequest)).thenReturn(getSchemaResponse);
