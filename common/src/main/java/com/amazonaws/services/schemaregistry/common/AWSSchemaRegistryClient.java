@@ -82,6 +82,10 @@ public class AWSSchemaRegistryClient {
     private final GlueClient client;
     private GlueSchemaRegistryConfiguration glueSchemaRegistryConfiguration;
 
+    public void setGlueSchemaRegistryConfiguration(GlueSchemaRegistryConfiguration glueSchemaRegistryConfiguration) {
+        this.glueSchemaRegistryConfiguration = glueSchemaRegistryConfiguration;
+    }
+
     /**
      * Create Amazon Schema Registry Client.
      *
@@ -316,7 +320,7 @@ public class AWSSchemaRegistryClient {
      * @return                 List of schema versions
      * @throws AWSSchemaRegistryException on any error during the registration and fetching of schema version
      */
-    public List<SchemaVersionListItem> getSchemaVersions(String schemaName) {
+    public List<SchemaVersionListItem> getSchemaVersions(@NonNull String schemaName) {
         ListSchemaVersionsRequest listSchemaVersionsRequest = getListSchemaVersionsRequest(schemaName);
         List<SchemaVersionListItem> schemaVersionList = new ArrayList<>();
         boolean done = false;

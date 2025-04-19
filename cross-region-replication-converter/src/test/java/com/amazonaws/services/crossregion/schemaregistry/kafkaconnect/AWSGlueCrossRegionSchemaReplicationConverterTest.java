@@ -2,6 +2,7 @@ package com.amazonaws.services.crossregion.schemaregistry.kafkaconnect;
 
 import com.amazonaws.services.schemaregistry.common.AWSSchemaRegistryClient;
 import com.amazonaws.services.schemaregistry.common.Schema;
+import com.amazonaws.services.schemaregistry.common.SchemaByDefinitionFetcher;
 import com.amazonaws.services.schemaregistry.common.configs.GlueSchemaRegistryConfiguration;
 import com.amazonaws.services.schemaregistry.deserializers.GlueSchemaRegistryDeserializerImpl;
 import com.amazonaws.services.schemaregistry.exception.AWSSchemaRegistryException;
@@ -50,6 +51,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
+import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -586,28 +588,27 @@ public class AWSGlueCrossRegionSchemaReplicationConverterTest {
         assertEquals(SCHEMA_ID_FOR_TESTING, schemaVersionId);
     }
 
-//    @Test
-//    public void testCreateSchemaAndRegisterAllSchemaVersions_OnUnknownException_ThrowsException() throws Exception {
-//        Map<String, String> configs = getConfigsWithAutoRegistrationSetting(true);
-//
-//        String schemaName = configs.get(AWSSchemaRegistryConstants.SCHEMA_NAME);
-//        String registryName = configs.get(AWSSchemaRegistryConstants.REGISTRY_NAME);
-//        String dataFormatName = DataFormat.AVRO.name();
-//
-//        GlueSchemaRegistryConfiguration awsSchemaRegistrySerDeConfigs = new GlueSchemaRegistryConfiguration(configs);
-//        awsSchemaRegistryClient =
-//            configureAWSSchemaRegistryClientWithSerdeConfig(awsSchemaRegistryClient, awsSchemaRegistrySerDeConfigs);
-//
-//        mockGetSchemaByDefinition_ThrowException(schemaName, registryName);
-//
-//        schemaByDefinitionFetcher = new SchemaByDefinitionFetcher(awsSchemaRegistryClient, awsSchemaRegistrySerDeConfigs);
-//
-//        Exception exception = assertThrows(AWSSchemaRegistryException.class,
-//            () -> schemaByDefinitionFetcher
-//                .getORRegisterSchemaVersionIdV2(userSchemaDefinition, schemaName, dataFormatName, Compatibility.FORWARD, getMetadata()));
-//        assertTrue(
-//            exception.getMessage().contains("Exception occurred while fetching or registering schema definition"));
-//    }
+    @Test
+    public void testCreateSchemaAndRegisterAllSchemaVersions_OnUnknownException_ThrowsException() throws Exception {
+        Map<String, String> configs = getTestConfigs();
+
+        String schemaName = configs.get(AWSSchemaRegistryConstants.SCHEMA_NAME);
+        String registryName = configs.get(AWSSchemaRegistryConstants.REGISTRY_NAME);
+        String dataFormatName = DataFormat.AVRO.name();
+
+        GlueSchemaRegistryConfiguration awsSchemaRegistrySerDeConfigs = new GlueSchemaRegistryConfiguration(configs);
+        awsSchemaRegistryClient =
+            configureAWSSchemaRegistryClientWithSerdeConfig(awsSchemaRegistryClient, awsSchemaRegistrySerDeConfigs);
+
+        mockGetSchemaByDefinition_ThrowException(schemaName, registryName);
+
+        SchemaByDefinitionFetcher schemaByDefinitionFetcher = new SchemaByDefinitionFetcher(awsSchemaRegistryClient, awsSchemaRegistrySerDeConfigs);
+
+        Exception exception = assertThrows(AWSSchemaRegistryException.class,
+            () -> schemaByDefinitionFetcher.getORRegisterSchemaVersionId(userSchemaDefinition, schemaName, dataFormatName, getMetadata()));
+        assertTrue(
+            exception.getMessage().contains("Exception occurred while fetching or registering schema definition"));
+    }
 
     @Test
     public void testCreateSchemaAndRegisterAllSchemaVersions_schemaNotPresent_autoCreatesSchemaAndRegisterSchemaVersions_retrieveFromCache() throws Exception {

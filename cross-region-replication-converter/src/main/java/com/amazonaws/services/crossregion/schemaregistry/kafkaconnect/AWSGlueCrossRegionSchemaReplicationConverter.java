@@ -113,8 +113,6 @@ public class AWSGlueCrossRegionSchemaReplicationConverter implements Converter {
     @Override
     public void configure(Map<String, ?> configs, boolean isKey) {
         this.isKey = isKey;
-        // TODO: Support credentialProvider passed on by the user
-        // https://github.com/awslabs/aws-glue-schema-registry/issues/293
         if (credentialsProvider == null) {
             credentialsProvider = DefaultCredentialsProvider.builder().build();
         }
@@ -237,8 +235,9 @@ public class AWSGlueCrossRegionSchemaReplicationConverter implements Converter {
             //Get compatibility mode for each schema
             Compatibility compatibility = getCompatibilityMode(schema);
 
+            //TODO: Do we need description and other fields as well?
             targetGlueSchemaRegistryConfiguration.setCompatibilitySetting(compatibility);
-            targetSchemaRegistryClient = new AWSSchemaRegistryClient(credentialsProvider, targetGlueSchemaRegistryConfiguration);
+            targetSchemaRegistryClient.setGlueSchemaRegistryConfiguration(targetGlueSchemaRegistryConfiguration);
 
             try {
 
@@ -275,7 +274,6 @@ public class AWSGlueCrossRegionSchemaReplicationConverter implements Converter {
                 targetSchemaRegistryClient.putSchemaVersionMetadata(schemaVersionId, metadataInfo);
             } catch (Exception e) {
                 String errorMessage = String.format("Exception occurred while fetching or registering schema name = %s ", schemaName);
-                //TODO: Will this exception be ever thrown?
                 throw new AWSSchemaRegistryException(errorMessage, e);
             }
         }
