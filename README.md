@@ -635,6 +635,24 @@ repository for the latest support: [Avro SerializationSchema and Deserialization
             properties);
     DataStream<GenericRecord> stream = env.addSource(consumer);
 ```
+
+## Cross-Account Avro Converter Support
+
+The `AWSCrossAccountKafkaAvroConverter` extends the standard Avro converter to assume an IAM role in a different AWS account before accessing Glue Schema Registry. You can configure the role ARN and an optional session name.
+
+### Connector configuration
+
+Include these properties in your Kafka Connect worker or connector config:
+
+```properties
+# Use cross-account converter
+key.converter=com.amazonaws.services.schemaregistry.kafkaconnect.AWSCrossAccountKafkaAvroConverter
+value.converter=com.amazonaws.services.schemaregistry.kafkaconnect.AWSCrossAccountKafkaAvroConverter
+
+# Override default session name (optional; default is "kafka-connect-session")
+key.converter.assume.role.session=my-custom-session
+value.converter.assume.role.session=my-custom-session
+```
  
  ## Security issue notifications
 If you discover a potential security issue in this project we ask that you notify AWS/Amazon Security via our [vulnerability reporting page](http://aws.amazon.com/security/vulnerability-reporting/). Please do **not** create a public github issue.
