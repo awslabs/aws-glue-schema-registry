@@ -638,20 +638,26 @@ repository for the latest support: [Avro SerializationSchema and Deserialization
 
 ## Cross-Account Avro Converter Support
 
-The `AWSCrossAccountKafkaAvroConverter` extends the standard Avro converter to assume an IAM role in a different AWS account before accessing Glue Schema Registry. You can configure the role ARN and an optional session name.
+The `AWSKafkaAvroConverter` Avro converter is able to assume an IAM role in a different AWS account before accessing Glue Schema Registry. You can configure the role ARN and an optional session name.
+
+If `registry.assume.role.arn` is not provided, the converter will fallback to using the default credentials associated to the host.
 
 ### Connector configuration
 
 Include these properties in your Kafka Connect worker or connector config:
 
 ```properties
-# Use cross-account converter
-key.converter=com.amazonaws.services.schemaregistry.kafkaconnect.AWSCrossAccountKafkaAvroConverter
-value.converter=com.amazonaws.services.schemaregistry.kafkaconnect.AWSCrossAccountKafkaAvroConverter
+# Define converter
+key.converter=com.amazonaws.services.schemaregistry.kafkaconnect.AWSKafkaAvroConverter
+value.converter=com.amazonaws.services.schemaregistry.kafkaconnect.AWSKafkaAvroConverter
+
+# Specify cross-account role arn
+key.converter.registry.assume.role.arn="arn:aws:iam::123456789012:role/my-role"
+value.converter.registry.assume.role.arn="arn:aws:iam::123456789012:role/my-role"
 
 # Override default session name (optional; default is "kafka-connect-session")
-key.converter.assume.role.session=my-custom-session
-value.converter.assume.role.session=my-custom-session
+key.converter.registry.assume.role.session.name=my-custom-session
+value.converter.registry.assume.role.session.name=my-custom-session
 ```
  
  ## Security issue notifications
