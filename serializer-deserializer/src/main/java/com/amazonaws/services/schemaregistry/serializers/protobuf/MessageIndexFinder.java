@@ -1,7 +1,6 @@
 package com.amazonaws.services.schemaregistry.serializers.protobuf;
 
 import com.amazonaws.services.schemaregistry.exception.AWSSchemaRegistryException;
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import com.google.protobuf.Descriptors;
@@ -91,8 +90,7 @@ public class MessageIndexFinder {
      * @param schemaDescriptor Protobuf Schema Descriptor.
      * @return Set of MessageIndex
      */
-    @VisibleForTesting
-    protected BiMap<Descriptors.Descriptor, Integer> getAll(@NonNull Descriptors.FileDescriptor schemaDescriptor) {
+    public BiMap<Descriptors.Descriptor, Integer> getAll(@NonNull Descriptors.FileDescriptor schemaDescriptor) {
         final Queue<Descriptors.Descriptor> descriptorQueue = new LinkedList<>();
         final List<Descriptors.Descriptor> allDescriptors = new ArrayList<>();
 
