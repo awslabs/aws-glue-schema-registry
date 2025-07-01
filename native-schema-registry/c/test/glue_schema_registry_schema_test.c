@@ -66,7 +66,7 @@ static void glue_schema_registry_schema_get_attribute_tests(void **state) {
     assert_string_equal(TEST_DATA_FORMAT, glue_schema_registry_schema_get_data_format(gsr_schema));
     assert_string_equal(TEST_SCHEMA_NAME, glue_schema_registry_schema_get_schema_name(gsr_schema));
     assert_string_equal(TEST_SCHEMA_DEF, glue_schema_registry_schema_get_schema_def(gsr_schema));
-    assert_string_equal(TEST_ADDITIONAL_SCHEMA_INFO, glue_schema_registry_schema_get_schema_def(gsr_schema));
+    assert_string_equal(TEST_ADDITIONAL_SCHEMA_INFO, glue_schema_registry_schema_get_additional_schema_info(gsr_schema));
 
     delete_glue_schema_registry_error_holder(p_err);
     schema_cleanup(gsr_schema);
