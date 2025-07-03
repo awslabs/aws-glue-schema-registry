@@ -5,6 +5,7 @@ if (CMAKE_SYSTEM_NAME MATCHES "^(Linux)$")
         list(APPEND TEST_COVERAGE "-ftest-coverage -fprofile-arcs")
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${TEST_COVERAGE} -g -O0 -Wall")
         set(CMAKE_C_CLANG_TIDY clang-tidy -checks=-*,readability-*)
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lgcov")
 endif()
 
 add_library(${AWS_COMMON_MEMALLOC} SHARED memory_allocator.c)
@@ -144,3 +145,7 @@ add_custom_command(
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${AWS_COMMON_MEMALLOC}> ${PYTHON_GEN_LIB_PATH}/
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${SERDE_MODULE_NAME}> ${PYTHON_GEN_LIB_PATH}/
 )
+if(CMAKE_C_COMPILER_ID MATCHES "GNU")
+    add_compile_options(--coverage)
+    link_libraries(gcov)
+endif()
