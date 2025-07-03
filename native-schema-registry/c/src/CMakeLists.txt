@@ -145,6 +145,43 @@ add_custom_command(
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${AWS_COMMON_MEMALLOC}> ${PYTHON_GEN_LIB_PATH}/
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${SERDE_MODULE_NAME}> ${PYTHON_GEN_LIB_PATH}/
 )
+####Go
+set(GO_MODULE_NAME GsrSerDeGoGen)
+set(GO_ROOT_PATH ${PROJECT_SOURCE_DIR}/../golang)
+set(GO_SOURCE_PATH ${GO_ROOT_PATH}/pkg/gsrserde)
+set(GO_LIB_PATH ${GO_ROOT_PATH}/lib)
+swig_add_library(
+        ${GO_MODULE_NAME}
+        TYPE SHARED
+        LANGUAGE go
+        OUTPUT_DIR "${GO_SOURCE_PATH}"
+        SOURCES ${GsrSerDeSrc}
+)
+set_target_properties(
+        ${GO_MODULE_NAME}
+        PROPERTIES
+        INCLUDE_DIRECTORIES "${PROJECT_SOURCE_DIR}/include/"
+        SWIG_USE_TARGET_INCLUDE_DIRECTORIES TRUE
+)
+swig_link_libraries(
+        ${GO_MODULE_NAME}
+        PUBLIC
+        ${DATA_TYPES_MODULE_NAME}
+        ${SERDE_MODULE_NAME}
+        ${AWS_COMMON_MEMALLOC}
+        ${NATIVE_SCHEMA_REGISTRY_MODULE_NAME}
+)
+# Copy shared libraries to lib directory
+add_custom_command(
+        TARGET ${GO_MODULE_NAME}
+        POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${GO_LIB_PATH}
+        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${DATA_TYPES_MODULE_NAME}> ${GO_LIB_PATH}/
+        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${NATIVE_SCHEMA_REGISTRY_MODULE_NAME}> ${GO_LIB_PATH}/
+        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${AWS_COMMON_MEMALLOC}> ${GO_LIB_PATH}/
+        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${SERDE_MODULE_NAME}> ${GO_LIB_PATH}/
+)
+
 if(CMAKE_C_COMPILER_ID MATCHES "GNU")
     add_compile_options(--coverage)
     link_libraries(gcov)
