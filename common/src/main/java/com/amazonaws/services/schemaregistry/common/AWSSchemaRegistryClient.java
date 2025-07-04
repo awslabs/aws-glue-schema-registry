@@ -42,11 +42,15 @@ import software.amazon.awssdk.services.glue.model.CreateSchemaResponse;
 import software.amazon.awssdk.services.glue.model.DataFormat;
 import software.amazon.awssdk.services.glue.model.GetSchemaByDefinitionRequest;
 import software.amazon.awssdk.services.glue.model.GetSchemaByDefinitionResponse;
+import software.amazon.awssdk.services.glue.model.GetSchemaRequest;
+import software.amazon.awssdk.services.glue.model.GetSchemaResponse;
 import software.amazon.awssdk.services.glue.model.GetSchemaVersionRequest;
 import software.amazon.awssdk.services.glue.model.GetSchemaVersionResponse;
 import software.amazon.awssdk.services.glue.model.GetTagsRequest;
 import software.amazon.awssdk.services.glue.model.GetTagsResponse;
 import software.amazon.awssdk.services.glue.model.GlueRequest;
+import software.amazon.awssdk.services.glue.model.ListSchemaVersionsRequest;
+import software.amazon.awssdk.services.glue.model.ListSchemaVersionsResponse;
 import software.amazon.awssdk.services.glue.model.MetadataKeyValuePair;
 import software.amazon.awssdk.services.glue.model.PutSchemaVersionMetadataRequest;
 import software.amazon.awssdk.services.glue.model.PutSchemaVersionMetadataResponse;
@@ -56,9 +60,12 @@ import software.amazon.awssdk.services.glue.model.RegisterSchemaVersionRequest;
 import software.amazon.awssdk.services.glue.model.RegisterSchemaVersionResponse;
 import software.amazon.awssdk.services.glue.model.RegistryId;
 import software.amazon.awssdk.services.glue.model.SchemaId;
+import software.amazon.awssdk.services.glue.model.SchemaVersionListItem;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.StringJoiner;
 import java.util.UUID;
@@ -74,6 +81,10 @@ public class AWSSchemaRegistryClient {
 
     private final GlueClient client;
     private GlueSchemaRegistryConfiguration glueSchemaRegistryConfiguration;
+
+    public void setGlueSchemaRegistryConfiguration(GlueSchemaRegistryConfiguration glueSchemaRegistryConfiguration) {
+        this.glueSchemaRegistryConfiguration = glueSchemaRegistryConfiguration;
+    }
 
     /**
      * Create Amazon Schema Registry Client.
@@ -180,7 +191,7 @@ public class AWSSchemaRegistryClient {
         return schemaVersionResponse;
     }
 
-    private GetSchemaVersionRequest getSchemaVersionRequest(String schemaVersionId) {
+    public GetSchemaVersionRequest getSchemaVersionRequest(String schemaVersionId) {
         GetSchemaVersionRequest getSchemaVersionRequest = GetSchemaVersionRequest.builder()
                 .schemaVersionId(schemaVersionId).build();
         return getSchemaVersionRequest;
@@ -189,6 +200,43 @@ public class AWSSchemaRegistryClient {
     private void validateSchemaVersionResponse(GetSchemaVersionResponse schemaVersionResponse, String schemaVersionId) {
         if (schemaVersionResponse == null || schemaVersionResponse.schemaVersionId() == null) {
             String message = String.format("Schema definition is not present for the schema id = %s", schemaVersionId);
+            throw new AWSSchemaRegistryException(message);
+        }
+    }
+
+    /**
+     * Get Schema by passing the schema id.
+     * @param schemaId Schema Id
+     * @return          schema returns the schema corresponding to the
+     *                  schema id passed and null in case service is not able to found the
+     *                  schema corresponding to schema id.
+     * @throws AWSSchemaRegistryException on any error while fetching the schema
+     */
+    public GetSchemaResponse getSchemaResponse(@NonNull SchemaId schemaId)
+            throws AWSSchemaRegistryException {
+        GetSchemaResponse schemaResponse = null;
+
+        try {
+            schemaResponse = client.getSchema(getSchemaRequest(schemaId));
+            validateSchemaResponse(schemaResponse, schemaId);
+        } catch (Exception e) {
+            String errorMessage = String.format("Failed to get schema Id = %s", schemaId);
+            throw new AWSSchemaRegistryException(errorMessage, e);
+        }
+
+        return schemaResponse;
+    }
+
+    private GetSchemaRequest getSchemaRequest(SchemaId schemaId) {
+        GetSchemaRequest getSchemaRequest = GetSchemaRequest.builder()
+                .schemaId(schemaId)
+                .build();
+        return getSchemaRequest;
+    }
+
+    private void validateSchemaResponse(GetSchemaResponse schemaResponse, SchemaId schemaId) {
+        if (schemaResponse == null) {
+            String message = String.format("Schema is not present for the schema id = %s", schemaId);
             throw new AWSSchemaRegistryException(message);
         }
     }
@@ -264,6 +312,53 @@ public class AWSSchemaRegistryClient {
         putSchemaVersionMetadata(schemaVersionId, metadata);
 
         return schemaVersionId;
+    }
+
+    /**
+     * List all versions of the schema
+     * @param schemaName       Schema Name
+     * @return                 List of schema versions
+     * @throws AWSSchemaRegistryException on any error during the registration and fetching of schema version
+     */
+    public List<SchemaVersionListItem> getSchemaVersions(@NonNull String schemaName) {
+        ListSchemaVersionsRequest listSchemaVersionsRequest = getListSchemaVersionsRequest(schemaName);
+        List<SchemaVersionListItem> schemaVersionList = new ArrayList<>();
+        boolean done = false;
+        try {
+            while (!done) {
+                //Get list of schema versions from source registry
+                ListSchemaVersionsResponse listSchemaVersionsResponse = client.listSchemaVersions(listSchemaVersionsRequest);
+                schemaVersionList = listSchemaVersionsResponse.schemas();
+
+                //Keep paginating till the end
+                if (listSchemaVersionsResponse.nextToken() == null) {
+                    done = true;
+                }
+
+                //Create the request object to get next set of results using the nextToken
+                listSchemaVersionsRequest = getListSchemaVersionsRequest(schemaName, listSchemaVersionsResponse.nextToken());
+            }
+        } catch (Exception e) {
+            String errorMessage = String.format("Failed to get schema version for schema = %s", schemaName);
+            throw new AWSSchemaRegistryException(errorMessage, e);
+        }
+
+        return schemaVersionList;
+    }
+
+    private ListSchemaVersionsRequest getListSchemaVersionsRequest(String schemaName, String nextToken) {
+        return ListSchemaVersionsRequest
+                .builder()
+                .nextToken(nextToken)
+                .schemaId(SchemaId.builder().schemaName(schemaName).registryName(glueSchemaRegistryConfiguration.getRegistryName()).build())
+                .build();
+    }
+
+    private ListSchemaVersionsRequest getListSchemaVersionsRequest(String schemaName) {
+        return ListSchemaVersionsRequest
+                .builder()
+                .schemaId(SchemaId.builder().schemaName(schemaName).registryName(glueSchemaRegistryConfiguration.getRegistryName()).build())
+                .build();
     }
 
     /**
