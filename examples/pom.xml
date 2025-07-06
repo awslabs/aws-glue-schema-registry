@@ -61,8 +61,18 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.amazonaws</groupId>
-            <artifactId>aws-java-sdk-kinesis</artifactId>
+            <groupId>software.amazon.kinesis</groupId>
+            <artifactId>amazon-kinesis-client</artifactId>
+            <!--  Because KCL 2.2.9 works on a different protobuf(2.6.1) than KPL's protobuf(3.x)-->
+            <!--  excluding this so that KPL's Protobuf version is honored for testing and parsing messages.-->
+            <!--  This means we are not yet utilizing the integration of GSR Library with KCL yet. -->
+            <exclusions>
+                <exclusion>
+                    <groupId>com.google.protobuf</groupId>
+                    <artifactId>protobuf-java</artifactId>
+                </exclusion>
+            </exclusions>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.dataformat</groupId>
