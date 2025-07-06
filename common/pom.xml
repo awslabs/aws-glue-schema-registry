@@ -66,6 +66,10 @@
             <artifactId>glue</artifactId>
         </dependency>
         <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>resourcegroupstaggingapi</artifactId>
+        </dependency>
+        <dependency>
             <groupId>${parent.groupId}</groupId>
             <artifactId>schema-registry-build-tools</artifactId>
             <version>${parent.version}</version>
