@@ -31,8 +31,8 @@ import software.amazon.awssdk.core.interceptor.Context;
 import software.amazon.awssdk.core.interceptor.ExecutionAttributes;
 import software.amazon.awssdk.core.interceptor.ExecutionInterceptor;
 import software.amazon.awssdk.core.retry.RetryPolicy;
-import software.amazon.awssdk.http.urlconnection.ProxyConfiguration;
-import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
+import software.amazon.awssdk.http.apache.ApacheHttpClient;
+import software.amazon.awssdk.http.apache.ProxyConfiguration;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.glue.GlueClient;
 import software.amazon.awssdk.services.glue.GlueClientBuilder;
@@ -90,25 +90,25 @@ public class AWSSchemaRegistryClient {
                 .retryPolicy(retryPolicy)
                 .addExecutionInterceptor(new UserAgentRequestInterceptor())
                 .build();
-        UrlConnectionHttpClient.Builder urlConnectionHttpClientBuilder = UrlConnectionHttpClient.builder();
+        ApacheHttpClient.Builder httpClientBuilder = ApacheHttpClient.builder();
         if (glueSchemaRegistryConfiguration.getProxyUrl() != null) {
-        	log.debug("Creating http client using proxy {}", glueSchemaRegistryConfiguration.getProxyUrl().toString());
+        	log.debug("Creating http client using proxy {}", glueSchemaRegistryConfiguration.getProxyUrl());
     		ProxyConfiguration proxy = ProxyConfiguration.builder().endpoint(glueSchemaRegistryConfiguration.getProxyUrl()).build();
-    		urlConnectionHttpClientBuilder.proxyConfiguration(proxy);
+    		httpClientBuilder.proxyConfiguration(proxy);
         }
 
         GlueClientBuilder glueClientBuilder = GlueClient
                 .builder()
                 .credentialsProvider(credentialsProvider)
                 .overrideConfiguration(overrideConfiguration)
-                .httpClient(urlConnectionHttpClientBuilder.build())
+                .httpClient(httpClientBuilder.build())
                 .region(Region.of(glueSchemaRegistryConfiguration.getRegion()));
 
         if (glueSchemaRegistryConfiguration.getEndPoint() != null) {
             try {
                 glueClientBuilder.endpointOverride(new URI(glueSchemaRegistryConfiguration.getEndPoint()));
             } catch (URISyntaxException e) {
-                String message = String.format("Malformed uri, please pass the valid uri for creating the client",
+                String message = String.format("Malformed uri, please pass the valid uri for creating the client: %s",
                                                glueSchemaRegistryConfiguration.getEndPoint());
                 throw new AWSSchemaRegistryException(message, e);
             }
