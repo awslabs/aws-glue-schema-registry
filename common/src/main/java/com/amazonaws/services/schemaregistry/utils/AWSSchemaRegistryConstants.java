@@ -173,6 +173,16 @@ public final class AWSSchemaRegistryConstants {
     public static final String USER_AGENT_APP = "userAgentApp";
 
     /**
+     * Cross account assume role ARN.
+     */
+    public static final String ASSUME_ROLE_ARN = "registry.assume.role.arn";
+
+    /**
+     * Cross account assume role session name.
+     */
+    public static final String ASSUME_ROLE_SESSION = "registry.assume.role.session.name";
+
+    /**
      * Private constructor to avoid initialization of the class.
      */
 
