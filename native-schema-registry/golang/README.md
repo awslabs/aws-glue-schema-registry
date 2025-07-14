@@ -1,55 +1,54 @@
-# AWS Glue Schema Registry - Go Bindings
+# AWS Glue Schema Registry - Go Module
 
-This directory contains the Go language bindings for the AWS Glue Schema Registry, providing a Go interface to the high-performance C library.
+This is a standalone Go module for the AWS Glue Schema Registry, providing high-performance serialization and deserialization capabilities through native bindings.
 
 ## Features
 
-- **High Performance**: Direct bindings to optimized C library
+- **High Performance**: Direct bindings to optimized native libraries
 - **Complete API Coverage**: Access to all serialization/deserialization functions
 - **Memory Safe**: Proper resource management with destructors
 - **Go Idiomatic**: Interface-based design following Go conventions
-- **Automatic Build**: Integrated with CMake build system
+- **Self-Contained**: All required libraries and headers included
+
+## Installation
+
+This module is distributed as platform-specific releases. Download the appropriate release for your platform:
+
+- `aws-glue-schema-registry-go-linux-amd64.tar.gz` - Linux on Intel/AMD 64-bit
+- `aws-glue-schema-registry-go-linux-arm64.tar.gz` - Linux on ARM 64-bit
+- `aws-glue-schema-registry-go-darwin-amd64.tar.gz` - macOS on Intel
+- `aws-glue-schema-registry-go-darwin-arm64.tar.gz` - macOS on Apple Silicon
+- `aws-glue-schema-registry-go-windows-amd64.tar.gz` - Windows 64-bit
+
+Extract the archive and use as a local Go module:
+
+```bash
+# Extract the release
+tar -xzf aws-glue-schema-registry-go-linux-amd64.tar.gz
+
+# Use in your project
+cd your-project
+go mod edit -replace github.com/awslabs/aws-glue-schema-registry-go=./path/to/golang
+go mod tidy
+```
 
 ## Project Structure
 
 ```
 golang/
-├── pkg/gsrserde/          # Core Go package with SWIG bindings
-│   ├── GsrSerDe.go       # Generated Go bindings (SWIG)
+├── include/          # C headers needed for compilation
+├── lib/             # Native libraries (platform-specific)
+├── pkg/gsrserde/    # Core Go package with native bindings
+│   ├── GsrSerDe.go       # Generated Go bindings
 │   ├── cgo_flags.go      # CGO compilation flags
 │   └── *.c               # Generated C wrapper code
-├── lib/                   # Shared libraries
-│   ├── libaws_common_memalloc.so
-│   ├── libnative_schema_registry_c_data_types.so
-│   ├── libnative_schema_registry_c.so
-│   └── libnativeschemaregistry.so
-├── examples/             # Usage examples
+├── examples/        # Usage examples
 │   └── basic/main.go    # Basic usage example
-├── test/                 # Test files
-├── go.mod               # Go module definition
-└── README.md           # This file
+├── go.mod          # Go module definition
+└── README.md       # This file
 ```
 
-## Building
-
-The Go bindings are automatically generated and built as part of the main CMake build process:
-
-```bash
-# From the native-schema-registry/c directory
-mkdir -p build && cd build
-cmake .. -DCMAKE_BUILD_TYPE=Release
-cmake --build .
-```
-
-This will:
-1. Generate Go bindings using SWIG
-2. Compile the C wrapper code
-3. Copy shared libraries to `lib/` directory
-4. Place generated Go code in `pkg/gsrserde/`
-
-## Usage
-
-### Basic Example
+## Quick Start
 
 ```go
 package main
@@ -57,12 +56,14 @@ package main
 import (
     "fmt"
     "unsafe"
-    "github.com/awslabs/aws-glue-schema-registry/golang/pkg/gsrserde"
+    "github.com/awslabs/aws-glue-schema-registry-go/pkg/gsrserde"
 )
 
 func main() {
-    // Create schema
+    // Create error handler
     var err gsrserde.Glue_schema_registry_error
+    
+    // Create schema
     schema := gsrserde.NewGlue_schema_registry_schema(
         "user-schema",
         `{"type": "record", "name": "User", "fields": [{"name": "name", "type": "string"}]}`,
@@ -76,16 +77,23 @@ func main() {
     serializer := gsrserde.NewGlue_schema_registry_serializer(err)
     defer gsrserde.DeleteGlue_schema_registry_serializer(serializer)
 
-    // Use the bindings...
+    // Create deserializer
+    deserializer := gsrserde.NewGlue_schema_registry_deserializer(err)
+    defer gsrserde.DeleteGlue_schema_registry_deserializer(deserializer)
+
+    fmt.Println("AWS Glue Schema Registry Go module initialized successfully")
 }
 ```
 
-### Running Examples
+## Building
+
+This module comes pre-built with all necessary libraries and headers. Simply run:
 
 ```bash
-cd examples/basic
-go run main.go
+go build ./examples/basic
 ```
+
+No additional build tools (CMake, Java, etc.) are required.
 
 ## Core Types
 
@@ -111,7 +119,7 @@ go run main.go
 
 ## Memory Management
 
-The bindings use SWIG-generated wrappers that properly manage C memory:
+The bindings use proper resource management:
 
 - **Constructors**: `New*()` functions allocate resources
 - **Destructors**: `Delete*()` functions clean up resources  
@@ -135,67 +143,50 @@ These bindings provide the core serialization/deserialization functionality. For
 
 - **Zero-Copy Operations**: Direct memory access where possible
 - **Minimal Allocations**: Efficient memory usage patterns
-- **C Library Speed**: Leverages optimized C implementation
+- **Native Library Speed**: Leverages optimized native implementation
 - **Concurrent Safe**: Multiple goroutines can use separate instances
 
-## Development
+## Requirements
 
-### Prerequisites
-- Go 1.20+
-- SWIG 4.0+
-- CMake 3.10+
-- GCC/Clang compiler
+- Go 1.21+
+- CGO enabled (`CGO_ENABLED=1`)
+- Platform-specific native libraries (included in release)
 
-### Building from Source
-```bash
-# Ensure SWIG and CMake are installed
-cd native-schema-registry/c
-mkdir build && cd build
-cmake ..
-make GsrSerDeGoGen  # Build just Go bindings
-```
+## Platform Support
 
-### Testing
-```bash
-cd golang
-go test ./...
-```
+- Linux: amd64, arm64
+- macOS: amd64 (Intel), arm64 (Apple Silicon)
+- Windows: amd64
 
 ## Troubleshooting
 
 ### Common Issues
 
-1. **Missing Shared Libraries**
+1. **CGO Not Enabled**
+   ```
+   # cgo: C compiler not found
+   ```
+   Solution: Install a C compiler and ensure `CGO_ENABLED=1`
+
+2. **Missing Libraries**
    ```
    error while loading shared libraries: libnativeschemaregistry.so
    ```
-   Solution: Ensure `lib/` directory is in your `LD_LIBRARY_PATH`
-
-2. **CGO Compilation Errors**
-   ```
-   fatal error: 'glue_schema_registry_serde.h' file not found
-   ```
-   Solution: Run CMake build to generate headers
+   Solution: Ensure you're using the correct platform-specific release
 
 3. **Import Path Issues**
    ```
-   cannot find package "github.com/awslabs/aws-glue-schema-registry/golang/pkg/gsrserde"
+   cannot find package
    ```
-   Solution: Use `go mod tidy` and check module path
-
-### Debug Mode
-
-Build with debug symbols:
-```bash
-cmake .. -DCMAKE_BUILD_TYPE=Debug
-```
+   Solution: Use `go mod edit -replace` to point to the local module path
 
 ## Contributing
 
-1. Modify the SWIG interface file: `../c/src/swig/glue_schema_registry_serde.i`
-2. Rebuild using CMake to regenerate bindings
-3. Test with the example applications
-4. Submit pull request with tests
+This module is generated from the main AWS Glue Schema Registry project. To contribute:
+
+1. Submit changes to the main repository
+2. Libraries and bindings are automatically generated during the build process
+3. Platform-specific releases are created via CI/CD
 
 ## License
 
