@@ -101,11 +101,6 @@ func (pd *ProtobufDeserializer) Deserialize(data []byte, schema *gsrserde.Schema
 // getMessageDescriptor extracts or creates a message descriptor from the schema.
 // It parses the protobuf schema definition and creates the appropriate descriptor.
 func (pd *ProtobufDeserializer) getMessageDescriptor(schema *gsrserde.Schema) (protoreflect.MessageDescriptor, error) {
-	// If we already have a cached descriptor and it matches, return it
-	if pd.messageDescriptor != nil {
-		// For simplicity, we'll regenerate the descriptor each time
-		// In a production implementation, you might want to cache based on schema hash
-	}
 	
 	// Parse the schema definition as a FileDescriptorSet
 	var fileDescriptorSet descriptorpb.FileDescriptorSet

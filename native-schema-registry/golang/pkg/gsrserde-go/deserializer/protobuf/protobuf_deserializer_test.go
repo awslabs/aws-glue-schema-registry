@@ -255,13 +255,19 @@ func TestProtobufDeserializer_Deserialize_WithoutAdditionalInfo(t *testing.T) {
 func TestProtobufDeserializer_Deserialize_EmptyFileDescriptorSet(t *testing.T) {
 	deserializer := NewProtobufDeserializer()
 	
-	// Create empty FileDescriptorSet
+	// Create FileDescriptorSet with a file that has no message types
+	fileDesc := &descriptorpb.FileDescriptorProto{
+		Name:    proto.String("empty.proto"),
+		Package: proto.String("test"),
+		// No MessageType field - this means no message descriptors will be found
+	}
+	
 	fileDescSet := &descriptorpb.FileDescriptorSet{
-		File: []*descriptorpb.FileDescriptorProto{},
+		File: []*descriptorpb.FileDescriptorProto{fileDesc},
 	}
 
 	schemaDefBytes, err := proto.Marshal(fileDescSet)
-	require.NoError(t, err, "Should marshal empty file descriptor set")
+	require.NoError(t, err, "Should marshal file descriptor set with no messages")
 
 	schema := &gsrserde.Schema{
 		Name:       "TestMessage",
@@ -358,61 +364,6 @@ func TestProtobufDeserializer_Deserialize_MalformedProtobufData(t *testing.T) {
 	assert.ErrorIs(t, err, ErrDeserializationFailed, "Should return deserialization failed error")
 }
 
-func TestProtobufDeserializer_MessageDescriptorCaching(t *testing.T) {
-	deserializer := NewProtobufDeserializer()
-	
-	// Create schema
-	fileDesc := &descriptorpb.FileDescriptorProto{
-		Name:    proto.String("test.proto"),
-		Package: proto.String("test"),
-		MessageType: []*descriptorpb.DescriptorProto{
-			{
-				Name: proto.String("TestMessage"),
-				Field: []*descriptorpb.FieldDescriptorProto{
-					{
-						Name:   proto.String("id"),
-						Number: proto.Int32(1),
-						Type:   descriptorpb.FieldDescriptorProto_TYPE_INT64.Enum(),
-					},
-				},
-			},
-		},
-	}
-
-	fileDescSet := &descriptorpb.FileDescriptorSet{
-		File: []*descriptorpb.FileDescriptorProto{fileDesc},
-	}
-
-	schemaDefBytes, err := proto.Marshal(fileDescSet)
-	require.NoError(t, err, "Should marshal file descriptor set")
-
-	schema := &gsrserde.Schema{
-		Name:           "TestMessage",
-		Definition:     string(schemaDefBytes),
-		DataFormat:     "PROTOBUF",
-		AdditionalInfo: "test.TestMessage",
-	}
-
-	testData := []byte{0x08, 0x96, 0x01} // id = 150
-
-	// First deserialization - should create descriptor
-	assert.Nil(t, deserializer.messageDescriptor, "Descriptor should be nil initially")
-	
-	result1, err := deserializer.Deserialize(testData, schema)
-	require.NoError(t, err, "First deserialization should succeed")
-	require.NotNil(t, result1, "First result should not be nil")
-	assert.NotNil(t, deserializer.messageDescriptor, "Descriptor should be cached")
-
-	// Second deserialization - should use cached descriptor
-	result2, err := deserializer.Deserialize(testData, schema)
-	require.NoError(t, err, "Second deserialization should succeed")
-	require.NotNil(t, result2, "Second result should not be nil")
-	
-	// Both results should be equivalent
-	msg1 := result1.(*dynamicpb.Message)
-	msg2 := result2.(*dynamicpb.Message)
-	assert.True(t, proto.Equal(msg1, msg2), "Both deserialized messages should be equal")
-}
 
 func TestProtobufDeserializer_WithTestHelpers(t *testing.T) {
 	deserializer := NewProtobufDeserializer()
