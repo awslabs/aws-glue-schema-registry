@@ -68,26 +68,30 @@ extern uintptr_t _wrap_glue_schema_registry_deserializer_decode_schema_GsrSerDe_
 */
 import "C"
 
-import (
-	_ "runtime/cgo"
-	"sync"
-	"unsafe"
-)
+import "unsafe"
+import _ "runtime/cgo"
+import "sync"
+
 
 type _ unsafe.Pointer
+
+
 
 var Swig_escape_always_false bool
 var Swig_escape_val interface{}
 
+
 type _swig_fnptr *byte
 type _swig_memberptr *byte
 
-func getSwigcptr(v interface{ Swigcptr() uintptr }) uintptr {
+
+func getSwigcptr(v interface { Swigcptr() uintptr }) uintptr {
 	if v == nil {
 		return 0
 	}
 	return v.Swigcptr()
 }
+
 
 type _ sync.Mutex
 
@@ -102,16 +106,13 @@ func cgo_panic__GsrSerDe_fa70d3d759b7424b(p *byte) {
 	panic(string(s))
 }
 
-type swig_gostring struct {
-	p uintptr
-	n int
-}
 
+type swig_gostring struct { p uintptr; n int }
 func swigCopyString(s string) string {
-	p := *(*swig_gostring)(unsafe.Pointer(&s))
-	r := string((*[0x7fffffff]byte)(unsafe.Pointer(p.p))[:p.n])
-	Swig_free(p.p)
-	return r
+  p := *(*swig_gostring)(unsafe.Pointer(&s))
+  r := string((*[0x7fffffff]byte)(unsafe.Pointer(p.p))[:p.n])
+  Swig_free(p.p)
+  return r
 }
 
 func Swig_free(arg1 uintptr) {
@@ -256,7 +257,7 @@ func (arg1 SwigcptrGlue_schema_registry_schema) Get_schema_name() (_swig_ret str
 	swig_r_p := C._wrap_glue_schema_registry_schema_get_schema_name_GsrSerDe_fa70d3d759b7424b(C.uintptr_t(_swig_i_0))
 	swig_r = *(*string)(unsafe.Pointer(&swig_r_p))
 	var swig_r_1 string
-	swig_r_1 = swigCopyString(swig_r)
+ swig_r_1 = swigCopyString(swig_r) 
 	return swig_r_1
 }
 
@@ -266,7 +267,7 @@ func (arg1 SwigcptrGlue_schema_registry_schema) Get_schema_def() (_swig_ret stri
 	swig_r_p := C._wrap_glue_schema_registry_schema_get_schema_def_GsrSerDe_fa70d3d759b7424b(C.uintptr_t(_swig_i_0))
 	swig_r = *(*string)(unsafe.Pointer(&swig_r_p))
 	var swig_r_1 string
-	swig_r_1 = swigCopyString(swig_r)
+ swig_r_1 = swigCopyString(swig_r) 
 	return swig_r_1
 }
 
@@ -276,7 +277,7 @@ func (arg1 SwigcptrGlue_schema_registry_schema) Get_data_format() (_swig_ret str
 	swig_r_p := C._wrap_glue_schema_registry_schema_get_data_format_GsrSerDe_fa70d3d759b7424b(C.uintptr_t(_swig_i_0))
 	swig_r = *(*string)(unsafe.Pointer(&swig_r_p))
 	var swig_r_1 string
-	swig_r_1 = swigCopyString(swig_r)
+ swig_r_1 = swigCopyString(swig_r) 
 	return swig_r_1
 }
 
@@ -286,7 +287,7 @@ func (arg1 SwigcptrGlue_schema_registry_schema) Get_additional_schema_info() (_s
 	swig_r_p := C._wrap_glue_schema_registry_schema_get_additional_schema_info_GsrSerDe_fa70d3d759b7424b(C.uintptr_t(_swig_i_0))
 	swig_r = *(*string)(unsafe.Pointer(&swig_r_p))
 	var swig_r_1 string
-	swig_r_1 = swigCopyString(swig_r)
+ swig_r_1 = swigCopyString(swig_r) 
 	return swig_r_1
 }
 
@@ -396,11 +397,12 @@ type Glue_schema_registry_deserializer interface {
 	Decode_schema(arg2 Read_only_byte_array, arg3 Glue_schema_registry_error) (_swig_ret Glue_schema_registry_schema)
 }
 
+
 type SwigcptrGlue_schema_registry_error uintptr
 type Glue_schema_registry_error interface {
-	Swigcptr() uintptr
+	Swigcptr() uintptr;
 }
-
 func (p SwigcptrGlue_schema_registry_error) Swigcptr() uintptr {
 	return uintptr(p)
 }
+
