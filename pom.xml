@@ -21,7 +21,7 @@
 
     <groupId>software.amazon.glue</groupId>
     <artifactId>schema-registry-parent</artifactId>
-    <version>1.1.24</version>
+    <version>1.1.23</version>
     <packaging>pom</packaging>
     <name>AWS Glue Schema Registry Library</name>
     <description>The AWS Glue Schema Registry Library for Java enables Java developers to easily integrate their
@@ -93,8 +93,8 @@
         <!-- Protobuf -->
         <proto-plugin.version>0.6.1</proto-plugin.version>
 	<protobuf.version>3.25.5</protobuf.version>
-	<kotlin.version>1.9.25</kotlin.version>
-        <square-wireschema.version>5.2.0</square-wireschema.version>
+	<kotlin.version>1.7.10</kotlin.version>
+        <square-wireschema.version>4.3.0</square-wireschema.version>
         <apicurio-registry.version>2.1.3.Final</apicurio-registry.version>
         <slf4j.version>1.7.30</slf4j.version>
         <log4j.version>2.17.1</log4j.version>
@@ -136,7 +136,7 @@
             <dependency>
                 <groupId>software.amazon.awssdk</groupId>
                 <artifactId>glue</artifactId>
-                <version>${aws.sdk.v2.version}</version>
+                <version>2.23.16</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.kafka</groupId>
@@ -146,27 +146,27 @@
             <dependency>
                 <groupId>org.apache.kafka</groupId>
                 <artifactId>kafka-clients</artifactId>
-                <version>${kafka.version}</version>
+                <version>3.9.1</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.kafka</groupId>
                 <artifactId>kafka-streams</artifactId>
-                <version>${kafka.version}</version>
+                <version>3.9.1</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.kafka</groupId>
                 <artifactId>connect-api</artifactId>
-                <version>${kafka.version}</version>
+                <version>3.9.1</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.kafka</groupId>
                 <artifactId>connect-json</artifactId>
-                <version>${kafka.version}</version>
+                <version>3.9.1</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.avro</groupId>
                 <artifactId>avro</artifactId>
-                <version>${avro.version}</version>
+                <version>1.11.4</version>
                 <exclusions>
                   <exclusion>
                     <groupId>org.apache.commons</groupId>
@@ -183,62 +183,62 @@
             <dependency>
                 <groupId>org.apache.avro</groupId>
                 <artifactId>avro-maven-plugin</artifactId>
-                <version>${avro.version}</version>
+                <version>1.12.0</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.avro</groupId>
                 <artifactId>avro-compiler</artifactId>
-                <version>${avro.version}</version>
+                <version>1.11.4</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.avro</groupId>
                 <artifactId>avro-ipc</artifactId>
-                <version>${avro.version}</version>
+                <version>1.11.4</version>
             </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-api</artifactId>
-                <version>${slf4j.version}</version>
+                <version>1.7.30</version>
             </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-simple</artifactId>
-                <version>${slf4j.version}</version>
+                <version>1.7.30</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.logging.log4j</groupId>
                 <artifactId>log4j-api</artifactId>
-                <version>${log4j.version}</version>
+                <version>2.17.1</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.logging.log4j</groupId>
                 <artifactId>log4j-core</artifactId>
-                <version>${log4j.version}</version>
+                <version>2.17.1</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.logging.log4j</groupId>
                 <artifactId>log4j-slf4j-impl</artifactId>
-                <version>${log4j.version}</version>
+                <version>2.17.1</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.logging.log4j</groupId>
                 <artifactId>log4j-1.2-api</artifactId>
-                <version>${log4j.version}</version>
+                <version>2.17.1</version>
             </dependency>
             <dependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
-                <version>${guava.version}</version>
+                <version>32.0.1-jre</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-lang3</artifactId>
-                <version>${commons.lang.version}</version>
+                <version>3.8.1</version>
             </dependency>
             <dependency>
                 <groupId>org.projectlombok</groupId>
                 <artifactId>lombok</artifactId>
-                <version>${lombok.version}</version>
+                <version>1.18.26</version>
                 <scope>provided</scope>
             </dependency>
             <dependency>
@@ -250,44 +250,44 @@
             <dependency>
                 <groupId>io.github.classgraph</groupId>
                 <artifactId>classgraph</artifactId>
-                <version>${classgraph.version}</version>
+                <version>4.8.120</version>
             </dependency>
             <dependency>
                 <groupId>com.github.erosb</groupId>
                 <artifactId>everit-json-schema</artifactId>
-                <version>${everit.json.schema.version}</version>
+                <version>1.14.5</version>
             </dependency>
             <dependency>
                 <groupId>com.amazonaws</groupId>
                 <artifactId>aws-java-sdk-kinesis</artifactId>
-                <version>${aws.sdk.v1.version}</version>
+                <version>1.12.768</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.dataformat</groupId>
                 <artifactId>jackson-dataformat-cbor</artifactId>
-                <version>${jackson.version}</version>
+                <version>2.13.5</version>
             </dependency>
             <dependency>
                 <groupId>commons-cli</groupId>
                 <artifactId>commons-cli</artifactId>
-                <version>${commons.cli.version}</version>
+                <version>1.2</version>
             </dependency>
             <dependency>
                 <groupId>cloud.localstack</groupId>
                 <artifactId>localstack-utils</artifactId>
-                <version>${localstack.utils}</version>
+                <version>0.2.23</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>software.amazon.kinesis</groupId>
                 <artifactId>amazon-kinesis-client</artifactId>
-                <version>${kinesis.client.version}</version>
+                <version>3.0.2</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>com.amazonaws</groupId>
                 <artifactId>amazon-kinesis-producer</artifactId>
-                <version>${kinesis.producer.version}</version>
+                <version>0.15.12</version>
                 <scope>test</scope>
                 <exclusions>
                     <exclusion>
@@ -299,66 +299,66 @@
             <dependency>
                 <groupId>org.awaitility</groupId>
                 <artifactId>awaitility</artifactId>
-                <version>${awaitility.version}</version>
+                <version>3.0.0</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter</artifactId>
-                <version>${jupiter.version}</version>
+                <version>5.6.3</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter-engine</artifactId>
-                <version>${jupiter.version}</version>
+                <version>5.6.3</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter-api</artifactId>
-                <version>${jupiter.version}</version>
+                <version>5.6.3</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter-params</artifactId>
-                <version>${jupiter.version}</version>
+                <version>5.6.3</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.mockito</groupId>
                 <artifactId>mockito-core</artifactId>
-                <version>${mockito.version}</version>
+                <version>3.3.3</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.mockito</groupId>
                 <artifactId>mockito-junit-jupiter</artifactId>
-                <version>${mockito.version}</version>
+                <version>3.3.3</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.junit.platform</groupId>
                 <artifactId>junit-platform-commons</artifactId>
-                <version>${junit.platform.commons.version}</version>
+                <version>1.6.2</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.junit.platform</groupId>
                 <artifactId>junit-platform-surefire-provider</artifactId>
-                <version>${junit.platform.surefire.version}</version>
+                <version>1.3.2</version>
             </dependency>
             <dependency>
                 <groupId>org.hamcrest</groupId>
                 <artifactId>hamcrest-all</artifactId>
-                <version>${hamcrest.version}</version>
+                <version>1.1</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>com.google.protobuf</groupId>
                 <artifactId>protobuf-java</artifactId>
-                <version>${protobuf.java.version}</version>
+                <version>3.25.5</version>
             </dependency>
             <!-- Temporarily adding dependency on a transitive dependency to fix security bug in underlying library. Remove when dependency is upgraded. -->
             <dependency>
