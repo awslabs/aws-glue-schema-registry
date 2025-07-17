@@ -1,6 +1,7 @@
 package protobuf
 
 import (
+	"encoding/base64"
 	"fmt"
 	"reflect"
 
@@ -184,10 +185,9 @@ func (p *ProtobufSerializer) GetSchemaDefinition(data interface{}) (string, erro
 		}
 	}
 
-	// For now, we'll return the proto as a binary string
-	// In a production environment, you might want to convert this to JSON
-	// or use a different schema representation format
-	return string(protoBytes), nil
+	// Return base64-encoded protobuf bytes as expected by the Java GSR library
+	// The Java ProtobufPreprocessor.convertBase64SchemaToStringSchema() expects base64-encoded data
+	return base64.StdEncoding.EncodeToString(protoBytes), nil
 }
 
 // Validate validates serialized protobuf data against a schema definition.

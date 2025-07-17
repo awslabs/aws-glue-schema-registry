@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package test;
+
+option go_package = "github.com/awslabs/aws-glue-schema-registry/native-schema-registry/golang/integration-tests/testpb";
+
+// Simple test message for integration tests
+message TestMessage {
+  string id = 1;
+  string name = 2;
+  int32 age = 3;
+  string email = 4;
+  repeated string tags = 5;
+}

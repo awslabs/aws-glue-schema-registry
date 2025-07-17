@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/awslabs/aws-glue-schema-registry/native-schema-registry/golang/pkg/gsrserde-go"
+	"github.com/awslabs/aws-glue-schema-registry/native-schema-registry/golang/pkg/gsrserde-go/common"
 )
 
 // KafkaSerializerConfig holds configuration for the Kafka serializer
@@ -44,11 +45,12 @@ func DefaultKafkaSerializerConfig() *KafkaSerializerConfig {
 // KafkaSerializer is a Kafka-specific serializer that mirrors the C# implementation
 // It provides a high-level interface for serializing Kafka messages using AWS Glue Schema Registry
 type KafkaSerializer struct {
-	coreSerializer *gsrserde.Serializer
-	formatFactory  SerializerFactory
-	config         *KafkaSerializerConfig
-	mu             sync.RWMutex
-	closed         bool
+	coreSerializer    *gsrserde.Serializer
+	formatFactory     SerializerFactory
+	config            *KafkaSerializerConfig
+	schemaNameStrategy common.SchemaNameStrategy
+	mu                sync.RWMutex
+	closed            bool
 }
 
 // NewKafkaSerializer creates a new Kafka serializer instance
@@ -67,10 +69,11 @@ func NewKafkaSerializer(config *KafkaSerializerConfig) (*KafkaSerializer, error)
 	formatFactory := GetSerializerFactory()
 
 	return &KafkaSerializer{
-		coreSerializer: coreSerializer,
-		formatFactory:  formatFactory,
-		config:         config,
-		closed:         false,
+		coreSerializer:     coreSerializer,
+		formatFactory:      formatFactory,
+		config:             config,
+		schemaNameStrategy: &common.DefaultSchemaNameStrategy{},
+		closed:             false,
 	}, nil
 }
 
@@ -112,7 +115,7 @@ func (ks *KafkaSerializer) Serialize(topic string, data interface{}) ([]byte, er
 	}
 
 	// Create schema based on the data type
-	schema, err := ks.createSchemaFromData(data)
+	schema, err := ks.createSchemaFromData(data, topic)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create schema from data: %w", err)
 	}
@@ -210,7 +213,7 @@ func (ks *KafkaSerializer) ValidateData(data interface{}) error {
 	}
 
 	// Create schema to determine data format
-	schema, err := ks.createSchemaFromData(data)
+	schema, err := ks.createSchemaFromData(data, "")
 	if err != nil {
 		return fmt.Errorf("failed to create schema from data: %w", err)
 	}
@@ -238,12 +241,12 @@ func (ks *KafkaSerializer) GetSchemaFromData(data interface{}) (*gsrserde.Schema
 		return nil, gsrserde.ErrNilData
 	}
 
-	return ks.createSchemaFromData(data)
+	return ks.createSchemaFromData(data, "")
 }
 
 // createSchemaFromData creates a schema based on the data type
 // This determines the appropriate data format based on the Go type
-func (ks *KafkaSerializer) createSchemaFromData(data interface{}) (*gsrserde.Schema, error) {
+func (ks *KafkaSerializer) createSchemaFromData(data interface{}, topic string) (*gsrserde.Schema, error) {
 	if data == nil {
 		return nil, gsrserde.ErrNilData
 	}
@@ -288,6 +291,14 @@ func (ks *KafkaSerializer) createSchemaFromData(data interface{}) (*gsrserde.Sch
 	// Set additional schema info
 	if err := formatSerializer.SetAdditionalSchemaInfo(data, schema); err != nil {
 		return nil, fmt.Errorf("failed to set additional schema info: %w", err)
+	}
+
+	// Generate schema name using the naming strategy and topic
+	if topic != "" && ks.schemaNameStrategy != nil {
+		schemaName := ks.schemaNameStrategy.GetSchemaName(data, topic)
+		if schemaName != "" {
+			schema.Name = schemaName
+		}
 	}
 
 	return schema, nil
