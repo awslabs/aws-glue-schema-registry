@@ -10,9 +10,28 @@ import (
 	"google.golang.org/protobuf/types/dynamicpb"
 
 	"github.com/awslabs/aws-glue-schema-registry/native-schema-registry/golang/pkg/gsrserde-go"
+	"github.com/awslabs/aws-glue-schema-registry/native-schema-registry/golang/pkg/gsrserde-go/common"
 	deserializer_protobuf "github.com/awslabs/aws-glue-schema-registry/native-schema-registry/golang/pkg/gsrserde-go/deserializer/protobuf"
 	"github.com/awslabs/aws-glue-schema-registry/native-schema-registry/golang/pkg/gsrserde-go/serializer/protobuf"
 )
+
+// createProtobufConfig creates a Configuration object for Protobuf integration tests
+func createProtobufConfig() *common.Configuration {
+	configMap := make(map[string]interface{})
+	configMap[common.DataFormatTypeKey] = common.DataFormatProtobuf
+	return common.NewConfiguration(configMap)
+}
+
+// createProtobufConfigWithDescriptor creates a Configuration object with a specific message descriptor
+func createProtobufConfigWithDescriptor(descriptor interface{}) *common.Configuration {
+	configMap := make(map[string]interface{})
+	configMap[common.DataFormatTypeKey] = common.DataFormatProtobuf
+	if descriptor != nil {
+		configMap[common.ProtobufMessageDescriptorKey] = descriptor
+	}
+	return common.NewConfiguration(configMap)
+}
+
 
 // TestProtobufSerializerDeserializerIntegration tests the complete round-trip:
 // serialize with ProtobufSerializer -> deserialize with ProtobufDeserializer
@@ -70,7 +89,8 @@ func TestProtobufSerializerDeserializerIntegration(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Step 1: Create serializer and serialize the message
-			serializer := protobuf.NewProtobufSerializer()
+			config := createProtobufConfig()
+			serializer := protobuf.NewProtobufSerializer(config)
 			
 			serializedData, err := serializer.Serialize(tt.inputMessage)
 			if err != nil {
@@ -108,7 +128,8 @@ func TestProtobufSerializerDeserializerIntegration(t *testing.T) {
 			}
 
 			// Step 4: Create deserializer and deserialize the data
-			deserializer := deserializer_protobuf.NewProtobufDeserializer()
+			deserializerConfig := createProtobufConfig()
+			deserializer := deserializer_protobuf.NewProtobufDeserializer(deserializerConfig)
 			
 			deserializedMessage, err := deserializer.Deserialize(serializedData, schema)
 			if err != nil {
@@ -158,7 +179,8 @@ func TestProtobufRoundTripWithComplexMessage(t *testing.T) {
 	}
 
 	// Serialize
-	serializer := protobuf.NewProtobufSerializer()
+	config := createProtobufConfig()
+	serializer := protobuf.NewProtobufSerializer(config)
 	serializedData, err := serializer.Serialize(complexMessage)
 	if err != nil {
 		t.Fatalf("Failed to serialize complex message: %v", err)
@@ -181,7 +203,8 @@ func TestProtobufRoundTripWithComplexMessage(t *testing.T) {
 	}
 
 	// Deserialize
-	deserializer := deserializer_protobuf.NewProtobufDeserializer()
+	deserializerConfig := createProtobufConfig()
+	deserializer := deserializer_protobuf.NewProtobufDeserializer(deserializerConfig)
 	deserializedMessage, err := deserializer.Deserialize(serializedData, schema)
 	if err != nil {
 		t.Fatalf("Failed to deserialize complex message: %v", err)
@@ -251,7 +274,8 @@ func TestProtobufRoundTripEdgeCases(t *testing.T) {
 			t.Logf("Testing: %s", tt.description)
 
 			// Serialize
-			serializer := protobuf.NewProtobufSerializer()
+			config := createProtobufConfig()
+			serializer := protobuf.NewProtobufSerializer(config)
 			serializedData, err := serializer.Serialize(tt.inputMessage)
 			if err != nil {
 				t.Fatalf("Failed to serialize %s: %v", tt.description, err)
@@ -274,7 +298,8 @@ func TestProtobufRoundTripEdgeCases(t *testing.T) {
 			}
 
 			// Deserialize
-			deserializer := deserializer_protobuf.NewProtobufDeserializer()
+			deserializerConfig := createProtobufConfig()
+			deserializer := deserializer_protobuf.NewProtobufDeserializer(deserializerConfig)
 			deserializedMessage, err := deserializer.Deserialize(serializedData, schema)
 			if err != nil {
 				t.Fatalf("Failed to deserialize %s: %v", tt.description, err)
@@ -299,7 +324,8 @@ func TestProtobufRoundTripBinaryEquivalence(t *testing.T) {
 		Syntax:  proto.String("proto3"),
 	}
 
-	serializer := protobuf.NewProtobufSerializer()
+	config := createProtobufConfig()
+	serializer := protobuf.NewProtobufSerializer(config)
 
 	// Serialize the same message twice
 	serializedData1, err := serializer.Serialize(message)
@@ -333,7 +359,8 @@ func TestProtobufRoundTripBinaryEquivalence(t *testing.T) {
 		t.Fatalf("Failed to set additional schema info: %v", err)
 	}
 
-	deserializer := deserializer_protobuf.NewProtobufDeserializer()
+	deserializerConfig := createProtobufConfig()
+	deserializer := deserializer_protobuf.NewProtobufDeserializer(deserializerConfig)
 	
 	deserializedMessage1, err := deserializer.Deserialize(serializedData1, schema)
 	if err != nil {

@@ -10,16 +10,36 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 
 	"github.com/awslabs/aws-glue-schema-registry/native-schema-registry/golang/pkg/gsrserde-go"
+	"github.com/awslabs/aws-glue-schema-registry/native-schema-registry/golang/pkg/gsrserde-go/common"
 	"github.com/awslabs/aws-glue-schema-registry/native-schema-registry/golang/pkg/gsrserde-go/test_helpers"
 )
 
+// createProtobufConfig creates a Configuration object for Protobuf tests
+func createProtobufConfig() *common.Configuration {
+	configMap := make(map[string]interface{})
+	configMap[common.DataFormatTypeKey] = common.DataFormatProtobuf
+	return common.NewConfiguration(configMap)
+}
+
+// createProtobufConfigWithDescriptor creates a Configuration object with a specific message descriptor
+func createProtobufConfigWithDescriptor(descriptor interface{}) *common.Configuration {
+	configMap := make(map[string]interface{})
+	configMap[common.DataFormatTypeKey] = common.DataFormatProtobuf
+	if descriptor != nil {
+		configMap[common.ProtobufMessageDescriptorKey] = descriptor
+	}
+	return common.NewConfiguration(configMap)
+}
+
 func TestNewProtobufSerializer(t *testing.T) {
-	serializer := NewProtobufSerializer()
+	config := createProtobufConfig()
+	serializer := NewProtobufSerializer(config)
 	assert.NotNil(t, serializer, "NewProtobufSerializer should return a non-nil serializer")
 }
 
 func TestProtobufSerializer_Serialize_ErrorCases(t *testing.T) {
-	serializer := NewProtobufSerializer()
+	config := createProtobufConfig()
+	serializer := NewProtobufSerializer(config)
 
 	tests := []struct {
 		name        string
@@ -65,7 +85,8 @@ func TestProtobufSerializer_Serialize_ErrorCases(t *testing.T) {
 }
 
 func TestProtobufSerializer_Serialize_ValidMessage(t *testing.T) {
-	serializer := NewProtobufSerializer()
+	config := createProtobufConfig()
+	serializer := NewProtobufSerializer(config)
 
 	// Generate test protobuf message
 	testMsg := test_helpers.GenerateTestProtoMessage()
@@ -84,7 +105,8 @@ func TestProtobufSerializer_Serialize_ValidMessage(t *testing.T) {
 }
 
 func TestProtobufSerializer_Serialize_ComplexMessage(t *testing.T) {
-	serializer := NewProtobufSerializer()
+	config := createProtobufConfig()
+	serializer := NewProtobufSerializer(config)
 
 	// Generate complex test message
 	complexMsg := test_helpers.GenerateComplexTestMessage(12345, "complex-test")
@@ -98,7 +120,8 @@ func TestProtobufSerializer_Serialize_ComplexMessage(t *testing.T) {
 }
 
 func TestProtobufSerializer_Serialize_DescriptorMessage(t *testing.T) {
-	serializer := NewProtobufSerializer()
+	config := createProtobufConfig()
+	serializer := NewProtobufSerializer(config)
 
 	// Use a FileDescriptorProto as test data (this is a known protobuf message)
 	descriptorMsg := &descriptorpb.FileDescriptorProto{
@@ -132,7 +155,8 @@ func TestProtobufSerializer_Serialize_DescriptorMessage(t *testing.T) {
 }
 
 func TestProtobufSerializer_GetSchemaDefinition_ErrorCases(t *testing.T) {
-	serializer := NewProtobufSerializer()
+	config := createProtobufConfig()
+	serializer := NewProtobufSerializer(config)
 
 	tests := []struct {
 		name        string
@@ -168,7 +192,8 @@ func TestProtobufSerializer_GetSchemaDefinition_ErrorCases(t *testing.T) {
 }
 
 func TestProtobufSerializer_GetSchemaDefinition_ValidMessage(t *testing.T) {
-	serializer := NewProtobufSerializer()
+	config := createProtobufConfig()
+	serializer := NewProtobufSerializer(config)
 
 	// Use FileDescriptorProto as test data
 	descriptorMsg := &descriptorpb.FileDescriptorProto{
@@ -198,7 +223,8 @@ func TestProtobufSerializer_GetSchemaDefinition_ValidMessage(t *testing.T) {
 }
 
 func TestProtobufSerializer_GetSchemaDefinition_DynamicMessage(t *testing.T) {
-	serializer := NewProtobufSerializer()
+	config := createProtobufConfig()
+	serializer := NewProtobufSerializer(config)
 
 	// Generate dynamic test message
 	dynamicMsg := test_helpers.GenerateTestProtoMessage()
@@ -211,7 +237,8 @@ func TestProtobufSerializer_GetSchemaDefinition_DynamicMessage(t *testing.T) {
 }
 
 func TestProtobufSerializer_ValidateObject_ErrorCases(t *testing.T) {
-	serializer := NewProtobufSerializer()
+	config := createProtobufConfig()
+	serializer := NewProtobufSerializer(config)
 
 	tests := []struct {
 		name        string
@@ -251,7 +278,8 @@ func TestProtobufSerializer_ValidateObject_ErrorCases(t *testing.T) {
 }
 
 func TestProtobufSerializer_ValidateObject_ValidMessages(t *testing.T) {
-	serializer := NewProtobufSerializer()
+	config := createProtobufConfig()
+	serializer := NewProtobufSerializer(config)
 
 	tests := []struct {
 		name string
@@ -288,7 +316,8 @@ func TestProtobufSerializer_ValidateObject_ValidMessages(t *testing.T) {
 }
 
 func TestProtobufSerializer_ValidateObject_DynamicMessage(t *testing.T) {
-	serializer := NewProtobufSerializer()
+	config := createProtobufConfig()
+	serializer := NewProtobufSerializer(config)
 
 	// Generate and validate dynamic message
 	dynamicMsg := test_helpers.GenerateTestProtoMessage()
@@ -299,7 +328,8 @@ func TestProtobufSerializer_ValidateObject_DynamicMessage(t *testing.T) {
 }
 
 func TestProtobufSerializer_Validate_ErrorCases(t *testing.T) {
-	serializer := NewProtobufSerializer()
+	config := createProtobufConfig()
+	serializer := NewProtobufSerializer(config)
 
 	tests := []struct {
 		name        string
@@ -338,7 +368,8 @@ func TestProtobufSerializer_Validate_ErrorCases(t *testing.T) {
 }
 
 func TestProtobufSerializer_Validate_ValidData(t *testing.T) {
-	serializer := NewProtobufSerializer()
+	config := createProtobufConfig()
+	serializer := NewProtobufSerializer(config)
 
 	tests := []struct {
 		name   string
@@ -375,7 +406,8 @@ func TestProtobufSerializer_Validate_ValidData(t *testing.T) {
 }
 
 func TestProtobufSerializer_SetAdditionalSchemaInfo_ErrorCases(t *testing.T) {
-	serializer := NewProtobufSerializer()
+	config := createProtobufConfig()
+	serializer := NewProtobufSerializer(config)
 
 	tests := []struct {
 		name        string
@@ -419,7 +451,8 @@ func TestProtobufSerializer_SetAdditionalSchemaInfo_ErrorCases(t *testing.T) {
 }
 
 func TestProtobufSerializer_SetAdditionalSchemaInfo_ValidCases(t *testing.T) {
-	serializer := NewProtobufSerializer()
+	config := createProtobufConfig()
+	serializer := NewProtobufSerializer(config)
 
 	tests := []struct {
 		name           string
@@ -456,7 +489,8 @@ func TestProtobufSerializer_SetAdditionalSchemaInfo_ValidCases(t *testing.T) {
 }
 
 func TestProtobufSerializer_SetAdditionalSchemaInfo_DynamicMessage(t *testing.T) {
-	serializer := NewProtobufSerializer()
+	config := createProtobufConfig()
+	serializer := NewProtobufSerializer(config)
 
 	// Generate dynamic test message
 	dynamicMsg := test_helpers.GenerateTestProtoMessage()
@@ -471,7 +505,8 @@ func TestProtobufSerializer_SetAdditionalSchemaInfo_DynamicMessage(t *testing.T)
 }
 
 func TestProtobufSerializer_SetAdditionalSchemaInfo_PreservesExistingDataFormat(t *testing.T) {
-	serializer := NewProtobufSerializer()
+	config := createProtobufConfig()
+	serializer := NewProtobufSerializer(config)
 
 	data := &descriptorpb.FileDescriptorProto{
 		Name: proto.String("test.proto"),
@@ -490,7 +525,8 @@ func TestProtobufSerializer_SetAdditionalSchemaInfo_PreservesExistingDataFormat(
 }
 
 func TestProtobufSerializer_WithTestHelpers(t *testing.T) {
-	serializer := NewProtobufSerializer()
+	config := createProtobufConfig()
+	serializer := NewProtobufSerializer(config)
 
 	// Test with multiple generated messages
 	messages := test_helpers.GenerateTestProtoMessages(3)
@@ -554,7 +590,8 @@ func TestProtobufSerializer_ErrorTypes(t *testing.T) {
 
 // BenchmarkProtobufSerializer_Serialize benchmarks the serialization performance
 func BenchmarkProtobufSerializer_Serialize(b *testing.B) {
-	serializer := NewProtobufSerializer()
+	config := createProtobufConfig()
+	serializer := NewProtobufSerializer(config)
 
 	// Setup test data
 	testMsg := &descriptorpb.FileDescriptorProto{
@@ -595,7 +632,8 @@ func BenchmarkProtobufSerializer_Serialize(b *testing.B) {
 
 // BenchmarkProtobufSerializer_GetSchemaDefinition benchmarks schema definition extraction
 func BenchmarkProtobufSerializer_GetSchemaDefinition(b *testing.B) {
-	serializer := NewProtobufSerializer()
+	config := createProtobufConfig()
+	serializer := NewProtobufSerializer(config)
 
 	testMsg := &descriptorpb.FileDescriptorProto{
 		Name:    proto.String("benchmark_schema.proto"),

@@ -9,6 +9,7 @@ import (
 	"google.golang.org/protobuf/reflect/protodesc"
 
 	"github.com/awslabs/aws-glue-schema-registry/native-schema-registry/golang/pkg/gsrserde-go"
+	"github.com/awslabs/aws-glue-schema-registry/native-schema-registry/golang/pkg/gsrserde-go/common"
 )
 
 var (
@@ -66,11 +67,17 @@ func (e *ProtobufValidationError) Unwrap() error {
 // It uses the google.golang.org/protobuf library for pure Go implementation.
 type ProtobufSerializer struct {
 	// This serializer is stateless and can be safely used concurrently
+	config *common.Configuration
 }
 
 // NewProtobufSerializer creates a new protobuf serializer instance.
-func NewProtobufSerializer() *ProtobufSerializer {
-	return &ProtobufSerializer{}
+func NewProtobufSerializer(config *common.Configuration) *ProtobufSerializer {
+	if config == nil {
+		panic("configuration cannot be nil")
+	}
+	return &ProtobufSerializer{
+		config: config,
+	}
 }
 
 // Serialize serializes a protobuf message to bytes.

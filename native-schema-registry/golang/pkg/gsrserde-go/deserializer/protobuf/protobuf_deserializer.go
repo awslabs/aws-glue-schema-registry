@@ -12,27 +12,28 @@ import (
 	"google.golang.org/protobuf/types/dynamicpb"
 
 	"github.com/awslabs/aws-glue-schema-registry/native-schema-registry/golang/pkg/gsrserde-go"
+	"github.com/awslabs/aws-glue-schema-registry/native-schema-registry/golang/pkg/gsrserde-go/common"
 )
 
 var (
 	// ErrNilData is returned when nil data is provided
 	ErrNilData = fmt.Errorf("protobuf deserializer: data cannot be nil")
-	
+
 	// ErrEmptyData is returned when empty data is provided
 	ErrEmptyData = fmt.Errorf("protobuf deserializer: data cannot be empty")
-	
+
 	// ErrNilSchema is returned when nil schema is provided
 	ErrNilSchema = fmt.Errorf("protobuf deserializer: schema cannot be nil")
-	
+
 	// ErrInvalidSchema is returned when schema is invalid
 	ErrInvalidSchema = fmt.Errorf("protobuf deserializer: invalid schema definition")
-	
+
 	// ErrSchemaNotProtobuf is returned when schema is not a protobuf schema
 	ErrSchemaNotProtobuf = fmt.Errorf("protobuf deserializer: schema is not a protobuf schema")
-	
+
 	// ErrMessageDescriptorNotFound is returned when the message descriptor cannot be found
 	ErrMessageDescriptorNotFound = fmt.Errorf("protobuf deserializer: message descriptor not found")
-	
+
 	// ErrDeserializationFailed is returned when protobuf deserialization fails
 	ErrDeserializationFailed = fmt.Errorf("protobuf deserializer: deserialization failed")
 )
@@ -42,87 +43,97 @@ var (
 type ProtobufDeserializer struct {
 	// messageDescriptor holds the protobuf message descriptor for deserialization
 	messageDescriptor protoreflect.MessageDescriptor
+	// config holds the configuration for the deserializer
+	config *common.Configuration
 }
 
 // NewProtobufDeserializer creates a new ProtobufDeserializer instance.
-// The schema must contain a valid protobuf schema definition.
-func NewProtobufDeserializer() *ProtobufDeserializer {
-	return &ProtobufDeserializer{}
+// The configuration must contain the protobuf message descriptor for deserialization.
+func NewProtobufDeserializer(config *common.Configuration) *ProtobufDeserializer {
+	if config == nil {
+		panic("configuration cannot be nil")
+	}
+	return &ProtobufDeserializer{
+		config:            config,
+		messageDescriptor: config.ProtobufMessageDescriptor(),
+	}
 }
 
 // Deserialize takes encoded protobuf data and a schema, and returns the deserialized message.
 // The schema must be a protobuf schema with a valid schema definition.
 //
 // Parameters:
-//   data: The encoded protobuf byte data to deserialize
-//   schema: The protobuf schema information needed for deserialization
+//
+//	data: The encoded protobuf byte data to deserialize
+//	schema: The protobuf schema information needed for deserialization
 //
 // Returns:
-//   interface{}: The deserialized protobuf message as a dynamic message
-//   error: Any error that occurred during deserialization
+//
+//	interface{}: The deserialized protobuf message as a dynamic message
+//	error: Any error that occurred during deserialization
 func (pd *ProtobufDeserializer) Deserialize(data []byte, schema *gsrserde.Schema) (interface{}, error) {
 	// Validate input parameters
 	if data == nil {
 		return nil, ErrNilData
 	}
-	
+
 	if len(data) == 0 {
 		return nil, ErrEmptyData
 	}
-	
+
 	if schema == nil {
 		return nil, ErrNilSchema
 	}
-	
+
 	// Verify this is a protobuf schema
 	if schema.DataFormat != "PROTOBUF" {
 		return nil, ErrSchemaNotProtobuf
 	}
-	
+
 	if schema.Definition == "" {
 		return nil, ErrInvalidSchema
 	}
-	
+
 	// Get or create message descriptor from schema
 	messageDescriptor, err := pd.getMessageDescriptor(schema)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get message descriptor: %w", err)
 	}
-	
+
 	// Create a new dynamic message instance
 	dynamicMessage := dynamicpb.NewMessage(messageDescriptor)
-	
+
 	// Unmarshal the protobuf data
 	if err := proto.Unmarshal(data, dynamicMessage); err != nil {
 		return nil, fmt.Errorf("%w: %v", ErrDeserializationFailed, err)
 	}
-	
+
 	return dynamicMessage, nil
 }
 
 // getMessageDescriptor extracts or creates a message descriptor from the schema.
 // It parses the protobuf schema definition and creates the appropriate descriptor.
 func (pd *ProtobufDeserializer) getMessageDescriptor(schema *gsrserde.Schema) (protoreflect.MessageDescriptor, error) {
-	
+
 	var fileDescriptorSet descriptorpb.FileDescriptorSet
 	var err error
-	
+
 	// Check if the schema definition is text format (.proto file content)
 	if strings.Contains(schema.Definition, "syntax") && strings.Contains(schema.Definition, "message") {
 		// This is a text format .proto file from Java GSR
 		// We need to parse it and create a FileDescriptorProto
 		return pd.parseTextFormatSchema(schema)
 	}
-	
+
 	var schemaBytes []byte
-	
+
 	// Try to decode as base64 first (Go serializer output format)
 	schemaBytes, err = base64.StdEncoding.DecodeString(schema.Definition)
 	if err != nil {
 		// If base64 decoding fails, treat as raw bytes (test format)
 		schemaBytes = []byte(schema.Definition)
 	}
-	
+
 	// Parse the schema definition as a FileDescriptorSet
 	if err := proto.Unmarshal(schemaBytes, &fileDescriptorSet); err != nil {
 		// If that fails, try parsing as a single FileDescriptor
@@ -132,13 +143,13 @@ func (pd *ProtobufDeserializer) getMessageDescriptor(schema *gsrserde.Schema) (p
 		}
 		fileDescriptorSet.File = []*descriptorpb.FileDescriptorProto{&fileDescriptor}
 	}
-	
+
 	// Create file descriptors from the descriptor set
 	files, err := protodesc.NewFiles(&fileDescriptorSet)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create file descriptors: %w", err)
 	}
-	
+
 	// Find the message descriptor
 	// Use AdditionalInfo if provided (should contain the message type name)
 	var messageTypeName string
@@ -153,27 +164,27 @@ func (pd *ProtobufDeserializer) getMessageDescriptor(schema *gsrserde.Schema) (p
 			}
 			return true // Continue iteration
 		})
-		
+
 		if messageTypeName == "" {
 			return nil, ErrMessageDescriptorNotFound
 		}
 	}
-	
+
 	// Find the message descriptor by name
 	messageDescriptor, err := files.FindDescriptorByName(protoreflect.FullName(messageTypeName))
 	if err != nil {
 		return nil, fmt.Errorf("failed to find message descriptor '%s': %w", messageTypeName, err)
 	}
-	
+
 	// Ensure it's a message descriptor
 	msgDesc, ok := messageDescriptor.(protoreflect.MessageDescriptor)
 	if !ok {
 		return nil, fmt.Errorf("descriptor '%s' is not a message descriptor", messageTypeName)
 	}
-	
+
 	// Cache the descriptor
 	pd.messageDescriptor = msgDesc
-	
+
 	return msgDesc, nil
 }
 
@@ -182,43 +193,43 @@ func (pd *ProtobufDeserializer) getMessageDescriptor(schema *gsrserde.Schema) (p
 func (pd *ProtobufDeserializer) parseTextFormatSchema(schema *gsrserde.Schema) (protoreflect.MessageDescriptor, error) {
 	// For compatibility with Java GSR, we need to parse text format .proto files
 	// Since Go doesn't have a built-in .proto text parser, we'll implement a basic one
-	
+
 	// Extract package name
 	packageName := extractPackageName(schema.Definition)
-	
+
 	// Extract message definitions
 	messages, err := extractMessageDefinitions(schema.Definition)
 	if err != nil {
 		return nil, fmt.Errorf("failed to extract message definitions: %w", err)
 	}
-	
+
 	if len(messages) == 0 {
 		return nil, fmt.Errorf("no message definitions found in schema")
 	}
-	
+
 	// Create FileDescriptorProto
 	fileDescriptor := &descriptorpb.FileDescriptorProto{
 		Name:    proto.String("generated.proto"),
 		Package: proto.String(packageName),
 		Syntax:  proto.String("proto3"), // Default to proto3
 	}
-	
+
 	// Add message types
 	for _, msg := range messages {
 		fileDescriptor.MessageType = append(fileDescriptor.MessageType, msg)
 	}
-	
+
 	// Create FileDescriptorSet
 	fileDescriptorSet := &descriptorpb.FileDescriptorSet{
 		File: []*descriptorpb.FileDescriptorProto{fileDescriptor},
 	}
-	
+
 	// Create file descriptors from the descriptor set
 	files, err := protodesc.NewFiles(fileDescriptorSet)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create file descriptors: %w", err)
 	}
-	
+
 	// Find the message descriptor
 	var messageTypeName string
 	if schema.AdditionalInfo != "" {
@@ -233,26 +244,26 @@ func (pd *ProtobufDeserializer) parseTextFormatSchema(schema *gsrserde.Schema) (
 			}
 		}
 	}
-	
+
 	if messageTypeName == "" {
 		return nil, ErrMessageDescriptorNotFound
 	}
-	
+
 	// Find the message descriptor by name
 	messageDescriptor, err := files.FindDescriptorByName(protoreflect.FullName(messageTypeName))
 	if err != nil {
 		return nil, fmt.Errorf("failed to find message descriptor '%s': %w", messageTypeName, err)
 	}
-	
+
 	// Ensure it's a message descriptor
 	msgDesc, ok := messageDescriptor.(protoreflect.MessageDescriptor)
 	if !ok {
 		return nil, fmt.Errorf("descriptor '%s' is not a message descriptor", messageTypeName)
 	}
-	
+
 	// Cache the descriptor
 	pd.messageDescriptor = msgDesc
-	
+
 	return msgDesc, nil
 }
 
@@ -274,20 +285,20 @@ func extractPackageName(protoContent string) string {
 // extractMessageDefinitions extracts message definitions from a .proto file content
 func extractMessageDefinitions(protoContent string) ([]*descriptorpb.DescriptorProto, error) {
 	var messages []*descriptorpb.DescriptorProto
-	
+
 	lines := strings.Split(protoContent, "\n")
 	var currentMessage *descriptorpb.DescriptorProto
 	var braceCount int
 	var inMessage bool
-	
+
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
-		
+
 		// Skip comments and empty lines
 		if strings.HasPrefix(line, "//") || strings.HasPrefix(line, "/*") || line == "" {
 			continue
 		}
-		
+
 		// Check for message start
 		if strings.HasPrefix(line, "message ") && !inMessage {
 			// Extract message name
@@ -296,25 +307,25 @@ func extractMessageDefinitions(protoContent string) ([]*descriptorpb.DescriptorP
 				messageName := parts[1]
 				// Remove any trailing '{' from the name
 				messageName = strings.TrimSuffix(messageName, "{")
-				
+
 				currentMessage = &descriptorpb.DescriptorProto{
 					Name: proto.String(messageName),
 				}
 				inMessage = true
 				braceCount = 0
-				
+
 				// Count opening braces on this line
 				braceCount += strings.Count(line, "{")
 				braceCount -= strings.Count(line, "}")
 			}
 			continue
 		}
-		
+
 		if inMessage {
 			// Count braces to track nesting
 			braceCount += strings.Count(line, "{")
 			braceCount -= strings.Count(line, "}")
-			
+
 			// Parse field definitions
 			if strings.Contains(line, "=") && !strings.HasPrefix(line, "message") && !strings.HasPrefix(line, "enum") {
 				field, err := parseFieldDefinition(line, int32(len(currentMessage.Field)+1))
@@ -322,7 +333,7 @@ func extractMessageDefinitions(protoContent string) ([]*descriptorpb.DescriptorP
 					currentMessage.Field = append(currentMessage.Field, field)
 				}
 			}
-			
+
 			// Check if message is complete
 			if braceCount <= 0 {
 				inMessage = false
@@ -333,12 +344,12 @@ func extractMessageDefinitions(protoContent string) ([]*descriptorpb.DescriptorP
 			}
 		}
 	}
-	
+
 	// Handle case where message doesn't end properly
 	if currentMessage != nil {
 		messages = append(messages, currentMessage)
 	}
-	
+
 	return messages, nil
 }
 
@@ -346,32 +357,32 @@ func extractMessageDefinitions(protoContent string) ([]*descriptorpb.DescriptorP
 func parseFieldDefinition(line string, fieldNumber int32) (*descriptorpb.FieldDescriptorProto, error) {
 	// Remove semicolon and extra whitespace
 	line = strings.TrimSuffix(strings.TrimSpace(line), ";")
-	
+
 	// Split by '=' to separate field definition from field number
 	parts := strings.Split(line, "=")
 	if len(parts) != 2 {
 		return nil, fmt.Errorf("invalid field definition: %s", line)
 	}
-	
+
 	// Parse field number
 	fieldNumStr := strings.TrimSpace(parts[1])
 	var actualFieldNumber int32
 	if _, err := fmt.Sscanf(fieldNumStr, "%d", &actualFieldNumber); err != nil {
 		return nil, fmt.Errorf("invalid field number: %s", fieldNumStr)
 	}
-	
+
 	// Parse field definition (type and name)
 	fieldDef := strings.TrimSpace(parts[0])
 	fieldParts := strings.Fields(fieldDef)
-	
+
 	if len(fieldParts) < 2 {
 		return nil, fmt.Errorf("invalid field definition: %s", fieldDef)
 	}
-	
+
 	var fieldType string
 	var fieldName string
 	var label descriptorpb.FieldDescriptorProto_Label
-	
+
 	// Handle repeated fields
 	if fieldParts[0] == "repeated" {
 		if len(fieldParts) < 3 {
@@ -385,22 +396,22 @@ func parseFieldDefinition(line string, fieldNumber int32) (*descriptorpb.FieldDe
 		fieldName = fieldParts[1]
 		label = descriptorpb.FieldDescriptorProto_LABEL_OPTIONAL
 	}
-	
+
 	// Map protobuf types to FieldDescriptorProto types
 	protoType := mapProtoType(fieldType)
-	
+
 	field := &descriptorpb.FieldDescriptorProto{
 		Name:   proto.String(fieldName),
 		Number: proto.Int32(actualFieldNumber),
 		Type:   protoType.Enum(),
 		Label:  label.Enum(),
 	}
-	
+
 	// Set type name for message types
 	if protoType == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE {
 		field.TypeName = proto.String(fieldType)
 	}
-	
+
 	return field, nil
 }
 

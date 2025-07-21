@@ -2,25 +2,27 @@ package gsrserde
 
 import (
 	"runtime"
-	"sync"
 
 	"github.com/awslabs/aws-glue-schema-registry/native-schema-registry/golang/pkg/GsrSerDe"
 )
 
-// Serializer is a thread-safe wrapper around the native schema registry serializer
+// Serializer is a wrapper around the native schema registry serializer
+// NOTE: This wrapper is NOT thread-safe. Each instance should be used by
+// only one context/operation to comply with native library constraints.
 type Serializer struct {
 	serializer GsrSerDe.Glue_schema_registry_serializer
 	closed     bool
-	mu         sync.Mutex
 }
 
 // NewSerializer creates a new serializer instance
 func NewSerializer() (*Serializer, error) {
+	runtime.LockOSThread()
 	// Create error holder
 	err := createErrorHolder()
 	
 	// Create native serializer
 	serializer := GsrSerDe.NewGlue_schema_registry_serializer(err)
+	GsrSerDe.
 	
 	// Check for errors
 	if err != nil && err.Swigcptr() != 0 {
@@ -37,16 +39,13 @@ func NewSerializer() (*Serializer, error) {
 	}
 	
 	// Set finalizer as a safety net
-	runtime.SetFinalizer(s, (*Serializer).finalize)
+	//runtime.SetFinalizer(s, (*Serializer).finalize)
 	
 	return s, nil
 }
 
 // Encode serializes data with the given schema
 func (s *Serializer) Encode(data []byte, transportName string, schema *Schema) ([]byte, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	
 	if s.closed {
 		return nil, ErrClosed
 	}
@@ -101,9 +100,6 @@ func (s *Serializer) Encode(data []byte, transportName string, schema *Schema) (
 
 // Close releases all resources associated with the serializer
 func (s *Serializer) Close() error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	
 	if s.closed {
 		return nil
 	}
@@ -116,7 +112,8 @@ func (s *Serializer) Close() error {
 	}
 	
 	// Remove finalizer
-	runtime.SetFinalizer(s, nil)
+	//runtime.SetFinalizer(s, nil)
+	runtime.UnlockOSThread()
 	
 	return nil
 }

@@ -2,20 +2,21 @@ package gsrserde
 
 import (
 	"runtime"
-	"sync"
 
 	"github.com/awslabs/aws-glue-schema-registry/native-schema-registry/golang/pkg/GsrSerDe"
 )
 
-// Deserializer is a thread-safe wrapper around the native schema registry deserializer
+// Deserializer is a wrapper around the native schema registry deserializer
+// NOTE: This wrapper is NOT thread-safe. Each instance should be used by
+// only one context/operation to comply with native library constraints.
 type Deserializer struct {
 	deserializer GsrSerDe.Glue_schema_registry_deserializer
 	closed       bool
-	mu           sync.Mutex
 }
 
 // NewDeserializer creates a new deserializer instance
 func NewDeserializer() (*Deserializer, error) {
+	runtime.LockOSThread()
 	// Create error holder
 	err := createErrorHolder()
 	
@@ -37,16 +38,13 @@ func NewDeserializer() (*Deserializer, error) {
 	}
 	
 	// Set finalizer as a safety net
-	runtime.SetFinalizer(d, (*Deserializer).finalize)
+	//runtime.SetFinalizer(d, (*Deserializer).finalize)
 	
 	return d, nil
 }
 
 // Decode deserializes the encoded data
 func (d *Deserializer) Decode(data []byte) ([]byte, error) {
-	d.mu.Lock()
-	defer d.mu.Unlock()
-	
 	if d.closed {
 		return nil, ErrClosed
 	}
@@ -90,9 +88,6 @@ func (d *Deserializer) Decode(data []byte) ([]byte, error) {
 
 // CanDecode checks if the data can be decoded
 func (d *Deserializer) CanDecode(data []byte) (bool, error) {
-	d.mu.Lock()
-	defer d.mu.Unlock()
-	
 	if d.closed {
 		return false, ErrClosed
 	}
@@ -128,9 +123,6 @@ func (d *Deserializer) CanDecode(data []byte) (bool, error) {
 
 // DecodeSchema extracts the schema from encoded data
 func (d *Deserializer) DecodeSchema(data []byte) (*Schema, error) {
-	d.mu.Lock()
-	defer d.mu.Unlock()
-	
 	if d.closed {
 		return nil, ErrClosed
 	}
@@ -174,9 +166,6 @@ func (d *Deserializer) DecodeSchema(data []byte) (*Schema, error) {
 
 // Close releases all resources associated with the deserializer
 func (d *Deserializer) Close() error {
-	d.mu.Lock()
-	defer d.mu.Unlock()
-	
 	if d.closed {
 		return nil
 	}
@@ -189,7 +178,8 @@ func (d *Deserializer) Close() error {
 	}
 	
 	// Remove finalizer
-	runtime.SetFinalizer(d, nil)
+	//runtime.SetFinalizer(d, nil)
+	runtime.UnlockOSThread()
 	
 	return nil
 }

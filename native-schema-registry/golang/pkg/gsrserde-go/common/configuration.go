@@ -24,13 +24,15 @@ type Configuration struct {
 	avroRecordType            AvroRecordType
 	protobufMessageDescriptor protoreflect.MessageDescriptor
 	jsonObjectType            reflect.Type
+	additionalProperties      map[string]interface{}
 }
 
 // NewConfiguration creates a new Configuration from a map of configuration values.
 func NewConfiguration(configs map[string]interface{}) *Configuration {
 	c := &Configuration{
-		dataFormat:     DataFormatUnknown,
-		avroRecordType: AvroRecordTypeUnknown,
+		dataFormat:           DataFormatUnknown,
+		avroRecordType:       AvroRecordTypeUnknown,
+		additionalProperties: make(map[string]interface{}),
 	}
 	c.buildConfigs(configs)
 	return c
@@ -54,6 +56,29 @@ func (c *Configuration) ProtobufMessageDescriptor() protoreflect.MessageDescript
 // JSONObjectType returns the configured JSON object type.
 func (c *Configuration) JSONObjectType() reflect.Type {
 	return c.jsonObjectType
+}
+
+// AdditionalProperties returns the map of additional properties.
+func (c *Configuration) AdditionalProperties() map[string]interface{} {
+	return c.additionalProperties
+}
+
+// SetAdditionalProperty sets an additional property with the given key and value.
+func (c *Configuration) SetAdditionalProperty(key string, value interface{}) {
+	if c.additionalProperties == nil {
+		c.additionalProperties = make(map[string]interface{})
+	}
+	c.additionalProperties[key] = value
+}
+
+// GetAdditionalProperty gets an additional property by key.
+// Returns the value and a boolean indicating whether the key was found.
+func (c *Configuration) GetAdditionalProperty(key string) (interface{}, bool) {
+	if c.additionalProperties == nil {
+		return nil, false
+	}
+	value, exists := c.additionalProperties[key]
+	return value, exists
 }
 
 func (c *Configuration) buildConfigs(configs map[string]interface{}) {
