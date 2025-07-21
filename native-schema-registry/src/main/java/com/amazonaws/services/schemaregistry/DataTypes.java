@@ -1,6 +1,5 @@
 package com.amazonaws.services.schemaregistry;
 
-import com.oracle.svm.core.c.ProjectHeaderFile;
 import org.graalvm.nativeimage.c.CContext;
 import org.graalvm.nativeimage.c.function.CFunction;
 import org.graalvm.nativeimage.c.struct.CField;
@@ -9,6 +8,7 @@ import org.graalvm.nativeimage.c.struct.CStruct;
 import org.graalvm.nativeimage.c.type.CCharPointer;
 import org.graalvm.word.PointerBase;
 
+import java.io.File;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -21,8 +21,8 @@ public class DataTypes {
      */
     static class HandlerDirectives implements CContext.Directives {
 
-        public static final String INCLUDE_PATH = "c/include/";
-        public static final String LIB_PATH = "target/";
+        public static final String INCLUDE_PATH = "<ABSOLUTE_PATH>/native-schema-registry/c/include/";
+        public static final String LIB_PATH = "";
         //Intentionally blank.
         public static final String PROJECT_NAME = "";
 
@@ -33,7 +33,8 @@ public class DataTypes {
 
         @Override
         public List<String> getLibraryPaths() {
-            String path = ProjectHeaderFile.resolve(PROJECT_NAME, LIB_PATH).replaceAll("\"", "");
+            String currentDir = System.getProperty("user.dir");
+            String path = new File(currentDir, LIB_PATH).getAbsolutePath();
             return Collections.singletonList(path);
         }
 
@@ -45,7 +46,7 @@ public class DataTypes {
                 "mutable_byte_array.h",
                 "glue_schema_registry_error.h"
             )
-                .map(header -> ProjectHeaderFile.resolve(PROJECT_NAME, INCLUDE_PATH + header))
+                .map(header -> "\"" + INCLUDE_PATH + header + "\"")
                 .collect(Collectors.toList());
         }
     }

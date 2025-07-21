@@ -16,8 +16,7 @@ public class ProtobufPostprocessor {
 
         CodedInputStream inputStream = indexAndStreamPair.getRight();
         List<Byte> output = new ArrayList<>();
-        while (!inputStream.isAtEnd()){
-
+        while (!inputStream.isAtEnd()) {
             byte b = inputStream.readRawByte();
             output.add(b);
         }
