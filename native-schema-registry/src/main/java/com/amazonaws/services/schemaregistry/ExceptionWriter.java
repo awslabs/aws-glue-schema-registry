@@ -1,6 +1,5 @@
 package com.amazonaws.services.schemaregistry;
 
-import org.apache.kafka.common.protocol.types.Field;
 import org.graalvm.nativeimage.c.type.CTypeConversion;
 
 import java.util.StringJoiner;
@@ -60,7 +59,7 @@ public class ExceptionWriter {
             throwableMessage = throwable.getClass().getName() + " is thrown, but there is no detail message";
         } else {
             throwableMessage = throwable.getMessage();
-            if (throwable.getStackTrace()!= null){
+            if (throwable.getStackTrace() != null) {
                 shouldAppendStackTrace = true;
             }
         }

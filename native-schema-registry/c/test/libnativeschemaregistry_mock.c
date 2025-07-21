@@ -66,7 +66,7 @@ void initialize_deserializer(graal_isolatethread_t* thread) {
 mutable_byte_array* encode_with_schema(
         graal_isolatethread_t* isolatethread,
         read_only_byte_array* byte_array,
-        const char* transport_name,
+        char* transport_name,
         glue_schema_registry_schema* schema,
         glue_schema_registry_error** p_err) {
     validate_mock_state();
