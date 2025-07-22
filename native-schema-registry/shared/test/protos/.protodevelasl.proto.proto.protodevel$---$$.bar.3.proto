@@ -1,0 +1,7 @@
+syntax = "proto2";
+
+package com.amazonaws.services.schemaregistry.tests.protobuf.syntax2.basic;
+
+message bar {
+  optional int32 symbol = 1;
+}

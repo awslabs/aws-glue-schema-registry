@@ -242,7 +242,7 @@
         </module>
         <module name="LocalVariableName">
             <property name="severity" value="${checkstyle.localvariablename.severity}" default="error"/>
-            <property name="format" value="${checkstyle.localvariablename.severity}" default="^[a-z][a-zA-Z0-9]*$"/>
+            <property name="format" value="${checkstyle.localvariablename.format}" default="^[a-z][a-zA-Z0-9_]*$"/>
             <property name="allowOneCharVarInForLoop" value="${checkstyle.localvariablename.allowonecharvarinforloop}" default="false"/>
             <message key="name.invalidPattern"
                      value="Local variable name ''{0}'' must match pattern ''{1}''."/>
@@ -290,7 +290,7 @@
         </module>
         <module name="ParameterName">
             <property name="severity" value="${checkstyle.parametername.severity}" default="error"/>
-            <property name="format" value="${checkstyle.parametername.format}" default="^[a-z][a-zA-Z0-9]*$"/>
+            <property name="format" value="${checkstyle.parametername.format}" default="^[a-z][a-zA-Z0-9_]*$"/>
             <property name="ignoreOverridden" value="${checkstyle.parametername.ignoreoverridden}" default="false"/>
             <property name="accessModifiers" value="${checkstyle.parametername.accessmodifiers}" default="public, protected, package, private"/>
             <message key="name.invalidPattern"
@@ -308,7 +308,7 @@
         </module>
         <module name="TypeName">
             <property name="severity" value="${checkstyle.typename.severity}" default="error"/>
-            <property name="format" value="${checkstyle.typename.format}" default="^[A-Z][a-zA-Z0-9]*$"/>
+            <property name="format" value="${checkstyle.typename.format}" default="^[A-Z][a-zA-Z0-9_]*$"/>
             <property name="applyToPublic" value="${checkstyle.typename.applytopublic}" default="true"/>
             <property name="applyToProtected" value="${checkstyle.typename.applytoprotected}" default="true"/>
             <property name="applyToPackage" value="${checkstyle.typename.applytopackage}" default="true"/>
