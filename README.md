@@ -41,6 +41,8 @@ The following maven command will clean the target directory, compile the project
 
 `cd build-tools/ && mvn clean install && cd .. && mvn clean install`
 
+Note: If you get any issues due to JAVA_HOME not found, just set it to graalvm java 17 installation path.
+
 Alternatively, one could git clone this repo and run ``mvn clean install``.
 
 ## Testing

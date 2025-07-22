@@ -1,6 +1,5 @@
 package com.amazonaws.services.schemaregistry;
 
-import com.oracle.svm.core.c.ProjectHeaderFile;
 import org.graalvm.nativeimage.c.CContext;
 import org.graalvm.nativeimage.c.function.CFunction;
 import org.graalvm.nativeimage.c.struct.CField;
@@ -48,7 +47,7 @@ public class DataTypes {
                 "mutable_byte_array.h",
                 "glue_schema_registry_error.h"
             )
-                    .map(header -> "\"" + INCLUDE_PATH + header + "\"")
+                .map(header -> "\"" + INCLUDE_PATH + header + "\"")
                 .collect(Collectors.toList());
         }
     }

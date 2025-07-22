@@ -33,6 +33,11 @@ find_package(Python3 REQUIRED COMPONENTS Development)
 include_directories(${Python3_INCLUDE_DIRS})
 link_libraries(${Python3_LIBRARIES})
 
+find_package(Python3 REQUIRED COMPONENTS Development)
+
+include_directories(${Python3_INCLUDE_DIRS})
+link_libraries(${Python3_LIBRARIES})
+
 add_subdirectory("src")
 include (CTest)
 enable_testing()

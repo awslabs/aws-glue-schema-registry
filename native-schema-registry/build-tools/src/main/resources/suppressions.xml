@@ -31,4 +31,7 @@
     <suppress checks="TypeName" files="DataTypes\.java"/>
     <suppress checks="ParameterName" files=".*Handler\.java"/>
     <suppress checks="LocalVariableName" files=".*Handler\.java"/>
+    
+    <!-- Allow existing package naming convention -->
+    <suppress checks="PackageName" files=".*\.java"/>
 </suppressions>
