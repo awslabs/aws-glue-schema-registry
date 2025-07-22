@@ -148,7 +148,7 @@ add_custom_command(
 ####Go
 set(GO_MODULE_NAME GsrSerDeGoGen)
 set(GO_ROOT_PATH ${PROJECT_SOURCE_DIR}/../golang)
-set(GO_SOURCE_PATH ${GO_ROOT_PATH}/pkg/gsrserde)
+set(GO_SOURCE_PATH ${GO_ROOT_PATH}/pkg/GsrSerDe)
 set(GO_LIB_PATH ${GO_ROOT_PATH}/lib)
 swig_add_library(
         ${GO_MODULE_NAME}
