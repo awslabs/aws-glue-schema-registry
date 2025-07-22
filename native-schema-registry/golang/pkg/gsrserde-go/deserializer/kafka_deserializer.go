@@ -21,49 +21,22 @@ func stringToDataFormat(dataFormatStr string) (common.DataFormat, error) {
 	}
 }
 
-// KafkaDeserializerConfig holds configuration for the Kafka deserializer
-type KafkaDeserializerConfig struct {
-	// AWS Configuration
-	Region       string
-	RegistryName string
-
-	// Caching Configuration
-	CacheSize int
-	CacheTTL  int // in seconds
-
-	// Compression Configuration
-	CompressionType string
-
-	// Additional configuration options
-	AdditionalConfig map[string]interface{}
-}
-
-// DefaultKafkaDeserializerConfig returns a default configuration
-func DefaultKafkaDeserializerConfig() *KafkaDeserializerConfig {
-	return &KafkaDeserializerConfig{
-		Region:           "us-east-1",
-		CacheSize:        100,
-		CacheTTL:         3600, // 1 hour
-		CompressionType:  "none",
-		AdditionalConfig: make(map[string]interface{}),
-	}
-}
-
 // KafkaDeserializer is a Kafka-specific deserializer that mirrors the C# implementation
 // It provides a high-level interface for deserializing Kafka messages using AWS Glue Schema Registry
 // NOTE: This deserializer is NOT thread-safe. Each instance should be used by
 // only one context/operation to comply with native library constraints.
 type KafkaDeserializer struct {
-	coreDeserializer *gsrserde.Deserializer
-	formatFactory    DeserializerFactory
-	config           *KafkaDeserializerConfig
-	closed           bool
+	coreDeserializer   *gsrserde.Deserializer
+	formatDeserializer DataFormatDeserializer
+	formatFactory      DeserializerFactory
+	config             *common.Configuration
+	closed             bool
 }
 
 // NewKafkaDeserializer creates a new Kafka deserializer instance
-func NewKafkaDeserializer(config *KafkaDeserializerConfig) (*KafkaDeserializer, error) {
+func NewKafkaDeserializer(config *common.Configuration) (*KafkaDeserializer, error) {
 	if config == nil {
-		config = DefaultKafkaDeserializerConfig()
+		return nil, fmt.Errorf("configuration cannot be nil")
 	}
 
 	// Create core deserializer for GSR operations
@@ -75,31 +48,19 @@ func NewKafkaDeserializer(config *KafkaDeserializerConfig) (*KafkaDeserializer, 
 	// Get format deserializer factory
 	formatFactory := GetDeserializerFactory()
 
+	// Create format deserializer based on configuration
+	formatDeserializer, err := formatFactory.GetDeserializer(config)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create format deserializer: %w", err)
+	}
+
 	return &KafkaDeserializer{
-		coreDeserializer: coreDeserializer,
-		formatFactory:    formatFactory,
-		config:           config,
-		closed:           false,
+		coreDeserializer:   coreDeserializer,
+		formatDeserializer: formatDeserializer,
+		formatFactory:      formatFactory,
+		config:             config,
+		closed:             false,
 	}, nil
-}
-
-// NewKafkaDeserializerWithDefaults creates a new Kafka deserializer with default configuration
-func NewKafkaDeserializerWithDefaults() (*KafkaDeserializer, error) {
-	return NewKafkaDeserializer(DefaultKafkaDeserializerConfig())
-}
-
-// Configure updates the deserializer configuration
-func (kd *KafkaDeserializer) Configure(config *KafkaDeserializerConfig) error {
-	if kd.closed {
-		return gsrserde.ErrClosed
-	}
-
-	if config == nil {
-		return fmt.Errorf("configuration cannot be nil")
-	}
-
-	kd.config = config
-	return nil
 }
 
 // Deserialize deserializes a Kafka message using AWS Glue Schema Registry
@@ -192,15 +153,8 @@ func (kd *KafkaDeserializer) GetSchema(data []byte) (*gsrserde.Schema, error) {
 }
 
 // GetConfiguration returns the current configuration
-func (kd *KafkaDeserializer) GetConfiguration() *KafkaDeserializerConfig {
-	// Return a copy to prevent external modification
-	configCopy := *kd.config
-	configCopy.AdditionalConfig = make(map[string]interface{})
-	for k, v := range kd.config.AdditionalConfig {
-		configCopy.AdditionalConfig[k] = v
-	}
-
-	return &configCopy
+func (kd *KafkaDeserializer) GetConfiguration() *common.Configuration {
+	return kd.config
 }
 
 // Close releases all resources associated with the deserializer

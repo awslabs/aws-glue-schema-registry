@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/awslabs/aws-glue-schema-registry/native-schema-registry/golang/pkg/gsrserde-go"
+	"github.com/awslabs/aws-glue-schema-registry/native-schema-registry/golang/pkg/gsrserde-go/avro"
 	"github.com/awslabs/aws-glue-schema-registry/native-schema-registry/golang/pkg/gsrserde-go/common"
 )
 
@@ -21,56 +22,22 @@ func stringToDataFormat(dataFormatStr string) (common.DataFormat, error) {
 	}
 }
 
-// KafkaSerializerConfig holds configuration for the Kafka serializer
-type KafkaSerializerConfig struct {
-	// AWS Configuration
-	Region       string
-	RegistryName string
-
-	// Schema Configuration
-	AutoRegisterSchemas bool
-	SchemaCompatibility string
-
-	// Caching Configuration
-	CacheSize int
-	CacheTTL  int // in seconds
-
-	// Compression Configuration
-	CompressionType string
-
-	// Additional configuration options
-	AdditionalConfig map[string]interface{}
-}
-
-// DefaultKafkaSerializerConfig returns a default configuration
-func DefaultKafkaSerializerConfig() *KafkaSerializerConfig {
-	return &KafkaSerializerConfig{
-		Region:              "us-east-1",
-		AutoRegisterSchemas: true,
-		SchemaCompatibility: "BACKWARD",
-		CacheSize:           100,
-		CacheTTL:            3600, // 1 hour
-		CompressionType:     "none",
-		AdditionalConfig:    make(map[string]interface{}),
-	}
-}
-
 // KafkaSerializer is a Kafka-specific serializer that mirrors the C# implementation
 // It provides a high-level interface for serializing Kafka messages using AWS Glue Schema Registry
 // NOTE: This serializer is NOT thread-safe. Each instance should be used by
 // only one context/operation to comply with native library constraints.
 type KafkaSerializer struct {
-	coreSerializer    *gsrserde.Serializer
-	formatFactory     SerializerFactory
-	config            *KafkaSerializerConfig
-	schemaNameStrategy common.SchemaNameStrategy
-	closed            bool
+	coreSerializer   *gsrserde.Serializer
+	formatSerializer DataFormatSerializer
+	formatFactory    SerializerFactory
+	config           *common.Configuration
+	closed           bool
 }
 
 // NewKafkaSerializer creates a new Kafka serializer instance
-func NewKafkaSerializer(config *KafkaSerializerConfig) (*KafkaSerializer, error) {
+func NewKafkaSerializer(config *common.Configuration) (*KafkaSerializer, error) {
 	if config == nil {
-		config = DefaultKafkaSerializerConfig()
+		return nil, fmt.Errorf("configuration cannot be nil")
 	}
 
 	// Create core serializer for GSR operations
@@ -82,32 +49,19 @@ func NewKafkaSerializer(config *KafkaSerializerConfig) (*KafkaSerializer, error)
 	// Get format serializer factory
 	formatFactory := GetSerializerFactory()
 
+	// Create format serializer based on configuration
+	formatSerializer, err := formatFactory.GetSerializer(config)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create format serializer: %w", err)
+	}
+
 	return &KafkaSerializer{
-		coreSerializer:     coreSerializer,
-		formatFactory:      formatFactory,
-		config:             config,
-		schemaNameStrategy: &common.DefaultSchemaNameStrategy{},
-		closed:             false,
+		coreSerializer:   coreSerializer,
+		formatSerializer: formatSerializer,
+		formatFactory:    formatFactory,
+		config:           config,
+		closed:           false,
 	}, nil
-}
-
-// NewKafkaSerializerWithDefaults creates a new Kafka serializer with default configuration
-func NewKafkaSerializerWithDefaults() (*KafkaSerializer, error) {
-	return NewKafkaSerializer(DefaultKafkaSerializerConfig())
-}
-
-// Configure updates the serializer configuration
-func (ks *KafkaSerializer) Configure(config *KafkaSerializerConfig) error {
-	if ks.closed {
-		return gsrserde.ErrClosed
-	}
-
-	if config == nil {
-		return fmt.Errorf("configuration cannot be nil")
-	}
-
-	ks.config = config
-	return nil
 }
 
 // Serialize serializes a message for Kafka using AWS Glue Schema Registry
@@ -123,45 +77,25 @@ func (ks *KafkaSerializer) Serialize(topic string, data interface{}) ([]byte, er
 	}
 
 	// Create schema based on the data type
-	schema, err := ks.createSchemaFromData(data, topic)
+	schema, err := ks.getSchemaFromData(data, topic)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create schema from data: %w", err)
 	}
 
-	// Create configuration from schema information
-	configMap := make(map[string]interface{})
-	
-	// Convert schema DataFormat string to DataFormat enum
-	dataFormat, err := stringToDataFormat(schema.DataFormat)
-	if err != nil {
-		return nil, err
-	}
-	
-	configMap[common.DataFormatTypeKey] = dataFormat
-	
-	// Create configuration object
-	config := common.NewConfiguration(configMap)
-	
-	// Get the appropriate format serializer (mirrors C# factory.GetSerializer call)
-	formatSerializer, err := ks.formatFactory.GetSerializer(config)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get serializer for format %s: %w", schema.DataFormat, err)
-	}
-
 	// Let the format serializer set additional schema info
-	if err := formatSerializer.SetAdditionalSchemaInfo(data, schema); err != nil {
+	if err := ks.formatSerializer.SetAdditionalSchemaInfo(data, schema); err != nil {
 		return nil, fmt.Errorf("failed to set additional schema info: %w", err)
 	}
 
 	// Validate the object before serialization
-	if err := formatSerializer.ValidateObject(data); err != nil {
+	if err := ks.formatSerializer.ValidateObject(data); err != nil {
 		return nil, fmt.Errorf("data validation failed: %w", err)
 	}
 
 	// Serialize the message content (mirrors C# serializer.Serialize call)
-	serializedData, err := formatSerializer.Serialize(data)
+	serializedData, err := ks.formatSerializer.Serialize(data)
 	if err != nil {
-		return nil, fmt.Errorf("failed to serialize %s data: %w", dataFormat, err)
+		return nil, fmt.Errorf("failed to serialize data: %w", err)
 	}
 
 	// Wrap with GSR header using transport name (topic)
@@ -241,7 +175,7 @@ func (ks *KafkaSerializer) ValidateData(data interface{}) error {
 	}
 
 	// Create schema to determine data format
-	schema, err := ks.createSchemaFromData(data, "")
+	schema, err := ks.getSchemaFromData(data, "")
 	if err != nil {
 		return fmt.Errorf("failed to create schema from data: %w", err)
 	}
@@ -280,12 +214,12 @@ func (ks *KafkaSerializer) GetSchemaFromData(data interface{}) (*gsrserde.Schema
 		return nil, gsrserde.ErrNilData
 	}
 
-	return ks.createSchemaFromData(data, "")
+	return ks.getSchemaFromData(data, "")
 }
 
-// createSchemaFromData creates a schema based on the data type
+// getSchemaFromData creates a schema based on the data type
 // This determines the appropriate data format based on the Go type
-func (ks *KafkaSerializer) createSchemaFromData(data interface{}, topic string) (*gsrserde.Schema, error) {
+func (ks *KafkaSerializer) getSchemaFromData(data interface{}, topic string) (*gsrserde.Schema, error) {
 	if data == nil {
 		return nil, gsrserde.ErrNilData
 	}
@@ -299,10 +233,9 @@ func (ks *KafkaSerializer) createSchemaFromData(data interface{}, topic string) 
 	}
 
 	// Determine data format based on type
-	// This mirrors the C# logic for detecting data format
+	// This enforces schema-aware types for AVRO
 	switch data.(type) {
-	case map[string]interface{}:
-		// AVRO records are represented as map[string]interface{} in Go
+	case *avro.AvroRecord:
 		schema.DataFormat = "AVRO"
 	default:
 		// Check if it's a protobuf message
@@ -347,27 +280,17 @@ func (ks *KafkaSerializer) createSchemaFromData(data interface{}, topic string) 
 		return nil, fmt.Errorf("failed to set additional schema info: %w", err)
 	}
 
-	// Generate schema name using the naming strategy and topic
-	if topic != "" && ks.schemaNameStrategy != nil {
-		schemaName := ks.schemaNameStrategy.GetSchemaName(data, topic)
-		if schemaName != "" {
-			schema.Name = schemaName
-		}
+	// Generate schema name using topic (simple naming strategy)
+	if topic != "" {
+		schema.Name = topic + "-value"
 	}
 
 	return schema, nil
 }
 
 // GetConfiguration returns the current configuration
-func (ks *KafkaSerializer) GetConfiguration() *KafkaSerializerConfig {
-	// Return a copy to prevent external modification
-	configCopy := *ks.config
-	configCopy.AdditionalConfig = make(map[string]interface{})
-	for k, v := range ks.config.AdditionalConfig {
-		configCopy.AdditionalConfig[k] = v
-	}
-
-	return &configCopy
+func (ks *KafkaSerializer) GetConfiguration() *common.Configuration {
+	return ks.config
 }
 
 // Close releases all resources associated with the serializer

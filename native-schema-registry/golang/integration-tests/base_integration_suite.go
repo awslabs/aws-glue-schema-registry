@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
+	"github.com/awslabs/aws-glue-schema-registry/native-schema-registry/golang/pkg/gsrserde-go/common"
 	"github.com/awslabs/aws-glue-schema-registry/native-schema-registry/golang/pkg/gsrserde-go/deserializer"
 	"github.com/awslabs/aws-glue-schema-registry/native-schema-registry/golang/pkg/gsrserde-go/serializer"
 )
@@ -42,7 +43,7 @@ func (s *BaseIntegrationSuite) SetupSuite() {
 // TearDownSuite is called once after all tests in the suite
 func (s *BaseIntegrationSuite) TearDownSuite() {
 	s.T().Log("=== Starting Base Suite Teardown ===")
-	
+
 	// Clear any remaining references and let Go GC handle cleanup
 	s.kafkaSerializer = nil
 	s.kafkaDeserializer = nil
@@ -59,7 +60,7 @@ func (s *BaseIntegrationSuite) SetupTest() {
 	s.T().Logf("Test setup complete for topic: %s", s.topicName)
 }
 
-// TearDownTest is called after each test method  
+// TearDownTest is called after each test method
 func (s *BaseIntegrationSuite) TearDownTest() {
 	s.T().Log("Starting test teardown...")
 
@@ -78,20 +79,8 @@ func (s *BaseIntegrationSuite) TearDownTest() {
 	s.T().Log("Test teardown complete")
 }
 
-
 // createKafkaSerializer creates a KafkaSerializer configured for AWS GSR
-func (s *BaseIntegrationSuite) createKafkaSerializer() *serializer.KafkaSerializer {
-	config := &serializer.KafkaSerializerConfig{
-		Region:              s.getAWSRegion(),
-		RegistryName:        testRegistryName,
-		AutoRegisterSchemas: true,
-		SchemaCompatibility: "BACKWARD",
-		CacheSize:           100,
-		CacheTTL:            3600,
-		CompressionType:     "none",
-		AdditionalConfig:    make(map[string]interface{}),
-	}
-
+func (s *BaseIntegrationSuite) createKafkaSerializer(config *common.Configuration) *serializer.KafkaSerializer {
 	kafkaSerializer, err := serializer.NewKafkaSerializer(config)
 	require.NoError(s.T(), err, "Should create KafkaSerializer")
 	require.NotNil(s.T(), kafkaSerializer, "KafkaSerializer should not be nil")
@@ -100,16 +89,7 @@ func (s *BaseIntegrationSuite) createKafkaSerializer() *serializer.KafkaSerializ
 }
 
 // createKafkaDeserializer creates a KafkaDeserializer configured for AWS GSR
-func (s *BaseIntegrationSuite) createKafkaDeserializer() *deserializer.KafkaDeserializer {
-	config := &deserializer.KafkaDeserializerConfig{
-		Region:           s.getAWSRegion(),
-		RegistryName:     testRegistryName,
-		CacheSize:        100,
-		CacheTTL:         3600,
-		CompressionType:  "none",
-		AdditionalConfig: make(map[string]interface{}),
-	}
-
+func (s *BaseIntegrationSuite) createKafkaDeserializer(config *common.Configuration) *deserializer.KafkaDeserializer {
 	kafkaDeserializer, err := deserializer.NewKafkaDeserializer(config)
 	require.NoError(s.T(), err, "Should create KafkaDeserializer")
 	require.NotNil(s.T(), kafkaDeserializer, "KafkaDeserializer should not be nil")
@@ -121,11 +101,12 @@ func (s *BaseIntegrationSuite) createKafkaDeserializer() *deserializer.KafkaDese
 func (s *BaseIntegrationSuite) runKafkaIntegrationTest(
 	originalMessage interface{},
 	validate func(original, deserialized interface{}),
+	config *common.Configuration,
 ) {
 	ctx := context.Background()
 
 	// Step 1: Create KafkaSerializer with GSR configuration
-	s.kafkaSerializer = s.createKafkaSerializer()
+	s.kafkaSerializer = s.createKafkaSerializer(config)
 
 	// Step 2: Serialize the message (auto-registers schema with GSR)
 	s.T().Logf("Serializing %T message", originalMessage)
@@ -134,7 +115,7 @@ func (s *BaseIntegrationSuite) runKafkaIntegrationTest(
 	require.NotEmpty(s.T(), gsrEncodedData, "Serialized data should not be empty")
 	s.T().Logf("Serialized message: %d bytes", len(gsrEncodedData))
 
-	s.T().Logf("Publishing message to topicName: %s with",s.topicName)
+	s.T().Logf("Publishing message to topicName: %s with", s.topicName)
 	// Step 3: Publish the GSR-encoded data to Kafka
 	s.publishMessageToKafka(ctx, s.topicName, gsrEncodedData)
 
@@ -143,7 +124,7 @@ func (s *BaseIntegrationSuite) runKafkaIntegrationTest(
 	require.Equal(s.T(), gsrEncodedData, consumedData, "Data consumed from Kafka should match published data")
 
 	// Step 5: Create KafkaDeserializer and deserialize the GSR-encoded data
-	s.kafkaDeserializer = s.createKafkaDeserializer()
+	s.kafkaDeserializer = s.createKafkaDeserializer(config)
 
 	// Verify the data can be deserialized
 	canDeserialize, err := s.kafkaDeserializer.CanDeserialize(consumedData)

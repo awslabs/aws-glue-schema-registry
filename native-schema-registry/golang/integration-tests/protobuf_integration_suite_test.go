@@ -11,6 +11,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/awslabs/aws-glue-schema-registry/native-schema-registry/golang/integration-tests/testpb"
+	"github.com/awslabs/aws-glue-schema-registry/native-schema-registry/golang/pkg/gsrserde-go/common"
 )
 
 // ProtobufIntegrationSuite tests Protobuf integration with Kafka and AWS GSR
@@ -35,8 +36,18 @@ func (s *ProtobufIntegrationSuite) TestProtobufKafkaIntegration() {
 		Tags:  []string{"integration", "test", "protobuf", "suite"},
 	}
 
-	// Run the integration test with validation
-	s.runKafkaIntegrationTest(message, s.validateProtobufMessage)
+	// Extract the message descriptor using protobuf reflection
+	messageDescriptor := message.ProtoReflect().Descriptor()
+
+	// Create Protobuf configuration
+	configMap := map[string]interface{}{
+		common.DataFormatTypeKey:            common.DataFormatProtobuf,
+		common.ProtobufMessageDescriptorKey: messageDescriptor,
+	}
+	config := common.NewConfiguration(configMap)
+
+	// Run the integration test with validation and configuration
+	s.runKafkaIntegrationTest(message, s.validateProtobufMessage, config)
 
 	s.T().Log("--- Protobuf Kafka Integration Test Complete ---")
 }

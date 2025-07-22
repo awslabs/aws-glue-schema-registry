@@ -22,7 +22,6 @@ func NewSerializer() (*Serializer, error) {
 	
 	// Create native serializer
 	serializer := GsrSerDe.NewGlue_schema_registry_serializer(err)
-	GsrSerDe.
 	
 	// Check for errors
 	if err != nil && err.Swigcptr() != 0 {
