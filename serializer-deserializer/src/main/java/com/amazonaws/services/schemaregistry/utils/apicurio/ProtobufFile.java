@@ -14,9 +14,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+<<<<<<< HEAD
  *
  * This will be removed once Apicurio releases the latest version with the json_name fix
  * https://github.com/Apicurio/apicurio-registry/blob/master/utils/protobuf-schema-utilities/src/main/java/io/apicurio/registry/utils/protobuf/schema/ProtobufFile.java
+=======
+>>>>>>> kafka-connect-converter-protobuf
  */
 
 package com.amazonaws.services.schemaregistry.utils.apicurio;
@@ -25,27 +28,14 @@ import com.google.common.collect.ContiguousSet;
 import com.google.common.collect.DiscreteDomain;
 import com.google.common.collect.Range;
 import com.google.common.io.Files;
+import com.squareup.wire.Syntax;
 import com.squareup.wire.schema.Location;
-import com.squareup.wire.schema.internal.parser.EnumConstantElement;
-import com.squareup.wire.schema.internal.parser.EnumElement;
-import com.squareup.wire.schema.internal.parser.FieldElement;
-import com.squareup.wire.schema.internal.parser.MessageElement;
-import com.squareup.wire.schema.internal.parser.OneOfElement;
-import com.squareup.wire.schema.internal.parser.ProtoFileElement;
-import com.squareup.wire.schema.internal.parser.ProtoParser;
-import com.squareup.wire.schema.internal.parser.ReservedElement;
-import com.squareup.wire.schema.internal.parser.RpcElement;
-import com.squareup.wire.schema.internal.parser.ServiceElement;
-import com.squareup.wire.schema.internal.parser.TypeElement;
+import com.squareup.wire.schema.internal.parser.*;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Indexed representation of the data resulting from parsing a single .proto protobuf schema file,
@@ -170,6 +160,10 @@ public class ProtobufFile {
      */
     public Map<String, Map<String, String>> getServiceRPCSignatures() {
         return serviceRPCSignatures;
+    }
+
+    public Syntax getSyntax() {
+        return element.getSyntax();
     }
 
     private void buildIndexes() {

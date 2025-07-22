@@ -31,7 +31,7 @@
     <parent>
         <groupId>software.amazon.glue</groupId>
         <artifactId>schema-registry-parent</artifactId>
-        <version>1.1.10</version>
+        <version>1.1.24</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -76,10 +76,6 @@
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok-utils</artifactId>
         </dependency>
         <dependency>
             <groupId>commons-cli</groupId>

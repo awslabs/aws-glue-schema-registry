@@ -1,0 +1,12 @@
+package com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax2;
+
+message OneofType {
+  oneof customer {
+    string name = 5;
+    int32 age = 6;
+  }
+  oneof order {
+    int32 id = 1;
+    bool shipped = 2;
+  }
+}

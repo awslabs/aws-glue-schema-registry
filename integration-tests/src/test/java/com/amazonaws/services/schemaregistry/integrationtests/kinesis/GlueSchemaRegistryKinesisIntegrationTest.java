@@ -17,9 +17,6 @@ package com.amazonaws.services.schemaregistry.integrationtests.kinesis;
 
 import cloud.localstack.Constants;
 import cloud.localstack.ServiceName;
-import cloud.localstack.awssdkv2.TestUtils;
-import cloud.localstack.docker.LocalstackDockerExtension;
-import cloud.localstack.docker.annotation.LocalstackDockerProperties;
 import com.amazonaws.services.kinesis.producer.KinesisProducer;
 import com.amazonaws.services.kinesis.producer.KinesisProducerConfiguration;
 import com.amazonaws.services.kinesis.producer.UserRecordResult;
@@ -49,7 +46,6 @@ import org.awaitility.Awaitility;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -106,15 +102,11 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@ExtendWith(LocalstackDockerExtension.class)
-@LocalstackDockerProperties(services = {ServiceName.KINESIS, ServiceName.DYNAMO, ServiceName.CLOUDWATCH}, imageName =
-        "public.ecr.aws/d4c7g6k3/localstack", imageTag = "0.12.10")
 public class GlueSchemaRegistryKinesisIntegrationTest {
     private static final Logger LOGGER = LogManager.getLogger(GlueSchemaRegistryKinesisIntegrationTest.class);
-    private static final DynamoDbAsyncClient dynamoClient = TestUtils.getClientDyanamoAsyncV2();
-    private static final CloudWatchAsyncClient cloudWatchClient = TestUtils.getClientCloudWatchAsyncV2();
     private static final String LOCALSTACK_HOSTNAME = "localhost";
     private static final int LOCALSTACK_KINESIS_PORT = 4566;
+    private static final String LOCALSTACK_ENDPOINT = String.format("http://%s:%d",LOCALSTACK_HOSTNAME,LOCALSTACK_KINESIS_PORT);
     private static final int LOCALSTACK_CLOUDWATCH_PORT = Constants.DEFAULT_PORTS.get(ServiceName.CLOUDWATCH)
             .intValue();
     private static final int KCL_SCHEDULER_START_UP_WAIT_TIME_SECONDS = 15;
@@ -139,6 +131,26 @@ public class GlueSchemaRegistryKinesisIntegrationTest {
     private static GlueSchemaRegistryDeserializer glueSchemaRegistryDeserializer;
     private static AwsCredentialsProvider awsCredentialsProvider = DefaultCredentialsProvider.builder()
             .build();
+
+    private static final DynamoDbAsyncClient dynamoClient;
+    private static final CloudWatchAsyncClient cloudWatchClient;
+
+    static {
+        try {
+            dynamoClient = DynamoDbAsyncClient.builder()
+                .endpointOverride(new URI(LOCALSTACK_ENDPOINT))
+                .region(Region.of(GlueSchemaRegistryConnectionProperties.REGION))
+                .credentialsProvider(awsCredentialsProvider)
+                .build();
+            cloudWatchClient = CloudWatchAsyncClient.builder()
+                .endpointOverride(new URI(LOCALSTACK_ENDPOINT))
+                .region(Region.of(GlueSchemaRegistryConnectionProperties.REGION))
+                .credentialsProvider(awsCredentialsProvider)
+                .build();
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     private static List<String> schemasToCleanUp = new ArrayList<>();
     private final TestDataGeneratorFactory testDataGeneratorFactory = new TestDataGeneratorFactory();
@@ -219,9 +231,12 @@ public class GlueSchemaRegistryKinesisIntegrationTest {
     }
 
     @BeforeEach
-    public void setUp() throws InterruptedException, ExecutionException {
+    public void setUp() throws InterruptedException, ExecutionException, URISyntaxException {
         System.setProperty(SdkSystemSetting.CBOR_ENABLED.property(), "false");
-        kinesisClient = TestUtils.getClientKinesisAsyncV2();
+        kinesisClient = KinesisAsyncClient.builder()
+            .endpointOverride(new URI(LOCALSTACK_ENDPOINT))
+            .region(Region.of(GlueSchemaRegistryConnectionProperties.REGION))
+            .build();
 
         streamName = String.format("%s%s", TEST_KINESIS_STREAM_PREFIX, RandomStringUtils.randomAlphanumeric(4));
         LOGGER.info("Creating Kinesis Stream : {} with {} shards on localStack..", streamName, SHARD_COUNT);
@@ -496,7 +511,7 @@ public class GlueSchemaRegistryKinesisIntegrationTest {
             byte[] serializedBytes = dataFormatSerializer.serialize(record);
 
             putFutures.add(producer.addUserRecord(streamName, Long.toString(timestamp.toEpochMilli()), null,
-                                                  ByteBuffer.wrap(serializedBytes), gsrSchema));
+                                                  ByteBuffer.wrap(serializedBytes),gsrSchema));
         }
 
         String shardId = null;

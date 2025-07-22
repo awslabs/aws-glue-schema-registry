@@ -14,18 +14,17 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
- * This will be removed once Apicurio releases the latest version with the json_name fix
- * https://github.com/Apicurio/apicurio-registry/blob/master/utils/protobuf-schema-utilities/src/main/java/io/apicurio/registry/utils/protobuf/schema/ProtobufMessage.java
  */
 
 package com.amazonaws.services.schemaregistry.utils.apicurio;
 
-import java.util.HashMap;
-import java.util.Map;
 import com.google.protobuf.DescriptorProtos;
 import com.google.protobuf.DescriptorProtos.DescriptorProto;
 import com.google.protobuf.DescriptorProtos.FieldDescriptorProto;
+import metadata.ProtobufSchemaMetadata;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author Fabian Martinez
@@ -88,12 +87,14 @@ public class ProtobufMessage {
             Boolean isPacked,
             DescriptorProtos.FieldOptions.CType ctype,
             DescriptorProtos.FieldOptions.JSType jsType,
+            String metadataKey,
+            String metadataValue,
             Integer oneOfIndex,
             Boolean isProto3Optional
-    ) {
+        ) {
         descriptorProtoBuilder.addField(
                 buildFieldDescriptorProto(label, type, typeName, name, num, defaultVal, jsonName, isDeprecated,
-                        isPacked, ctype, jsType, oneOfIndex, isProto3Optional)
+                        isPacked, ctype, jsType, metadataKey, metadataValue, oneOfIndex, isProto3Optional)
         );
     }
 
@@ -108,6 +109,8 @@ public class ProtobufMessage {
                                                                  Boolean isPacked,
                                                                  DescriptorProtos.FieldOptions.CType ctype,
                                                                  DescriptorProtos.FieldOptions.JSType jsType,
+                                                                 String metadataKey,
+                                                                 String metadataValue,
                                                                  Integer oneOfIndex,
                                                                  Boolean isProto3Optional) {
         FieldDescriptorProto.Builder fieldBuilder = FieldDescriptorProto.newBuilder();
@@ -160,6 +163,18 @@ public class ProtobufMessage {
         if (ctype != null) {
             DescriptorProtos.FieldOptions.Builder optionsBuilder = DescriptorProtos.FieldOptions.newBuilder();
             optionsBuilder.setCtype(ctype);
+            fieldBuilder.mergeOptions(optionsBuilder.build());
+        }
+
+        if (metadataKey != null) {
+            DescriptorProtos.FieldOptions.Builder optionsBuilder = DescriptorProtos.FieldOptions.newBuilder();
+            optionsBuilder.setExtension(ProtobufSchemaMetadata.metadataKey, metadataKey);
+            fieldBuilder.mergeOptions(optionsBuilder.build());
+        }
+
+        if (metadataValue != null) {
+            DescriptorProtos.FieldOptions.Builder optionsBuilder = DescriptorProtos.FieldOptions.newBuilder();
+            optionsBuilder.setExtension(ProtobufSchemaMetadata.metadataValue, metadataValue);
             fieldBuilder.mergeOptions(optionsBuilder.build());
         }
 

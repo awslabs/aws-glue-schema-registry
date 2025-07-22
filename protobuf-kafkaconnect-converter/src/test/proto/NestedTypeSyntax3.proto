@@ -1,0 +1,24 @@
+syntax = "proto3";
+package com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax3;
+
+message NestedType {
+  Address address = 1;
+  Status status = 2;
+  Customer customer = 3;
+  map<string, bool> mapping = 4;
+  optional int32 id = 5;
+
+  message Customer {
+    string name = 1;
+  }
+}
+
+message Address {
+  string street = 1;
+  int32 zipcode = 2;
+}
+
+enum Status {
+  VALID = 0;
+  INVALID = 1;
+}
