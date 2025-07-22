@@ -61,18 +61,21 @@ downloadMongoDBConnector() {
 
 AVRO_CONVERTER=schema-registry-kafkaconnect-converter-*.jar
 JSON_SCHEMA_CONVERTER=jsonschema-kafkaconnect-converter-*.jar
+PROTOBUF_SCHEMA_CONVERTER=protobuf-kafkaconnect-converter-*.jar
 
 copyGSRConverters() {
     cp ../avro-kafkaconnect-converter/target/${AVRO_CONVERTER} .
     cp ../jsonschema-kafkaconnect-converter/target/${JSON_SCHEMA_CONVERTER} .
+    cp ../protobuf-kafkaconnect-converter/target/${PROTOBUF_SCHEMA_CONVERTER} .
 }
 
 startKafkaConnectTasks() {
     if [ $1 == 'avro' ]; then
         CONVERTER_JAR=${AVRO_CONVERTER}
-    else if [ $1 == 'json' ]; then
+    elif [ $1 == 'json' ]; then
         CONVERTER_JAR=${JSON_SCHEMA_CONVERTER}
-        fi
+    elif [ $1 == 'protobuf' ]; then
+        CONVERTER_JAR=${PROTOBUF_SCHEMA_CONVERTER}
     fi
 
     ### Get inside the kafka_connect container and run source and sink connector tasks
@@ -112,7 +115,7 @@ cleanUpConnectFiles() {
 
 cleanUpDockerResources || true
 # Start Kafka using docker command asynchronously
-docker-compose up &
+docker-compose up --no-attach localstack &
 sleep 10
 ## Run mvn tests for Kafka and Kinesis Platforms
 cd .. && mvn --file integration-tests/pom.xml verify -Psurefire -X && cd integration-tests
@@ -128,7 +131,7 @@ downloadMongoDBConnector
 copyGSRConverters
 
 runConnectTests() {
-    docker-compose up &
+    docker-compose up --no-attach localstack &
     setUpMongoDBLocal
     startKafkaConnectTasks ${1}
     echo "Waiting for Sink task to pick up data.."
@@ -139,7 +142,7 @@ runConnectTests() {
     cleanUpDockerResources
 }
 
-for format in avro json
+for format in avro json protobuf
 do
     runConnectTests ${format}
 done

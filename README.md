@@ -62,7 +62,7 @@ The recommended way to use the AWS Glue Schema Registry Library for Java is to c
   <dependency>
       <groupId>software.amazon.glue</groupId>
       <artifactId>schema-registry-serde</artifactId>
-      <version>1.1.10</version>
+      <version>1.1.24</version>
   </dependency>
   ```
 ### Code Example
@@ -383,7 +383,7 @@ Alternatively, a schema registry naming strategy implementation can be provided.
     properties.put(AWSSchemaRegistryConstants.SCHEMA_NAMING_GENERATION_CLASS,
                     "com.amazonaws.services.schemaregistry.serializers.avro.CustomerProvidedSchemaNamingStrategy");
 ```
-An example test implementation class is [here](https://github.com/awslabs/aws-glue-schema-registry/blob/master/avro-serializer-deserializer/src/test/java/com/amazonaws/services/schemaregistry/serializers/avro/CustomerProvidedSchemaNamingStrategy.java).
+An example test implementation class is [here](https://github.com/awslabs/aws-glue-schema-registry/blob/master/serializer-deserializer/src/test/java/com/amazonaws/services/schemaregistry/serializers/avro/CustomerProvidedSchemaNamingStrategy.java).
 
 ### Providing Registry Description
 
@@ -492,7 +492,7 @@ It should look like this
 * If using bash, run the below commands to set-up your CLASSPATH in your bash_profile. (For any other shell, update the environment accordingly.)
   ```bash
       echo 'export GSR_LIB_BASE_DIR=<>' >>~/.bash_profile
-      echo 'export GSR_LIB_VERSION=1.1.10' >>~/.bash_profile
+      echo 'export GSR_LIB_VERSION=1.1.24' >>~/.bash_profile
       echo 'export KAFKA_HOME=<your kafka installation directory>' >>~/.bash_profile
       echo 'export CLASSPATH=$CLASSPATH:$GSR_LIB_BASE_DIR/avro-kafkaconnect-converter/target/schema-registry-kafkaconnect-converter-$GSR_LIB_VERSION.jar:$GSR_LIB_BASE_DIR/common/target/schema-registry-common-$GSR_LIB_VERSION.jar:$GSR_LIB_BASE_DIR/avro-serializer-deserializer/target/schema-registry-serde-$GSR_LIB_VERSION.jar' >>~/.bash_profile
       source ~/.bash_profile
@@ -541,8 +541,8 @@ It should look like this
   $KAFKA_HOME/bin/connect-standalone.sh $KAFKA_HOME/config/connect-standalone.properties $KAFKA_HOME/config/connect-file-sink.properties
   ```
 
-* For more examples for running Kafka Connect with Avro and JSON formats, refer script **run-local-tests.sh** under 
-**integration-tests** module. Kafka Connect integration with Protobuf format is still under active development. 
+* For more examples for running Kafka Connect with Avro, JSON, and Protobuf formats, refer script **run-local-tests.sh** under
+**integration-tests** module.
 
 ### Using Kafka Streams with AWS Glue Schema Registry
 
@@ -551,7 +551,7 @@ It should look like this
   <dependency>
         <groupId>software.amazon.glue</groupId>
         <artifactId>schema-registry-kafkastreams-serde</artifactId>
-        <version>1.1.10</version>
+        <version>1.1.24</version>
   </dependency>
   ```
 
@@ -589,7 +589,7 @@ repository for the latest support: [Avro SerializationSchema and Deserialization
   <dependency>
        <groupId>software.amazon.glue</groupId>
        <artifactId>schema-registry-flink-serde</artifactId>
-       <version>1.1.10</version>
+       <version>1.1.24</version>
   </dependency>
   ```
 ### Code Example

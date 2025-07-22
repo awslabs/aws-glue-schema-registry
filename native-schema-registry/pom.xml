@@ -68,7 +68,7 @@
 
         <dependency>
             <!-- Optimize this dependency for reducing the shared library size -->
-            <groupId>software.amazon.glue</groupId>
+            <groupId>${parent.groupId}</groupId>
             <artifactId>schema-registry-serde</artifactId>
             <version>${parent.version}</version>
         </dependency>

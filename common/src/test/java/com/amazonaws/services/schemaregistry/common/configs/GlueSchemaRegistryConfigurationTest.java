@@ -25,12 +25,14 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import software.amazon.awssdk.services.glue.model.Compatibility;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -95,6 +97,7 @@ public class GlueSchemaRegistryConfigurationTest {
     public void testBuildConfig_noRegionConfigsSupplied_throwsException() {
         Map<String, Object> configWithoutRegion = new HashMap<>();
         configWithoutRegion.put(AWSSchemaRegistryConstants.AWS_ENDPOINT, "https://test/");
+        System.setProperty("aws.profile", "");
 
         Exception exception = assertThrows(AWSSchemaRegistryException.class,
                 () -> new GlueSchemaRegistryConfiguration(configWithoutRegion));
@@ -103,11 +106,27 @@ public class GlueSchemaRegistryConfigurationTest {
     }
 
     /**
+     * Tests configuration for region value via default AWS region provider chain
+     */
+    @Test
+    public void testBuildConfig_regionConfigsSuppliedUsingAwsProvider_thenUseDefaultAwsRegionProviderChain() {
+        Map<String, Object> configWithoutRegion = new HashMap<>();
+        configWithoutRegion.put(AWSSchemaRegistryConstants.AWS_ENDPOINT, "https://test/");
+        System.setProperty("aws.region", "us-west-2");
+
+        GlueSchemaRegistryConfiguration glueSchemaRegistryConfiguration = new GlueSchemaRegistryConfiguration(configWithoutRegion);
+
+        assertEquals("us-west-2", glueSchemaRegistryConfiguration.getRegion());
+
+        System.clearProperty("aws.region");
+    }
+
+    /**
      * Tests configuration for region value
      */
     @Test
     public void testBuildConfig_withRegionConfig_Instantiates() {
-        assertNotNull(new GlueSchemaRegistryConfiguration("us-west-1"));
+        assertDoesNotThrow(() -> new GlueSchemaRegistryConfiguration("us-west-1"));
     }
 
     /**
@@ -368,6 +387,28 @@ public class GlueSchemaRegistryConfigurationTest {
 
         assertEquals(expectedRegistryName, glueSchemaRegistryConfiguration.getRegistryName());
     }
+
+    /**
+     * Tests valid proxy URL value.
+     */
+    @Test
+    public void testBuildConfig_validProxyUrl_success() {
+        Properties props = createTestProperties();
+        String proxy = "http://proxy.servers.url:8080";
+        props.put(AWSSchemaRegistryConstants.PROXY_URL, proxy);
+        GlueSchemaRegistryConfiguration glueSchemaRegistryConfiguration = new GlueSchemaRegistryConfiguration(props);
+        assertEquals(URI.create(proxy), glueSchemaRegistryConfiguration.getProxyUrl());
+    }
+
+    /**
+     * Tests invalid proxy URL value.
+     */
+    @Test
+    public void testBuildConfig_invalidProxyUrl_throwsException() {
+        Properties props = createTestProperties();
+        String proxy = "http:// proxy.url: 8080";
+        props.put(AWSSchemaRegistryConstants.PROXY_URL, "http:// proxy.url: 8080");
+        Exception exception = assertThrows(AWSSchemaRegistryException.class, () -> new GlueSchemaRegistryConfiguration(props));
+        assertEquals("Proxy URL property is not a valid URL: "+proxy, exception.getMessage());
+    }
 }
-
-

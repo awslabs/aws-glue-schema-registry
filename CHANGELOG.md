@@ -50,3 +50,49 @@ GlueSchemaRegistryKafkaSerializer/GlueSchemaRegistryKafkaDeserializer.
 * Fix bug for missing Protobuf wellknown types
 * Fix Json schema converter NPEs due to missing connect.index and connect.type for sink only cases
 * Add AWS SDK dependency to allow irsa service account
+
+## Release 1.1.11
+* Add support for Kafka Connect Protobuf converter
+
+## Release 1.1.12
+* Upgraded Avro Version to prevent a CVE
+
+## Release 1.1.13
+* Upgraded kotlin dependency versions to prevent a CVE
+
+## Release 1.1.14
+* Upgraded Protobuf dependency version to prevent a CVE
+* Upgraded everit-json-schema dependency version to prevent a CVE
+
+## Release 1.1.15
+* Upgrade Avro, Apicurio and Localhost utils versions
+
+## Release 1.1.16
+* Upgraded Wire version
+* Excluded some transitive dependencies that are having vulnerabilities
+
+## Release 1.1.17
+* Upgraded kafka dependencies version
+
+## Release 1.1.18
+* Add a dummy class in the serializer-deserializer-msk-iam module for javadoc and source jar generation
+* Upgraded Avro and Json dependencies version
+* Upgraded AWS SDK v1 and v2 versions to fix vulnerabilities
+
+## Release 1.1.19
+* Upgraded dependency versions to remove ION dependencies
+
+## Release 1.1.20
+* Upgrade the dependency version to remove commons:compress dependency
+
+## Release 1.1.21
+* Upgraded Avro dependencies version to fix vulnerabilities
+
+## Release 1.1.22
+* Upgraded protobuf dependencies version to fix vulnerabilities
+
+## Release 1.1.23
+* Upgraded json-schema dependencies version to fix vulnerabilities
+
+## Release 1.1.24
+* Upgraded square-wireschema version to fix vulnerabilities

@@ -1,7 +1,13 @@
 #Ignore IntelliJ files
 .idea/
+.DS_Store
 *.iml
 
 #Ignore Maven files
 **/target
 
+**/.settings
+**/*.project
+**/*.classpath
+**/*.factorypath
+**/dependency-reduced-pom.xml

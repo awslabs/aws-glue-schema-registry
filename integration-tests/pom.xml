@@ -31,7 +31,7 @@
     <parent>
         <groupId>software.amazon.glue</groupId>
         <artifactId>schema-registry-parent</artifactId>
-        <version>1.1.10</version>
+        <version>1.1.24</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -72,6 +72,10 @@
             <version>${parent.version}</version>
         </dependency>
         <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+        </dependency>
+        <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>kinesis</artifactId>
         </dependency>
@@ -90,7 +94,13 @@
         </dependency>
         <dependency>
             <groupId>com.amazonaws</groupId>
-            <artifactId>amazon-kinesis-producer</artifactId>
+	    <artifactId>amazon-kinesis-producer</artifactId>
+	    <exclusions>
+       	        <exclusion>
+		    <groupId>software.amazon.ion</groupId>
+		    <artifactId>ion-java</artifactId>
+	 	</exclusion>
+	    </exclusions>
         </dependency>
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
@@ -172,6 +182,11 @@
             <groupId>org.hamcrest</groupId>
             <artifactId>hamcrest-all</artifactId>
         </dependency>
+	<dependency>
+	    <groupId>javax.xml.bind</groupId>
+	    <artifactId>jaxb-api</artifactId>
+	    <version>2.3.1</version>
+    	</dependency>
         <!-- Dependency on test jar for test data -->
         <dependency>
             <groupId>software.amazon.glue</groupId>
