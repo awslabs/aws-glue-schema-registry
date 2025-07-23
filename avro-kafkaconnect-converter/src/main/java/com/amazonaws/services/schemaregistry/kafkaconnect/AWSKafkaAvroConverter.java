@@ -81,10 +81,11 @@ public class AWSKafkaAvroConverter implements Converter {
         this.isKey = isKey;
         new AWSKafkaAvroConverterConfig(configs);
 
+        //TODO: add this feature to all other converters
         String roleToAssume = (String) configs.get(AWSSchemaRegistryConstants.ASSUME_ROLE_ARN);
         if (roleToAssume != null && !roleToAssume.isEmpty()) {
-            String sessionName = configs.get(AWSSchemaRegistryConstants.ASSUME_ROLE_SESSION) != null
-                    ? configs.get(AWSSchemaRegistryConstants.ASSUME_ROLE_SESSION).toString()
+            String sessionName = configs.get(AWSSchemaRegistryConstants.ASSUME_ROLE_SESSION_NAME) != null
+                    ? configs.get(AWSSchemaRegistryConstants.ASSUME_ROLE_SESSION_NAME).toString()
                     : "kafka-connect-session";
 
             String region = configs.get(AWSSchemaRegistryConstants.AWS_REGION).toString();

@@ -47,7 +47,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import static com.amazonaws.services.schemaregistry.utils.AWSSchemaRegistryConstants.ASSUME_ROLE_ARN;
-import static com.amazonaws.services.schemaregistry.utils.AWSSchemaRegistryConstants.ASSUME_ROLE_SESSION;
+import static com.amazonaws.services.schemaregistry.utils.AWSSchemaRegistryConstants.ASSUME_ROLE_SESSION_NAME;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.*;
@@ -166,7 +166,7 @@ public class AWSKafkaAvroConverterTest {
     @Test
     void testConverter_configure_invokeAssumeRoleWithCustomSession() {
         configs.put(ASSUME_ROLE_ARN, ROLE_ARN);
-        configs.put(ASSUME_ROLE_SESSION, "my-session");
+        configs.put(ASSUME_ROLE_SESSION_NAME, "my-session");
 
         converter = spy(new AWSKafkaAvroConverter());
         doReturn(mockCredProvider)
