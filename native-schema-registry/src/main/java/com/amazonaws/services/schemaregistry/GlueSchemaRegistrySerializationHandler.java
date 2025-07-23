@@ -49,23 +49,23 @@ public class GlueSchemaRegistrySerializationHandler {
     }
 
     @CEntryPoint(name = "initialize_serializer_with_config")
-    public static int initializeSerializerWithConfig(
-        IsolateThread isolateThread,
-        CCharPointer configFilePath,
-        C_GlueSchemaRegistryErrorPointerHolder errorPointer) {
+    public static int initializeSerializerWithConfig(IsolateThread isolateThread, CCharPointer configFilePath) {
         try {
             if (configFilePath.isNull()) {
                 // Use default configuration when no config file provided
                 initializeSerializer(isolateThread);
                 return 0;
             }
+            
             String filePath = CTypeConversion.toJavaString(configFilePath);
             Map<String, String> configs = ConfigurationFileReader.loadConfigFromFile(filePath);
             GlueSchemaRegistryConfiguration configuration = new GlueSchemaRegistryConfiguration(configs);
             SerializerInstance.create(configuration);
-            return 0;
+            
+            return 0; // Success
         } catch (Exception e) {
-            ExceptionWriter.write(errorPointer, e);
+            System.err.println("Failed to initialize serializer with config: " + e.getMessage());
+            e.printStackTrace();
             return 1; // Error
         }
     }
