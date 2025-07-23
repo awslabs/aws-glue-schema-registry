@@ -7,19 +7,19 @@ import (
 )
 
 // KafkaDeserializer type alias for easy access from main package
-type KafkaDeserializer = deserializer.KafkaDeserializer
+type KafkaDeserializer = deserializer.Deserializer
 
 // KafkaSerializer type alias for easy access from main package
-type KafkaSerializer = serializer.KafkaSerializer
+type KafkaSerializer = serializer.Serializer
 
 // NewKafkaDeserializer creates a new Kafka deserializer instance
 // This is a convenience function that mirrors the C# implementation structure
 func NewKafkaDeserializer(config *common.Configuration) (*KafkaDeserializer, error) {
-	return deserializer.NewKafkaDeserializer(config)
+	return deserializer.NewDeserializer(config)
 }
 
 // NewKafkaSerializer creates a new Kafka serializer instance
 // This is a convenience function that mirrors the C# implementation structure
 func NewKafkaSerializer(config *common.Configuration) (*KafkaSerializer, error) {
-	return serializer.NewKafkaSerializer(config)
+	return serializer.NewSerializer(config)
 }

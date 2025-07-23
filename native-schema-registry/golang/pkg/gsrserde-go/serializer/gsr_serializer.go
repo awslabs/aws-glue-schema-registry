@@ -22,11 +22,11 @@ func stringToDataFormat(dataFormatStr string) (common.DataFormat, error) {
 	}
 }
 
-// KafkaSerializer is a Kafka-specific serializer that mirrors the C# implementation
-// It provides a high-level interface for serializing Kafka messages using AWS Glue Schema Registry
+// Serializer is a high-level serializer that mirrors the C# implementation
+// It provides a high-level interface for serializing messages using AWS Glue Schema Registry
 // NOTE: This serializer is NOT thread-safe. Each instance should be used by
 // only one context/operation to comply with native library constraints.
-type KafkaSerializer struct {
+type Serializer struct {
 	coreSerializer   *gsrserde.Serializer
 	formatSerializer DataFormatSerializer
 	formatFactory    SerializerFactory
@@ -34,8 +34,8 @@ type KafkaSerializer struct {
 	closed           bool
 }
 
-// NewKafkaSerializer creates a new Kafka serializer instance
-func NewKafkaSerializer(config *common.Configuration) (*KafkaSerializer, error) {
+// NewSerializer creates a new serializer instance
+func NewSerializer(config *common.Configuration) (*Serializer, error) {
 	if config == nil {
 		return nil, fmt.Errorf("configuration cannot be nil")
 	}
@@ -55,7 +55,7 @@ func NewKafkaSerializer(config *common.Configuration) (*KafkaSerializer, error) 
 		return nil, fmt.Errorf("failed to create format serializer: %w", err)
 	}
 
-	return &KafkaSerializer{
+	return &Serializer{
 		coreSerializer:   coreSerializer,
 		formatSerializer: formatSerializer,
 		formatFactory:    formatFactory,
@@ -64,10 +64,10 @@ func NewKafkaSerializer(config *common.Configuration) (*KafkaSerializer, error) 
 	}, nil
 }
 
-// Serialize serializes a message for Kafka using AWS Glue Schema Registry
+// Serialize serializes a message using AWS Glue Schema Registry
 // This method mirrors the C# GlueSchemaRegistryKafkaSerializer.Serialize method
-func (ks *KafkaSerializer) Serialize(topic string, data interface{}) ([]byte, error) {
-	if ks.closed {
+func (s *Serializer) Serialize(topic string, data interface{}) ([]byte, error) {
+	if s.closed {
 		return nil, gsrserde.ErrClosed
 	}
 
@@ -77,30 +77,30 @@ func (ks *KafkaSerializer) Serialize(topic string, data interface{}) ([]byte, er
 	}
 
 	// Create schema based on the data type
-	schema, err := ks.getSchemaFromData(data, topic)
+	schema, err := s.getSchemaFromData(data, topic)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create schema from data: %w", err)
 	}
 
 	// Let the format serializer set additional schema info
-	if err := ks.formatSerializer.SetAdditionalSchemaInfo(data, schema); err != nil {
+	if err := s.formatSerializer.SetAdditionalSchemaInfo(data, schema); err != nil {
 		return nil, fmt.Errorf("failed to set additional schema info: %w", err)
 	}
 
 	// Validate the object before serialization
-	if err := ks.formatSerializer.ValidateObject(data); err != nil {
+	if err := s.formatSerializer.ValidateObject(data); err != nil {
 		return nil, fmt.Errorf("data validation failed: %w", err)
 	}
 
 	// Serialize the message content (mirrors C# serializer.Serialize call)
-	serializedData, err := ks.formatSerializer.Serialize(data)
+	serializedData, err := s.formatSerializer.Serialize(data)
 	if err != nil {
 		return nil, fmt.Errorf("failed to serialize data: %w", err)
 	}
 
 	// Wrap with GSR header using transport name (topic)
 	// This mirrors the C# Encode call with transport name
-	encodedData, err := ks.coreSerializer.Encode(serializedData, topic, schema)
+	encodedData, err := s.coreSerializer.Encode(serializedData, topic, schema)
 	if err != nil {
 		return nil, fmt.Errorf("failed to encode GSR data: %w", err)
 	}
@@ -110,8 +110,8 @@ func (ks *KafkaSerializer) Serialize(topic string, data interface{}) ([]byte, er
 
 // SerializeWithSchema serializes a message with an explicit schema
 // This provides more control over the schema used for serialization
-func (ks *KafkaSerializer) SerializeWithSchema(topic string, data interface{}, schema *gsrserde.Schema) ([]byte, error) {
-	if ks.closed {
+func (s *Serializer) SerializeWithSchema(topic string, data interface{}, schema *gsrserde.Schema) ([]byte, error) {
+	if s.closed {
 		return nil, gsrserde.ErrClosed
 	}
 
@@ -139,7 +139,7 @@ func (ks *KafkaSerializer) SerializeWithSchema(topic string, data interface{}, s
 	config := common.NewConfiguration(configMap)
 	
 	// Get the appropriate format serializer
-	formatSerializer, err := ks.formatFactory.GetSerializer(config)
+	formatSerializer, err := s.formatFactory.GetSerializer(config)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get serializer for format %s: %w", schema.DataFormat, err)
 	}
@@ -156,7 +156,7 @@ func (ks *KafkaSerializer) SerializeWithSchema(topic string, data interface{}, s
 	}
 
 	// Wrap with GSR header using transport name (topic)
-	encodedData, err := ks.coreSerializer.Encode(serializedData, topic, schema)
+	encodedData, err := s.coreSerializer.Encode(serializedData, topic, schema)
 	if err != nil {
 		return nil, fmt.Errorf("failed to encode GSR data: %w", err)
 	}
@@ -165,8 +165,8 @@ func (ks *KafkaSerializer) SerializeWithSchema(topic string, data interface{}, s
 }
 
 // ValidateData validates that the provided data can be serialized
-func (ks *KafkaSerializer) ValidateData(data interface{}) error {
-	if ks.closed {
+func (s *Serializer) ValidateData(data interface{}) error {
+	if s.closed {
 		return gsrserde.ErrClosed
 	}
 
@@ -175,7 +175,7 @@ func (ks *KafkaSerializer) ValidateData(data interface{}) error {
 	}
 
 	// Create schema to determine data format
-	schema, err := ks.getSchemaFromData(data, "")
+	schema, err := s.getSchemaFromData(data, "")
 	if err != nil {
 		return fmt.Errorf("failed to create schema from data: %w", err)
 	}
@@ -195,7 +195,7 @@ func (ks *KafkaSerializer) ValidateData(data interface{}) error {
 	config := common.NewConfiguration(configMap)
 	
 	// Get the appropriate format serializer
-	formatSerializer, err := ks.formatFactory.GetSerializer(config)
+	formatSerializer, err := s.formatFactory.GetSerializer(config)
 	if err != nil {
 		return fmt.Errorf("failed to get serializer for format %s: %w", schema.DataFormat, err)
 	}
@@ -205,8 +205,8 @@ func (ks *KafkaSerializer) ValidateData(data interface{}) error {
 }
 
 // GetSchemaFromData extracts schema information from the provided data
-func (ks *KafkaSerializer) GetSchemaFromData(data interface{}) (*gsrserde.Schema, error) {
-	if ks.closed {
+func (s *Serializer) GetSchemaFromData(data interface{}) (*gsrserde.Schema, error) {
+	if s.closed {
 		return nil, gsrserde.ErrClosed
 	}
 
@@ -214,12 +214,12 @@ func (ks *KafkaSerializer) GetSchemaFromData(data interface{}) (*gsrserde.Schema
 		return nil, gsrserde.ErrNilData
 	}
 
-	return ks.getSchemaFromData(data, "")
+	return s.getSchemaFromData(data, "")
 }
 
 // getSchemaFromData creates a schema based on the data type
 // This determines the appropriate data format based on the Go type
-func (ks *KafkaSerializer) getSchemaFromData(data interface{}, topic string) (*gsrserde.Schema, error) {
+func (s *Serializer) getSchemaFromData(data interface{}, topic string) (*gsrserde.Schema, error) {
 	if data == nil {
 		return nil, gsrserde.ErrNilData
 	}
@@ -263,7 +263,7 @@ func (ks *KafkaSerializer) getSchemaFromData(data interface{}, topic string) (*g
 	config := common.NewConfiguration(configMap)
 	
 	// Get the format serializer to populate schema details
-	formatSerializer, err := ks.formatFactory.GetSerializer(config)
+	formatSerializer, err := s.formatFactory.GetSerializer(config)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get serializer for format %s: %w", schema.DataFormat, err)
 	}
@@ -289,21 +289,21 @@ func (ks *KafkaSerializer) getSchemaFromData(data interface{}, topic string) (*g
 }
 
 // GetConfiguration returns the current configuration
-func (ks *KafkaSerializer) GetConfiguration() *common.Configuration {
-	return ks.config
+func (s *Serializer) GetConfiguration() *common.Configuration {
+	return s.config
 }
 
 // Close releases all resources associated with the serializer
-func (ks *KafkaSerializer) Close() error {
-	if ks.closed {
+func (s *Serializer) Close() error {
+	if s.closed {
 		return nil
 	}
 
-	ks.closed = true
+	s.closed = true
 
 	// Close core serializer
-	if ks.coreSerializer != nil {
-		err := ks.coreSerializer.Close()
+	if s.coreSerializer != nil {
+		err := s.coreSerializer.Close()
 		if err != nil {
 			return fmt.Errorf("failed to close core serializer: %w", err)
 		}
@@ -315,6 +315,6 @@ func (ks *KafkaSerializer) Close() error {
 }
 
 // IsClosed returns whether the serializer is closed
-func (ks *KafkaSerializer) IsClosed() bool {
-	return ks.closed
+func (s *Serializer) IsClosed() bool {
+	return s.closed
 }

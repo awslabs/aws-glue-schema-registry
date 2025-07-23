@@ -19,20 +19,15 @@ import (
 // BaseIntegrationSuite provides common functionality for all integration test suites
 type BaseIntegrationSuite struct {
 	suite.Suite
-	kafkaSerializer   *serializer.KafkaSerializer
-	kafkaDeserializer *deserializer.KafkaDeserializer
+	gsr_serializer   *serializer.Serializer
+	gsr_deserializer *deserializer.Deserializer
 	topicName         string
 	cleanup           func()
-	// NOTE: No mutex needed - serializers are single-use and not shared between tests
-	// Removed resourceMutex to prevent cross-thread cleanup issues with GraalVM isolates
 }
 
 // SetupSuite is called once before all tests in the suite
 func (s *BaseIntegrationSuite) SetupSuite() {
 	s.T().Log("=== Setting up Base Integration Suite ===")
-
-	// Force sequential execution to prevent concurrency issues
-	s.T().Log("Forcing sequential test execution...")
 
 	// Verify Kafka is running
 	s.requireKafkaRunning()
@@ -44,9 +39,8 @@ func (s *BaseIntegrationSuite) SetupSuite() {
 func (s *BaseIntegrationSuite) TearDownSuite() {
 	s.T().Log("=== Starting Base Suite Teardown ===")
 
-	// Clear any remaining references and let Go GC handle cleanup
-	s.kafkaSerializer = nil
-	s.kafkaDeserializer = nil
+	s.gsr_serializer = nil
+	s.gsr_deserializer = nil
 	s.T().Log("✓ Cleared all serializer/deserializer references")
 
 	s.T().Log("=== Base Suite Teardown Complete ===")
@@ -64,9 +58,8 @@ func (s *BaseIntegrationSuite) SetupTest() {
 func (s *BaseIntegrationSuite) TearDownTest() {
 	s.T().Log("Starting test teardown...")
 
-	// Clear references to allow GC - don't call Close() to avoid thread affinity issues
-	s.kafkaSerializer = nil
-	s.kafkaDeserializer = nil
+	s.gsr_serializer = nil
+	s.gsr_deserializer = nil
 	s.T().Log("✓ Cleared serializer/deserializer references")
 
 	// Execute Kafka topic cleanup function
@@ -75,24 +68,23 @@ func (s *BaseIntegrationSuite) TearDownTest() {
 		s.cleanup = nil
 	}
 
-	// Let Go GC and process termination handle native resource cleanup
 	s.T().Log("Test teardown complete")
 }
 
-// createKafkaSerializer creates a KafkaSerializer configured for AWS GSR
-func (s *BaseIntegrationSuite) createKafkaSerializer(config *common.Configuration) *serializer.KafkaSerializer {
-	kafkaSerializer, err := serializer.NewKafkaSerializer(config)
-	require.NoError(s.T(), err, "Should create KafkaSerializer")
-	require.NotNil(s.T(), kafkaSerializer, "KafkaSerializer should not be nil")
+// createSerializer creates a Serializer configured for AWS GSR
+func (s *BaseIntegrationSuite) createSerializer(config *common.Configuration) *serializer.Serializer {
+	kafkaSerializer, err := serializer.NewSerializer(config)
+	require.NoError(s.T(), err, "Should create Serializer")
+	require.NotNil(s.T(), kafkaSerializer, "Serializer should not be nil")
 
 	return kafkaSerializer
 }
 
-// createKafkaDeserializer creates a KafkaDeserializer configured for AWS GSR
-func (s *BaseIntegrationSuite) createKafkaDeserializer(config *common.Configuration) *deserializer.KafkaDeserializer {
-	kafkaDeserializer, err := deserializer.NewKafkaDeserializer(config)
-	require.NoError(s.T(), err, "Should create KafkaDeserializer")
-	require.NotNil(s.T(), kafkaDeserializer, "KafkaDeserializer should not be nil")
+// createDeserializer creates a Deserializer configured for AWS GSR
+func (s *BaseIntegrationSuite) createDeserializer(config *common.Configuration) *deserializer.Deserializer {
+	kafkaDeserializer, err := deserializer.NewDeserializer(config)
+	require.NoError(s.T(), err, "Should create Deserializer")
+	require.NotNil(s.T(), kafkaDeserializer, "Deserializer should not be nil")
 
 	return kafkaDeserializer
 }
@@ -105,13 +97,13 @@ func (s *BaseIntegrationSuite) runKafkaIntegrationTest(
 ) {
 	ctx := context.Background()
 
-	// Step 1: Create KafkaSerializer with GSR configuration
-	s.kafkaSerializer = s.createKafkaSerializer(config)
+	// Step 1: Create Serializer with GSR configuration
+	s.gsr_serializer = s.createSerializer(config)
 
 	// Step 2: Serialize the message (auto-registers schema with GSR)
 	s.T().Logf("Serializing %T message", originalMessage)
-	gsrEncodedData, err := s.kafkaSerializer.Serialize(s.topicName, originalMessage)
-	require.NoError(s.T(), err, "KafkaSerializer.Serialize should succeed")
+	gsrEncodedData, err := s.gsr_serializer.Serialize(s.topicName, originalMessage)
+	require.NoError(s.T(), err, "Serializer.Serialize should succeed")
 	require.NotEmpty(s.T(), gsrEncodedData, "Serialized data should not be empty")
 	s.T().Logf("Serialized message: %d bytes", len(gsrEncodedData))
 
@@ -123,18 +115,18 @@ func (s *BaseIntegrationSuite) runKafkaIntegrationTest(
 	consumedData := s.consumeMessageFromKafka(ctx, s.topicName)
 	require.Equal(s.T(), gsrEncodedData, consumedData, "Data consumed from Kafka should match published data")
 
-	// Step 5: Create KafkaDeserializer and deserialize the GSR-encoded data
-	s.kafkaDeserializer = s.createKafkaDeserializer(config)
+	// Step 5: Create Deserializer and deserialize the GSR-encoded data
+	s.gsr_deserializer = s.createDeserializer(config)
 
 	// Verify the data can be deserialized
-	canDeserialize, err := s.kafkaDeserializer.CanDeserialize(consumedData)
+	canDeserialize, err := s.gsr_deserializer.CanDeserialize(consumedData)
 	require.NoError(s.T(), err, "Should check if data can be deserialized")
 	require.True(s.T(), canDeserialize, "GSR-encoded data should be deserializable")
 
 	// Deserialize the GSR-encoded data back to the original message
 	s.T().Log("Deserializing GSR-encoded data")
-	deserializedMessage, err := s.kafkaDeserializer.Deserialize(s.topicName, consumedData)
-	require.NoError(s.T(), err, "KafkaDeserializer.Deserialize should succeed")
+	deserializedMessage, err := s.gsr_deserializer.Deserialize(s.topicName, consumedData)
+	require.NoError(s.T(), err, "Deserializer.Deserialize should succeed")
 	require.NotNil(s.T(), deserializedMessage, "Deserialized message should not be nil")
 
 	// Step 6: Validate the round-trip
@@ -172,7 +164,6 @@ func (s *BaseIntegrationSuite) consumeMessageFromKafka(ctx context.Context, topi
 	})
 	defer reader.Close()
 
-	// Set a reasonable timeout for reading
 	readCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
@@ -198,10 +189,8 @@ func (s *BaseIntegrationSuite) requireKafkaRunning() {
 func (s *BaseIntegrationSuite) setupTestInfrastructure() func() {
 	ctx := context.Background()
 
-	// Create topic
 	s.createKafkaTopic(ctx, s.topicName)
 
-	// Return cleanup function
 	return func() {
 		s.deleteKafkaTopic(ctx, s.topicName)
 	}

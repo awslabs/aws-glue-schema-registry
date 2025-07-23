@@ -21,11 +21,11 @@ func stringToDataFormat(dataFormatStr string) (common.DataFormat, error) {
 	}
 }
 
-// KafkaDeserializer is a Kafka-specific deserializer that mirrors the C# implementation
-// It provides a high-level interface for deserializing Kafka messages using AWS Glue Schema Registry
+// Deserializer is a high-level deserializer that mirrors the C# implementation
+// It provides a high-level interface for deserializing messages using AWS Glue Schema Registry
 // NOTE: This deserializer is NOT thread-safe. Each instance should be used by
 // only one context/operation to comply with native library constraints.
-type KafkaDeserializer struct {
+type Deserializer struct {
 	coreDeserializer   *gsrserde.Deserializer
 	formatDeserializer DataFormatDeserializer
 	formatFactory      DeserializerFactory
@@ -33,8 +33,8 @@ type KafkaDeserializer struct {
 	closed             bool
 }
 
-// NewKafkaDeserializer creates a new Kafka deserializer instance
-func NewKafkaDeserializer(config *common.Configuration) (*KafkaDeserializer, error) {
+// NewDeserializer creates a new deserializer instance
+func NewDeserializer(config *common.Configuration) (*Deserializer, error) {
 	if config == nil {
 		return nil, fmt.Errorf("configuration cannot be nil")
 	}
@@ -54,7 +54,7 @@ func NewKafkaDeserializer(config *common.Configuration) (*KafkaDeserializer, err
 		return nil, fmt.Errorf("failed to create format deserializer: %w", err)
 	}
 
-	return &KafkaDeserializer{
+	return &Deserializer{
 		coreDeserializer:   coreDeserializer,
 		formatDeserializer: formatDeserializer,
 		formatFactory:      formatFactory,
@@ -63,10 +63,10 @@ func NewKafkaDeserializer(config *common.Configuration) (*KafkaDeserializer, err
 	}, nil
 }
 
-// Deserialize deserializes a Kafka message using AWS Glue Schema Registry
+// Deserialize deserializes a message using AWS Glue Schema Registry
 // This method mirrors the C# GlueSchemaRegistryKafkaDeserializer.Deserialize method
-func (kd *KafkaDeserializer) Deserialize(topic string, data []byte) (interface{}, error) {
-	if kd.closed {
+func (d *Deserializer) Deserialize(topic string, data []byte) (interface{}, error) {
+	if d.closed {
 		return nil, gsrserde.ErrClosed
 	}
 
@@ -76,7 +76,7 @@ func (kd *KafkaDeserializer) Deserialize(topic string, data []byte) (interface{}
 	}
 
 	// Check if data can be decoded (mirrors C# CanDecode check)
-	canDecode, err := kd.coreDeserializer.CanDecode(data)
+	canDecode, err := d.coreDeserializer.CanDecode(data)
 	if err != nil {
 		return nil, fmt.Errorf("failed to check if data can be decoded: %w", err)
 	}
@@ -86,33 +86,33 @@ func (kd *KafkaDeserializer) Deserialize(topic string, data []byte) (interface{}
 	}
 
 	// Decode the GSR-wrapped bytes (mirrors C# Decode call)
-	decodedBytes, err := kd.coreDeserializer.Decode(data)
+	decodedBytes, err := d.coreDeserializer.Decode(data)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode GSR data: %w", err)
 	}
 
 	// Extract schema information (mirrors C# DecodeSchema call)
-	schema, err := kd.coreDeserializer.DecodeSchema(data)
+	schema, err := d.coreDeserializer.DecodeSchema(data)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode schema: %w", err)
 	}
 
 	// Create configuration from schema information
 	configMap := make(map[string]interface{})
-	
+
 	// Convert schema DataFormat string to DataFormat enum
 	dataFormat, err := stringToDataFormat(schema.DataFormat)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	configMap[common.DataFormatTypeKey] = dataFormat
-	
+
 	// Create configuration object
 	config := common.NewConfiguration(configMap)
-	
+
 	// Get the appropriate format deserializer (mirrors C# factory.GetDeserializer call)
-	formatDeserializer, err := kd.formatFactory.GetDeserializer(config)
+	formatDeserializer, err := d.formatFactory.GetDeserializer(config)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get deserializer for format %s: %w", schema.DataFormat, err)
 	}
@@ -127,8 +127,8 @@ func (kd *KafkaDeserializer) Deserialize(topic string, data []byte) (interface{}
 }
 
 // CanDeserialize checks if the provided data can be deserialized
-func (kd *KafkaDeserializer) CanDeserialize(data []byte) (bool, error) {
-	if kd.closed {
+func (d *Deserializer) CanDeserialize(data []byte) (bool, error) {
+	if d.closed {
 		return false, gsrserde.ErrClosed
 	}
 
@@ -136,12 +136,12 @@ func (kd *KafkaDeserializer) CanDeserialize(data []byte) (bool, error) {
 		return false, nil
 	}
 
-	return kd.coreDeserializer.CanDecode(data)
+	return d.coreDeserializer.CanDecode(data)
 }
 
 // GetSchema extracts schema information from the data without deserializing the message
-func (kd *KafkaDeserializer) GetSchema(data []byte) (*gsrserde.Schema, error) {
-	if kd.closed {
+func (d *Deserializer) GetSchema(data []byte) (*gsrserde.Schema, error) {
+	if d.closed {
 		return nil, gsrserde.ErrClosed
 	}
 
@@ -149,25 +149,25 @@ func (kd *KafkaDeserializer) GetSchema(data []byte) (*gsrserde.Schema, error) {
 		return nil, gsrserde.ErrNilData
 	}
 
-	return kd.coreDeserializer.DecodeSchema(data)
+	return d.coreDeserializer.DecodeSchema(data)
 }
 
 // GetConfiguration returns the current configuration
-func (kd *KafkaDeserializer) GetConfiguration() *common.Configuration {
-	return kd.config
+func (d *Deserializer) GetConfiguration() *common.Configuration {
+	return d.config
 }
 
 // Close releases all resources associated with the deserializer
-func (kd *KafkaDeserializer) Close() error {
-	if kd.closed {
+func (d *Deserializer) Close() error {
+	if d.closed {
 		return nil
 	}
 
-	kd.closed = true
+	d.closed = true
 
 	// Close core deserializer
-	if kd.coreDeserializer != nil {
-		err := kd.coreDeserializer.Close()
+	if d.coreDeserializer != nil {
+		err := d.coreDeserializer.Close()
 		if err != nil {
 			return fmt.Errorf("failed to close core deserializer: %w", err)
 		}
@@ -179,6 +179,6 @@ func (kd *KafkaDeserializer) Close() error {
 }
 
 // IsClosed returns whether the deserializer is closed
-func (kd *KafkaDeserializer) IsClosed() bool {
-	return kd.closed
+func (d *Deserializer) IsClosed() bool {
+	return d.closed
 }
