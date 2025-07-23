@@ -9,7 +9,6 @@ import (
 
 	"github.com/awslabs/aws-glue-schema-registry/native-schema-registry/golang/pkg/gsrserde-go"
 	"github.com/awslabs/aws-glue-schema-registry/native-schema-registry/golang/pkg/gsrserde-go/common"
-	jsonserializer "github.com/awslabs/aws-glue-schema-registry/native-schema-registry/golang/pkg/gsrserde-go/serializer/json"
 )
 
 func TestNewJsonDeserializer(t *testing.T) {
@@ -47,7 +46,7 @@ func TestJsonDeserializer_Deserialize(t *testing.T) {
 		schema        *gsrserde.Schema
 		expectError   bool
 		errorContains string
-		validateResult func(t *testing.T, result interface{})
+		expectedResult string
 	}{
 		{
 			name: "ValidDataAndSchema",
@@ -59,12 +58,7 @@ func TestJsonDeserializer_Deserialize(t *testing.T) {
 				AdditionalInfo: "JsonDataWithSchema",
 			},
 			expectError: false,
-			validateResult: func(t *testing.T, result interface{}) {
-				wrapper, ok := result.(*jsonserializer.JsonDataWithSchema)
-				assert.True(t, ok, "Result should be JsonDataWithSchema")
-				assert.Equal(t, validSchema, wrapper.GetSchema())
-				assert.JSONEq(t, `{"name": "John", "age": 30}`, wrapper.GetPayload())
-			},
+			expectedResult: `{"name": "John", "age": 30}`,
 		},
 		{
 			name: "ValidDataMinimalPayload",
@@ -76,12 +70,7 @@ func TestJsonDeserializer_Deserialize(t *testing.T) {
 				AdditionalInfo: "JsonDataWithSchema",
 			},
 			expectError: false,
-			validateResult: func(t *testing.T, result interface{}) {
-				wrapper, ok := result.(*jsonserializer.JsonDataWithSchema)
-				assert.True(t, ok, "Result should be JsonDataWithSchema")
-				assert.Equal(t, validSchema, wrapper.GetSchema())
-				assert.JSONEq(t, `{"name": "John"}`, wrapper.GetPayload())
-			},
+			expectedResult: `{"name": "John"}`,
 		},
 		{
 			name: "EmptyDataValidSchema",
@@ -93,12 +82,7 @@ func TestJsonDeserializer_Deserialize(t *testing.T) {
 				AdditionalInfo: "JsonDataWithSchema",
 			},
 			expectError: false,
-			validateResult: func(t *testing.T, result interface{}) {
-				wrapper, ok := result.(*jsonserializer.JsonDataWithSchema)
-				assert.True(t, ok, "Result should be JsonDataWithSchema")
-				assert.Equal(t, validSchema, wrapper.GetSchema())
-				assert.Equal(t, "", wrapper.GetPayload())
-			},
+			expectedResult: "",
 		},
 		{
 			name:          "NilData",
@@ -163,277 +147,9 @@ func TestJsonDeserializer_Deserialize(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 				assert.NotNil(t, result)
-				if tt.validateResult != nil {
-					tt.validateResult(t, result)
-				}
-			}
-		})
-	}
-}
-
-func TestJsonDeserializer_DeserializeToMap(t *testing.T) {
-	config := &common.Configuration{}
-	deserializer := NewJsonDeserializer(config)
-
-	validSchema := `{
-		"type": "object",
-		"properties": {
-			"name": {"type": "string"},
-			"age": {"type": "number"}
-		}
-	}`
-
-	tests := []struct {
-		name          string
-		data          []byte
-		schema        *gsrserde.Schema
-		expectError   bool
-		errorContains string
-		expectedMap   map[string]interface{}
-	}{
-		{
-			name: "ValidDataAndSchema",
-			data: []byte(`{"name": "John", "age": 30}`),
-			schema: &gsrserde.Schema{
-				Definition: validSchema,
-			},
-			expectError: false,
-			expectedMap: map[string]interface{}{
-				"name": "John",
-				"age":  float64(30), // JSON numbers are parsed as float64
-			},
-		},
-		{
-			name: "ValidDataNoSchemaValidation",
-			data: []byte(`{"name": "John", "age": 30}`),
-			schema: &gsrserde.Schema{
-				Definition: "", // Empty schema should skip validation
-			},
-			expectError: false,
-			expectedMap: map[string]interface{}{
-				"name": "John",
-				"age":  float64(30),
-			},
-		},
-		{
-			name:          "NilData",
-			data:          nil,
-			schema:        &gsrserde.Schema{Definition: validSchema},
-			expectError:   true,
-			errorContains: "cannot deserialize nil data",
-		},
-		{
-			name:          "NilSchema",
-			data:          []byte(`{"name": "John"}`),
-			schema:        nil,
-			expectError:   true,
-			errorContains: "schema cannot be nil",
-		},
-		{
-			name: "InvalidJsonData",
-			data: []byte(`{"name": "John", "age":}`), // Invalid JSON
-			schema: &gsrserde.Schema{
-				Definition: validSchema,
-			},
-			expectError:   true,
-			errorContains: "data validation against schema failed",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result, err := deserializer.DeserializeToMap(tt.data, tt.schema)
-
-			if tt.expectError {
-				assert.Error(t, err)
-				assert.Nil(t, result)
-				assert.Contains(t, err.Error(), tt.errorContains)
-			} else {
-				assert.NoError(t, err)
-				assert.Equal(t, tt.expectedMap, result)
-			}
-		})
-	}
-}
-
-func TestJsonDeserializer_DeserializeToStruct(t *testing.T) {
-	config := &common.Configuration{}
-	deserializer := NewJsonDeserializer(config)
-
-	validSchema := `{
-		"type": "object",
-		"properties": {
-			"name": {"type": "string"},
-			"age": {"type": "number"}
-		}
-	}`
-
-	type TestStruct struct {
-		Name string  `json:"name"`
-		Age  float64 `json:"age"`
-	}
-
-	tests := []struct {
-		name          string
-		data          []byte
-		schema        *gsrserde.Schema
-		target        interface{}
-		expectError   bool
-		errorContains string
-		expectedStruct TestStruct
-	}{
-		{
-			name: "ValidDataAndSchema",
-			data: []byte(`{"name": "John", "age": 30}`),
-			schema: &gsrserde.Schema{
-				Definition: validSchema,
-			},
-			target:      &TestStruct{},
-			expectError: false,
-			expectedStruct: TestStruct{
-				Name: "John",
-				Age:  30,
-			},
-		},
-		{
-			name: "ValidDataNoSchemaValidation",
-			data: []byte(`{"name": "John", "age": 30}`),
-			schema: &gsrserde.Schema{
-				Definition: "", // Empty schema should skip validation
-			},
-			target:      &TestStruct{},
-			expectError: false,
-			expectedStruct: TestStruct{
-				Name: "John",
-				Age:  30,
-			},
-		},
-		{
-			name:          "NilData",
-			data:          nil,
-			schema:        &gsrserde.Schema{Definition: validSchema},
-			target:        &TestStruct{},
-			expectError:   true,
-			errorContains: "cannot deserialize nil data",
-		},
-		{
-			name:          "NilSchema",
-			data:          []byte(`{"name": "John"}`),
-			schema:        nil,
-			target:        &TestStruct{},
-			expectError:   true,
-			errorContains: "schema cannot be nil",
-		},
-		{
-			name: "NilTarget",
-			data: []byte(`{"name": "John"}`),
-			schema: &gsrserde.Schema{
-				Definition: validSchema,
-			},
-			target:        nil,
-			expectError:   true,
-			errorContains: "target cannot be nil",
-		},
-		{
-			name: "InvalidJsonData",
-			data: []byte(`{"name": "John", "age":}`), // Invalid JSON
-			schema: &gsrserde.Schema{
-				Definition: validSchema,
-			},
-			target:        &TestStruct{},
-			expectError:   true,
-			errorContains: "data validation against schema failed",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := deserializer.DeserializeToStruct(tt.data, tt.schema, tt.target)
-
-			if tt.expectError {
-				assert.Error(t, err)
-				assert.Contains(t, err.Error(), tt.errorContains)
-			} else {
-				assert.NoError(t, err)
-				if targetStruct, ok := tt.target.(*TestStruct); ok {
-					assert.Equal(t, tt.expectedStruct, *targetStruct)
-				}
-			}
-		})
-	}
-}
-
-func TestJsonDeserializer_ValidateJsonData(t *testing.T) {
-	config := &common.Configuration{}
-	deserializer := NewJsonDeserializer(config)
-
-	validSchema := `{
-		"$schema": "http://json-schema.org/draft-07/schema#",
-		"type": "object",
-		"properties": {
-			"name": {"type": "string"},
-			"age": {"type": "number"}
-		},
-		"required": ["name"]
-	}`
-
-	tests := []struct {
-		name             string
-		data             []byte
-		schemaDefinition string
-		expectError      bool
-		errorContains    string
-	}{
-		{
-			name:             "ValidDataAndSchema",
-			data:             []byte(`{"name": "John", "age": 30}`),
-			schemaDefinition: validSchema,
-			expectError:      false,
-		},
-		{
-			name:             "ValidDataMinimal",
-			data:             []byte(`{"name": "John"}`),
-			schemaDefinition: validSchema,
-			expectError:      false,
-		},
-		{
-			name:             "EmptyData",
-			data:             []byte{},
-			schemaDefinition: validSchema,
-			expectError:      false, // Empty data is considered valid
-		},
-		{
-			name:             "DataDoesNotMatchSchema",
-			data:             []byte(`{"age": 30}`), // Missing required "name"
-			schemaDefinition: validSchema,
-			expectError:      true,
-			errorContains:    "validation errors",
-		},
-		{
-			name:             "InvalidJsonData",
-			data:             []byte(`{"name": "John", "age":}`), // Invalid JSON
-			schemaDefinition: validSchema,
-			expectError:      true,
-			errorContains:    "validation failed",
-		},
-		{
-			name:             "EmptySchema",
-			data:             []byte(`{"name": "John"}`),
-			schemaDefinition: "",
-			expectError:      true,
-			errorContains:    "schema definition cannot be empty",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := deserializer.ValidateJsonData(tt.data, tt.schemaDefinition)
-
-			if tt.expectError {
-				assert.Error(t, err)
-				assert.Contains(t, err.Error(), tt.errorContains)
-			} else {
-				assert.NoError(t, err)
+				resultStr, ok := result.(string)
+				assert.True(t, ok, "Result should be a string, got %T", result)
+				assert.Equal(t, tt.expectedResult, resultStr)
 			}
 		})
 	}
@@ -578,10 +294,9 @@ func TestJsonDeserializer_ComplexScenarios(t *testing.T) {
 		result, err := deserializer.Deserialize([]byte(payload), gsrSchema)
 		require.NoError(t, err)
 
-		wrapper, ok := result.(*jsonserializer.JsonDataWithSchema)
-		require.True(t, ok, "Result should be JsonDataWithSchema")
-		assert.Equal(t, schema, wrapper.GetSchema())
-		assert.JSONEq(t, payload, wrapper.GetPayload())
+		resultStr, ok := result.(string)
+		require.True(t, ok, "Result should be a string")
+		assert.JSONEq(t, payload, resultStr)
 	})
 
 	t.Run("ArraySchema", func(t *testing.T) {
@@ -609,9 +324,9 @@ func TestJsonDeserializer_ComplexScenarios(t *testing.T) {
 		result, err := deserializer.Deserialize([]byte(payload), gsrSchema)
 		require.NoError(t, err)
 
-		wrapper, ok := result.(*jsonserializer.JsonDataWithSchema)
-		require.True(t, ok, "Result should be JsonDataWithSchema")
-		assert.JSONEq(t, payload, wrapper.GetPayload())
+		resultStr, ok := result.(string)
+		require.True(t, ok, "Result should be a string")
+		assert.JSONEq(t, payload, resultStr)
 	})
 }
 
@@ -630,7 +345,7 @@ func TestJsonDeserializer_ErrorTypes(t *testing.T) {
 	})
 
 	t.Run("JsonValidationError", func(t *testing.T) {
-		err := deserializer.ValidateJsonData([]byte(`{"invalid": "data"}`), `{"type": "array"}`)
+		err := deserializer.validateAgainstSchema(`{"type": "array"}`, []byte(`{"invalid": "data"}`))
 		assert.Error(t, err)
 
 		var valErr *JsonValidationError
@@ -665,13 +380,13 @@ func TestJsonDeserializer_ConcurrentAccess(t *testing.T) {
 				return
 			}
 
-			wrapper, ok := result.(*jsonserializer.JsonDataWithSchema)
+			resultStr, ok := result.(string)
 			if !ok {
-				t.Errorf("Expected JsonDataWithSchema, got %T", result)
+				t.Errorf("Expected string, got %T", result)
 				return
 			}
 
-			assert.JSONEq(t, payload, wrapper.GetPayload())
+			assert.JSONEq(t, payload, resultStr)
 		}(i)
 	}
 
@@ -679,45 +394,4 @@ func TestJsonDeserializer_ConcurrentAccess(t *testing.T) {
 	for i := 0; i < numGoroutines; i++ {
 		<-done
 	}
-}
-
-func TestJsonDeserializer_RoundTrip(t *testing.T) {
-	// Test serialization followed by deserialization
-	config := &common.Configuration{}
-	serializer := jsonserializer.NewJsonSerializer(config)
-	deserializer := NewJsonDeserializer(config)
-
-	schema := `{
-		"$schema": "http://json-schema.org/draft-07/schema#",
-		"type": "object",
-		"properties": {
-			"name": {"type": "string"},
-			"age": {"type": "number"},
-			"active": {"type": "boolean"}
-		},
-		"required": ["name"]
-	}`
-
-	originalPayload := `{"name": "Alice", "age": 25, "active": true}`
-
-	// Create wrapper and serialize
-	wrapper, err := jsonserializer.NewJsonDataWithSchema(schema, originalPayload)
-	require.NoError(t, err)
-
-	serializedData, err := serializer.Serialize(wrapper)
-	require.NoError(t, err)
-
-	// Deserialize back
-	gsrSchema := &gsrserde.Schema{
-		Definition: schema,
-	}
-
-	result, err := deserializer.Deserialize(serializedData, gsrSchema)
-	require.NoError(t, err)
-
-	// Verify round-trip
-	resultWrapper, ok := result.(*jsonserializer.JsonDataWithSchema)
-	require.True(t, ok, "Result should be JsonDataWithSchema")
-	assert.Equal(t, schema, resultWrapper.GetSchema())
-	assert.JSONEq(t, originalPayload, resultWrapper.GetPayload())
 }

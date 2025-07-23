@@ -9,7 +9,6 @@ import (
 
 	"github.com/awslabs/aws-glue-schema-registry/native-schema-registry/golang/pkg/gsrserde-go"
 	"github.com/awslabs/aws-glue-schema-registry/native-schema-registry/golang/pkg/gsrserde-go/common"
-	jsonserializer "github.com/awslabs/aws-glue-schema-registry/native-schema-registry/golang/pkg/gsrserde-go/serializer/json"
 )
 
 var (
@@ -80,7 +79,7 @@ func NewJsonDeserializer(config *common.Configuration) *JsonDeserializer {
 	}
 }
 
-// Deserialize deserializes JSON data bytes and returns a JsonDataWithSchema wrapper object.
+// Deserialize deserializes JSON data bytes and returns the validated JSON payload as a string.
 // The schema parameter contains the JSON schema definition for validation.
 //
 // Parameters:
@@ -90,7 +89,7 @@ func NewJsonDeserializer(config *common.Configuration) *JsonDeserializer {
 //
 // Returns:
 //
-//	interface{}: A JsonDataWithSchema wrapper object containing schema and deserialized data
+//	interface{}: The validated JSON payload as a string
 //	error: Any error that occurred during deserialization
 func (j *JsonDeserializer) Deserialize(data []byte, schema *gsrserde.Schema) (interface{}, error) {
 	if data == nil {
@@ -108,19 +107,17 @@ func (j *JsonDeserializer) Deserialize(data []byte, schema *gsrserde.Schema) (in
 	}
 
 	// Handle empty data case
-	var payload string
 	if len(data) == 0 {
-		payload = ""
-	} else {
-		// Validate that data is valid JSON
-		var jsonData interface{}
-		if err := json.Unmarshal(data, &jsonData); err != nil {
-			return nil, &JsonDeserializationError{
-				Message: "data is not valid JSON",
-				Cause:   err,
-			}
+		return "", nil
+	}
+
+	// Validate that data is valid JSON
+	var jsonData interface{}
+	if err := json.Unmarshal(data, &jsonData); err != nil {
+		return nil, &JsonDeserializationError{
+			Message: "data is not valid JSON",
+			Cause:   err,
 		}
-		payload = string(data)
 	}
 
 	// Get schema definition from schema object
@@ -140,17 +137,8 @@ func (j *JsonDeserializer) Deserialize(data []byte, schema *gsrserde.Schema) (in
 		}
 	}
 
-	// Create JsonDataWithSchema wrapper
-	// Use the payload we already prepared above
-	wrapper, err := jsonserializer.NewJsonDataWithSchema(schemaDefinition, payload)
-	if err != nil {
-		return nil, &JsonDeserializationError{
-			Message: "failed to create JsonDataWithSchema wrapper",
-			Cause:   err,
-		}
-	}
-
-	return wrapper, nil
+	// Return the validated JSON payload as a string
+	return string(data), nil
 }
 
 // validateAgainstSchema validates JSON data against a schema definition using gojsonschema.
@@ -212,127 +200,4 @@ func (j *JsonDeserializer) validateAgainstSchema(schemaDefinition string, data [
 	}
 
 	return nil
-}
-
-// DeserializeToMap deserializes JSON data bytes to a map[string]interface{} for cases
-// where the caller wants raw map data instead of the JsonDataWithSchema wrapper.
-// This is a convenience method for specific use cases.
-//
-// Parameters:
-//
-//	data: The JSON data bytes to deserialize
-//	schema: The schema object containing the JSON schema definition
-//
-// Returns:
-//
-//	map[string]interface{}: The deserialized JSON data as a map
-//	error: Any error that occurred during deserialization
-func (j *JsonDeserializer) DeserializeToMap(data []byte, schema *gsrserde.Schema) (map[string]interface{}, error) {
-	if data == nil {
-		return nil, &JsonDeserializationError{
-			Message: "cannot deserialize nil data",
-			Cause:   ErrNilData,
-		}
-	}
-
-	if schema == nil {
-		return nil, &JsonDeserializationError{
-			Message: "schema cannot be nil",
-			Cause:   ErrInvalidSchema,
-		}
-	}
-
-	// Validate data against schema if schema definition is available
-	schemaDefinition := schema.Definition
-	if strings.TrimSpace(schemaDefinition) != "" {
-		if err := j.validateAgainstSchema(schemaDefinition, data); err != nil {
-			return nil, &JsonDeserializationError{
-				Message: "data validation against schema failed",
-				Cause:   err,
-			}
-		}
-	}
-
-	// Deserialize to map
-	var result map[string]interface{}
-	if err := json.Unmarshal(data, &result); err != nil {
-		return nil, &JsonDeserializationError{
-			Message: "failed to unmarshal JSON to map",
-			Cause:   err,
-		}
-	}
-
-	return result, nil
-}
-
-// DeserializeToStruct deserializes JSON data bytes to a specific struct type.
-// This is a convenience method for cases where the caller wants to deserialize
-// directly to a specific Go struct type.
-//
-// Parameters:
-//
-//	data: The JSON data bytes to deserialize
-//	schema: The schema object containing the JSON schema definition
-//	target: Pointer to the struct to deserialize into
-//
-// Returns:
-//
-//	error: Any error that occurred during deserialization
-func (j *JsonDeserializer) DeserializeToStruct(data []byte, schema *gsrserde.Schema, target interface{}) error {
-	if data == nil {
-		return &JsonDeserializationError{
-			Message: "cannot deserialize nil data",
-			Cause:   ErrNilData,
-		}
-	}
-
-	if schema == nil {
-		return &JsonDeserializationError{
-			Message: "schema cannot be nil",
-			Cause:   ErrInvalidSchema,
-		}
-	}
-
-	if target == nil {
-		return &JsonDeserializationError{
-			Message: "target cannot be nil",
-			Cause:   ErrNilData,
-		}
-	}
-
-	// Validate data against schema if schema definition is available
-	schemaDefinition := schema.Definition
-	if strings.TrimSpace(schemaDefinition) != "" {
-		if err := j.validateAgainstSchema(schemaDefinition, data); err != nil {
-			return &JsonDeserializationError{
-				Message: "data validation against schema failed",
-				Cause:   err,
-			}
-		}
-	}
-
-	// Deserialize to target struct
-	if err := json.Unmarshal(data, target); err != nil {
-		return &JsonDeserializationError{
-			Message: "failed to unmarshal JSON to struct",
-			Cause:   err,
-		}
-	}
-
-	return nil
-}
-
-// ValidateJsonData validates JSON data bytes against a schema definition.
-// This is a utility method for standalone validation without deserialization.
-//
-// Parameters:
-//
-//	data: The JSON data bytes to validate
-//	schemaDefinition: The JSON schema definition string
-//
-// Returns:
-//
-//	error: Any validation error, nil if valid
-func (j *JsonDeserializer) ValidateJsonData(data []byte, schemaDefinition string) error {
-	return j.validateAgainstSchema(schemaDefinition, data)
 }
