@@ -1,0 +1,79 @@
+# Maven build artifacts
+target/
+*.jar
+*.war
+*.ear
+*.class
+
+# Native shared libraries
+*.so
+*.dll
+*.dylib
+*.a
+
+# C/C++ build artifacts
+c/build/
+c/src/*.o
+c/src/*.so
+c/src/*.dll
+c/src/*.dylib
+
+# CMake build artifacts
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+CPackConfig.cmake
+CPackSourceConfig.cmake
+DartConfiguration.tcl
+CTestTestfile.cmake
+compile_commands.json
+Makefile
+*.cmake
+
+# SWIG generated files
+*_wrap.c
+*_wrap.cxx
+*_wrap.h
+
+# C# build artifacts
+csharp/bin/
+csharp/obj/
+*.exe
+*.pdb
+*.dll.config
+
+# Python build artifacts
+python/build/
+python/dist/
+python/*.egg-info/
+__pycache__/
+*.pyc
+*.pyo
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+
+# GraalVM native image artifacts
+*.debug
+graal_isolate*.h
+libnativeschemaregistry*.h
+libnativeschemaregistry*.he
+
+# Test artifacts
+*.test
+test-results/
+
+# OS generated files
+Thumbs.db
+ehthumbs.db
+Desktop.ini

@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 
 namespace AWSGsrSerDe
 {
@@ -14,6 +15,33 @@ namespace AWSGsrSerDe
             //p_err will be set by Swig automatically.
             _deserializer = new glue_schema_registry_deserializer(p_err: null);
             
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="GlueSchemaRegistryDeserializer"/> class with configuration file.
+        /// </summary>
+        /// <param name="configFilePath">Path to the configuration properties file.</param>
+        /// <exception cref="ArgumentException">Thrown when config file path is null or empty.</exception>
+        /// <exception cref="FileNotFoundException">Thrown when configuration file does not exist.</exception>
+        /// <exception cref="UnauthorizedAccessException">Thrown when configuration file cannot be read.</exception>
+        public GlueSchemaRegistryDeserializer(string configFilePath)
+        {
+            if (string.IsNullOrEmpty(configFilePath))
+                throw new ArgumentException("Config file path cannot be null or empty", nameof(configFilePath));
+                
+            if (!File.Exists(configFilePath))
+                throw new FileNotFoundException($"Configuration file not found: {configFilePath}");
+                
+            try 
+            {
+                using (var fs = File.OpenRead(configFilePath)) { }
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                throw new UnauthorizedAccessException($"Cannot read configuration file: {configFilePath}", ex);
+            }
+            
+            _deserializer = new glue_schema_registry_deserializer(configFilePath, null);
         }
 
         ~GlueSchemaRegistryDeserializer()

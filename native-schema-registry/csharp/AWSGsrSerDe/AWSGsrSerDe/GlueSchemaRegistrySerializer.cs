@@ -12,6 +12,7 @@
 // limitations under the License.
 
 using System;
+using System.IO;
 
 namespace AWSGsrSerDe
 {
@@ -29,6 +30,33 @@ namespace AWSGsrSerDe
         public GlueSchemaRegistrySerializer()
         {
             _serializer = new glue_schema_registry_serializer(p_err: null);
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="GlueSchemaRegistrySerializer"/> class with configuration file.
+        /// </summary>
+        /// <param name="configFilePath">Path to the configuration properties file.</param>
+        /// <exception cref="ArgumentException">Thrown when config file path is null or empty.</exception>
+        /// <exception cref="FileNotFoundException">Thrown when configuration file does not exist.</exception>
+        /// <exception cref="UnauthorizedAccessException">Thrown when configuration file cannot be read.</exception>
+        public GlueSchemaRegistrySerializer(string configFilePath)
+        {
+            if (string.IsNullOrEmpty(configFilePath))
+                throw new ArgumentException("Config file path cannot be null or empty", nameof(configFilePath));
+                
+            if (!File.Exists(configFilePath))
+                throw new FileNotFoundException($"Configuration file not found: {configFilePath}");
+                
+            try 
+            {
+                using (var fs = File.OpenRead(configFilePath)) { }
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                throw new UnauthorizedAccessException($"Cannot read configuration file: {configFilePath}", ex);
+            }
+            
+            _serializer = new glue_schema_registry_serializer(configFilePath, null);
         }
 
         /// <summary>

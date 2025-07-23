@@ -15,8 +15,37 @@ glue_schema_registry_serializer *new_glue_schema_registry_serializer(glue_schema
         throw_error(p_err, "Failed to initialize GraalVM isolate.", ERR_CODE_GRAALVM_INIT_EXCEPTION);
         return NULL;
     }
-    //TODO: Handle errors here. This will be updated when configuration is added.
-    initialize_serializer(serializer->instance_context);
+    //Initialize with default configuration (no config file)
+    initialize_serializer_with_config(serializer->instance_context, NULL);
+    return serializer;
+}
+
+glue_schema_registry_serializer *new_glue_schema_registry_serializer_with_config(const char *config_file_path, glue_schema_registry_error **p_err) {
+    if (config_file_path == NULL) {
+        throw_error(p_err, "Config file path cannot be NULL.", ERR_CODE_NULL_PARAMETERS);
+        return NULL;
+    }
+
+    glue_schema_registry_serializer *serializer = NULL;
+    serializer = (glue_schema_registry_serializer *) aws_common_malloc(sizeof(glue_schema_registry_serializer));
+
+    //Initializes a GraalVM instance to call the entry points.
+    int ret = graal_create_isolate(NULL, NULL, (graal_isolatethread_t **) &serializer->instance_context);
+
+    if (ret != 0) {
+        delete_glue_schema_registry_serializer(serializer);
+        throw_error(p_err, "Failed to initialize GraalVM isolate.", ERR_CODE_GRAALVM_INIT_EXCEPTION);
+        return NULL;
+    }
+    
+    //Initialize with configuration file
+    int config_result = initialize_serializer_with_config(serializer->instance_context, (char*)config_file_path);
+    if (config_result != 0) {
+        delete_glue_schema_registry_serializer(serializer);
+        throw_error(p_err, "Failed to initialize serializer with configuration file.", ERR_CODE_RUNTIME_ERROR);
+        return NULL;
+    }
+    
     return serializer;
 }
 
