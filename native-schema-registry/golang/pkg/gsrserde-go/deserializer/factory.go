@@ -6,6 +6,7 @@ import (
 
 	"github.com/awslabs/aws-glue-schema-registry/native-schema-registry/golang/pkg/gsrserde-go/common"
 	"github.com/awslabs/aws-glue-schema-registry/native-schema-registry/golang/pkg/gsrserde-go/deserializer/avro"
+	"github.com/awslabs/aws-glue-schema-registry/native-schema-registry/golang/pkg/gsrserde-go/deserializer/json"
 	"github.com/awslabs/aws-glue-schema-registry/native-schema-registry/golang/pkg/gsrserde-go/deserializer/protobuf"
 )
 
@@ -72,8 +73,7 @@ func (f *DataFormatDeserializerFactory) GetDeserializer(config *common.Configura
 	case common.DataFormatAvro:
 		return avro.NewAvroDeserializer(config), nil
 	case common.DataFormatJSON:
-		// TODO: Implement JSON deserializer
-		return nil, fmt.Errorf("%w: JSON deserializer not yet implemented", ErrUnsupportedDataFormat)
+		return json.NewJsonDeserializer(config), nil
 	default:
 		return nil, fmt.Errorf("%w: %v", ErrUnsupportedDataFormat, dataFormat)
 	}
