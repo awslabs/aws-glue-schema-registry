@@ -19,7 +19,16 @@ Usually, the process is as follows:
 3. mvn install -P native-image (again, and this time it works)
 4. Build C layer (it should build fully during this attempt)
 
-On Amazon Linux, you might need to install cmake, Python, locv, llvm etc and set PATHs accordingly to make it work. These setps are not necessary on Ubnutu as they come in-built.
+On Amazon Linux, you might need to install cmake, Python, lcov, llvm etc and set PATHs accordingly to make it work. These setps are not necessary on Ubnutu as they come in-built.
+
+The versions we've used when building the native schema registry library are:
+- Maven 3.8.7
+- Java (GraalVM) 17.0.12
+- gcov 13.3.0
+- llvm 18.1.3
+- lcov 2.0-1
+- cmake 3.28.3
+- dotnet 8.0.117
 
 -------------
 

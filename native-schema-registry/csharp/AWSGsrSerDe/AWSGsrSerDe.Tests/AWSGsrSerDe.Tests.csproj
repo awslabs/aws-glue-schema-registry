@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>netcoreapp3.1</TargetFramework>
+        <TargetFramework>net8.0</TargetFramework>
         <CodeAnalysisRuleSet>GlueSchemaRegistryTest.ruleset</CodeAnalysisRuleSet>
         <IsPackable>false</IsPackable>
     </PropertyGroup>
@@ -35,12 +35,19 @@
         <MakeDir Directories=".proto/" />
     </Target>
     
-    <ItemGroup>
+    <!-- <ItemGroup>
         <Content Include="resources\**">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </Content>
         <Protobuf Include="../../../shared/test/protos/*.proto" ProtoRoot="../../../shared/test/protos/" GrpcServices="None" OutputDir=".proto/" CompileOutputs="false" />
         <Compile Include=".proto/*.cs" />
-    </ItemGroup>
+    </ItemGroup> -->
 
+     <ItemGroup>
+        <Protobuf Include="../../../shared/test/protos/*.proto"
+                 ProtoRoot="../../../shared/test/protos/"
+                 GrpcServices="None"
+                 OutputDir=".proto/" />
+	    <Compile Include=".proto/*.cs" />
+     </ItemGroup>
 </Project>
