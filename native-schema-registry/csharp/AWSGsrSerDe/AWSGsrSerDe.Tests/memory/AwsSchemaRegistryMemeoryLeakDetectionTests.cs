@@ -97,15 +97,15 @@ namespace AWSGsrSerDe.Tests.memory
 
         // TODO: Improve and automate the memory leak check
         // Test for detecting memory leak
-        // [Test]
-        // public void KafkaSerDeMemoryTestForProtobuf()
-        // {
-        //     for (;;)
-        //     {
-        //         SerializeDeserializeAvroMessage();
-        //         SerializeDeserializeProtobufMessage();
-        //         SerializeDeserializeJsonMessage();
-        //     }
-        // }
+        [Test]
+        public void KafkaSerDeMemoryTestForProtobuf()
+        {
+            for (;;)
+            {
+                SerializeDeserializeAvroMessage();
+                SerializeDeserializeProtobufMessage();
+                SerializeDeserializeJsonMessage();
+            }
+        }
     }
 }
