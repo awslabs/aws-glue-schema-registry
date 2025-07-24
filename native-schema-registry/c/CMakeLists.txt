@@ -28,15 +28,6 @@ set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 include_directories("include")
 include_directories(${LIB_NATIVE_SCHEMA_REGISTRY_PATH})
 # --- Python Integration ---
-find_package(Python3 REQUIRED COMPONENTS Development)
-
-include_directories(${Python3_INCLUDE_DIRS})
-link_libraries(${Python3_LIBRARIES})
-
-find_package(Python3 REQUIRED COMPONENTS Development)
-
-include_directories(${Python3_INCLUDE_DIRS})
-link_libraries(${Python3_LIBRARIES})
 
 add_subdirectory("src")
 include (CTest)

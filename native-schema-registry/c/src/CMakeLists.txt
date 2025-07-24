@@ -110,41 +110,6 @@ add_custom_command(
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${SERDE_MODULE_NAME}> ${CSHARP_GEN_LIB_PATH}/
 )
 
-####Python
-find_package(PythonLibs REQUIRED)
-set(PYTHON_MODULE_NAME GsrSerDePyGen)
-set(PYTHON_ROOT_PATH ${PROJECT_SOURCE_DIR}/../python/PyGsrSerDe)
-set(PYTHON_SOURCE_PATH ${PYTHON_ROOT_PATH}/)
-set(PYTHON_GEN_LIB_PATH ${PYTHON_ROOT_PATH})
-swig_add_library(
-        ${PYTHON_MODULE_NAME}
-        TYPE SHARED
-        LANGUAGE python
-        OUTPUT_DIR "${PYTHON_SOURCE_PATH}"
-        SOURCES ${GsrSerDeSrc}
-)
-list(APPEND PYTHON_INCLUDES
-        "${PROJECT_SOURCE_DIR}/include/"
-        #TODO: Path needs to be configurable per version and OS
-        "/usr/include/python3.7m/")
-
-target_include_directories(${PYTHON_MODULE_NAME} PUBLIC ${PYTHON_INCLUDES})
-set_target_properties(
-        ${PYTHON_MODULE_NAME}
-        PROPERTIES
-        SWIG_USE_TARGET_INCLUDE_DIRECTORIES TRUE
-)
-
-##TODO: Fix this during release. We should segregate Debug and Release
-##Copying built libraries to PYTHON project
-add_custom_command(
-        TARGET ${PYTHON_MODULE_NAME}
-        POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${DATA_TYPES_MODULE_NAME}> ${PYTHON_GEN_LIB_PATH}/
-        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${NATIVE_SCHEMA_REGISTRY_MODULE_NAME}> ${PYTHON_GEN_LIB_PATH}/
-        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${AWS_COMMON_MEMALLOC}> ${PYTHON_GEN_LIB_PATH}/
-        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${SERDE_MODULE_NAME}> ${PYTHON_GEN_LIB_PATH}/
-)
 ####Go
 set(GO_MODULE_NAME GsrSerDeGoGen)
 set(GO_ROOT_PATH ${PROJECT_SOURCE_DIR}/../golang)
@@ -180,6 +145,8 @@ add_custom_command(
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${NATIVE_SCHEMA_REGISTRY_MODULE_NAME}> ${GO_LIB_PATH}/
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${AWS_COMMON_MEMALLOC}> ${GO_LIB_PATH}/
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${SERDE_MODULE_NAME}> ${GO_LIB_PATH}/
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${GO_LIB_PATH}/include
+        COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/include/ ${GO_LIB_PATH}/include/
 )
 
 if(CMAKE_C_COMPILER_ID MATCHES "GNU")
