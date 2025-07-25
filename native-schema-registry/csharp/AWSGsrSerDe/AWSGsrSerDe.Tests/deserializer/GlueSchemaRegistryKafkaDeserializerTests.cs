@@ -13,6 +13,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Text.Json.Nodes;
 using AWSGsrSerDe.common;
 using AWSGsrSerDe.deserializer;
@@ -29,8 +31,29 @@ namespace AWSGsrSerDe.Tests.deserializer
     [TestFixture]
     public class GlueSchemaRegistryKafkaDeserializerTests
     {
-        private const string AVRO_CONFIG_PATH = "configuration/test-configs/valid-minimal.properties";
-        private const string PROTOBUF_CONFIG_PATH = "configuration/test-configs/valid-minimal-protobuf.properties";
+        private static readonly string AVRO_CONFIG_PATH = GetConfigPath("configuration/test-configs/valid-minimal.properties");
+        private static readonly string PROTOBUF_CONFIG_PATH = GetConfigPath("configuration/test-configs/valid-minimal-protobuf.properties");
+
+        /// <summary>
+        /// Finds the project root by looking for .csproj file and returns absolute path to config file
+        /// </summary>
+        /// <param name="relativePath">Relative path from project root</param>
+        /// <returns>Absolute path to the configuration file</returns>
+        private static string GetConfigPath(string relativePath)
+        {
+            var currentDir = new DirectoryInfo(Directory.GetCurrentDirectory());
+            while (currentDir != null && !currentDir.GetFiles("*.csproj").Any())
+            {
+                currentDir = currentDir.Parent;
+            }
+            
+            if (currentDir == null)
+            {
+                throw new DirectoryNotFoundException("Could not find project root directory containing .csproj file");
+            }
+            
+            return Path.Combine(currentDir.FullName, relativePath);
+        }
 
         private static readonly GlueSchemaRegistryKafkaSerializer KafkaSerializer =
             new GlueSchemaRegistryKafkaSerializer(AVRO_CONFIG_PATH);
@@ -46,7 +69,7 @@ namespace AWSGsrSerDe.Tests.deserializer
             var jsonMessage = RecordGenerator.GetSampleJsonTestData();
 
             // Json Data Encoded
-            var jsonSerializer = new GlueSchemaRegistryKafkaSerializer("configuration/test-configs/valid-minimal-json.properties");
+            var jsonSerializer = new GlueSchemaRegistryKafkaSerializer(GetConfigPath("configuration/test-configs/valid-minimal-json.properties"));
             var bytes = jsonSerializer.Serialize(jsonMessage, "test-topic-json");
 
             Assert.DoesNotThrow(() => Deserializer.CanDecode(bytes));

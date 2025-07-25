@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using NUnit.Framework;
 
 namespace AWSGsrSerDe.Tests.Configuration
@@ -7,19 +8,32 @@ namespace AWSGsrSerDe.Tests.Configuration
     [TestFixture]
     public class ConfigFileValidationTests
     {
-        private string _testConfigDirectory;
-
-        [SetUp]
-        public void Setup()
+        /// <summary>
+        /// Finds the project root by looking for .csproj file and returns absolute path to config file
+        /// </summary>
+        /// <param name="relativePath">Relative path from project root</param>
+        /// <returns>Absolute path to the configuration file</returns>
+        private static string GetConfigPath(string relativePath)
         {
-            _testConfigDirectory = Path.Combine(TestContext.CurrentContext.WorkDirectory, "configuration", "test-configs");
+            var currentDir = new DirectoryInfo(Directory.GetCurrentDirectory());
+            while (currentDir != null && !currentDir.GetFiles("*.csproj").Any())
+            {
+                currentDir = currentDir.Parent;
+            }
+            
+            if (currentDir == null)
+            {
+                throw new DirectoryNotFoundException("Could not find project root directory containing .csproj file");
+            }
+            
+            return Path.Combine(currentDir.FullName, relativePath);
         }
 
         [Test]
         public void Constructor_WithValidMinimalConfig_CreatesSerializerSuccessfully()
         {
             // Arrange
-            var configPath = Path.Combine(_testConfigDirectory, "valid-minimal.properties");
+            var configPath = GetConfigPath("configuration/test-configs/valid-minimal.properties");
 
             // Act & Assert
             using var serializer = new GlueSchemaRegistrySerializer(configPath);
@@ -30,7 +44,7 @@ namespace AWSGsrSerDe.Tests.Configuration
         public void Constructor_WithValidMaximalConfig_CreatesSerializerSuccessfully()
         {
             // Arrange  
-            var configPath = Path.Combine(_testConfigDirectory, "valid-maximal.properties");
+            var configPath = GetConfigPath("configuration/test-configs/valid-maximal.properties");
 
             // Act & Assert
             using var serializer = new GlueSchemaRegistrySerializer(configPath);
@@ -41,7 +55,7 @@ namespace AWSGsrSerDe.Tests.Configuration
         public void Constructor_WithValidMinimalConfig_CreatesDeserializerSuccessfully()
         {
             // Arrange
-            var configPath = Path.Combine(_testConfigDirectory, "valid-minimal.properties");
+            var configPath = GetConfigPath("configuration/test-configs/valid-minimal.properties");
 
             // Act & Assert
             using var deserializer = new GlueSchemaRegistryDeserializer(configPath);
@@ -52,7 +66,7 @@ namespace AWSGsrSerDe.Tests.Configuration
         public void Constructor_WithValidMaximalConfig_CreatesDeserializerSuccessfully()
         {
             // Arrange
-            var configPath = Path.Combine(_testConfigDirectory, "valid-maximal.properties");
+            var configPath = GetConfigPath("configuration/test-configs/valid-maximal.properties");
 
             // Act & Assert
             using var deserializer = new GlueSchemaRegistryDeserializer(configPath);
@@ -79,7 +93,7 @@ namespace AWSGsrSerDe.Tests.Configuration
         public void Constructor_WithNonExistentConfigFile_ThrowsException()
         {
             // Arrange
-            var nonExistentPath = Path.Combine(_testConfigDirectory, "nonexistent.properties");
+            var nonExistentPath = GetConfigPath("configuration/test-configs/nonexistent.properties");
 
             // Act & Assert
             Assert.Throws<FileNotFoundException>(() => new GlueSchemaRegistrySerializer(nonExistentPath));
@@ -90,7 +104,7 @@ namespace AWSGsrSerDe.Tests.Configuration
         public void Constructor_WithInvalidConfigFormat_ThrowsException()
         {
             // Arrange
-            var invalidConfigPath = Path.Combine(_testConfigDirectory, "invalid-format.properties");
+            var invalidConfigPath = GetConfigPath("configuration/test-configs/invalid-format.properties");
 
             // Act & Assert - The C library should handle invalid format gracefully or throw appropriate exceptions
             // This test verifies the behavior when config file has syntax errors
