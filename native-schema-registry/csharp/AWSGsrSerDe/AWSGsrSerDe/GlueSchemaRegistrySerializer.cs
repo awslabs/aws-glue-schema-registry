@@ -30,7 +30,48 @@ namespace AWSGsrSerDe
         /// <param name="configFilePath">Path to the configuration properties file.</param>
         public GlueSchemaRegistrySerializer(string configFilePath)
         {
-            _serializer = new glue_schema_registry_serializer(configFilePath, null);
+            ValidateConfigFilePath(configFilePath);
+            
+            try
+            {
+                _serializer = new glue_schema_registry_serializer(configFilePath, null);
+            }
+            catch (Exception e)
+            {
+                // Check for specific error conditions that should throw specific exceptions
+                if (e.Message.Contains("No such file") || e.Message.Contains("does not exist"))
+                {
+                    throw new FileNotFoundException($"Configuration file not found: {configFilePath}", configFilePath);
+                }
+                if (e.Message.Contains("invalid") || e.Message.Contains("format") || e.Message.Contains("parse"))
+                {
+                    throw new AwsSchemaRegistryException($"Invalid configuration file format: {e.Message}");
+                }
+                
+                throw new AwsSchemaRegistryException($"Failed to initialize serializer: {e.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Validates the configuration file path parameter.
+        /// </summary>
+        /// <param name="configFilePath">The configuration file path to validate.</param>
+        private static void ValidateConfigFilePath(string configFilePath)
+        {
+            if (configFilePath is null)
+            {
+                throw new ArgumentException("Configuration file path cannot be null", nameof(configFilePath));
+            }
+
+            if (string.IsNullOrEmpty(configFilePath) || string.IsNullOrWhiteSpace(configFilePath))
+            {
+                throw new ArgumentException("Configuration file path cannot be empty or whitespace", nameof(configFilePath));
+            }
+
+            if (!File.Exists(configFilePath))
+            {
+                throw new FileNotFoundException($"Configuration file not found: {configFilePath}", configFilePath);
+            }
         }
 
         /// <summary>

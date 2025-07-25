@@ -76,6 +76,11 @@ namespace AWSGsrSerDe.common
             {
                 AvroRecordType = configs[GlueSchemaRegistryConstants.AvroRecordType];
             }
+            else
+            {
+                // Set a sensible default when not specified
+                AvroRecordType = AvroRecordType.GenericRecord;
+            }
         }
 
         private void ValidateAndSetProtobufMessageDescriptor(Dictionary<string, dynamic> configs)
