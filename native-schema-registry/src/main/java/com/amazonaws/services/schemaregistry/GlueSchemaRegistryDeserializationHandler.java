@@ -54,12 +54,12 @@ public class GlueSchemaRegistryDeserializationHandler {
                 initializeDeserializer(isolateThread);
                 return 0;
             }
-            
+
             String filePath = CTypeConversion.toJavaString(configFilePath);
             Map<String, String> configs = ConfigurationFileReader.loadConfigFromFile(filePath);
             GlueSchemaRegistryConfiguration configuration = new GlueSchemaRegistryConfiguration(configs);
             DeserializerInstance.create(configuration);
-            
+
             return 0; // Success
         } catch (Exception e) {
             System.err.println("Failed to initialize deserializer with config: " + e.getMessage());

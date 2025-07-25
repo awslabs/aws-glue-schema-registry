@@ -12,9 +12,7 @@ typedef struct glue_schema_registry_deserializer {
     void *instance_context;
 } glue_schema_registry_deserializer;
 
-glue_schema_registry_deserializer *new_glue_schema_registry_deserializer(glue_schema_registry_error **p_err);
-
-glue_schema_registry_deserializer *new_glue_schema_registry_deserializer_with_config(const char *config_file_path, glue_schema_registry_error **p_err);
+glue_schema_registry_deserializer *new_glue_schema_registry_deserializer(const char *config_file_path, glue_schema_registry_error **p_err);
 
 void delete_glue_schema_registry_deserializer(glue_schema_registry_deserializer *deserializer);
 

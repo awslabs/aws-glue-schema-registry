@@ -3,28 +3,7 @@
 #include "libnativeschemaregistry.h"
 #include <stdlib.h>
 
-glue_schema_registry_deserializer * new_glue_schema_registry_deserializer(glue_schema_registry_error **p_err) {
-    glue_schema_registry_deserializer *deserializer = NULL;
-    deserializer =
-            (glue_schema_registry_deserializer *) aws_common_malloc(sizeof(glue_schema_registry_deserializer));
-
-    int ret = graal_create_isolate(NULL, NULL, (graal_isolatethread_t **) &deserializer->instance_context);
-    if (ret != 0) {
-        delete_glue_schema_registry_deserializer(deserializer);
-        throw_error(p_err, "Failed to initialize GraalVM isolate.", ERR_CODE_GRAALVM_INIT_EXCEPTION);
-        return NULL;
-    }
-    //Initialize with default configuration (no config file)
-    initialize_deserializer_with_config(deserializer->instance_context, NULL);
-    return deserializer;
-}
-
-glue_schema_registry_deserializer * new_glue_schema_registry_deserializer_with_config(const char *config_file_path, glue_schema_registry_error **p_err) {
-    if (config_file_path == NULL) {
-        throw_error(p_err, "Config file path cannot be NULL.", ERR_CODE_NULL_PARAMETERS);
-        return NULL;
-    }
-
+glue_schema_registry_deserializer * new_glue_schema_registry_deserializer(const char *config_file_path, glue_schema_registry_error **p_err) {
     glue_schema_registry_deserializer *deserializer = NULL;
     deserializer =
             (glue_schema_registry_deserializer *) aws_common_malloc(sizeof(glue_schema_registry_deserializer));
@@ -36,7 +15,7 @@ glue_schema_registry_deserializer * new_glue_schema_registry_deserializer_with_c
         return NULL;
     }
     
-    //Initialize with configuration file
+    //Initialize with configuration file (can be NULL for default configuration)
     int config_result = initialize_deserializer_with_config(deserializer->instance_context, (char*)config_file_path);
     if (config_result != 0) {
         delete_glue_schema_registry_deserializer(deserializer);
@@ -109,4 +88,3 @@ bool glue_schema_registry_deserializer_can_decode(glue_schema_registry_deseriali
 
     return can_decode(deserializer->instance_context, array, p_err);
 }
-

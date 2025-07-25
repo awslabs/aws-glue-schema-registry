@@ -56,13 +56,11 @@ public class GlueSchemaRegistrySerializationHandler {
                 initializeSerializer(isolateThread);
                 return 0;
             }
-            
             String filePath = CTypeConversion.toJavaString(configFilePath);
             Map<String, String> configs = ConfigurationFileReader.loadConfigFromFile(filePath);
             GlueSchemaRegistryConfiguration configuration = new GlueSchemaRegistryConfiguration(configs);
             SerializerInstance.create(configuration);
-            
-            return 0; // Success
+            return 0;
         } catch (Exception e) {
             System.err.println("Failed to initialize serializer with config: " + e.getMessage());
             e.printStackTrace();
