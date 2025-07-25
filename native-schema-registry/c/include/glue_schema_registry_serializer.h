@@ -13,8 +13,6 @@ typedef struct glue_schema_registry_serializer {
 
 glue_schema_registry_serializer *new_glue_schema_registry_serializer(const char *config_file_path, glue_schema_registry_error **p_err);
 
-glue_schema_registry_serializer *new_glue_schema_registry_serializer_with_config(const char *config_file_path, glue_schema_registry_error **p_err);
-
 void delete_glue_schema_registry_serializer(glue_schema_registry_serializer *serializer);
 
 //Encodes the GSR Schema with a byte array.
