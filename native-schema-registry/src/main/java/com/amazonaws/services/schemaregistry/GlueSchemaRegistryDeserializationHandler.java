@@ -47,7 +47,10 @@ public class GlueSchemaRegistryDeserializationHandler {
     }
 
     @CEntryPoint(name = "initialize_deserializer_with_config")
-    public static int initializeDeserializerWithConfig(IsolateThread isolateThread, CCharPointer configFilePath) {
+    public static int initializeDeserializerWithConfig(
+        IsolateThread isolateThread, 
+        CCharPointer configFilePath,
+        C_GlueSchemaRegistryErrorPointerHolder errorPointer) {
         try {
             if (configFilePath.isNull()) {
                 // Use default configuration when no config file provided
@@ -62,8 +65,7 @@ public class GlueSchemaRegistryDeserializationHandler {
 
             return 0; // Success
         } catch (Exception e) {
-            System.err.println("Failed to initialize deserializer with config: " + e.getMessage());
-            e.printStackTrace();
+            ExceptionWriter.write(errorPointer, e);
             return 1; // Error
         }
     }

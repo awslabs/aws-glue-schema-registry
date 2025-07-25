@@ -38,7 +38,7 @@ namespace AWSGsrSerDe.Tests.deserializer.protobuf
         [Test]
         public void TestConstruct_ValidArg_Succeed()
         {
-            var config = new GlueSchemaRegistryConfiguration(new Dictionary<string, dynamic>
+            var config = new GlueSchemaRegistryDataFormatConfiguration(new Dictionary<string, dynamic>
             {
                 { GlueSchemaRegistryConstants.ProtobufMessageDescriptor, Phone.Descriptor },
             });
@@ -49,7 +49,7 @@ namespace AWSGsrSerDe.Tests.deserializer.protobuf
         [Test]
         public void TestDeserialize_NullArgs_ThrowsException()
         {
-            var config = new GlueSchemaRegistryConfiguration(new Dictionary<string, dynamic>
+            var config = new GlueSchemaRegistryDataFormatConfiguration(new Dictionary<string, dynamic>
             {
                 { GlueSchemaRegistryConstants.ProtobufMessageDescriptor, Phone.Descriptor },
             });
@@ -93,7 +93,7 @@ namespace AWSGsrSerDe.Tests.deserializer.protobuf
         [TestCaseSource(nameof(TestDeserializationMessageProvider))]
         public void TestDeserialize_Succeed_ForAllTypesOfMessages(IMessage message)
         {
-            var config = new GlueSchemaRegistryConfiguration(new Dictionary<string, dynamic>
+            var config = new GlueSchemaRegistryDataFormatConfiguration(new Dictionary<string, dynamic>
             {
                 { GlueSchemaRegistryConstants.ProtobufMessageDescriptor, message.Descriptor },
             });
@@ -110,7 +110,7 @@ namespace AWSGsrSerDe.Tests.deserializer.protobuf
         [Test]
         public void TestDeserialize_InvalidBytes_ThrowsException()
         {
-            var config = new GlueSchemaRegistryConfiguration(new Dictionary<string, dynamic>
+            var config = new GlueSchemaRegistryDataFormatConfiguration(new Dictionary<string, dynamic>
             {
                 { GlueSchemaRegistryConstants.ProtobufMessageDescriptor, Phone.Descriptor },
             });

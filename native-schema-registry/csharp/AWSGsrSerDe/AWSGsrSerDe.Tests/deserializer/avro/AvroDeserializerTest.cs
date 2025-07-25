@@ -46,9 +46,9 @@ namespace AWSGsrSerDe.Tests.deserializer.avro
         private static User _userDefinedSpecificRecord;
         private static GenericRecord _userDefinedGenericRecord;
         
-        private static GlueSchemaRegistryConfiguration _avroGenericConfiguration;
-        private static GlueSchemaRegistryConfiguration _avroSpecificConfiguration;
-        private static GlueSchemaRegistryConfiguration _avroUnknownConfiguration;
+        private static GlueSchemaRegistryDataFormatConfiguration _avroGenericConfiguration;
+        private static GlueSchemaRegistryDataFormatConfiguration _avroSpecificConfiguration;
+        private static GlueSchemaRegistryDataFormatConfiguration _avroUnknownConfiguration;
 
 
 
@@ -108,9 +108,9 @@ namespace AWSGsrSerDe.Tests.deserializer.avro
                 { GlueSchemaRegistryConstants.AvroRecordType, AvroRecordType.Unknown }
             };
 
-            _avroGenericConfiguration = new GlueSchemaRegistryConfiguration(genericDeserializerConfigs);
-            _avroSpecificConfiguration = new GlueSchemaRegistryConfiguration(specificDeserializerConfigs);
-            _avroUnknownConfiguration = new GlueSchemaRegistryConfiguration(unknownDeserializerConfigs);
+            _avroGenericConfiguration = new GlueSchemaRegistryDataFormatConfiguration(genericDeserializerConfigs);
+            _avroSpecificConfiguration = new GlueSchemaRegistryDataFormatConfiguration(specificDeserializerConfigs);
+            _avroUnknownConfiguration = new GlueSchemaRegistryDataFormatConfiguration(unknownDeserializerConfigs);
         }
         
         [Test]

@@ -56,7 +56,7 @@ namespace AWSGsrSerDe.deserializer
         /// <param name="configs">configuration elements for de-serializers</param>
         /// <returns>protocol specific de-serializer instance.</returns>
         /// <exception cref="AwsSchemaRegistryException">Unsupported Data format.</exception>
-        public IDataFormatDeserializer GetDeserializer(string dataFormat, GlueSchemaRegistryConfiguration configs)
+        public IDataFormatDeserializer GetDeserializer(string dataFormat, GlueSchemaRegistryDataFormatConfiguration configs)
         {
             return dataFormat switch
             {
@@ -67,7 +67,7 @@ namespace AWSGsrSerDe.deserializer
             };
         }
 
-        private AvroDeserializer GetAvroDeserializer(GlueSchemaRegistryConfiguration configs)
+        private AvroDeserializer GetAvroDeserializer(GlueSchemaRegistryDataFormatConfiguration configs)
         {
             var key = configs.AvroRecordType;
             var avroDeserializer = _avroDeserializerMap.GetValueOrDefault(
@@ -81,7 +81,7 @@ namespace AWSGsrSerDe.deserializer
             return avroDeserializer;
         }
 
-        private ProtobufDeserializer GetProtobufDeserializer(GlueSchemaRegistryConfiguration configs)
+        private ProtobufDeserializer GetProtobufDeserializer(GlueSchemaRegistryDataFormatConfiguration configs)
         {
             if (configs.ProtobufMessageDescriptor == null)
             {
@@ -100,7 +100,7 @@ namespace AWSGsrSerDe.deserializer
             return protobufDeserializer;
         }
 
-        private JsonDeserializer GetJsonDeserializer(GlueSchemaRegistryConfiguration configs)
+        private JsonDeserializer GetJsonDeserializer(GlueSchemaRegistryDataFormatConfiguration configs)
         {
             string key;
             if (configs.JsonObjectType is null)
