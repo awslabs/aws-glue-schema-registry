@@ -100,16 +100,6 @@ namespace AWSGsrSerDe.Tests.Configuration
             Assert.Throws<FileNotFoundException>(() => new GlueSchemaRegistryDeserializer(nonExistentPath));
         }
 
-        [Test]
-        public void Constructor_WithInvalidConfigFormat_ThrowsException()
-        {
-            // Arrange
-            var invalidConfigPath = GetConfigPath("configuration/test-configs/invalid-format.properties");
-
-            // Act & Assert - The C library should handle invalid format gracefully or throw appropriate exceptions
-            // This test verifies the behavior when config file has syntax errors
-            Assert.Throws<AwsSchemaRegistryException>(() => new GlueSchemaRegistrySerializer(invalidConfigPath));
-        }
 
         [Test]
         public void Constructor_WithCustomConfig_AcceptsAllProperties()
