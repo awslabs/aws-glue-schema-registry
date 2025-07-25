@@ -15,6 +15,8 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
+using System.IO;
+using System.Linq;
 using System.Text.Json.Nodes;
 using Avro;
 using Avro.Generic;
@@ -53,9 +55,30 @@ namespace AWSGsrSerDe.Tests.serializer
             "geolocation1.json",
             true);
 
-        private const string AVRO_CONFIG_PATH = "configuration/test-configs/valid-minimal.properties";
-        private const string PROTOBUF_CONFIG_PATH = "configuration/test-configs/valid-minimal-protobuf.properties";
-        private const string JSON_CONFIG_PATH = "configuration/test-configs/valid-minimal-json.properties";
+        private static readonly string AVRO_CONFIG_PATH = GetConfigPath("configuration/test-configs/valid-minimal.properties");
+        private static readonly string PROTOBUF_CONFIG_PATH = GetConfigPath("configuration/test-configs/valid-minimal-protobuf.properties");
+        private static readonly string JSON_CONFIG_PATH = GetConfigPath("configuration/test-configs/valid-minimal-json.properties");
+
+        /// <summary>
+        /// Finds the project root by looking for .csproj file and returns absolute path to config file
+        /// </summary>
+        /// <param name="relativePath">Relative path from project root</param>
+        /// <returns>Absolute path to the configuration file</returns>
+        private static string GetConfigPath(string relativePath)
+        {
+            var currentDir = new DirectoryInfo(Directory.GetCurrentDirectory());
+            while (currentDir != null && !currentDir.GetFiles("*.csproj").Any())
+            {
+                currentDir = currentDir.Parent;
+            }
+            
+            if (currentDir == null)
+            {
+                throw new DirectoryNotFoundException("Could not find project root directory containing .csproj file");
+            }
+            
+            return Path.Combine(currentDir.FullName, relativePath);
+        }
 
         private static readonly GlueSchemaRegistryKafkaSerializer KafkaSerializer =
             new GlueSchemaRegistryKafkaSerializer(AVRO_CONFIG_PATH);
