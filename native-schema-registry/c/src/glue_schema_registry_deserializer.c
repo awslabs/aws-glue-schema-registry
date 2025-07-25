@@ -8,7 +8,7 @@ glue_schema_registry_deserializer * new_glue_schema_registry_deserializer(const 
     deserializer =
             (glue_schema_registry_deserializer *) aws_common_malloc(sizeof(glue_schema_registry_deserializer));
 
-    int ret = graal_create_isolate(NULL, NULL, (graal_isolatethread_t **) &deserializer->instance_context);
+    const int ret = graal_create_isolate(NULL, NULL, (graal_isolatethread_t **) &deserializer->instance_context);
     if (ret != 0) {
         delete_glue_schema_registry_deserializer(deserializer);
         throw_error(p_err, "Failed to initialize GraalVM isolate.", ERR_CODE_GRAALVM_INIT_EXCEPTION);
@@ -16,7 +16,7 @@ glue_schema_registry_deserializer * new_glue_schema_registry_deserializer(const 
     }
     
     //Initialize with configuration file (can be NULL for default configuration)
-    int config_result = initialize_deserializer_with_config(deserializer->instance_context, (char*)config_file_path);
+    const int config_result = initialize_deserializer_with_config(deserializer->instance_context, (char*)config_file_path, p_err);
     if (config_result != 0) {
         delete_glue_schema_registry_deserializer(deserializer);
         throw_error(p_err, "Failed to initialize deserializer with configuration file.", ERR_CODE_RUNTIME_ERROR);
@@ -32,7 +32,7 @@ void delete_glue_schema_registry_deserializer(glue_schema_registry_deserializer 
         return;
     }
     if (deserializer->instance_context != NULL) {
-        int ret = graal_tear_down_isolate(deserializer->instance_context);
+        const int ret = graal_tear_down_isolate(deserializer->instance_context);
         if (ret != 0) {
             log_warn("Error tearing down the graal isolate instance.", ERR_CODE_GRAALVM_TEARDOWN_EXCEPTION);
         }

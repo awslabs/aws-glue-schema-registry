@@ -8,7 +8,7 @@ glue_schema_registry_serializer *new_glue_schema_registry_serializer(const char 
     serializer = (glue_schema_registry_serializer *) aws_common_malloc(sizeof(glue_schema_registry_serializer));
 
     //Initializes a GraalVM instance to call the entry points.
-    int ret = graal_create_isolate(NULL, NULL, (graal_isolatethread_t **) &serializer->instance_context);
+    const int ret = graal_create_isolate(NULL, NULL, (graal_isolatethread_t **) &serializer->instance_context);
 
     if (ret != 0) {
         delete_glue_schema_registry_serializer(serializer);
@@ -17,7 +17,7 @@ glue_schema_registry_serializer *new_glue_schema_registry_serializer(const char 
     }
     
     //Initialize with configuration file (can be NULL for default configuration)
-    int config_result = initialize_serializer_with_config(serializer->instance_context, (char*)config_file_path);
+    const int config_result = initialize_serializer_with_config(serializer->instance_context, (char*)config_file_path, p_err);
     if (config_result != 0) {
         delete_glue_schema_registry_serializer(serializer);
         throw_error(p_err, "Failed to initialize serializer with configuration file.", ERR_CODE_RUNTIME_ERROR);
@@ -34,7 +34,7 @@ void delete_glue_schema_registry_serializer(glue_schema_registry_serializer *ser
         return;
     }
     if (serializer->instance_context != NULL) {
-        int ret = graal_tear_down_isolate(serializer->instance_context);
+        const int ret = graal_tear_down_isolate(serializer->instance_context);
         if (ret != 0) {
             log_warn("Error tearing down the graal isolate instance.", ERR_CODE_GRAALVM_TEARDOWN_EXCEPTION);
         }

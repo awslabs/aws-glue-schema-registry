@@ -28,7 +28,7 @@ namespace AWSGsrSerDe.deserializer
 
         private readonly GlueSchemaRegistryDeserializer _glueSchemaRegistryDeserializer;
         
-        private readonly GlueSchemaRegistryConfiguration _configuration;
+        private readonly GlueSchemaRegistryDataFormatConfiguration _configuration;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="GlueSchemaRegistryKafkaDeserializer"/> class.
@@ -41,11 +41,11 @@ namespace AWSGsrSerDe.deserializer
         }
 
         /// <summary>
-        /// Loads configuration from properties file and creates GlueSchemaRegistryConfiguration
+        /// Loads configuration from properties file and creates GlueSchemaRegistryDataFormatConfiguration
         /// </summary>
         /// <param name="configFilePath">Path to the configuration properties file</param>
-        /// <returns>GlueSchemaRegistryConfiguration instance</returns>
-        private GlueSchemaRegistryConfiguration LoadConfigurationFromFile(string configFilePath)
+        /// <returns>GlueSchemaRegistryDataFormatConfiguration instance</returns>
+        private GlueSchemaRegistryDataFormatConfiguration LoadConfigurationFromFile(string configFilePath)
         {
             if (!File.Exists(configFilePath))
             {
@@ -70,7 +70,7 @@ namespace AWSGsrSerDe.deserializer
                 }
             }
             
-            return new GlueSchemaRegistryConfiguration(configDictionary);
+            return new GlueSchemaRegistryDataFormatConfiguration(configDictionary);
         }
 
         /// <summary>

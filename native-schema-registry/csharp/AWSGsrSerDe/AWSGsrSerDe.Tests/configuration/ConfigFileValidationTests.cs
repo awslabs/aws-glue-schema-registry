@@ -29,6 +29,7 @@ namespace AWSGsrSerDe.Tests.Configuration
             return Path.Combine(currentDir.FullName, relativePath);
         }
 
+        // TODO:Use parameterized tests to validate various configurations instead
         [Test]
         public void Constructor_WithValidMinimalConfig_CreatesSerializerSuccessfully()
         {
@@ -184,10 +185,10 @@ namespace AWSGsrSerDe.Tests.Configuration
                 // Arrange
                 var configPath = Path.Combine(TestContext.CurrentContext.WorkDirectory, $"format-{dataFormat}-config.properties");
                 var configContent = $@"region=us-east-1
-registry.name=test-registry
-dataFormat={dataFormat}
-schemaAutoRegistrationEnabled=true
-";
+                    registry.name=test-registry
+                    dataFormat={dataFormat}
+                    schemaAutoRegistrationEnabled=true
+                    ";
 
                 File.WriteAllText(configPath, configContent);
 
