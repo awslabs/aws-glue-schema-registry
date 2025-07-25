@@ -25,14 +25,6 @@ namespace AWSGsrSerDe
         private readonly glue_schema_registry_serializer _serializer;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="GlueSchemaRegistrySerializer"/> class.
-        /// </summary>
-        public GlueSchemaRegistrySerializer()
-        {
-            _serializer = new glue_schema_registry_serializer(null, p_err: null);
-        }
-
-        /// <summary>
         /// Initializes a new instance of the <see cref="GlueSchemaRegistrySerializer"/> class with configuration file.
         /// </summary>
         /// <param name="configFilePath">Path to the configuration properties file.</param>

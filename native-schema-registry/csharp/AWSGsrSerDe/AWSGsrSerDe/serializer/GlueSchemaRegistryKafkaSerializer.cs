@@ -13,6 +13,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using AWSGsrSerDe.common;
 
 namespace AWSGsrSerDe.serializer
@@ -24,30 +25,48 @@ namespace AWSGsrSerDe.serializer
     {
         private readonly GlueSchemaRegistrySerializer _glueSchemaRegistrySerializer;
         
-        private GlueSchemaRegistryConfiguration _configuration;
         private string _dataFormat;
         private ISchemaNameStrategy _schemaNamingStrategy;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="GlueSchemaRegistryKafkaSerializer"/> class.
         /// </summary>
-        /// <param name="configs">configuration elements for serializer</param>
-        public GlueSchemaRegistryKafkaSerializer(Dictionary<string, dynamic> configs)
+        /// <param name="configFilePath">Path to the configuration properties file</param>
+        public GlueSchemaRegistryKafkaSerializer(string configFilePath)
         {
-            Configure(configs);
+            _dataFormat = ReadDataFormatFromConfig(configFilePath);
+            _schemaNamingStrategy = new DefaultSchemaNameStrategy();
             
-            _glueSchemaRegistrySerializer = new GlueSchemaRegistrySerializer();
+            _glueSchemaRegistrySerializer = new GlueSchemaRegistrySerializer(configFilePath);
         }
         
         /// <summary>
-        /// Configures the <see cref="GlueSchemaRegistryKafkaSerializer"/> instance
+        /// Reads the dataFormat property from the configuration file
         /// </summary>
-        /// <param name="configs">configuration elements for serializer</param>
-        public void Configure(Dictionary<string, dynamic> configs)
+        /// <param name="configFilePath">Path to the configuration properties file</param>
+        /// <returns>Data format string</returns>
+        private string ReadDataFormatFromConfig(string configFilePath)
         {
-            _configuration = new GlueSchemaRegistryConfiguration(configs);
-            _dataFormat = _configuration.DataFormat.ToString();
-            _schemaNamingStrategy = new DefaultSchemaNameStrategy();
+            if (!File.Exists(configFilePath))
+            {
+                throw new FileNotFoundException($"Configuration file not found: {configFilePath}");
+            }
+            
+            var lines = File.ReadAllLines(configFilePath);
+            foreach (var line in lines)
+            {
+                var trimmedLine = line.Trim();
+                if (string.IsNullOrEmpty(trimmedLine) || trimmedLine.StartsWith("#"))
+                    continue;
+                    
+                if (trimmedLine.StartsWith("dataFormat="))
+                {
+                    return trimmedLine.Substring("dataFormat=".Length).Trim();
+                }
+            }
+            
+            // Default to AVRO if not specified
+            return "AVRO";
         }
 
         /// <summary>
