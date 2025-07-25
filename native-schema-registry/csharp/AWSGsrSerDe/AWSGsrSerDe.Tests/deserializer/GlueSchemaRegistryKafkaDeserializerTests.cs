@@ -38,7 +38,7 @@ namespace AWSGsrSerDe.Tests.deserializer
         private static readonly GlueSchemaRegistryKafkaDeserializer KafkaDeserializer =
             new GlueSchemaRegistryKafkaDeserializer(AVRO_CONFIG_PATH);
 
-        private static readonly GlueSchemaRegistryDeserializer Deserializer = new GlueSchemaRegistryDeserializer();
+        private static readonly GlueSchemaRegistryDeserializer Deserializer = new GlueSchemaRegistryDeserializer(AVRO_CONFIG_PATH);
 
         [Test]
         public void TestDeserializerWithMessageEncodedBySerializer_Json()
