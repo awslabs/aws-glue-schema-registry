@@ -83,6 +83,11 @@ namespace AWSGsrSerDe.deserializer
 
         private ProtobufDeserializer GetProtobufDeserializer(GlueSchemaRegistryConfiguration configs)
         {
+            if (configs.ProtobufMessageDescriptor == null)
+            {
+                throw new AwsSchemaRegistryException("ProtobufMessageDescriptor is null in configuration. Please ensure proper Protobuf configuration.");
+            }
+
             var key = configs.ProtobufMessageDescriptor.FullName;
             var protobufDeserializer = _protobufDeserializerMap.GetValueOrDefault(
                 key,
