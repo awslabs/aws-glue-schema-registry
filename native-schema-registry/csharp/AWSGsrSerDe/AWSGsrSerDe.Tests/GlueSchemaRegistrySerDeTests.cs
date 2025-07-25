@@ -32,8 +32,8 @@ namespace AWSGsrSerDe.Tests
         [SetUp]
         public void Setup()
         {
-            _serializer = new GlueSchemaRegistrySerializer();
-            _deserializer = new GlueSchemaRegistryDeserializer();
+            _serializer = new GlueSchemaRegistrySerializer("configuration/test-configs/valid-minimal.properties");
+            _deserializer = new GlueSchemaRegistryDeserializer("configuration/test-configs/valid-minimal.properties");
             
             _schema = new GlueSchemaRegistrySchema("TestSchemaName", TestAvroSchema, "AVRO");
             _data = GetAvroMessage();
