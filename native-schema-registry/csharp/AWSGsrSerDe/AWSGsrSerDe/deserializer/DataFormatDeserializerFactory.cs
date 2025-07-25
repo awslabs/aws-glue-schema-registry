@@ -83,18 +83,12 @@ namespace AWSGsrSerDe.deserializer
 
         private ProtobufDeserializer GetProtobufDeserializer(GlueSchemaRegistryConfiguration configs)
         {
-            // For Kafka deserialization, the ProtobufMessageDescriptor can be null and will be resolved dynamically from the schema
-            string key;
-            if (configs.ProtobufMessageDescriptor != null)
+            if (configs.ProtobufMessageDescriptor == null)
             {
-                key = configs.ProtobufMessageDescriptor.FullName;
+                throw new AwsSchemaRegistryException("ProtobufMessageDescriptor is null in configuration. Please ensure proper Protobuf configuration.");
             }
-            else
-            {
-                // Use a default key for dynamic schema resolution
-                key = "dynamic_protobuf_deserializer";
-            }
-            
+
+            var key = configs.ProtobufMessageDescriptor.FullName;
             var protobufDeserializer = _protobufDeserializerMap.GetValueOrDefault(
                 key,
                 new ProtobufDeserializer(configs));
