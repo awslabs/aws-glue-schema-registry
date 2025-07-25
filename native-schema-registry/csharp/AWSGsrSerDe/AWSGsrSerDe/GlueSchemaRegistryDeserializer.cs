@@ -10,13 +10,6 @@ namespace AWSGsrSerDe
     {
         private readonly glue_schema_registry_deserializer _deserializer;
 
-        public GlueSchemaRegistryDeserializer()
-        {
-            //p_err will be set by Swig automatically.
-            _deserializer = new glue_schema_registry_deserializer(null, p_err: null);
-            
-        }
-
         /// <summary>
         /// Initializes a new instance of the <see cref="GlueSchemaRegistryDeserializer"/> class with configuration file.
         /// </summary>

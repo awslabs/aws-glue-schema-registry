@@ -11,7 +11,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using System.Collections.Generic;
+using System.IO;
 using AWSGsrSerDe.common;
 
 namespace AWSGsrSerDe.deserializer
@@ -26,26 +28,49 @@ namespace AWSGsrSerDe.deserializer
 
         private readonly GlueSchemaRegistryDeserializer _glueSchemaRegistryDeserializer;
         
-        private GlueSchemaRegistryConfiguration _configuration;
-
+        private readonly GlueSchemaRegistryConfiguration _configuration;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="GlueSchemaRegistryKafkaDeserializer"/> class.
         /// </summary>
-        /// <param name="configs">configuration elements for de-serializer</param>
-        public GlueSchemaRegistryKafkaDeserializer(Dictionary<string, dynamic> configs)
+        /// <param name="configFilePath">Path to the configuration properties file</param>
+        public GlueSchemaRegistryKafkaDeserializer(string configFilePath)
         {
-            Configure(configs);
-            _glueSchemaRegistryDeserializer = new GlueSchemaRegistryDeserializer();
+            _configuration = LoadConfigurationFromFile(configFilePath);
+            _glueSchemaRegistryDeserializer = new GlueSchemaRegistryDeserializer(configFilePath);
         }
 
         /// <summary>
-        /// Configures the <see cref="GlueSchemaRegistryKafkaDeserializer"/> instance
+        /// Loads configuration from properties file and creates GlueSchemaRegistryConfiguration
         /// </summary>
-        /// <param name="configs">configuration elements for de-serializer</param>
-        public void Configure(Dictionary<string, dynamic> configs)
+        /// <param name="configFilePath">Path to the configuration properties file</param>
+        /// <returns>GlueSchemaRegistryConfiguration instance</returns>
+        private GlueSchemaRegistryConfiguration LoadConfigurationFromFile(string configFilePath)
         {
-            _configuration = new GlueSchemaRegistryConfiguration(configs);
+            if (!File.Exists(configFilePath))
+            {
+                throw new FileNotFoundException($"Configuration file not found: {configFilePath}");
+            }
+            
+            var configDictionary = new Dictionary<string, dynamic>();
+            var lines = File.ReadAllLines(configFilePath);
+            
+            foreach (var line in lines)
+            {
+                var trimmedLine = line.Trim();
+                if (string.IsNullOrEmpty(trimmedLine) || trimmedLine.StartsWith("#"))
+                    continue;
+                    
+                var equalIndex = trimmedLine.IndexOf('=');
+                if (equalIndex > 0)
+                {
+                    var key = trimmedLine.Substring(0, equalIndex).Trim();
+                    var value = trimmedLine.Substring(equalIndex + 1).Trim();
+                    configDictionary[key] = value;
+                }
+            }
+            
+            return new GlueSchemaRegistryConfiguration(configDictionary);
         }
 
         /// <summary>

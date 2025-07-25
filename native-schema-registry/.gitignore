@@ -38,7 +38,6 @@ Makefile
 # C# build artifacts
 csharp/bin/
 csharp/obj/
-csharp/AWSGsrSerDe/**
 *.exe
 *.pdb
 *.dll.config
