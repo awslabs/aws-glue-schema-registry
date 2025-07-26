@@ -29,10 +29,6 @@ namespace AWSGsrSerDe
                 {
                     throw new FileNotFoundException($"Configuration file not found: {configFilePath}", configFilePath);
                 }
-                if (e.Message.Contains("invalid") || e.Message.Contains("format") || e.Message.Contains("parse"))
-                {
-                    throw new AwsSchemaRegistryException($"Invalid configuration file format: {e.Message}");
-                }
                 
                 throw new AwsSchemaRegistryException($"Failed to initialize deserializer: {e.Message}");
             }
