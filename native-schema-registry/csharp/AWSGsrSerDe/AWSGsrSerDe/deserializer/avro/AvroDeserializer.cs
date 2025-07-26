@@ -36,7 +36,7 @@ namespace AWSGsrSerDe.deserializer.avro
         /// Initializes a new instance of the <see cref="AvroDeserializer"/> class.
         /// </summary>
         /// <param name="configs">configuration elements</param>
-        public AvroDeserializer(GlueSchemaRegistryConfiguration configs)
+        public AvroDeserializer(GlueSchemaRegistryDataFormatConfiguration configs)
             : this()
         {
             _avroRecordType = configs.AvroRecordType;

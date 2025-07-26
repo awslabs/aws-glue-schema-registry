@@ -6,7 +6,7 @@
 
 static void test_new_glue_schema_registry_deserializer_created_successfully(void **state) {
     set_mock_state(GRAAL_VM_INIT_SUCCESS);
-    glue_schema_registry_deserializer *gsr_deserializer = new_glue_schema_registry_deserializer(NULL);
+    glue_schema_registry_deserializer *gsr_deserializer = new_glue_schema_registry_deserializer(NULL, NULL);
 
     assert_non_null(gsr_deserializer);
     assert_non_null(gsr_deserializer->instance_context);
@@ -20,10 +20,24 @@ static void test_new_glue_schema_registry_deserializer_init_fails_throws_excepti
     set_mock_state(GRAAL_VM_INIT_FAIL);
 
     glue_schema_registry_error **p_err = new_glue_schema_registry_error_holder();
-    glue_schema_registry_deserializer *gsr_deserializer = new_glue_schema_registry_deserializer(p_err);
+    glue_schema_registry_deserializer *gsr_deserializer = new_glue_schema_registry_deserializer(NULL, p_err);
 
     assert_null(gsr_deserializer);
     assert_error_and_clear(p_err, "Failed to initialize GraalVM isolate.", ERR_CODE_GRAALVM_INIT_EXCEPTION);
+
+    delete_glue_schema_registry_deserializer(gsr_deserializer);
+
+    clear_mock_state();
+}
+
+static void test_new_glue_schema_registry_deserializer_config_init_fails_throws_exception(void **state) {
+    set_mock_state(CONFIG_INIT_DESERIALIZER_FAIL);
+
+    glue_schema_registry_error **p_err = new_glue_schema_registry_error_holder();
+    glue_schema_registry_deserializer *gsr_deserializer = new_glue_schema_registry_deserializer(NULL, p_err);
+
+    assert_null(gsr_deserializer);
+    assert_error_and_clear(p_err, "Configuration initialization failed for deserializer", ERR_CODE_RUNTIME_ERROR);
 
     delete_glue_schema_registry_deserializer(gsr_deserializer);
 
@@ -34,7 +48,7 @@ static void test_new_glue_schema_registry_deserializer_deletes_instance(void **s
     set_mock_state(GRAAL_VM_INIT_SUCCESS);
 
     glue_schema_registry_error **p_err = new_glue_schema_registry_error_holder();
-    glue_schema_registry_deserializer *gsr_deserializer = new_glue_schema_registry_deserializer(p_err);
+    glue_schema_registry_deserializer *gsr_deserializer = new_glue_schema_registry_deserializer(NULL, p_err);
 
     assert_non_null(gsr_deserializer);
     delete_glue_schema_registry_deserializer(gsr_deserializer);
@@ -51,7 +65,7 @@ static void test_new_glue_schema_registry_deserializer_delete_ignores_NULL_deser
 static void test_new_glue_schema_registry_deserializer_delete_ignores_tear_down_failure(void **state) {
     set_mock_state(TEAR_DOWN_FAIL);
 
-    glue_schema_registry_deserializer *deserializer = new_glue_schema_registry_deserializer(NULL);
+    glue_schema_registry_deserializer *deserializer = new_glue_schema_registry_deserializer(NULL, NULL);
     delete_glue_schema_registry_deserializer(deserializer);
 
     clear_mock_state();
@@ -62,7 +76,7 @@ static void test_new_glue_schema_registry_deserializer_decodes_successfully(void
 
     read_only_byte_array *arr = get_read_only_byte_array_fixture();
 
-    glue_schema_registry_deserializer *deserializer = new_glue_schema_registry_deserializer(NULL);
+    glue_schema_registry_deserializer *deserializer = new_glue_schema_registry_deserializer(NULL, NULL);
 
     mutable_byte_array *mut_byte_array = glue_schema_registry_deserializer_decode(
             deserializer,
@@ -89,7 +103,7 @@ static void test_new_glue_schema_registry_deserializer_decode_throws_exception(v
     read_only_byte_array *arr = get_read_only_byte_array_fixture();
     glue_schema_registry_error **p_err = new_glue_schema_registry_error_holder();
 
-    glue_schema_registry_deserializer *deserializer = new_glue_schema_registry_deserializer(NULL);
+    glue_schema_registry_deserializer *deserializer = new_glue_schema_registry_deserializer(NULL, NULL);
 
     mutable_byte_array *mut_byte_array = glue_schema_registry_deserializer_decode(
             deserializer,
@@ -125,7 +139,7 @@ static void test_new_glue_schema_registry_deserializer_decode_arr_null_throws_ex
     set_mock_state(GRAAL_VM_INIT_SUCCESS);
 
     glue_schema_registry_error **p_err = new_glue_schema_registry_error_holder();
-    glue_schema_registry_deserializer *deserializer = new_glue_schema_registry_deserializer(NULL);
+    glue_schema_registry_deserializer *deserializer = new_glue_schema_registry_deserializer(NULL, NULL);
 
     mutable_byte_array *mutableByteArray = glue_schema_registry_deserializer_decode(
             deserializer,
@@ -146,7 +160,7 @@ static void test_new_glue_schema_registry_deserializer_decodes_schema_successful
 
     read_only_byte_array *arr = get_read_only_byte_array_fixture();
 
-    glue_schema_registry_deserializer *deserializer = new_glue_schema_registry_deserializer(NULL);
+    glue_schema_registry_deserializer *deserializer = new_glue_schema_registry_deserializer(NULL, NULL);
 
     glue_schema_registry_schema *schema = glue_schema_registry_deserializer_decode_schema(
             deserializer,
@@ -173,7 +187,7 @@ static void test_new_glue_schema_registry_deserializer_decode_schema_throws_exce
     read_only_byte_array *arr = get_read_only_byte_array_fixture();
     glue_schema_registry_error **p_err = new_glue_schema_registry_error_holder();
 
-    glue_schema_registry_deserializer *deserializer = new_glue_schema_registry_deserializer(NULL);
+    glue_schema_registry_deserializer *deserializer = new_glue_schema_registry_deserializer(NULL, NULL);
 
     glue_schema_registry_schema *schema = glue_schema_registry_deserializer_decode_schema(
             deserializer,
@@ -208,7 +222,7 @@ static void test_new_glue_schema_registry_deserializer_decode_schema_deserialize
 static void test_new_glue_schema_registry_deserializer_decode_schema_arr_null_throws_exception(void **state) {
     set_mock_state(GRAAL_VM_INIT_SUCCESS);
     glue_schema_registry_error **p_err = new_glue_schema_registry_error_holder();
-    glue_schema_registry_deserializer *deserializer = new_glue_schema_registry_deserializer(NULL);
+    glue_schema_registry_deserializer *deserializer = new_glue_schema_registry_deserializer(NULL, NULL);
 
     glue_schema_registry_schema *schema = glue_schema_registry_deserializer_decode_schema(
             deserializer,
@@ -228,7 +242,7 @@ static void test_new_glue_schema_registry_deserializer_can_decode_successfully(v
     set_mock_state(GRAAL_VM_INIT_SUCCESS);
     read_only_byte_array *arr = get_read_only_byte_array_fixture();
 
-    glue_schema_registry_deserializer *deserializer = new_glue_schema_registry_deserializer(NULL);
+    glue_schema_registry_deserializer *deserializer = new_glue_schema_registry_deserializer(NULL, NULL);
 
     bool can_decode = glue_schema_registry_deserializer_can_decode(
             deserializer,
@@ -249,7 +263,7 @@ static void test_new_glue_schema_registry_deserializer_can_decode_throws_excepti
     read_only_byte_array *arr = get_read_only_byte_array_fixture();
     glue_schema_registry_error **p_err = new_glue_schema_registry_error_holder();
 
-    glue_schema_registry_deserializer *deserializer = new_glue_schema_registry_deserializer(NULL);
+    glue_schema_registry_deserializer *deserializer = new_glue_schema_registry_deserializer(NULL, NULL);
 
     bool can_decode = glue_schema_registry_deserializer_can_decode(
             deserializer,
@@ -284,7 +298,7 @@ static void test_new_glue_schema_registry_deserializer_can_decode_deserializer_n
 static void test_new_glue_schema_registry_deserializer_can_decode_arr_null_throws_exception(void **state) {
     set_mock_state(GRAAL_VM_INIT_SUCCESS);
     glue_schema_registry_error **p_err = new_glue_schema_registry_error_holder();
-    glue_schema_registry_deserializer *deserializer = new_glue_schema_registry_deserializer(NULL);
+    glue_schema_registry_deserializer *deserializer = new_glue_schema_registry_deserializer(NULL, NULL);
 
     bool can_decode = glue_schema_registry_deserializer_can_decode(
             deserializer,
@@ -304,6 +318,7 @@ int main(void) {
     const struct CMUnitTest tests[] = {
             cmocka_unit_test(test_new_glue_schema_registry_deserializer_created_successfully),
             cmocka_unit_test(test_new_glue_schema_registry_deserializer_init_fails_throws_exception),
+            cmocka_unit_test(test_new_glue_schema_registry_deserializer_config_init_fails_throws_exception),
             cmocka_unit_test(test_new_glue_schema_registry_deserializer_deletes_instance),
             cmocka_unit_test(test_new_glue_schema_registry_deserializer_delete_ignores_NULL_deserializer),
             cmocka_unit_test(test_new_glue_schema_registry_deserializer_delete_ignores_tear_down_failure),

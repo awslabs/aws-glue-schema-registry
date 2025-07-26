@@ -41,7 +41,7 @@ namespace AWSGsrSerDe.deserializer.json
         /// </summary>
         /// <param name="config">configuration elements</param>
         /// <exception cref="ArgumentNullException">config passed in is null.</exception>
-        public JsonDeserializer([NotNull] GlueSchemaRegistryConfiguration config)
+        public JsonDeserializer([NotNull] GlueSchemaRegistryDataFormatConfiguration config)
         {
             if (config is null)
             {

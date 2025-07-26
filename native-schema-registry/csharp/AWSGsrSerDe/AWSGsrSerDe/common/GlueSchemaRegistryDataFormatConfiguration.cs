@@ -19,16 +19,17 @@ using Google.Protobuf.Reflection;
 namespace AWSGsrSerDe.common
 {
     /// <summary>
-    /// Glue Schema Registry Configuration entries.
+    /// Glue Schema Registry Data Format Configuration entries.
+    /// This configuration class handles data format specific settings for serialization and deserialization.
     /// </summary>
-    public class GlueSchemaRegistryConfiguration
+    public class GlueSchemaRegistryDataFormatConfiguration
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="GlueSchemaRegistryConfiguration"/> class.
+        /// Initializes a new instance of the <see cref="GlueSchemaRegistryDataFormatConfiguration"/> class.
         /// Build Configuration object from config elements
         /// </summary>
         /// <param name="configs">non-nested Dictionary contains key-value pairs for configuration</param>
-        public GlueSchemaRegistryConfiguration(Dictionary<string, dynamic> configs)
+        public GlueSchemaRegistryDataFormatConfiguration(Dictionary<string, dynamic> configs)
         {
             BuildConfigs(configs);
         }
@@ -75,6 +76,11 @@ namespace AWSGsrSerDe.common
             if (configs.ContainsKey(GlueSchemaRegistryConstants.AvroRecordType))
             {
                 AvroRecordType = configs[GlueSchemaRegistryConstants.AvroRecordType];
+            }
+            else
+            {
+                // Set a sensible default when not specified
+                AvroRecordType = AvroRecordType.GenericRecord;
             }
         }
 

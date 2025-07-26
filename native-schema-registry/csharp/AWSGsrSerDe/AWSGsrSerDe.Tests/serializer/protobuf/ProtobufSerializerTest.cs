@@ -105,7 +105,7 @@ namespace AWSGsrSerDe.Tests.serializer.protobuf
         [TestCaseSource(nameof(TestMessageProvider))]
         public void TestSerialize_ProducesValidDeserializableBytes_ForAllTypesOfMessages(IMessage message)
         {
-            var config = new GlueSchemaRegistryConfiguration(new Dictionary<string, dynamic>
+            var config = new GlueSchemaRegistryDataFormatConfiguration(new Dictionary<string, dynamic>
             {
                 { GlueSchemaRegistryConstants.ProtobufMessageDescriptor, message.Descriptor},
             });

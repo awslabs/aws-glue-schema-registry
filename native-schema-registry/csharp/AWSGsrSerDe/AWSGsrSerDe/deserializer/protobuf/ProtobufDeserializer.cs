@@ -30,7 +30,7 @@ namespace AWSGsrSerDe.deserializer.protobuf
         /// Initializes a new instance of the <see cref="ProtobufDeserializer"/> class.
         /// </summary>
         /// <param name="config">configuration element</param>
-        public ProtobufDeserializer([NotNull] GlueSchemaRegistryConfiguration config)
+        public ProtobufDeserializer([NotNull] GlueSchemaRegistryDataFormatConfiguration config)
         {
             if (config is null)
             {

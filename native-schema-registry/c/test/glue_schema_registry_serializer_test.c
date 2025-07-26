@@ -7,7 +7,7 @@
 
 static void test_new_glue_schema_registry_serializer_created_successfully(void **state) {
     set_mock_state(GRAAL_VM_INIT_SUCCESS);
-    glue_schema_registry_serializer *gsr_serializer = new_glue_schema_registry_serializer(NULL);
+    glue_schema_registry_serializer *gsr_serializer = new_glue_schema_registry_serializer(NULL, NULL);
 
     assert_non_null(gsr_serializer);
     assert_non_null(gsr_serializer->instance_context);
@@ -21,10 +21,24 @@ static void test_new_glue_schema_registry_serializer_init_fails_throws_exception
     set_mock_state(GRAAL_VM_INIT_FAIL);
 
     glue_schema_registry_error **p_err = new_glue_schema_registry_error_holder();
-    glue_schema_registry_serializer *gsr_serializer = new_glue_schema_registry_serializer(p_err);
+    glue_schema_registry_serializer *gsr_serializer = new_glue_schema_registry_serializer(NULL, p_err);
 
     assert_null(gsr_serializer);
     assert_error_and_clear(p_err, "Failed to initialize GraalVM isolate.", ERR_CODE_GRAALVM_INIT_EXCEPTION);
+
+    delete_glue_schema_registry_serializer(gsr_serializer);
+
+    clear_mock_state();
+}
+
+static void test_new_glue_schema_registry_serializer_config_init_fails_throws_exception(void **state) {
+    set_mock_state(CONFIG_INIT_SERIALIZER_FAIL);
+
+    glue_schema_registry_error **p_err = new_glue_schema_registry_error_holder();
+    glue_schema_registry_serializer *gsr_serializer = new_glue_schema_registry_serializer(NULL, p_err);
+
+    assert_null(gsr_serializer);
+    assert_error_and_clear(p_err, "Configuration initialization failed for serializer", ERR_CODE_RUNTIME_ERROR);
 
     delete_glue_schema_registry_serializer(gsr_serializer);
 
@@ -35,7 +49,7 @@ static void test_new_glue_schema_registry_serializer_deletes_instance(void **sta
     set_mock_state(GRAAL_VM_INIT_SUCCESS);
 
     glue_schema_registry_error **p_err = new_glue_schema_registry_error_holder();
-    glue_schema_registry_serializer *gsr_serializer = new_glue_schema_registry_serializer(p_err);
+    glue_schema_registry_serializer *gsr_serializer = new_glue_schema_registry_serializer(NULL, p_err);
 
     assert_non_null(gsr_serializer);
     delete_glue_schema_registry_serializer(gsr_serializer);
@@ -51,7 +65,7 @@ static void test_new_glue_schema_registry_serializer_delete_ignores_NULL_seriali
 
 static void test_new_glue_schema_registry_serializer_delete_ignores_tear_down_failure(void **state) {
     set_mock_state(TEAR_DOWN_FAIL);
-    glue_schema_registry_serializer *serializer = new_glue_schema_registry_serializer(NULL);
+    glue_schema_registry_serializer *serializer = new_glue_schema_registry_serializer(NULL, NULL);
     delete_glue_schema_registry_serializer(serializer);
 
     clear_mock_state();
@@ -64,7 +78,7 @@ static void test_new_glue_schema_registry_serializer_encodes_successfully(void *
     glue_schema_registry_schema *schema = get_gsr_schema_fixture();
     read_only_byte_array *arr = get_read_only_byte_array_fixture();
 
-    glue_schema_registry_serializer *serializer = new_glue_schema_registry_serializer(NULL);
+    glue_schema_registry_serializer *serializer = new_glue_schema_registry_serializer(NULL, NULL);
 
     mutable_byte_array *mut_byte_array = glue_schema_registry_serializer_encode(
             serializer,
@@ -95,7 +109,7 @@ static void test_new_glue_schema_registry_serializer_encode_throws_exception(voi
     read_only_byte_array *arr = get_read_only_byte_array_fixture();
     glue_schema_registry_error **p_err = new_glue_schema_registry_error_holder();
 
-    glue_schema_registry_serializer *serializer = new_glue_schema_registry_serializer(NULL);
+    glue_schema_registry_serializer *serializer = new_glue_schema_registry_serializer(NULL, NULL);
 
     mutable_byte_array *mut_byte_array = glue_schema_registry_serializer_encode(
             serializer,
@@ -140,7 +154,7 @@ static void test_new_glue_schema_registry_serializer_encode_schema_null_throws_e
     const char *transport_name = get_transport_name_fixture();
     read_only_byte_array *arr = get_read_only_byte_array_fixture();
     glue_schema_registry_error **p_err = new_glue_schema_registry_error_holder();
-    glue_schema_registry_serializer *serializer = new_glue_schema_registry_serializer(NULL);
+    glue_schema_registry_serializer *serializer = new_glue_schema_registry_serializer(NULL, NULL);
 
     mutable_byte_array *mutableByteArray = glue_schema_registry_serializer_encode(
             serializer,
@@ -164,7 +178,7 @@ static void test_new_glue_schema_registry_serializer_encode_arr_null_throws_exce
     const char *transport_name = get_transport_name_fixture();
     glue_schema_registry_schema *schema = get_gsr_schema_fixture();
     glue_schema_registry_error **p_err = new_glue_schema_registry_error_holder();
-    glue_schema_registry_serializer *serializer = new_glue_schema_registry_serializer(NULL);
+    glue_schema_registry_serializer *serializer = new_glue_schema_registry_serializer(NULL, NULL);
 
     mutable_byte_array *mutableByteArray = glue_schema_registry_serializer_encode(
             serializer,
@@ -188,6 +202,7 @@ int main(void) {
     const struct CMUnitTest tests[] = {
             cmocka_unit_test(test_new_glue_schema_registry_serializer_created_successfully),
             cmocka_unit_test(test_new_glue_schema_registry_serializer_init_fails_throws_exception),
+            cmocka_unit_test(test_new_glue_schema_registry_serializer_config_init_fails_throws_exception),
             cmocka_unit_test(test_new_glue_schema_registry_serializer_deletes_instance),
             cmocka_unit_test(test_new_glue_schema_registry_serializer_delete_ignores_NULL_serializer),
             cmocka_unit_test(test_new_glue_schema_registry_serializer_delete_ignores_tear_down_failure),

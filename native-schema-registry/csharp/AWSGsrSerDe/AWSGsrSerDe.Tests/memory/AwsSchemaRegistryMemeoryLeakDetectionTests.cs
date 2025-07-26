@@ -26,69 +26,47 @@ namespace AWSGsrSerDe.Tests.memory
     [TestFixture]
     public class AwsSchemaRegistryMemeoryLeakDetectionTests
     {
-        private static readonly Dictionary<string, dynamic> Configs = new Dictionary<string, dynamic>
-        {
-            { GlueSchemaRegistryConstants.AvroRecordType, AvroRecordType.GenericRecord },
-            { GlueSchemaRegistryConstants.DataFormatType, GlueSchemaRegistryConstants.DataFormat.AVRO },
-        };
+        private const string AVRO_CONFIG_PATH = "configuration/test-configs/valid-minimal.properties";
+        private const string PROTOBUF_CONFIG_PATH = "configuration/test-configs/valid-minimal-protobuf.properties";
+        private const string JSON_CONFIG_PATH = "configuration/test-configs/valid-minimal-json.properties";
 
         private static readonly GlueSchemaRegistryKafkaSerializer KafkaSerializer =
-            new GlueSchemaRegistryKafkaSerializer(Configs);
+            new GlueSchemaRegistryKafkaSerializer(AVRO_CONFIG_PATH);
 
         private static readonly GlueSchemaRegistryKafkaDeserializer KafkaDeserializer =
-            new GlueSchemaRegistryKafkaDeserializer(Configs);
+            new GlueSchemaRegistryKafkaDeserializer(AVRO_CONFIG_PATH);
 
-        private static readonly GlueSchemaRegistryDeserializer Deserializer = new GlueSchemaRegistryDeserializer();
+        private static readonly GlueSchemaRegistryDeserializer Deserializer = new GlueSchemaRegistryDeserializer(AVRO_CONFIG_PATH);
 
         private void SerializeDeserializeProtobufMessage()
         {
             var message = (IMessage)BASIC_SYNTAX2_MESSAGE;
-            var configs = new Dictionary<string, dynamic>
-            {
-                { GlueSchemaRegistryConstants.ProtobufMessageDescriptor, message.Descriptor },
-                { GlueSchemaRegistryConstants.DataFormatType, GlueSchemaRegistryConstants.DataFormat.PROTOBUF },
-            };
+            var protobufSerializer = new GlueSchemaRegistryKafkaSerializer(PROTOBUF_CONFIG_PATH);
+            var protobufDeserializer = new GlueSchemaRegistryKafkaDeserializer(PROTOBUF_CONFIG_PATH);
 
-            KafkaSerializer.Configure(configs);
-            KafkaDeserializer.Configure(configs);
-
-            var serialized = KafkaSerializer.Serialize(message, message.Descriptor.FullName);
+            var serialized = protobufSerializer.Serialize(message, message.Descriptor.FullName);
             var canDecode = Deserializer.CanDecode(serialized);
             var decodedSchema = Deserializer.DecodeSchema(serialized);
-            var deserializedObject =
-                KafkaDeserializer.Deserialize(message.Descriptor.FullName, serialized);
+            var deserializedObject = protobufDeserializer.Deserialize(message.Descriptor.FullName, serialized);
         }
 
         private void SerializeDeserializeJsonMessage()
         {
             var message = RecordGenerator.GetSampleJsonTestData();
-            var configs = new Dictionary<string, dynamic>
-            {
-                { GlueSchemaRegistryConstants.DataFormatType, GlueSchemaRegistryConstants.DataFormat.JSON },
-            };
+            var jsonSerializer = new GlueSchemaRegistryKafkaSerializer(JSON_CONFIG_PATH);
+            var jsonDeserializer = new GlueSchemaRegistryKafkaDeserializer(JSON_CONFIG_PATH);
 
-            KafkaSerializer.Configure(configs);
-            KafkaDeserializer.Configure(configs);
-
-            var serialized = KafkaSerializer.Serialize(message, "test-topic-json");
+            var serialized = jsonSerializer.Serialize(message, "test-topic-json");
             var canDecode = Deserializer.CanDecode(serialized);
             var decodedSchema = Deserializer.DecodeSchema(serialized);
-            var deserializedObject = KafkaDeserializer.Deserialize("test-topic-json", serialized);
+            var deserializedObject = jsonDeserializer.Deserialize("test-topic-json", serialized);
         }
 
         private void SerializeDeserializeAvroMessage()
         {
             var message = RecordGenerator.GetTestAvroRecord();
 
-            var configs = new Dictionary<string, dynamic>
-            {
-                { GlueSchemaRegistryConstants.AvroRecordType, AvroRecordType.GenericRecord },
-                { GlueSchemaRegistryConstants.DataFormatType, GlueSchemaRegistryConstants.DataFormat.AVRO },
-            };
-
-            KafkaSerializer.Configure(configs);
-            KafkaDeserializer.Configure(configs);
-
+            // Using static KafkaSerializer and KafkaDeserializer which are already configured for AVRO
             var serialized = KafkaSerializer.Serialize(message, "test-topic-avro");
             var canDecode = Deserializer.CanDecode(serialized);
             var decodedSchema = Deserializer.DecodeSchema(serialized);
