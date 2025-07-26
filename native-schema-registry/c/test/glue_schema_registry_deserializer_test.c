@@ -30,6 +30,20 @@ static void test_new_glue_schema_registry_deserializer_init_fails_throws_excepti
     clear_mock_state();
 }
 
+static void test_new_glue_schema_registry_deserializer_config_init_fails_throws_exception(void **state) {
+    set_mock_state(CONFIG_INIT_DESERIALIZER_FAIL);
+
+    glue_schema_registry_error **p_err = new_glue_schema_registry_error_holder();
+    glue_schema_registry_deserializer *gsr_deserializer = new_glue_schema_registry_deserializer(NULL, p_err);
+
+    assert_null(gsr_deserializer);
+    assert_error_and_clear(p_err, "Failed to initialize deserializer with configuration file.", ERR_CODE_RUNTIME_ERROR);
+
+    delete_glue_schema_registry_deserializer(gsr_deserializer);
+
+    clear_mock_state();
+}
+
 static void test_new_glue_schema_registry_deserializer_deletes_instance(void **state) {
     set_mock_state(GRAAL_VM_INIT_SUCCESS);
 
@@ -304,6 +318,7 @@ int main(void) {
     const struct CMUnitTest tests[] = {
             cmocka_unit_test(test_new_glue_schema_registry_deserializer_created_successfully),
             cmocka_unit_test(test_new_glue_schema_registry_deserializer_init_fails_throws_exception),
+            cmocka_unit_test(test_new_glue_schema_registry_deserializer_config_init_fails_throws_exception),
             cmocka_unit_test(test_new_glue_schema_registry_deserializer_deletes_instance),
             cmocka_unit_test(test_new_glue_schema_registry_deserializer_delete_ignores_NULL_deserializer),
             cmocka_unit_test(test_new_glue_schema_registry_deserializer_delete_ignores_tear_down_failure),

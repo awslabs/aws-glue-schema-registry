@@ -50,7 +50,7 @@ public class GlueSchemaRegistrySerializationHandler {
 
     @CEntryPoint(name = "initialize_serializer_with_config")
     public static int initializeSerializerWithConfig(
-        IsolateThread isolateThread, 
+        IsolateThread isolateThread,
         CCharPointer configFilePath,
         C_GlueSchemaRegistryErrorPointerHolder errorPointer) {
         try {
