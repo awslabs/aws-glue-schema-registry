@@ -37,7 +37,7 @@ static void test_new_glue_schema_registry_deserializer_config_init_fails_throws_
     glue_schema_registry_deserializer *gsr_deserializer = new_glue_schema_registry_deserializer(NULL, p_err);
 
     assert_null(gsr_deserializer);
-    assert_error_and_clear(p_err, "Configuration initialization failed for deserializer", ERR_CODE_RUNTIME_ERROR);
+    assert_error_and_clear(p_err, "Failed to initialize deserializer with configuration file.", ERR_CODE_RUNTIME_ERROR);
 
     delete_glue_schema_registry_deserializer(gsr_deserializer);
 

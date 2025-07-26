@@ -38,7 +38,7 @@ static void test_new_glue_schema_registry_serializer_config_init_fails_throws_ex
     glue_schema_registry_serializer *gsr_serializer = new_glue_schema_registry_serializer(NULL, p_err);
 
     assert_null(gsr_serializer);
-    assert_error_and_clear(p_err, "Configuration initialization failed for serializer", ERR_CODE_RUNTIME_ERROR);
+    assert_error_and_clear(p_err, "Failed to initialize serializer with configuration file.", ERR_CODE_RUNTIME_ERROR);
 
     delete_glue_schema_registry_serializer(gsr_serializer);
 

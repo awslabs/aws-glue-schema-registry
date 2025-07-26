@@ -48,7 +48,7 @@ public class GlueSchemaRegistryDeserializationHandler {
 
     @CEntryPoint(name = "initialize_deserializer_with_config")
     public static int initializeDeserializerWithConfig(
-        IsolateThread isolateThread, 
+        IsolateThread isolateThread,
         CCharPointer configFilePath,
         C_GlueSchemaRegistryErrorPointerHolder errorPointer) {
         try {
