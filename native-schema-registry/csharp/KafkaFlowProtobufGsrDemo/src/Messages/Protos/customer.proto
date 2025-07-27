@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package kafkaflow.protobuf.demo;
+
+option csharp_namespace = "KafkaFlowProtobufGsrDemo.Messages";
+
+message Customer {
+  string id = 1;
+  string name = 2;
+  string email = 3;
+  Address address = 4;
+  string phone = 5;
+  int64 created_timestamp = 6;
+  CustomerStatus status = 7;
+}
+
+message Address {
+  string street = 1;
+  string city = 2;
+  string state = 3;
+  string zip_code = 4;
+  string country = 5;
+}
+
+enum CustomerStatus {
+  UNKNOWN = 0;
+  ACTIVE = 1;
+  INACTIVE = 2;
+  SUSPENDED = 3;
+}

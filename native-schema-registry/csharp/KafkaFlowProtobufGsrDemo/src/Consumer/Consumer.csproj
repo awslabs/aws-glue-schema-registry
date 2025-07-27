@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>KafkaFlowProtobufGsrDemo.Consumer</RootNamespace>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="KafkaFlow" Version="3.0.8" />
+    <PackageReference Include="KafkaFlow.Microsoft.DependencyInjection" Version="3.0.8" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.0" />
+    <PackageReference Include="Google.Protobuf" Version="3.25.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Messages\Messages.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="AWSGsrSerDe">
+      <HintPath>..\..\AWSGsrSerDe\AWSGsrSerDe\bin\Debug\net8.0\AWSGsrSerDe.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+</Project>

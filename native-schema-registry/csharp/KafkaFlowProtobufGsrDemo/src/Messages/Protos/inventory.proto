@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package kafkaflow.protobuf.demo;
+
+option csharp_namespace = "KafkaFlowProtobufGsrDemo.Messages";
+
+message Inventory {
+  string sku = 1;
+  string name = 2;
+  string description = 3;
+  int32 quantity = 4;
+  double price = 5;
+  string currency = 6;
+  string location = 7;
+  InventoryStatus status = 8;
+  int64 last_updated = 9;
+  string category = 10;
+  string supplier_id = 11;
+  int32 reorder_level = 12;
+  int32 max_stock_level = 13;
+}
+
+enum InventoryStatus {
+  UNKNOWN_INVENTORY_STATUS = 0;
+  IN_STOCK = 1;
+  OUT_OF_STOCK = 2;
+  LOW_STOCK = 3;
+  DISCONTINUED = 4;
+  BACKORDERED = 5;
+}
