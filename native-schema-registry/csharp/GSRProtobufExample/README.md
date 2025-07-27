@@ -214,6 +214,19 @@ docker-compose down -v
 - Add custom serialization configurations
 - Implement error handling and retry policies
 
+## Recent Updates
+
+This example has been updated to be compatible with KafkaFlow 3.0.7 and fix compilation issues:
+
+- **KafkaFlow 3.0.7 Compatibility**: Updated serializer and deserializer interfaces to match the new KafkaFlow API
+  - `ISerializer.SerializeAsync(object message, Stream output, ISerializerContext context)`
+  - `IDeserializer.DeserializeAsync(Stream input, Type type, ISerializerContext context)`
+- **Package Dependencies**: Removed deprecated `KafkaFlow.Microsoft.Extensions.Logging` package
+- **Build System**: Fixed project references and ensured all projects build successfully
+- **Interface Implementations**: Updated custom GSR serializers to implement the correct async interfaces
+
+The example now builds and runs successfully with the latest versions of all dependencies.
+
 ## References
 
 - [AWS Glue Schema Registry Documentation](https://docs.aws.amazon.com/glue/latest/dg/schema-registry.html)
