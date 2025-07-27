@@ -37,26 +37,37 @@ namespace AWSGsrSerDe.deserializer
         /// <param name="dataConfig">Optional data format configuration for runtime settings (protobuf descriptors, etc.)</param>
         public GlueSchemaRegistryKafkaDeserializer(string configFilePath, GlueSchemaRegistryDataFormatConfiguration dataConfig = null)
         {
-            var baseConfiguration = LoadConfigurationFromFile(configFilePath);
+            // Load base config as dictionary
+            var baseConfigDict = LoadConfigurationDictionary(configFilePath);
             
+            // If dataConfig provided, overlay its non-null properties
             if (dataConfig != null)
             {
-                _configuration = MergeConfigurations(baseConfiguration, dataConfig);
+                if (dataConfig.ProtobufMessageDescriptor != null)
+                    baseConfigDict[GlueSchemaRegistryConstants.ProtobufMessageDescriptor] = dataConfig.ProtobufMessageDescriptor;
+                
+                if (dataConfig.JsonObjectType != null)
+                    baseConfigDict[GlueSchemaRegistryConstants.JsonObjectType] = dataConfig.JsonObjectType;
+                
+                if (dataConfig.DataFormat != default)
+                    baseConfigDict[GlueSchemaRegistryConstants.DataFormatType] = dataConfig.DataFormat;
+                
+                if (dataConfig.AvroRecordType != default)
+                    baseConfigDict[GlueSchemaRegistryConstants.AvroRecordType] = dataConfig.AvroRecordType;
             }
-            else
-            {
-                _configuration = baseConfiguration;
-            }
+            
+            // Create final merged configuration
+            _configuration = new GlueSchemaRegistryDataFormatConfiguration(baseConfigDict);
             
             _glueSchemaRegistryDeserializer = new GlueSchemaRegistryDeserializer(configFilePath);
         }
 
         /// <summary>
-        /// Loads configuration from properties file and creates GlueSchemaRegistryDataFormatConfiguration
+        /// Loads configuration from properties file and returns as dictionary
         /// </summary>
         /// <param name="configFilePath">Path to the configuration properties file</param>
-        /// <returns>GlueSchemaRegistryDataFormatConfiguration instance</returns>
-        private GlueSchemaRegistryDataFormatConfiguration LoadConfigurationFromFile(string configFilePath)
+        /// <returns>Dictionary containing configuration key-value pairs</returns>
+        private Dictionary<string, dynamic> LoadConfigurationDictionary(string configFilePath)
         {
             if (!File.Exists(configFilePath))
             {
@@ -81,29 +92,7 @@ namespace AWSGsrSerDe.deserializer
                 }
             }
             
-            return new GlueSchemaRegistryDataFormatConfiguration(configDictionary);
-        }
-
-        /// <summary>
-        /// Merges base configuration from file with optional data format configuration
-        /// </summary>
-        /// <param name="baseConfig">Configuration loaded from file</param>
-        /// <param name="dataConfig">Data format configuration with runtime settings</param>
-        /// <returns>Merged configuration</returns>
-        private GlueSchemaRegistryDataFormatConfiguration MergeConfigurations(
-            GlueSchemaRegistryDataFormatConfiguration baseConfig,
-            GlueSchemaRegistryDataFormatConfiguration dataConfig)
-        {
-            var merged = new Dictionary<string, dynamic>(baseConfig.GetAllProperties());
-            
-            // Override with data format specific settings from dataConfig
-            var dataConfigProperties = dataConfig.GetAllProperties();
-            foreach (var kvp in dataConfigProperties)
-            {
-                merged[kvp.Key] = kvp.Value;
-            }
-            
-            return new GlueSchemaRegistryDataFormatConfiguration(merged);
+            return configDictionary;
         }
 
         /// <summary>
