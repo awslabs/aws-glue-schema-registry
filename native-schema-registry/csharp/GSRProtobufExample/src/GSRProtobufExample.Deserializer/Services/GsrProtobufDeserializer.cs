@@ -1,59 +1,37 @@
-using Amazon.GlueSchemaRegistry.SerDe;
-using Example.V1;
+using AWSGsrSerDe.deserializer;
+using AWSGsrSerDe.common;
 using Google.Protobuf;
 using KafkaFlow;
+using Example.V1;
 
 namespace GSRProtobufExample.Deserializer.Services;
 
 public class GsrProtobufDeserializer : IDeserializer
 {
     private readonly GlueSchemaRegistryKafkaDeserializer _gsrDeserializer;
-    private readonly Dictionary<string, Func<byte[], IMessage>> _deserializerMap;
 
     public GsrProtobufDeserializer()
     {
-        // Configure GSR for Protobuf
-        var config = new Dictionary<string, object>
-        {
-            {"schemaregistryname", "gsr-protobuf-example"},
-            {"region", "us-east-1"},
-            {"dataformat", "PROTOBUF"},
-            {"compressiontype", "NONE"},
-            {"cachettl", 86400000}, // 24 hours in milliseconds
-            {"cachesize", 200}
-        };
-
-        _gsrDeserializer = new GlueSchemaRegistryKafkaDeserializer(config);
-
-        // Map schema names to protobuf deserializers
-        _deserializerMap = new Dictionary<string, Func<byte[], IMessage>>
-        {
-            { "example.v1.User", data => User.Parser.ParseFrom(data) },
-            { "example.v1.Product", data => Product.Parser.ParseFrom(data) },
-            { "example.v1.Order", data => Order.Parser.ParseFrom(data) },
-            { "example.v1.Event", data => Event.Parser.ParseFrom(data) },
-            { "example.v1.Company", data => Company.Parser.ParseFrom(data) }
-        };
+        var configPath = "config.properties";
+        _gsrDeserializer = new GlueSchemaRegistryKafkaDeserializer(configPath);
     }
 
     public async Task<object> DeserializeAsync(Stream input, Type type, ISerializerContext context)
     {
-        using var memoryStream = new MemoryStream();
-        await input.CopyToAsync(memoryStream);
-        var data = memoryStream.ToArray();
-
-        return await Task.Run(() => Deserialize(data, type));
+        var data = new byte[input.Length];
+        await input.ReadAsync(data, 0, data.Length);
+        
+        return await Task.Run(() => Deserialize(context.Topic, data, type));
     }
 
-    private object Deserialize(byte[] data, Type type)
+    private object Deserialize(string topic, byte[] data, Type targetType)
     {
-        var (schemaName, deserializedData) = _gsrDeserializer.Deserialize(data);
-        
-        if (_deserializerMap.TryGetValue(schemaName, out var deserializer))
-        {
-            return deserializer(deserializedData);
-        }
+        if (data == null) return null;
 
-        throw new ArgumentException($"No deserializer found for schema: {schemaName}");
+        var result = _gsrDeserializer.Deserialize(topic, data);
+        
+        // The deserializer returns the correct protobuf message type
+        // based on the schema registered in GSR
+        return result;
     }
 }
