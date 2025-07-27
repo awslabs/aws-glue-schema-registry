@@ -81,62 +81,6 @@ namespace AWSGsrSerDe.Tests.serializer
             return Path.Combine(currentDir.FullName, relativePath);
         }
 
-        /// <summary>
-        /// Parses a Java-style .properties file into a Dictionary for configuration loading.
-        /// This helper method handles the key=value format used by configuration files.
-        /// </summary>
-        /// <param name="filePath">Path to the .properties file</param>
-        /// <returns>Dictionary containing the parsed key-value pairs</returns>
-        private static Dictionary<string, dynamic> ParsePropertiesFile(string filePath)
-        {
-            var properties = new Dictionary<string, dynamic>();
-            
-            foreach (var line in File.ReadAllLines(filePath))
-            {
-                var trimmedLine = line.Trim();
-                if (string.IsNullOrEmpty(trimmedLine) || trimmedLine.StartsWith("#"))
-                    continue;
-                    
-                var equalsIndex = trimmedLine.IndexOf('=');
-                if (equalsIndex > 0)
-                {
-                    var key = trimmedLine.Substring(0, equalsIndex).Trim();
-                    var value = trimmedLine.Substring(equalsIndex + 1).Trim();
-                    properties[key] = value;
-                }
-            }
-            
-            return properties;
-        }
-
-        /// <summary>
-        /// Creates a temporary configuration file for protobuf testing with the specific message descriptor.
-        /// Since the existing API only accepts config file paths, this method creates a temporary config file
-        /// that can be used to test different protobuf message types without modifying source code.
-        /// 
-        /// The approach:
-        /// 1. Loads base configuration from the original properties file
-        /// 2. Creates a temporary config file with all the base settings
-        /// 3. Note: The protobuf descriptor cannot be stored in the config file since it's a runtime object,
-        ///    so this approach works by ensuring each test gets its own isolated config file
-        /// </summary>
-        /// <param name="messageDescriptor">The protobuf message descriptor for this specific test</param>
-        /// <returns>Path to the temporary configuration file</returns>
-        private static string CreateTempProtobufConfig(MessageDescriptor messageDescriptor)
-        {
-            // Generate a unique temporary file name for this test
-            var tempFileName = $"temp-protobuf-config-{Guid.NewGuid()}.properties";
-            var tempConfigPath = Path.Combine(Path.GetTempPath(), tempFileName);
-            
-            // Read the base config file and copy all settings to the temporary file
-            var baseConfigLines = File.ReadAllLines(PROTOBUF_CONFIG_PATH);
-            
-            // Write the base configuration to the temporary file
-            // The protobuf descriptor will be set programmatically during serialization/deserialization
-            File.WriteAllLines(tempConfigPath, baseConfigLines);
-            
-            return tempConfigPath;
-        }
 
         private static readonly GlueSchemaRegistryKafkaSerializer KafkaSerializer =
             new GlueSchemaRegistryKafkaSerializer(AVRO_CONFIG_PATH);
@@ -180,28 +124,22 @@ namespace AWSGsrSerDe.Tests.serializer
         [TestCaseSource(nameof(TestMessageProvider))]
         public void KafkaSerDeTestForAllProtobufTypes(IMessage message)
         {
-            // Create a temporary config file with the dynamic protobuf descriptor for this test
-            var tempConfigPath = CreateTempProtobufConfig(message.Descriptor);
-            
-            try
+            // Use new constructor approach:
+            // - Config file provides AWS settings (region, registry, etc.)
+            // - dataConfig provides runtime protobuf descriptor for this specific test
+            var dataConfig = new GlueSchemaRegistryDataFormatConfiguration(new Dictionary<string, dynamic>
             {
-                var protobufSerializer = new GlueSchemaRegistryKafkaSerializer(tempConfigPath);
-                var protobufDeserializer = new GlueSchemaRegistryKafkaDeserializer(tempConfigPath);
+                { GlueSchemaRegistryConstants.ProtobufMessageDescriptor, message.Descriptor }
+            });
 
-                var serialized = protobufSerializer.Serialize(message, message.Descriptor.FullName);
+            var protobufSerializer = new GlueSchemaRegistryKafkaSerializer(PROTOBUF_CONFIG_PATH);
+            var protobufDeserializer = new GlueSchemaRegistryKafkaDeserializer(PROTOBUF_CONFIG_PATH, dataConfig);
 
-                var deserializedObject =
-                    protobufDeserializer.Deserialize(message.Descriptor.FullName, serialized);
-                Assert.AreEqual(message, deserializedObject);
-            }
-            finally
-            {
-                // Clean up the temporary config file
-                if (File.Exists(tempConfigPath))
-                {
-                    File.Delete(tempConfigPath);
-                }
-            }
+            var serialized = protobufSerializer.Serialize(message, message.Descriptor.FullName);
+
+            var deserializedObject =
+                protobufDeserializer.Deserialize(message.Descriptor.FullName, serialized);
+            Assert.AreEqual(message, deserializedObject);
         }
 
         [Test]

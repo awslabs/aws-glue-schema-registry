@@ -34,9 +34,20 @@ namespace AWSGsrSerDe.deserializer
         /// Initializes a new instance of the <see cref="GlueSchemaRegistryKafkaDeserializer"/> class.
         /// </summary>
         /// <param name="configFilePath">Path to the configuration properties file</param>
-        public GlueSchemaRegistryKafkaDeserializer(string configFilePath)
+        /// <param name="dataConfig">Optional data format configuration for runtime settings (protobuf descriptors, etc.)</param>
+        public GlueSchemaRegistryKafkaDeserializer(string configFilePath, GlueSchemaRegistryDataFormatConfiguration dataConfig = null)
         {
-            _configuration = LoadConfigurationFromFile(configFilePath);
+            var baseConfiguration = LoadConfigurationFromFile(configFilePath);
+            
+            if (dataConfig != null)
+            {
+                _configuration = MergeConfigurations(baseConfiguration, dataConfig);
+            }
+            else
+            {
+                _configuration = baseConfiguration;
+            }
+            
             _glueSchemaRegistryDeserializer = new GlueSchemaRegistryDeserializer(configFilePath);
         }
 
@@ -71,6 +82,28 @@ namespace AWSGsrSerDe.deserializer
             }
             
             return new GlueSchemaRegistryDataFormatConfiguration(configDictionary);
+        }
+
+        /// <summary>
+        /// Merges base configuration from file with optional data format configuration
+        /// </summary>
+        /// <param name="baseConfig">Configuration loaded from file</param>
+        /// <param name="dataConfig">Data format configuration with runtime settings</param>
+        /// <returns>Merged configuration</returns>
+        private GlueSchemaRegistryDataFormatConfiguration MergeConfigurations(
+            GlueSchemaRegistryDataFormatConfiguration baseConfig,
+            GlueSchemaRegistryDataFormatConfiguration dataConfig)
+        {
+            var merged = new Dictionary<string, dynamic>(baseConfig.GetAllProperties());
+            
+            // Override with data format specific settings from dataConfig
+            var dataConfigProperties = dataConfig.GetAllProperties();
+            foreach (var kvp in dataConfigProperties)
+            {
+                merged[kvp.Key] = kvp.Value;
+            }
+            
+            return new GlueSchemaRegistryDataFormatConfiguration(merged);
         }
 
         /// <summary>

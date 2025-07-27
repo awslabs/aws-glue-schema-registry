@@ -168,5 +168,16 @@ namespace AWSGsrSerDe.Tests.deserializer
             exception = Assert.Throws(typeof(AwsSchemaRegistryException), () => Deserializer.Decode(bytes));
             Assert.IsTrue(exception.Message.StartsWith("Data is not compatible with schema registry"));
         }
+
+        /// <summary>
+        /// Tests that the constructor works with null dataConfig parameter
+        /// </summary>
+        [Test]
+        public void TestDeserializerConstructor_WithNullDataConfig()
+        {
+            // Constructor should work exactly as before with null dataConfig
+            var deserializer = new GlueSchemaRegistryKafkaDeserializer(PROTOBUF_CONFIG_PATH, null);
+            Assert.IsNotNull(deserializer);
+        }
     }
 }
