@@ -22,9 +22,9 @@ public class LogHandler : ILogHandler
         _logger.LogInformation("KafkaFlow Info: {Message}. Data: {@Data}", message, data);
     }
 
-    public void Warning(string message, Exception ex, object data)
+    public void Warning(string message, object data)
     {
-        _logger.LogWarning(ex, "KafkaFlow Warning: {Message}. Data: {@Data}", message, data);
+        _logger.LogWarning("KafkaFlow Warning: {Message}. Data: {@Data}", message, data);
     }
 
     public void Verbose(string message, object data)

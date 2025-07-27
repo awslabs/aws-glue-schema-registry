@@ -1,235 +1,250 @@
-# GSR Protobuf Example with KafkaFlow
+# GSR Protobuf KafkaFlow Example
 
-This example demonstrates how to use AWS Glue Schema Registry (GSR) with Protocol Buffers in a C# application using KafkaFlow. It showcases serialization and deserialization of protobuf messages through Kafka topics with GSR schema management.
+This example demonstrates how to integrate AWS Glue Schema Registry (GSR) with KafkaFlow for C# applications using Protocol Buffers (Protobuf) serialization.
 
 ## Overview
 
-The example consists of three main projects:
+This example consists of:
+- **Producer Application**: Publishes different types of protobuf messages to Kafka topics using GSR serialization
+- **Consumer Application**: Consumes messages from Kafka topics using GSR deserialization
+- **Shared Library**: Contains protobuf message definitions and common utilities
 
-1. **GSRProtobufExample.Shared** - Contains protobuf schema definitions (`.proto` files) and generated C# classes
-2. **GSRProtobufExample.Serializer** - Producer application that publishes messages to Kafka using GSR
-3. **GSRProtobufExample.Deserializer** - Consumer application that consumes messages from Kafka using GSR
+## Architecture
 
-## Features Demonstrated
+```
+┌─────────────────┐    ┌─────────────┐    ┌──────────────────┐    ┌─────────────────┐
+│   Producer      │───▶│    Kafka    │───▶│  AWS Glue        │───▶│   Consumer      │
+│   Application   │    │   Cluster   │    │  Schema Registry │    │   Application   │
+└─────────────────┘    └─────────────┘    └──────────────────┘    └─────────────────┘
+```
 
-- **Schema Registry Integration**: Uses AWS Glue Schema Registry for schema management
-- **Protocol Buffers**: Demonstrates various protobuf features:
-  - Simple messages (User)
-  - Nested messages (Product with Price)
-  - Repeated fields (Order with OrderItems)
-  - Enums (Event with EventType)
-  - Complex messages with imports, maps, and oneof (Company)
-- **KafkaFlow Framework**: Modern .NET Kafka framework with middleware support
-- **Automatic Serialization/Deserialization**: Transparent protobuf serialization with GSR header injection
-- **Schema Evolution**: Supports schema evolution through AWS Glue Schema Registry
+## Project Structure
 
-## Protobuf Schema Definitions
+```
+GSRProtobufExample/
+├── src/
+│   ├── GSRProtobufExample.Shared/         # Shared protobuf definitions
+│   │   └── Protos/                        # Protocol buffer schema files
+│   │       ├── user.proto
+│   │       ├── product.proto
+│   │       ├── order.proto
+│   │       ├── event.proto
+│   │       └── company.proto
+│   ├── GSRProtobufExample.Serializer/     # Producer application
+│   │   ├── Program.cs
+│   │   └── Services/
+│   │       ├── GsrProtobufSerializer.cs
+│   │       ├── MessagePublisher.cs
+│   │       └── LogHandler.cs
+│   └── GSRProtobufExample.Deserializer/   # Consumer application
+│       ├── Program.cs
+│       └── Services/
+│           ├── GsrProtobufDeserializer.cs
+│           ├── MessageHandlers.cs
+│           └── LogHandler.cs
+├── config.properties                      # GSR configuration
+├── docker-compose.yml                     # Kafka infrastructure
+└── README.md
+```
 
-### 1. User (user.proto)
-Simple message with basic fields demonstrating fundamental protobuf structure.
+## Key Features
 
-### 2. Product (product.proto) 
-Nested message structure with embedded Price message.
+### AWS Glue Schema Registry Integration
+- **Schema Management**: Automatic schema registration and versioning
+- **Compression**: Configurable compression (GZIP/None)
+- **Caching**: Schema caching for improved performance
+- **Evolution**: Backward compatible schema evolution
 
-### 3. Order (order.proto)
-Demonstrates repeated fields with OrderItem collection.
+### KafkaFlow Integration
+- **Modern C# API**: Fluent configuration and dependency injection
+- **Custom Serializers**: GSR-aware serialization/deserialization
+- **Message Routing**: Topic-based message routing with handlers
+- **Logging**: Structured logging with configurable levels
 
-### 4. Event (event.proto)
-Shows enum usage with EventType enumeration.
-
-### 5. Company (company.proto)
-Complex message demonstrating:
-- Message imports (User)
-- Map fields (metadata)
-- Oneof fields (contact_method)
-- Nested Address message
+### Protocol Buffers Support
+- **Multiple Message Types**: User, Product, Order, Event, Company schemas
+- **Type Safety**: Strongly-typed message handling
+- **Code Generation**: Automatic C# class generation from .proto files
 
 ## Prerequisites
 
-- .NET 8.0 or later
-- Docker and Docker Compose (for local Kafka)
-- AWS CLI configured with appropriate permissions for Glue Schema Registry
-- Access to AWS Glue Schema Registry
+1. **.NET 8.0 SDK** or later
+2. **Docker and Docker Compose** for Kafka infrastructure
+3. **AWS CLI** configured with appropriate credentials
+4. **AWS Glue Schema Registry** setup in your AWS account
 
-## AWS Configuration
+## Configuration
 
-The example assumes you have AWS credentials configured through one of the following methods:
-- AWS CLI (`aws configure`)
-- Environment variables (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`)
-- IAM roles (if running on EC2)
-- AWS profiles
+### GSR Configuration (`config.properties`)
 
-Required AWS permissions for Glue Schema Registry:
-- `glue:GetSchema`
-- `glue:GetSchemaByDefinition`
-- `glue:RegisterSchemaVersion`
-- `glue:PutSchemaVersionMetadata`
-- `glue:GetSchemaVersionsDiff`
+```properties
+# AWS Region
+region=us-east-1
+
+# Schema Registry Name
+schemaregistryname=gsr-protobuf-example
+
+# Data Format
+dataFormat=PROTOBUF
+
+# Compression Type (NONE, GZIP)
+compressiontype=NONE
+
+# Cache Settings
+cachettl=86400000
+cachesize=200
+
+# Schema Evolution Settings
+compatibilitysetting=BACKWARD
+
+# Optional: Schema Auto-registration
+autoregisterschemas=true
+```
+
+### AWS Credentials
+
+Configure AWS credentials using one of these methods:
+
+1. **AWS CLI**: `aws configure`
+2. **Environment Variables**:
+   ```bash
+   export AWS_ACCESS_KEY_ID=your-access-key
+   export AWS_SECRET_ACCESS_KEY=your-secret-key
+   export AWS_DEFAULT_REGION=us-east-1
+   ```
+3. **IAM Roles** (recommended for EC2/ECS deployments)
 
 ## Running the Example
 
 ### 1. Start Kafka Infrastructure
 
 ```bash
-# Start Kafka and Zookeeper using Docker Compose
+# Start Kafka cluster
 docker-compose up -d
 
-# Wait for services to be ready (about 30 seconds)
+# Wait for services to be ready (30-60 seconds)
 docker-compose logs -f kafka
 ```
 
-### 2. Build the Solution
+### 2. Build the Applications
 
 ```bash
-# Navigate to the project directory
-cd aws-glue-schema-registry/native-schema-registry/csharp/GSRProtobufExample
-
-# Restore dependencies and build
+# Build all projects
 dotnet build
+
+# Or build individual projects
+dotnet build src/GSRProtobufExample.Serializer/
+dotnet build src/GSRProtobufExample.Deserializer/
 ```
 
-### 3. Run the Deserializer (Consumer)
+### 3. Run Consumer (in separate terminal)
 
 ```bash
-# Start the consumer first to create consumer groups
-dotnet run --project src/GSRProtobufExample.Deserializer
+dotnet run --project src/GSRProtobufExample.Deserializer/
 ```
 
-### 4. Run the Serializer (Producer)
-
-In a separate terminal:
+### 4. Run Producer (in separate terminal)
 
 ```bash
-# Start the producer to publish sample messages
-dotnet run --project src/GSRProtobufExample.Serializer
+dotnet run --project src/GSRProtobufExample.Serializer/
 ```
-
-## Configuration
-
-Both applications are configured to use:
-- **Schema Registry Name**: `gsr-protobuf-example`
-- **AWS Region**: `us-east-1`
-- **Data Format**: `PROTOBUF`
-- **Compression**: `NONE`
-- **Cache TTL**: 24 hours (86400000 ms)
-- **Cache Size**: 200 schemas
-
-### Topics and Consumer Groups
-
-| Topic | Consumer Group | Message Type |
-|-------|----------------|--------------|
-| `users` | `gsr-protobuf-example-users` | User |
-| `products` | `gsr-protobuf-example-products` | Product |
-| `orders` | `gsr-protobuf-example-orders` | Order |
-| `events` | `gsr-protobuf-example-events` | Event |
-| `companies` | `gsr-protobuf-example-companies` | Company |
 
 ## Message Flow
 
-1. **Producer (Serializer)**:
-   - Creates sample protobuf messages
-   - Serializes messages to byte arrays
-   - Registers/validates schemas with GSR
-   - Publishes messages to appropriate Kafka topics with GSR headers
+### Producer Workflow
+1. Creates various protobuf message instances
+2. Publishes messages to different Kafka topics:
+   - `user-events` → User messages
+   - `product-events` → Product messages  
+   - `order-events` → Order messages
+   - `system-events` → Event messages
+   - `company-events` → Company messages
 
-2. **Consumer (Deserializer)**:
-   - Consumes messages from Kafka topics
-   - Extracts GSR headers to identify schema
-   - Deserializes protobuf messages using schema information
-   - Processes and logs message content
+### Consumer Workflow
+1. Subscribes to all configured topics
+2. Receives serialized messages from Kafka
+3. Deserializes using GSR with schema validation
+4. Routes messages to appropriate handlers based on type
+5. Processes and logs message content
 
-## Schema Registry Integration
+## GSR Integration Details
 
-The example automatically handles:
-- **Schema Registration**: First-time schema registration with GSR
-- **Schema Validation**: Ensuring message compatibility with registered schemas
-- **Schema Caching**: Local caching of schemas for performance
-- **Schema Evolution**: Support for compatible schema changes
+### Serialization Process
+1. **Message Creation**: Create protobuf message instance
+2. **Schema Registration**: Register/retrieve schema from GSR
+3. **Serialization**: Convert message to bytes with GSR header
+4. **Publication**: Send to Kafka topic
 
-## Troubleshooting
+### Deserialization Process
+1. **Message Reception**: Receive bytes from Kafka
+2. **Header Parsing**: Extract schema information from GSR header
+3. **Schema Lookup**: Retrieve schema from GSR (with caching)
+4. **Deserialization**: Convert bytes to strongly-typed message
+5. **Processing**: Route to appropriate message handler
+
+## Monitoring and Troubleshooting
+
+### Logs
+Both applications provide structured logging:
+- **KafkaFlow events**: Connection, consumption, production status
+- **GSR operations**: Schema registration, caching, errors
+- **Message processing**: Handler execution, errors, performance
 
 ### Common Issues
 
-1. **AWS Credentials Not Configured**
-   ```
-   Error: Unable to load AWS credentials
-   Solution: Configure AWS CLI or set environment variables
-   ```
+1. **Schema Registry Connection**
+   - Verify AWS credentials and region
+   - Check GSR service availability
+   - Validate IAM permissions
 
-2. **Schema Registry Access Denied**
-   ```
-   Error: Access denied to Glue Schema Registry
-   Solution: Verify IAM permissions for Glue operations
-   ```
+2. **Kafka Connection**
+   - Ensure Kafka is running (`docker-compose ps`)
+   - Check broker connectivity
+   - Verify topic creation
 
-3. **Kafka Connection Refused**
-   ```
-   Error: Connection refused to localhost:9092
-   Solution: Ensure Kafka is running via docker-compose up
-   ```
+3. **Schema Evolution Errors**
+   - Review compatibility settings
+   - Check schema changes for backward compatibility
+   - Monitor GSR schema versions
 
-4. **Schema Compatibility Issues**
-   ```
-   Error: Schema evolution validation failed
-   Solution: Review protobuf schema changes for compatibility
-   ```
+### Performance Tuning
 
-### Logs and Debugging
+1. **Schema Caching**
+   - Adjust `cachesize` and `cachettl` values
+   - Monitor cache hit rates
 
-Enable verbose logging by modifying `appsettings.json` or environment variables:
+2. **Compression**
+   - Enable GZIP for large messages
+   - Test performance impact
 
-```json
-{
-  "Logging": {
-    "LogLevel": {
-      "Default": "Information",
-      "KafkaFlow": "Debug",
-      "Amazon.GlueSchemaRegistry": "Debug"
-    }
-  }
-}
-```
+3. **Batch Processing**
+   - Configure KafkaFlow batch settings
+   - Adjust consumer group settings
 
-## Cleanup
+## Extending the Example
 
-Stop and remove Docker containers:
+### Adding New Message Types
+1. Create new `.proto` file in `Shared/Protos/`
+2. Add message handler in consumer
+3. Update publisher to send new message type
+4. Register new topic routing
 
-```bash
-docker-compose down -v
-```
+### Custom Serialization Logic
+- Extend `GsrProtobufSerializer`/`GsrProtobufDeserializer`
+- Add message preprocessing/postprocessing
+- Implement custom error handling
 
-## Architecture Benefits
+### Integration Testing
+- Use testcontainers for integration tests
+- Mock GSR responses for unit tests
+- Validate schema evolution scenarios
 
-1. **Schema Governance**: Centralized schema management through AWS GSR
-2. **Backward Compatibility**: Support for schema evolution
-3. **Performance**: Schema caching reduces registry calls
-4. **Type Safety**: Strong typing through generated protobuf classes
-5. **Monitoring**: Integration with AWS CloudWatch for GSR metrics
+## Resources
 
-## Next Steps
-
-- Implement schema evolution scenarios
-- Add monitoring and alerting
-- Integrate with CI/CD pipelines for schema validation
-- Add custom serialization configurations
-- Implement error handling and retry policies
-
-## Recent Updates
-
-This example has been updated to be compatible with KafkaFlow 3.0.7 and fix compilation issues:
-
-- **KafkaFlow 3.0.7 Compatibility**: Updated serializer and deserializer interfaces to match the new KafkaFlow API
-  - `ISerializer.SerializeAsync(object message, Stream output, ISerializerContext context)`
-  - `IDeserializer.DeserializeAsync(Stream input, Type type, ISerializerContext context)`
-- **Package Dependencies**: Removed deprecated `KafkaFlow.Microsoft.Extensions.Logging` package
-- **Build System**: Fixed project references and ensured all projects build successfully
-- **Interface Implementations**: Updated custom GSR serializers to implement the correct async interfaces
-
-The example now builds and runs successfully with the latest versions of all dependencies.
-
-## References
-
-- [AWS Glue Schema Registry Documentation](https://docs.aws.amazon.com/glue/latest/dg/schema-registry.html)
 - [KafkaFlow Documentation](https://farfetch.github.io/kafkaflow/)
+- [AWS Glue Schema Registry Documentation](https://docs.aws.amazon.com/glue/latest/dg/schema-registry.html)
 - [Protocol Buffers Documentation](https://developers.google.com/protocol-buffers)
-- [Native Schema Registry C# Implementation](../../../README.md)
+
+## License
+
+This example is provided under the same license as the AWS Glue Schema Registry project.
