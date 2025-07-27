@@ -1,0 +1,16 @@
+syntax = "proto3";
+package example.v1;
+
+message Event {
+  string id = 1;
+  EventType type = 2;
+  string user_id = 3;
+  int64 timestamp = 4;
+}
+
+enum EventType {
+  EVENT_TYPE_UNSPECIFIED = 0;
+  EVENT_TYPE_LOGIN = 1;
+  EVENT_TYPE_LOGOUT = 2;
+  EVENT_TYPE_PURCHASE = 3;
+}

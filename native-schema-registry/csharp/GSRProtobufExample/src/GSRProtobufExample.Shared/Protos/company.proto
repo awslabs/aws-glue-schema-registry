@@ -1,0 +1,24 @@
+syntax = "proto3";
+package example.v1;
+
+import "user.proto";
+
+message Company {
+  string id = 1;
+  string name = 2;
+  repeated User employees = 3;
+  Address address = 4;
+  map<string, string> metadata = 5;
+  oneof contact_method {
+    string email = 6;
+    string phone = 7;
+  }
+}
+
+message Address {
+  string street = 1;
+  string city = 2;
+  string state = 3;
+  string country = 4;
+  string postal_code = 5;
+}

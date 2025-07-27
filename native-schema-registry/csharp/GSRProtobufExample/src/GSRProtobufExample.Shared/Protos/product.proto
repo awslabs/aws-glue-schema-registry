@@ -1,0 +1,13 @@
+syntax = "proto3";
+package example.v1;
+
+message Product {
+  string id = 1;
+  string name = 2;
+  Price price = 3;
+}
+
+message Price {
+  double amount = 1;
+  string currency = 2;
+}
