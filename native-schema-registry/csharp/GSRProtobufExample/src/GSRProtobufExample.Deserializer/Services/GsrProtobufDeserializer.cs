@@ -36,7 +36,16 @@ public class GsrProtobufDeserializer : IDeserializer
         };
     }
 
-    public object Deserialize(byte[] data, Type type)
+    public async Task<object> DeserializeAsync(Stream input, Type type, ISerializerContext context)
+    {
+        using var memoryStream = new MemoryStream();
+        await input.CopyToAsync(memoryStream);
+        var data = memoryStream.ToArray();
+
+        return await Task.Run(() => Deserialize(data, type));
+    }
+
+    private object Deserialize(byte[] data, Type type)
     {
         var (schemaName, deserializedData) = _gsrDeserializer.Deserialize(data);
         
@@ -46,21 +55,5 @@ public class GsrProtobufDeserializer : IDeserializer
         }
 
         throw new ArgumentException($"No deserializer found for schema: {schemaName}");
-    }
-
-    public byte[] Serialize(object message)
-    {
-        // This deserializer is for inbound messages only
-        throw new NotImplementedException("This deserializer is for inbound messages only");
-    }
-
-    public async Task<object> DeserializeAsync(byte[] data, Type type)
-    {
-        return await Task.Run(() => Deserialize(data, type));
-    }
-
-    public async Task<byte[]> SerializeAsync(object message)
-    {
-        return await Task.Run(() => Serialize(message));
     }
 }

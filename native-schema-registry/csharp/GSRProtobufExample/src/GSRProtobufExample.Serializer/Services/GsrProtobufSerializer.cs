@@ -25,7 +25,13 @@ public class GsrProtobufSerializer : ISerializer
         _gsrSerializer = new GlueSchemaRegistryKafkaSerializer(config);
     }
 
-    public byte[] Serialize(object message)
+    public async Task SerializeAsync(object message, Stream output, ISerializerContext context)
+    {
+        var serializedData = await Task.Run(() => Serialize(message));
+        await output.WriteAsync(serializedData, 0, serializedData.Length);
+    }
+
+    private byte[] Serialize(object message)
     {
         if (message is IMessage protobufMessage)
         {
@@ -34,21 +40,5 @@ public class GsrProtobufSerializer : ISerializer
         }
 
         throw new ArgumentException($"Message must be a protobuf IMessage, but was {message?.GetType()}");
-    }
-
-    public object Deserialize(byte[] data, Type type)
-    {
-        // This serializer is for outbound messages only
-        throw new NotImplementedException("This serializer is for outbound messages only");
-    }
-
-    public async Task<byte[]> SerializeAsync(object message)
-    {
-        return await Task.Run(() => Serialize(message));
-    }
-
-    public async Task<object> DeserializeAsync(byte[] data, Type type)
-    {
-        return await Task.Run(() => Deserialize(data, type));
     }
 }

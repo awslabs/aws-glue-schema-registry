@@ -9,7 +9,6 @@
 
   <ItemGroup>
     <PackageReference Include="KafkaFlow" Version="3.0.7" />
-    <PackageReference Include="KafkaFlow.Microsoft.Extensions.Logging" Version="3.0.7" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="6.0.1" />
     <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="6.0.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
