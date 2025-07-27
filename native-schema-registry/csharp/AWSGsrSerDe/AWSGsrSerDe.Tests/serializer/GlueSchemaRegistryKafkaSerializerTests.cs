@@ -167,8 +167,15 @@ namespace AWSGsrSerDe.Tests.serializer
         public void KafkaSerDeTestForJsonObject()
         {
             var message = SPECIFIC_TEST_RECORD;
+            
+            // Use new constructor approach with dataConfig to specify the target type for JSON deserialization
+            var dataConfig = new GlueSchemaRegistryDataFormatConfiguration(new Dictionary<string, dynamic>
+            {
+                { GlueSchemaRegistryConstants.JsonObjectType, typeof(Car) }
+            });
+            
             var jsonSerializer = new GlueSchemaRegistryKafkaSerializer(JSON_CONFIG_PATH);
-            var jsonDeserializer = new GlueSchemaRegistryKafkaDeserializer(JSON_CONFIG_PATH);
+            var jsonDeserializer = new GlueSchemaRegistryKafkaDeserializer(JSON_CONFIG_PATH, dataConfig);
 
             var serialized = jsonSerializer.Serialize(message, "test-topic-json-car");
             var deserializedObject = jsonDeserializer.Deserialize("test-topic-json-car", serialized);
