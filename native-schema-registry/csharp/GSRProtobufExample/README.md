@@ -34,14 +34,12 @@ GSRProtobufExample/
 │   │   ├── Program.cs
 │   │   └── Services/
 │   │       ├── GsrProtobufSerializer.cs
-│   │       ├── MessagePublisher.cs
-│   │       └── LogHandler.cs
+│   │       └── MessagePublisher.cs
 │   └── GSRProtobufExample.Deserializer/   # Consumer application
 │       ├── Program.cs
 │       └── Services/
 │           ├── GsrProtobufDeserializer.cs
-│           ├── MessageHandlers.cs
-│           └── LogHandler.cs
+│           └── MessageHandlers.cs
 ├── config.properties                      # GSR configuration
 ├── docker-compose.yml                     # Kafka infrastructure
 └── README.md

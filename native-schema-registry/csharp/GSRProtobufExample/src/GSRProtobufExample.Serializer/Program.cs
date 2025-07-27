@@ -10,9 +10,8 @@ var builder = Host.CreateApplicationBuilder(args);
 // Add logging
 builder.Services.AddLogging(configure => configure.AddConsole());
 
-// Add KafkaFlow
+// Add KafkaFlow (without custom log handler)
 builder.Services.AddKafka(kafka => kafka
-    .UseLogHandler<LogHandler>()
     .AddCluster(cluster => cluster
         .WithBrokers("localhost:9092")
         .CreateTopicIfNotExists("users", 1, 1)
