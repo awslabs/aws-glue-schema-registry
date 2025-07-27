@@ -1,0 +1,60 @@
+syntax = "proto3";
+
+package kafkaflow.protobuf.demo;
+
+option csharp_namespace = "KafkaFlowProtobufGsrDemo.Messages";
+
+message Notification {
+  string id = 1;
+  string recipient_id = 2;
+  NotificationType type = 3;
+  string title = 4;
+  string message = 5;
+  NotificationPriority priority = 6;
+  NotificationChannel channel = 7;
+  int64 created_timestamp = 8;
+  int64 scheduled_timestamp = 9;
+  NotificationStatus status = 10;
+  string source_system = 11;
+  map<string, string> metadata = 12;
+}
+
+enum NotificationType {
+  UNKNOWN_TYPE = 0;
+  SYSTEM_ALERT = 1;
+  USER_MESSAGE = 2;
+  MARKETING = 3;
+  SECURITY = 4;
+  BILLING = 5;
+  ORDER_UPDATE = 6;
+  PROMOTIONAL = 7;
+}
+
+enum NotificationPriority {
+  UNKNOWN_PRIORITY = 0;
+  LOW = 1;
+  MEDIUM = 2;
+  HIGH = 3;
+  CRITICAL = 4;
+  URGENT = 5;
+}
+
+enum NotificationChannel {
+  UNKNOWN_CHANNEL = 0;
+  EMAIL = 1;
+  SMS = 2;
+  PUSH_NOTIFICATION = 3;
+  IN_APP = 4;
+  SLACK = 5;
+  WEBHOOK = 6;
+}
+
+enum NotificationStatus {
+  UNKNOWN_NOTIFICATION_STATUS = 0;
+  PENDING = 1;
+  SENT = 2;
+  DELIVERED = 3;
+  FAILED = 4;
+  EXPIRED = 5;
+  CANCELLED = 6;
+}

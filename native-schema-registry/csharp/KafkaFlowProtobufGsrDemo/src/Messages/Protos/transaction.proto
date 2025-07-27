@@ -1,0 +1,45 @@
+syntax = "proto3";
+
+package kafkaflow.protobuf.demo;
+
+option csharp_namespace = "KafkaFlowProtobufGsrDemo.Messages";
+
+message Transaction {
+  string id = 1;
+  string customer_id = 2;
+  double amount = 3;
+  string currency = 4;
+  int64 timestamp = 5;
+  TransactionType type = 6;
+  string description = 7;
+  string merchant_id = 8;
+  PaymentMethod payment_method = 9;
+  TransactionStatus status = 10;
+}
+
+enum TransactionType {
+  UNKNOWN_TYPE = 0;
+  PURCHASE = 1;
+  REFUND = 2;
+  TRANSFER = 3;
+  WITHDRAWAL = 4;
+  DEPOSIT = 5;
+}
+
+enum PaymentMethod {
+  UNKNOWN_METHOD = 0;
+  CREDIT_CARD = 1;
+  DEBIT_CARD = 2;
+  BANK_TRANSFER = 3;
+  DIGITAL_WALLET = 4;
+  CASH = 5;
+}
+
+enum TransactionStatus {
+  UNKNOWN_STATUS = 0;
+  PENDING = 1;
+  COMPLETED = 2;
+  FAILED = 3;
+  CANCELLED = 4;
+  PROCESSING = 5;
+}
