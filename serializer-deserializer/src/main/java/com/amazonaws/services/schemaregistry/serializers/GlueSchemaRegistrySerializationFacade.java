@@ -61,24 +61,13 @@ public class GlueSchemaRegistrySerializationFacade {
             throw new AWSSchemaRegistryException("Configuration map and properties cannot be null");
         }
 
-        // Log critical configuration values for debugging
-        log.info("GSR: SerializationFacade configuration - region={}, autoRegistration={}, registryName={}, cacheSize={}, credentialsProvider={}", 
-                 this.glueSchemaRegistryConfiguration.getRegion(),
-                 this.glueSchemaRegistryConfiguration.isSchemaAutoRegistrationEnabled(),
-                 this.glueSchemaRegistryConfiguration.getRegistryName(),
-                 this.glueSchemaRegistryConfiguration.getCacheSize(),
-                 credentialProvider.getClass().getSimpleName());
-
         this.schemaByDefinitionFetcher = schemaByDefinitionFetcher;
 
         if (this.schemaByDefinitionFetcher == null) {
-            log.info("GSR: Creating new AWSSchemaRegistryClient and SchemaByDefinitionFetcher");
             final AWSSchemaRegistryClient client =
                 new AWSSchemaRegistryClient(credentialProvider, this.glueSchemaRegistryConfiguration,
                     AWSSchemaRegistryGlueClientRetryPolicyHelper.getRetryPolicy());
             this.schemaByDefinitionFetcher = new SchemaByDefinitionFetcher(client, this.glueSchemaRegistryConfiguration);
-        } else {
-            log.info("GSR: Using provided SchemaByDefinitionFetcher instance");
         }
 
         this.serializationDataEncoder = new SerializationDataEncoder(this.glueSchemaRegistryConfiguration);
@@ -91,16 +80,11 @@ public class GlueSchemaRegistrySerializationFacade {
         String transportName = serializerInput.getTransportName();
         String dataFormat = serializerInput.getDataFormat();
 
-        log.info("GSR: SerializationFacade - Starting schema version lookup/registration - schema={}, transport={}, dataFormat={}", 
-                 schemaName, transportName, dataFormat);
-
         Map<String, String> metadata = constructSchemaVersionMetadata(transportName);
 
         UUID schemaVersionId =
                     schemaByDefinitionFetcher.getORRegisterSchemaVersionId(schemaDefinition, schemaName, dataFormat,
                                                                          metadata);
-        log.info("GSR: SerializationFacade - Completed schema version lookup/registration - schema={}, version={}", 
-                 schemaName, schemaVersionId);
         return schemaVersionId;
     }
 
@@ -132,9 +116,6 @@ public class GlueSchemaRegistrySerializationFacade {
         final String schemaDefinition = schema.getSchemaDefinition();
         final String schemaName = schema.getSchemaName();
 
-        log.info("GSR: SerializationFacade - Starting encode process - transport={}, schema={}, dataFormat={}, dataSize={}", 
-                 transportName, schemaName, dataFormat, data.length);
-
         GlueSchemaRegistryDataFormatSerializer dataFormatSerializer =
             glueSchemaRegistrySerializerFactory.getInstance(
                 DataFormat.valueOf(dataFormat), glueSchemaRegistryConfiguration);
@@ -148,10 +129,7 @@ public class GlueSchemaRegistrySerializationFacade {
                                                                   .transportName(transportName)
                                                                   .build());
 
-        byte[] encodedData = serializationDataEncoder.write(data, schemaVersionId);
-        log.info("GSR: SerializationFacade - Completed encode process - schema={}, encodedSize={}", 
-                 schemaName, encodedData.length);
-        return encodedData;
+        return serializationDataEncoder.write(data, schemaVersionId);
     }
 
     public String getSchemaDefinition(DataFormat dataFormat,
