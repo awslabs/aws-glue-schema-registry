@@ -38,7 +38,7 @@ namespace AWSGsrSerDe.deserializer
         public GlueSchemaRegistryKafkaDeserializer(string configFilePath, GlueSchemaRegistryDataFormatConfiguration dataConfig = null)
         {
             // Load base config as dictionary
-            var baseConfigDict = LoadConfigurationDictionary(configFilePath);
+            var baseConfigDict = ConfigFileReader.LoadConfigurationDictionary(configFilePath);
             
             // If dataConfig provided, overlay its non-null properties
             if (dataConfig != null)
@@ -62,38 +62,6 @@ namespace AWSGsrSerDe.deserializer
             _glueSchemaRegistryDeserializer = new GlueSchemaRegistryDeserializer(configFilePath);
         }
 
-        /// <summary>
-        /// Loads configuration from properties file and returns as dictionary
-        /// </summary>
-        /// <param name="configFilePath">Path to the configuration properties file</param>
-        /// <returns>Dictionary containing configuration key-value pairs</returns>
-        private Dictionary<string, dynamic> LoadConfigurationDictionary(string configFilePath)
-        {
-            if (!File.Exists(configFilePath))
-            {
-                throw new FileNotFoundException($"Configuration file not found: {configFilePath}");
-            }
-            
-            var configDictionary = new Dictionary<string, dynamic>();
-            var lines = File.ReadAllLines(configFilePath);
-            
-            foreach (var line in lines)
-            {
-                var trimmedLine = line.Trim();
-                if (string.IsNullOrEmpty(trimmedLine) || trimmedLine.StartsWith("#"))
-                    continue;
-                    
-                var equalIndex = trimmedLine.IndexOf('=');
-                if (equalIndex > 0)
-                {
-                    var key = trimmedLine.Substring(0, equalIndex).Trim();
-                    var value = trimmedLine.Substring(equalIndex + 1).Trim();
-                    configDictionary[key] = value;
-                }
-            }
-            
-            return configDictionary;
-        }
 
         /// <summary>
         /// De-serialize operation for de-serializing the byte array to an Object.

@@ -34,40 +34,12 @@ namespace AWSGsrSerDe.serializer
         /// <param name="configFilePath">Path to the configuration properties file</param>
         public GlueSchemaRegistryKafkaSerializer(string configFilePath)
         {
-            _dataFormat = ReadDataFormatFromConfig(configFilePath);
+            _dataFormat = ConfigFileReader.GetConfigValue(configFilePath, "dataFormat") ?? "AVRO";
             _schemaNamingStrategy = new DefaultSchemaNameStrategy();
             
             _glueSchemaRegistrySerializer = new GlueSchemaRegistrySerializer(configFilePath);
         }
         
-        /// <summary>
-        /// Reads the dataFormat property from the configuration file
-        /// </summary>
-        /// <param name="configFilePath">Path to the configuration properties file</param>
-        /// <returns>Data format string</returns>
-        private string ReadDataFormatFromConfig(string configFilePath)
-        {
-            if (!File.Exists(configFilePath))
-            {
-                throw new FileNotFoundException($"Configuration file not found: {configFilePath}");
-            }
-            
-            var lines = File.ReadAllLines(configFilePath);
-            foreach (var line in lines)
-            {
-                var trimmedLine = line.Trim();
-                if (string.IsNullOrEmpty(trimmedLine) || trimmedLine.StartsWith("#"))
-                    continue;
-                    
-                if (trimmedLine.StartsWith("dataFormat="))
-                {
-                    return trimmedLine.Substring("dataFormat=".Length).Trim();
-                }
-            }
-            
-            // Default to AVRO if not specified
-            return "AVRO";
-        }
 
         /// <summary>
         /// serializes the given Object to an byte array.
