@@ -143,20 +143,14 @@ public class AWSSchemaRegistryClient {
     public UUID getSchemaVersionIdByDefinition(@NonNull String schemaDefinition, @NonNull String schemaName,
                                                @NonNull String dataFormat) throws AWSSchemaRegistryException {
         try {
-            String truncatedSchema = schemaDefinition.length() > 100 ? 
-                schemaDefinition.substring(0, 100) + "..." : schemaDefinition;
-            log.info("GSR: AWSSchemaRegistryClient - Making API call getSchemaByDefinition - schema={}, dataFormat={}, registryName={}, schemaPreview={}", 
-                     schemaName, dataFormat, glueSchemaRegistryConfiguration.getRegistryName(), truncatedSchema);
-            
-            GetSchemaByDefinitionResponse response = client.getSchemaByDefinition(buildGetSchemaByDefinitionRequest(schemaDefinition, schemaName));
-            
-            UUID result = returnSchemaVersionIdIfAvailable(response);
-            log.info("GSR: AWSSchemaRegistryClient - API call getSchemaByDefinition completed - schema={}, version={}, status={}", 
-                     schemaName, result, response.statusAsString());
-            return result;
+            String message = String.format(
+                    "Getting Schema Version Id for : schemaDefinition = %s, schemaName = %s, dataFormat = %s",
+                    schemaDefinition, schemaName, dataFormat);
+            log.debug(message);
+            GetSchemaByDefinitionResponse response = null;
+            response = client.getSchemaByDefinition(buildGetSchemaByDefinitionRequest(schemaDefinition, schemaName));
+            return returnSchemaVersionIdIfAvailable(response);
         } catch (Exception e) {
-            log.warn("GSR: AWSSchemaRegistryClient - API call getSchemaByDefinition failed - schema={}, error={}", 
-                     schemaName, e.getMessage());
             String message = String.format("Failed to get schemaVersionId by schema definition for schema name = %s ", schemaName);
             throw new AWSSchemaRegistryException(message, e);
         }
@@ -251,21 +245,16 @@ public class AWSSchemaRegistryClient {
                              Map<String, String> metadata) throws AWSSchemaRegistryException {
         UUID schemaVersionId = null;
         try {
-            log.info("GSR: AWSSchemaRegistryClient - Making API call createSchema - schema={}, dataFormat={}, registryName={}", 
-                     schemaName, dataFormat, glueSchemaRegistryConfiguration.getRegistryName());
-            
+            log.info("Auto Creating schema with schemaName: {} and schemaDefinition : {}", schemaName,
+                      schemaDefinition);
             CreateSchemaResponse createSchemaResponse =
                     client.createSchema(getCreateSchemaRequestObject(schemaName, dataFormat, schemaDefinition));
             schemaVersionId = UUID.fromString(createSchemaResponse.schemaVersionId());
-            
-            log.info("GSR: AWSSchemaRegistryClient - API call createSchema completed successfully - schema={}, version={}", 
-                     schemaName, schemaVersionId);
         } catch (AlreadyExistsException e) {
-            log.warn("GSR: AWSSchemaRegistryClient - Schema already exists, attempting to register version - schema={}", schemaName);
+            log.warn("Schema is already created, this could be caused by multiple producers racing to "
+                     + "auto-create schema.");
             schemaVersionId = registerSchemaVersion(schemaDefinition, schemaName, dataFormat, metadata);
         } catch (Exception e) {
-            log.error("GSR: AWSSchemaRegistryClient - API call createSchema failed - schema={}, error={}", 
-                      schemaName, e.getMessage());
             String errorMessage = String.format(
                     "Create schema :: Call failed when creating the schema with the schema registry for"
                     + " schema name = %s", schemaName);
@@ -307,14 +296,11 @@ public class AWSSchemaRegistryClient {
         GetSchemaVersionResponse schemaVersionResponse = null;
 
         try {
-            log.info("GSR: AWSSchemaRegistryClient - Making API call registerSchemaVersion - schema={}, dataFormat={}, registryName={}", 
-                     schemaName, dataFormat, glueSchemaRegistryConfiguration.getRegistryName());
-            
             RegisterSchemaVersionResponse registerSchemaVersionResponse =
                     client.registerSchemaVersion(getRegisterSchemaVersionRequest(schemaDefinition, schemaName));
 
-            log.info("GSR: AWSSchemaRegistryClient - API call registerSchemaVersion completed - schema={}, version={}, versionNumber={}, status={}", 
-                     schemaName, registerSchemaVersionResponse.schemaVersionId(),
+            log.info("Registered the schema version with schema version id = {} and with version number = {} and "
+                     + "status {}", registerSchemaVersionResponse.schemaVersionId(),
                      registerSchemaVersionResponse.versionNumber(), registerSchemaVersionResponse.statusAsString());
 
             if (AWSSchemaRegistryConstants.SchemaVersionStatus.AVAILABLE.toString()
@@ -322,15 +308,10 @@ public class AWSSchemaRegistryClient {
                 return transformToGetSchemaVersionResponse(registerSchemaVersionResponse);
             }
 
-            log.info("GSR: AWSSchemaRegistryClient - Schema version status is {}, waiting for evolution check to complete - schema={}", 
-                     registerSchemaVersionResponse.statusAsString(), schemaName);
-            
             schemaVersionResponse = waitForSchemaEvolutionCheckToComplete(
                     getGetSchemaVersionRequest(registerSchemaVersionResponse.schemaVersionId()));
 
         } catch (Exception e) {
-            log.error("GSR: AWSSchemaRegistryClient - API call registerSchemaVersion failed - schema={}, error={}", 
-                      schemaName, e.getMessage());
             String errorMessage = String.format("Register schema :: Call failed when registering the schema with the schema registry for schema name = %s",
                     schemaName);
             throw new AWSSchemaRegistryException(errorMessage, e);
