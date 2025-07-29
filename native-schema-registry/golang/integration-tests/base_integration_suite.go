@@ -21,8 +21,8 @@ type BaseIntegrationSuite struct {
 	suite.Suite
 	gsr_serializer   *serializer.Serializer
 	gsr_deserializer *deserializer.Deserializer
-	topicName         string
-	cleanup           func()
+	topicName        string
+	cleanup          func()
 }
 
 // SetupSuite is called once before all tests in the suite
@@ -151,6 +151,11 @@ func (s *BaseIntegrationSuite) publishMessageToKafka(ctx context.Context, topicN
 	}
 
 	err := writer.WriteMessages(ctx, message)
+	for i := 1; i < 5 && err != nil; i++ {
+		err = writer.WriteMessages(ctx, message)
+		s.T().Logf("Retrying publish attempt %d...", i)
+		time.Sleep(time.Duration(i) * time.Second)
+	}
 	require.NoError(s.T(), err, "Should publish message to Kafka")
 	s.T().Logf("Published message to topic %s: %d bytes", topicName, len(data))
 }
@@ -196,6 +201,55 @@ func (s *BaseIntegrationSuite) setupTestInfrastructure() func() {
 	}
 }
 
+// waitForTopicReady waits until a Kafka topic is ready and available for operations
+func (s *BaseIntegrationSuite) waitForTopicReady(ctx context.Context, topicName string) {
+	s.T().Logf("Waiting for topic %s to be ready...", topicName)
+	
+	timeoutCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
+	ticker := time.NewTicker(5 * time.Second)
+	defer ticker.Stop()
+
+	// Check immediately first
+	conn, err := kafka.Dial("tcp", s.getKafkaBroker())
+	if err == nil {
+		partitions, err := conn.ReadPartitions(topicName)
+		conn.Close()
+		
+		if err == nil && len(partitions) > 0 {
+			s.T().Logf("✅ Topic %s is ready with %d partition(s)", topicName, len(partitions))
+			return
+		}
+	}
+
+	// Then poll every 5 seconds
+	for {
+		select {
+		case <-timeoutCtx.Done():
+			require.Fail(s.T(), "Timeout waiting for topic to be ready", 
+				"Topic %s was not ready after 30 seconds", topicName)
+			return
+		case <-ticker.C:
+			conn, err := kafka.Dial("tcp", s.getKafkaBroker())
+			if err != nil {
+				s.T().Logf("Could not connect to Kafka: %v", err)
+				continue
+			}
+
+			partitions, err := conn.ReadPartitions(topicName)
+			conn.Close()
+			
+			if err == nil && len(partitions) > 0 {
+				s.T().Logf("✅ Topic %s is ready with %d partition(s)", topicName, len(partitions))
+				return
+			}
+			
+			s.T().Logf("Topic %s not ready yet, retrying in 5s...", topicName)
+		}
+	}
+}
+
 // createKafkaTopic creates a Kafka topic for testing
 func (s *BaseIntegrationSuite) createKafkaTopic(ctx context.Context, topicName string) {
 	conn, err := kafka.Dial("tcp", s.getKafkaBroker())
@@ -212,6 +266,9 @@ func (s *BaseIntegrationSuite) createKafkaTopic(ctx context.Context, topicName s
 	} else {
 		s.T().Logf("Created Kafka topic: %s", topicName)
 	}
+
+	// Wait for topic to be ready for operations to prevent race conditions
+	s.waitForTopicReady(ctx, topicName)
 }
 
 // deleteKafkaTopic deletes a Kafka topic after testing
