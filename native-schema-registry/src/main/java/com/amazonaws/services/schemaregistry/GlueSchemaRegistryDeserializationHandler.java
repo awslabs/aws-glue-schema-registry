@@ -64,7 +64,7 @@ public class GlueSchemaRegistryDeserializationHandler {
             DeserializerInstance.create(configuration);
 
             return 0; // Success
-        } catch (Exception e) {
+        } catch (Exception | Error e) {
             ExceptionWriter.write(errorPointer, e);
             return 1; // Error
         }
