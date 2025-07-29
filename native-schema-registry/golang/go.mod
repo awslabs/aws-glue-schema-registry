@@ -6,7 +6,7 @@ require (
 	github.com/hamba/avro/v2 v2.25.1
 	github.com/stretchr/testify v1.10.0
 	github.com/xeipuuv/gojsonschema v1.2.0
-	google.golang.org/protobuf v1.28.1
+	google.golang.org/protobuf v1.36.5
 )
 
 require (
