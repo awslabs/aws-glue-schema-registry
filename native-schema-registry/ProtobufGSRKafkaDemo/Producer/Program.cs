@@ -3,7 +3,7 @@ using KafkaFlow.Producers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using ProtobufGSRKafkaDemo.GSR;
+using AWSGsrSerDe.KafkaFlow;
 using ProtobufGSRKafkaDemo.Messages;
 using Google.Protobuf.WellKnownTypes;
 
@@ -76,31 +76,31 @@ class Program
                         .AddProducer("user-producer", producer => producer
                             .DefaultTopic("users")
                             .AddMiddlewares(middlewares => middlewares
-                                .AddSerializer(resolver => new GsrProtobufSerializer<User>(CONFIG_PATH))
+                                .AddSerializer(resolver => new GsrKafkaFlowProtobufSerializer<User>(CONFIG_PATH))
                             )
                         )
                         .AddProducer("product-producer", producer => producer
                             .DefaultTopic("products")
                             .AddMiddlewares(middlewares => middlewares
-                                .AddSerializer(resolver => new GsrProtobufSerializer<Product>(CONFIG_PATH))
+                                .AddSerializer(resolver => new GsrKafkaFlowProtobufSerializer<Product>(CONFIG_PATH))
                             )
                         )
                         .AddProducer("order-producer", producer => producer
                             .DefaultTopic("orders")
                             .AddMiddlewares(middlewares => middlewares
-                                .AddSerializer(resolver => new GsrProtobufSerializer<Order>(CONFIG_PATH))
+                                .AddSerializer(resolver => new GsrKafkaFlowProtobufSerializer<Order>(CONFIG_PATH))
                             )
                         )
                         .AddProducer("payment-producer", producer => producer
                             .DefaultTopic("payments")
                             .AddMiddlewares(middlewares => middlewares
-                                .AddSerializer(resolver => new GsrProtobufSerializer<Payment>(CONFIG_PATH))
+                                .AddSerializer(resolver => new GsrKafkaFlowProtobufSerializer<Payment>(CONFIG_PATH))
                             )
                         )
                         .AddProducer("event-producer", producer => producer
                             .DefaultTopic("events")
                             .AddMiddlewares(middlewares => middlewares
-                                .AddSerializer(resolver => new GsrProtobufSerializer<Event>(CONFIG_PATH))
+                                .AddSerializer(resolver => new GsrKafkaFlowProtobufSerializer<Event>(CONFIG_PATH))
                             )
                         )
                     )

@@ -2,7 +2,7 @@ using KafkaFlow;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using ProtobufGSRKafkaDemo.GSR;
+using AWSGsrSerDe.KafkaFlow;
 using ProtobufGSRKafkaDemo.Messages;
 
 namespace ProtobufGSRKafkaDemo.Consumer;
@@ -96,7 +96,7 @@ class Program
                             .WithWorkersCount(1)
                             .WithAutoOffsetReset(AutoOffsetReset.Earliest)
                             .AddMiddlewares(middlewares => middlewares
-                                .AddDeserializer(resolver => new GsrProtobufDeserializer<User>(CONFIG_PATH))
+                                .AddDeserializer(resolver => new GsrKafkaFlowProtobufDeserializer<User>(CONFIG_PATH))
                                 .AddTypedHandlers(h => h.AddHandler<UserHandler>())
                             )
                         )
@@ -107,7 +107,7 @@ class Program
                             .WithWorkersCount(1)
                             .WithAutoOffsetReset(AutoOffsetReset.Earliest)
                             .AddMiddlewares(middlewares => middlewares
-                                .AddDeserializer(resolver => new GsrProtobufDeserializer<Product>(CONFIG_PATH))
+                                .AddDeserializer(resolver => new GsrKafkaFlowProtobufDeserializer<Product>(CONFIG_PATH))
                                 .AddTypedHandlers(h => h.AddHandler<ProductHandler>())
                             )
                         )
@@ -118,7 +118,7 @@ class Program
                             .WithWorkersCount(1)
                             .WithAutoOffsetReset(AutoOffsetReset.Earliest)
                             .AddMiddlewares(middlewares => middlewares
-                                .AddDeserializer(resolver => new GsrProtobufDeserializer<Order>(CONFIG_PATH))
+                                .AddDeserializer(resolver => new GsrKafkaFlowProtobufDeserializer<Order>(CONFIG_PATH))
                                 .AddTypedHandlers(h => h.AddHandler<OrderHandler>())
                             )
                         )
@@ -129,7 +129,7 @@ class Program
                             .WithWorkersCount(1)
                             .WithAutoOffsetReset(AutoOffsetReset.Earliest)
                             .AddMiddlewares(middlewares => middlewares
-                                .AddDeserializer(resolver => new GsrProtobufDeserializer<Payment>(CONFIG_PATH))
+                                .AddDeserializer(resolver => new GsrKafkaFlowProtobufDeserializer<Payment>(CONFIG_PATH))
                                 .AddTypedHandlers(h => h.AddHandler<PaymentHandler>())
                             )
                         )
@@ -140,7 +140,7 @@ class Program
                             .WithWorkersCount(1)
                             .WithAutoOffsetReset(AutoOffsetReset.Earliest)
                             .AddMiddlewares(middlewares => middlewares
-                                .AddDeserializer(resolver => new GsrProtobufDeserializer<Event>(CONFIG_PATH))
+                                .AddDeserializer(resolver => new GsrKafkaFlowProtobufDeserializer<Event>(CONFIG_PATH))
                                 .AddTypedHandlers(h => h.AddHandler<EventHandler>())
                             )
                         )
