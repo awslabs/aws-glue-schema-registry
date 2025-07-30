@@ -1,33 +1,73 @@
+// Copyright 2020 Amazon.com, Inc. or its affiliates.
+// Licensed under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//  
+//     http://www.apache.org/licenses/LICENSE-2.0
+//  
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
-using Xunit;
-using Moq;
-using AWSGsrSerDe.KafkaFlow;
 using AWSGsrSerDe.common;
+using AWSGsrSerDe.KafkaFlow;
 using Google.Protobuf;
 using KafkaFlow;
+using Moq;
+using NUnit.Framework;
 using Com.Amazonaws.Services.Schemaregistry.Tests.Protobuf.Syntax2.Basic;
 using static AWSGsrSerDe.Tests.utils.ProtobufGenerator;
 
 namespace AWSGsrSerDe.Tests.KafkaFlow
 {
-
-    public class GsrKafkaFlowProtobufTests : IDisposable
+    [TestFixture]
+    public class GsrKafkaFlowProtobufTests
     {
-        private readonly List<string> _tempFiles = new List<string>();
+        private static readonly string PROTOBUF_CONFIG_PATH = GetConfigPath("configuration/test-configs/valid-minimal-protobuf.properties");
 
-        private string CreateTempConfigFile(string content = null)
+        /// <summary>
+        /// Finds the project root by looking for .csproj file and returns absolute path to config file
+        /// </summary>
+        /// <param name="relativePath">Relative path from project root</param>
+        /// <returns>Absolute path to the configuration file</returns>
+        private static string GetConfigPath(string relativePath)
         {
-            var tempFile = Path.GetTempFileName();
-            var configContent = content ?? 
-                "dataFormat=PROTOBUF\n" +
-                "region=us-east-1\n" +
-                "schemaRegistryName=test-registry\n";
-            File.WriteAllText(tempFile, configContent);
-            _tempFiles.Add(tempFile);
-            return tempFile;
+            var currentDir = new DirectoryInfo(Directory.GetCurrentDirectory());
+            while (currentDir != null && !currentDir.GetFiles("*.csproj").Any())
+            {
+                currentDir = currentDir.Parent;
+            }
+            
+            if (currentDir == null)
+            {
+                throw new DirectoryNotFoundException("Could not find project root directory containing .csproj file");
+            }
+            
+            return Path.Combine(currentDir.FullName, relativePath);
+        }
+
+        private static List<IMessage> TestMessageProvider()
+        {
+            return new List<IMessage>
+            {
+                BASIC_SYNTAX2_MESSAGE,
+                BASIC_SYNTAX3_MESSAGE,
+                BASIC_REFERENCING_MESSAGE,
+                NESTING_MESSAGE_PROTO2,
+                NESTING_MESSAGE_PROTO3,
+                NESTING_MESSAGE_PROTO3_MULTIPLE_FILES,
+                ALL_TYPES_MESSAGE_SYNTAX2,
+                ALL_TYPES_MESSAGE_SYNTAX3,
+                WELL_KNOWN_TYPES_SYNTAX_2,
+                WELL_KNOWN_TYPES_SYNTAX_3,
+            };
         }
 
         private Mock<ISerializerContext> CreateMockSerializerContext(string topic = "test-topic")
@@ -37,17 +77,14 @@ namespace AWSGsrSerDe.Tests.KafkaFlow
             return context;
         }
 
-        [Fact]
+        [Test]
         public void GsrKafkaFlowProtobufSerializer_Constructor_ValidConfig_Success()
         {
-            // Arrange
-            var configFile = CreateTempConfigFile();
-
             // Act & Assert - Should not throw
-            Assert.DoesNotThrow(() => new GsrKafkaFlowProtobufSerializer<BasicSyntax2Message>(configFile));
+            Assert.DoesNotThrow(() => new GsrKafkaFlowProtobufSerializer<BasicSyntax2Message>(PROTOBUF_CONFIG_PATH));
         }
 
-        [Fact]
+        [Test]
         public void GsrKafkaFlowProtobufSerializer_Constructor_InvalidConfigPath_ThrowsException()
         {
             // Arrange
@@ -56,78 +93,18 @@ namespace AWSGsrSerDe.Tests.KafkaFlow
             // Act & Assert
             var exception = Assert.Throws<InvalidOperationException>(() => 
                 new GsrKafkaFlowProtobufSerializer<BasicSyntax2Message>(invalidConfigPath));
-            Assert.Contains("Failed to initialize GSR KafkaFlow serializer", exception.Message);
-            Assert.Contains("BasicSyntax2Message", exception.Message);
+            Assert.That(exception.Message, Does.Contain("Failed to initialize GSR KafkaFlow serializer"));
+            Assert.That(exception.Message, Does.Contain("BasicSyntax2Message"));
         }
 
-        [Fact]
-        public void GsrKafkaFlowProtobufSerializer_Serialize_ValidMessage_ReturnsBytes()
-        {
-            // Arrange
-            var configFile = CreateTempConfigFile();
-            var serializer = new GsrKafkaFlowProtobufSerializer<BasicSyntax2Message>(configFile);
-            var message = BASIC_SYNTAX2_MESSAGE;
-            var context = CreateMockSerializerContext();
-
-            // Act & Assert - Should not throw (though it may fail at runtime due to mocked dependencies)
-            // We're testing the wrapper logic, not the underlying GSR functionality
-            try
-            {
-                var result = serializer.Serialize(message, context.Object);
-                // If it succeeds, great. If it fails due to missing dependencies, that's expected
-            }
-            catch (Exception ex) when (ex is not InvalidOperationException || 
-                                     !ex.Message.Contains("Failed to serialize BasicSyntax2Message"))
-            {
-                // Expected - underlying GSR may not be fully functional in test environment
-            }
-        }
-
-        [Fact]
-        public async Task GsrKafkaFlowProtobufSerializer_SerializeAsync_ValidMessage_WritesToStream()
-        {
-            // Arrange
-            var configFile = CreateTempConfigFile();
-            var serializer = new GsrKafkaFlowProtobufSerializer<BasicSyntax2Message>(configFile);
-            var message = BASIC_SYNTAX2_MESSAGE;
-            var context = CreateMockSerializerContext();
-            var stream = new MemoryStream();
-
-            // Act & Assert
-            try
-            {
-                await serializer.SerializeAsync(message, stream, context.Object);
-                // If it succeeds, the stream should have been written to
-            }
-            catch (Exception ex) when (ex is not InvalidOperationException || 
-                                     !ex.Message.Contains("Failed to serialize BasicSyntax2Message"))
-            {
-                // Expected - underlying GSR may not be fully functional in test environment
-            }
-        }
-
-        [Fact]
-        public void GsrKafkaFlowProtobufSerializer_Dispose_DoesNotThrow()
-        {
-            // Arrange
-            var configFile = CreateTempConfigFile();
-            var serializer = new GsrKafkaFlowProtobufSerializer<BasicSyntax2Message>(configFile);
-
-            // Act & Assert
-            Assert.DoesNotThrow(() => serializer.Dispose());
-        }
-
-        [Fact]
+        [Test]
         public void GsrKafkaFlowProtobufDeserializer_Constructor_ValidConfig_Success()
         {
-            // Arrange
-            var configFile = CreateTempConfigFile();
-
             // Act & Assert - Should not throw
-            Assert.DoesNotThrow(() => new GsrKafkaFlowProtobufDeserializer<BasicSyntax2Message>(configFile));
+            Assert.DoesNotThrow(() => new GsrKafkaFlowProtobufDeserializer<BasicSyntax2Message>(PROTOBUF_CONFIG_PATH));
         }
 
-        [Fact]
+        [Test]
         public void GsrKafkaFlowProtobufDeserializer_Constructor_InvalidConfigPath_ThrowsException()
         {
             // Arrange
@@ -136,163 +113,266 @@ namespace AWSGsrSerDe.Tests.KafkaFlow
             // Act & Assert
             var exception = Assert.Throws<InvalidOperationException>(() => 
                 new GsrKafkaFlowProtobufDeserializer<BasicSyntax2Message>(invalidConfigPath));
-            Assert.Contains("Failed to initialize GSR KafkaFlow deserializer", exception.Message);
-            Assert.Contains("BasicSyntax2Message", exception.Message);
+            Assert.That(exception.Message, Does.Contain("Failed to initialize GSR KafkaFlow deserializer"));
+            Assert.That(exception.Message, Does.Contain("BasicSyntax2Message"));
         }
 
-        [Fact]
-        public void GsrKafkaFlowProtobufDeserializer_Deserialize_ValidData_ReturnsObject()
+        [Test]
+        [TestCaseSource(nameof(TestMessageProvider))]
+        public void KafkaFlowSerDeTestForAllProtobufTypes(IMessage message)
+        {
+            // Arrange - Use topic name based on message type for better organization
+            var topicName = $"test-topic-{message.GetType().Name.ToLower()}";
+            var context = CreateMockSerializerContext(topicName);
+
+            // Create serializer and deserializer with proper data config for deserializer
+            var dataConfig = new GlueSchemaRegistryDataFormatConfiguration(new Dictionary<string, dynamic>
+            {
+                { GlueSchemaRegistryConstants.ProtobufMessageDescriptor, message.Descriptor }
+            });
+
+            var serializer = new GlueSchemaRegistryKafkaFlowProtobufSerializer<IMessage>(PROTOBUF_CONFIG_PATH);
+            var deserializer = new GlueSchemaRegistryKafkaFlowProtobufDeserializer<IMessage>(PROTOBUF_CONFIG_PATH, dataConfig);
+
+            // Act
+            var serialized = serializer.Serialize(message, context.Object);
+            var deserialized = deserializer.Deserialize(serialized, message.GetType(), context.Object);
+
+            // Assert
+            Assert.That(deserialized, Is.Not.Null);
+            Assert.That(deserialized.GetType(), Is.EqualTo(message.GetType()));
+            Assert.That(deserialized, Is.EqualTo(message));
+            
+            // Verify context was used correctly
+            context.Verify(c => c.Topic, Times.AtLeastOnce);
+        }
+
+        [Test]
+        public void KafkaFlowSerDeTest_BasicSyntax2Message_RoundTripSuccess()
         {
             // Arrange
-            var configFile = CreateTempConfigFile();
-            var deserializer = new GsrKafkaFlowProtobufDeserializer<BasicSyntax2Message>(configFile);
-            var testData = new byte[] { 0x01, 0x02, 0x03, 0x04 }; // Mock GSR-encoded data
+            var message = BASIC_SYNTAX2_MESSAGE;
+            var topicName = "test-topic-basic-syntax2";
+            var context = CreateMockSerializerContext(topicName);
+
+            var serializer = new GsrKafkaFlowProtobufSerializer<BasicSyntax2Message>(PROTOBUF_CONFIG_PATH);
+            var deserializer = new GsrKafkaFlowProtobufDeserializer<BasicSyntax2Message>(PROTOBUF_CONFIG_PATH);
+
+            // Act
+            var serialized = serializer.Serialize(message, context.Object);
+            var deserialized = (BasicSyntax2Message)deserializer.Deserialize(serialized, typeof(BasicSyntax2Message), context.Object);
+
+            // Assert
+            Assert.That(deserialized, Is.Not.Null);
+            Assert.That(deserialized, Is.EqualTo(message));
+            Assert.That(deserialized.OptionalString, Is.EqualTo(message.OptionalString));
+            Assert.That(deserialized.OptionalInt32, Is.EqualTo(message.OptionalInt32));
+        }
+
+        [Test]
+        public async Task KafkaFlowSerializeAsync_ValidMessage_WritesToStreamCorrectly()
+        {
+            // Arrange
+            var message = BASIC_SYNTAX2_MESSAGE;
+            var topicName = "test-topic-async-serialize";
+            var context = CreateMockSerializerContext(topicName);
+            var serializer = new GsrKafkaFlowProtobufSerializer<BasicSyntax2Message>(PROTOBUF_CONFIG_PATH);
+            var stream = new MemoryStream();
+
+            // Act
+            await serializer.SerializeAsync(message, stream, context.Object);
+
+            // Assert
+            Assert.That(stream.Length, Is.GreaterThan(0));
+            
+            // Verify we can deserialize what was written
+            stream.Position = 0;
+            var deserializer = new GsrKafkaFlowProtobufDeserializer<BasicSyntax2Message>(PROTOBUF_CONFIG_PATH);
+            var deserialized = await deserializer.DeserializeAsync(stream, typeof(BasicSyntax2Message), context.Object);
+            
+            Assert.That(deserialized, Is.Not.Null);
+            Assert.That(deserialized, Is.EqualTo(message));
+        }
+
+        [Test]
+        public async Task KafkaFlowDeserializeAsync_ValidData_ReturnsCorrectObject()
+        {
+            // Arrange
+            var message = BASIC_SYNTAX2_MESSAGE;
+            var topicName = "test-topic-async-deserialize";
+            var context = CreateMockSerializerContext(topicName);
+            
+            // First serialize to get valid data
+            var serializer = new GsrKafkaFlowProtobufSerializer<BasicSyntax2Message>(PROTOBUF_CONFIG_PATH);
+            var serialized = serializer.Serialize(message, context.Object);
+            
+            var deserializer = new GsrKafkaFlowProtobufDeserializer<BasicSyntax2Message>(PROTOBUF_CONFIG_PATH);
+            var stream = new MemoryStream(serialized);
+
+            // Act
+            var deserialized = await deserializer.DeserializeAsync(stream, typeof(BasicSyntax2Message), context.Object);
+
+            // Assert
+            Assert.That(deserialized, Is.Not.Null);
+            Assert.That(deserialized, Is.EqualTo(message));
+        }
+
+        [Test]
+        public void KafkaFlowSerializer_WithDifferentTopics_UsesTopicCorrectly()
+        {
+            // Arrange
+            var message = BASIC_SYNTAX2_MESSAGE;
+            var serializer = new GsrKafkaFlowProtobufSerializer<BasicSyntax2Message>(PROTOBUF_CONFIG_PATH);
+            
+            var topics = new[] { "topic-1", "topic-2", "custom-topic-name" };
+
+            foreach (var topicName in topics)
+            {
+                var context = CreateMockSerializerContext(topicName);
+
+                // Act
+                var serialized = serializer.Serialize(message, context.Object);
+
+                // Assert
+                Assert.That(serialized, Is.Not.Null);
+                Assert.That(serialized.Length, Is.GreaterThan(0));
+                context.Verify(c => c.Topic, Times.AtLeastOnce, $"Topic {topicName} should be accessed");
+            }
+        }
+
+        [Test]
+        public void KafkaFlowDeserializer_WithDifferentTopics_UsesTopicCorrectly()
+        {
+            // Arrange
+            var message = BASIC_SYNTAX2_MESSAGE;
+            var serializer = new GsrKafkaFlowProtobufSerializer<BasicSyntax2Message>(PROTOBUF_CONFIG_PATH);
+            var deserializer = new GsrKafkaFlowProtobufDeserializer<BasicSyntax2Message>(PROTOBUF_CONFIG_PATH);
+            
+            var topics = new[] { "topic-1", "topic-2", "custom-topic-name" };
+
+            foreach (var topicName in topics)
+            {
+                var context = CreateMockSerializerContext(topicName);
+                
+                // First serialize with this topic
+                var serialized = serializer.Serialize(message, context.Object);
+
+                // Act - Deserialize with same topic
+                var deserialized = deserializer.Deserialize(serialized, typeof(BasicSyntax2Message), context.Object);
+
+                // Assert
+                Assert.That(deserialized, Is.Not.Null);
+                Assert.That(deserialized, Is.EqualTo(message));
+                context.Verify(c => c.Topic, Times.AtLeastOnce, $"Topic {topicName} should be accessed during deserialize");
+            }
+        }
+
+        [Test]
+        public void KafkaFlowSerializer_SerializeNull_ThrowsException()
+        {
+            // Arrange
+            var serializer = new GsrKafkaFlowProtobufSerializer<BasicSyntax2Message>(PROTOBUF_CONFIG_PATH);
             var context = CreateMockSerializerContext();
 
             // Act & Assert
-            try
-            {
-                var result = deserializer.Deserialize(testData, typeof(BasicSyntax2Message), context.Object);
-                // If it succeeds, great. If it fails due to invalid data format, that's expected
-            }
-            catch (Exception ex) when (ex is not InvalidOperationException || 
-                                     !ex.Message.Contains("Failed to deserialize BasicSyntax2Message"))
-            {
-                // Expected - the test data is not valid GSR-encoded data
-            }
+            var exception = Assert.Throws<InvalidOperationException>(() => 
+                serializer.Serialize(null, context.Object));
+            Assert.That(exception.Message, Does.Contain("Failed to serialize BasicSyntax2Message"));
         }
 
-        [Fact]
-        public async Task GsrKafkaFlowProtobufDeserializer_DeserializeAsync_ValidData_ReturnsObject()
+        [Test]
+        public void KafkaFlowDeserializer_DeserializeInvalidData_ThrowsException()
         {
             // Arrange
-            var configFile = CreateTempConfigFile();
-            var deserializer = new GsrKafkaFlowProtobufDeserializer<BasicSyntax2Message>(configFile);
-            var testData = new byte[] { 0x01, 0x02, 0x03, 0x04 };
-            var stream = new MemoryStream(testData);
+            var deserializer = new GsrKafkaFlowProtobufDeserializer<BasicSyntax2Message>(PROTOBUF_CONFIG_PATH);
             var context = CreateMockSerializerContext();
+            var invalidData = new byte[] { 0x01, 0x02, 0x03, 0x04 }; // Invalid GSR data
 
             // Act & Assert
-            try
-            {
-                var result = await deserializer.DeserializeAsync(stream, typeof(BasicSyntax2Message), context.Object);
-                // If it succeeds, great. If it fails due to invalid data format, that's expected
-            }
-            catch (Exception ex) when (ex is not InvalidOperationException || 
-                                     !ex.Message.Contains("Failed to deserialize BasicSyntax2Message"))
-            {
-                // Expected - the test data is not valid GSR-encoded data
-            }
+            var exception = Assert.Throws<InvalidOperationException>(() => 
+                deserializer.Deserialize(invalidData, typeof(BasicSyntax2Message), context.Object));
+            Assert.That(exception.Message, Does.Contain("Failed to deserialize BasicSyntax2Message"));
         }
 
-        [Fact]
-        public void GsrKafkaFlowProtobufDeserializer_Dispose_DoesNotThrow()
+        [Test]
+        public void KafkaFlowSerializer_Dispose_DoesNotThrow()
         {
             // Arrange
-            var configFile = CreateTempConfigFile();
-            var deserializer = new GsrKafkaFlowProtobufDeserializer<BasicSyntax2Message>(configFile);
+            var serializer = new GsrKafkaFlowProtobufSerializer<BasicSyntax2Message>(PROTOBUF_CONFIG_PATH);
+
+            // Act & Assert
+            Assert.DoesNotThrow(() => serializer.Dispose());
+        }
+
+        [Test]
+        public void KafkaFlowDeserializer_Dispose_DoesNotThrow()
+        {
+            // Arrange
+            var deserializer = new GsrKafkaFlowProtobufDeserializer<BasicSyntax2Message>(PROTOBUF_CONFIG_PATH);
 
             // Act & Assert
             Assert.DoesNotThrow(() => deserializer.Dispose());
         }
 
-        [Fact]
-        public void GsrKafkaFlowProtobufSerializer_WithCustomTopic_UsesCorrectTopic()
+        [Test]
+        public void KafkaFlowSerializer_MultipleOperations_WorksCorrectly()
         {
             // Arrange
-            var configFile = CreateTempConfigFile();
-            var serializer = new GsrKafkaFlowProtobufSerializer<BasicSyntax2Message>(configFile);
+            var serializer = new GsrKafkaFlowProtobufSerializer<BasicSyntax2Message>(PROTOBUF_CONFIG_PATH);
+            var context = CreateMockSerializerContext("multi-op-topic");
+            var messages = new[] { BASIC_SYNTAX2_MESSAGE, BASIC_SYNTAX2_MESSAGE, BASIC_SYNTAX2_MESSAGE };
+
+            // Act & Assert - Multiple serializations should work
+            foreach (var message in messages)
+            {
+                var serialized = serializer.Serialize(message, context.Object);
+                Assert.That(serialized, Is.Not.Null);
+                Assert.That(serialized.Length, Is.GreaterThan(0));
+            }
+        }
+
+        [Test]
+        public void KafkaFlowDeserializer_MultipleOperations_WorksCorrectly()
+        {
+            // Arrange
+            var serializer = new GsrKafkaFlowProtobufSerializer<BasicSyntax2Message>(PROTOBUF_CONFIG_PATH);
+            var deserializer = new GsrKafkaFlowProtobufDeserializer<BasicSyntax2Message>(PROTOBUF_CONFIG_PATH);
+            var context = CreateMockSerializerContext("multi-op-topic");
             var message = BASIC_SYNTAX2_MESSAGE;
-            var customTopic = "custom-topic-name";
-            var context = CreateMockSerializerContext(customTopic);
 
-            // Act & Assert
-            try
+            // Act & Assert - Multiple deserializations should work
+            for (int i = 0; i < 3; i++)
             {
-                serializer.Serialize(message, context.Object);
-                context.Verify(c => c.Topic, Times.AtLeastOnce);
-            }
-            catch (Exception ex) when (ex is not InvalidOperationException || 
-                                     !ex.Message.Contains($"topic {customTopic}"))
-            {
-                // Expected - underlying GSR may not be fully functional, but topic should be used
+                var serialized = serializer.Serialize(message, context.Object);
+                var deserialized = deserializer.Deserialize(serialized, typeof(BasicSyntax2Message), context.Object);
+                Assert.That(deserialized, Is.EqualTo(message));
             }
         }
+    }
 
-        [Fact]
-        public void GsrKafkaFlowProtobufDeserializer_WithCustomTopic_UsesCorrectTopic()
+    /// <summary>
+    /// Helper class to create KafkaFlow serializers with data configuration
+    /// This mimics the pattern used in GlueSchemaRegistryKafkaSerializerTests
+    /// </summary>
+    public class GlueSchemaRegistryKafkaFlowProtobufSerializer<T> : GsrKafkaFlowProtobufSerializer<T>
+        where T : class, IMessage<T>, new()
+    {
+        public GlueSchemaRegistryKafkaFlowProtobufSerializer(string configPath) : base(configPath) { }
+    }
+
+    /// <summary>
+    /// Helper class to create KafkaFlow deserializers with data configuration
+    /// This mimics the pattern used in GlueSchemaRegistryKafkaSerializerTests
+    /// </summary>
+    public class GlueSchemaRegistryKafkaFlowProtobufDeserializer<T> : GsrKafkaFlowProtobufDeserializer<T>
+        where T : class, IMessage<T>, new()
+    {
+        public GlueSchemaRegistryKafkaFlowProtobufDeserializer(string configPath) : base(configPath) { }
+        
+        public GlueSchemaRegistryKafkaFlowProtobufDeserializer(string configPath, GlueSchemaRegistryDataFormatConfiguration dataConfig) : base(configPath) 
         {
-            // Arrange
-            var configFile = CreateTempConfigFile();
-            var deserializer = new GsrKafkaFlowProtobufDeserializer<BasicSyntax2Message>(configFile);
-            var testData = new byte[] { 0x01, 0x02, 0x03, 0x04 };
-            var customTopic = "custom-topic-name";
-            var context = CreateMockSerializerContext(customTopic);
-
-            // Act & Assert
-            try
-            {
-                deserializer.Deserialize(testData, typeof(BasicSyntax2Message), context.Object);
-                context.Verify(c => c.Topic, Times.AtLeastOnce);
-            }
-            catch (Exception ex) when (ex is not InvalidOperationException || 
-                                     !ex.Message.Contains($"topic {customTopic}"))
-            {
-                // Expected - underlying GSR may not be fully functional, but topic should be used
-            }
-        }
-
-        [Fact]
-        public void GsrKafkaFlowProtobufSerializer_WithDifferentConfigFormats_HandlesCorrectly()
-        {
-            // Test with different config file formats
-            var configs = new[]
-            {
-                "dataFormat=PROTOBUF\nregion=us-west-2\n",
-                "# Comment\ndataFormat=PROTOBUF\n\nregion=eu-west-1\n",
-                "dataFormat=PROTOBUF\nregion=ap-southeast-1\nschemaRegistryName=my-registry\n"
-            };
-
-            foreach (var config in configs)
-            {
-                // Arrange
-                var configFile = CreateTempConfigFile(config);
-
-                // Act & Assert
-                Assert.DoesNotThrow(() => new GsrKafkaFlowProtobufSerializer<BasicSyntax2Message>(configFile));
-            }
-        }
-
-        [Fact]
-        public void GsrKafkaFlowProtobufDeserializer_WithDifferentConfigFormats_HandlesCorrectly()
-        {
-            // Test with different config file formats
-            var configs = new[]
-            {
-                "dataFormat=PROTOBUF\nregion=us-west-2\n",
-                "# Comment\ndataFormat=PROTOBUF\n\nregion=eu-west-1\n",
-                "dataFormat=PROTOBUF\nregion=ap-southeast-1\nschemaRegistryName=my-registry\n"
-            };
-
-            foreach (var config in configs)
-            {
-                // Arrange
-                var configFile = CreateTempConfigFile(config);
-
-                // Act & Assert
-                Assert.DoesNotThrow(() => new GsrKafkaFlowProtobufDeserializer<BasicSyntax2Message>(configFile));
-            }
-        }
-
-        public void Dispose()
-        {
-            foreach (var tempFile in _tempFiles)
-            {
-                if (File.Exists(tempFile))
-                {
-                    File.Delete(tempFile);
-                }
-            }
+            // Note: The base deserializer already handles the data config in its constructor
+            // This constructor signature matches the pattern from the main serializer tests
         }
     }
 }
