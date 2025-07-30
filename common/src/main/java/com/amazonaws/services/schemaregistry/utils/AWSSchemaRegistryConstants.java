@@ -173,16 +173,6 @@ public final class AWSSchemaRegistryConstants {
     public static final String USER_AGENT_APP = "userAgentApp";
 
     /**
-     * IAM Role ARN to assume for accessing the registry
-     */
-    public static final String ASSUME_ROLE_ARN = "assumeRoleArn";
-
-    /**
-     * IAM Role session name for accessing the registry
-     */
-    public static final String ASSUME_ROLE_SESSION_NAME = "assumeRoleSessionName";
-
-    /**
      * Private constructor to avoid initialization of the class.
      */
 

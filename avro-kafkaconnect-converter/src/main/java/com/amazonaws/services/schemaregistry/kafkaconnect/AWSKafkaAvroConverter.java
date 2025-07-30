@@ -21,8 +21,7 @@ import com.amazonaws.services.schemaregistry.exception.AWSSchemaRegistryExceptio
 import com.amazonaws.services.schemaregistry.kafkaconnect.avrodata.AvroData;
 import com.amazonaws.services.schemaregistry.kafkaconnect.avrodata.AvroDataConfig;
 import com.amazonaws.services.schemaregistry.serializers.avro.AWSKafkaAvroSerializer;
-import com.amazonaws.services.schemaregistry.utils.AWSSchemaRegistryConstants;
-import com.google.common.annotations.VisibleForTesting;
+
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.common.errors.SerializationException;
@@ -30,11 +29,6 @@ import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.errors.DataException;
 import org.apache.kafka.connect.storage.Converter;
-import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
-import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
-import software.amazon.awssdk.regions.Region;
-import software.amazon.awssdk.services.sts.StsClient;
-import software.amazon.awssdk.services.sts.auth.StsAssumeRoleCredentialsProvider;
 
 import java.util.Map;
 
@@ -80,21 +74,6 @@ public class AWSKafkaAvroConverter implements Converter {
     public void configure(Map<String, ?> configs, boolean isKey) {
         this.isKey = isKey;
         new AWSKafkaAvroConverterConfig(configs);
-
-        //TODO: add this feature to all other converters
-        String roleToAssume = (String) configs.get(AWSSchemaRegistryConstants.ASSUME_ROLE_ARN);
-        if (roleToAssume != null && !roleToAssume.isEmpty()) {
-            String sessionName = configs.get(AWSSchemaRegistryConstants.ASSUME_ROLE_SESSION_NAME) != null
-                    ? configs.get(AWSSchemaRegistryConstants.ASSUME_ROLE_SESSION_NAME).toString()
-                    : "kafka-connect-session";
-
-            String region = configs.get(AWSSchemaRegistryConstants.AWS_REGION).toString();
-
-            AwsCredentialsProvider credentialsProvider = getCredentialsProvider(roleToAssume, sessionName, region);
-
-            deserializer = new AWSKafkaAvroDeserializer(credentialsProvider, configs);
-            serializer = new AWSKafkaAvroSerializer(credentialsProvider, configs);
-        }
 
         serializer.configure(configs, this.isKey);
         deserializer.configure(configs, this.isKey);
@@ -143,20 +122,5 @@ public class AWSKafkaAvroConverter implements Converter {
         org.apache.avro.Schema avroSchema = parser.parse(deserializer.getGlueSchemaRegistryDeserializationFacade().getSchemaDefinition(value));
 
         return avroData.toConnectData(avroSchema, deserialized);
-    }
-
-    @VisibleForTesting
-    protected AwsCredentialsProvider getCredentialsProvider(String roleArn, String sessionName, String region) {
-        UrlConnectionHttpClient.Builder urlConnectionHttpClientBuilder = UrlConnectionHttpClient.builder();
-        StsClient stsClient = StsClient.builder()
-                .httpClient(urlConnectionHttpClientBuilder.build())
-                .region(Region.of(region))
-                .build();
-        return StsAssumeRoleCredentialsProvider.builder()
-                .refreshRequest(assumeRoleRequest -> assumeRoleRequest
-                        .roleArn(roleArn)
-                        .roleSessionName(sessionName))
-                .stsClient(stsClient)
-                .build();
     }
 }
