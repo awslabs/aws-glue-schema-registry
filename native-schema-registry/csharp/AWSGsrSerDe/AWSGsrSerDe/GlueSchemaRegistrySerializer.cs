@@ -12,6 +12,7 @@
 // limitations under the License.
 
 using System;
+using System.IO;
 
 namespace AWSGsrSerDe
 {
@@ -24,11 +25,25 @@ namespace AWSGsrSerDe
         private readonly glue_schema_registry_serializer _serializer;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="GlueSchemaRegistrySerializer"/> class.
+        /// Initializes a new instance of the <see cref="GlueSchemaRegistrySerializer"/> class with configuration file.
         /// </summary>
-        public GlueSchemaRegistrySerializer()
+        /// <param name="configFilePath">Path to the configuration properties file.</param>
+        public GlueSchemaRegistrySerializer(string configFilePath)
         {
-            _serializer = new glue_schema_registry_serializer(p_err: null);
+            try
+            {
+                _serializer = new glue_schema_registry_serializer(configFilePath, null);
+            }
+            catch (Exception e)
+            {
+                // Check for specific error conditions that should throw specific exceptions
+                if (e.Message.Contains("No such file") || e.Message.Contains("does not exist"))
+                {
+                    throw new FileNotFoundException($"Configuration file not found: {configFilePath}", configFilePath);
+                }
+                
+                throw new AwsSchemaRegistryException($"Failed to initialize serializer: {e.Message}");
+            }
         }
 
         /// <summary>

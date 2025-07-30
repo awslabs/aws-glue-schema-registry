@@ -13,6 +13,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Text.Json.Nodes;
 using AWSGsrSerDe.common;
 using AWSGsrSerDe.deserializer;
@@ -29,19 +31,37 @@ namespace AWSGsrSerDe.Tests.deserializer
     [TestFixture]
     public class GlueSchemaRegistryKafkaDeserializerTests
     {
-        private static readonly Dictionary<string, dynamic> Configs = new Dictionary<string, dynamic>
+        private static readonly string AVRO_CONFIG_PATH = GetConfigPath("configuration/test-configs/valid-minimal.properties");
+        private static readonly string PROTOBUF_CONFIG_PATH = GetConfigPath("configuration/test-configs/valid-minimal-protobuf.properties");
+
+        /// <summary>
+        /// Finds the project root by looking for .csproj file and returns absolute path to config file
+        /// </summary>
+        /// <param name="relativePath">Relative path from project root</param>
+        /// <returns>Absolute path to the configuration file</returns>
+        private static string GetConfigPath(string relativePath)
         {
-            { GlueSchemaRegistryConstants.AvroRecordType, AvroRecordType.GenericRecord },
-            { GlueSchemaRegistryConstants.DataFormatType, GlueSchemaRegistryConstants.DataFormat.AVRO },
-        };
+            var currentDir = new DirectoryInfo(Directory.GetCurrentDirectory());
+            while (currentDir != null && !currentDir.GetFiles("*.csproj").Any())
+            {
+                currentDir = currentDir.Parent;
+            }
+            
+            if (currentDir == null)
+            {
+                throw new DirectoryNotFoundException("Could not find project root directory containing .csproj file");
+            }
+            
+            return Path.Combine(currentDir.FullName, relativePath);
+        }
 
         private static readonly GlueSchemaRegistryKafkaSerializer KafkaSerializer =
-            new GlueSchemaRegistryKafkaSerializer(Configs);
+            new GlueSchemaRegistryKafkaSerializer(AVRO_CONFIG_PATH);
 
         private static readonly GlueSchemaRegistryKafkaDeserializer KafkaDeserializer =
-            new GlueSchemaRegistryKafkaDeserializer(Configs);
+            new GlueSchemaRegistryKafkaDeserializer(AVRO_CONFIG_PATH);
 
-        private static readonly GlueSchemaRegistryDeserializer Deserializer = new GlueSchemaRegistryDeserializer();
+        private static readonly GlueSchemaRegistryDeserializer Deserializer = new GlueSchemaRegistryDeserializer(AVRO_CONFIG_PATH);
 
         [Test]
         public void TestDeserializerWithMessageEncodedBySerializer_Json()
@@ -49,13 +69,8 @@ namespace AWSGsrSerDe.Tests.deserializer
             var jsonMessage = RecordGenerator.GetSampleJsonTestData();
 
             // Json Data Encoded
-            var configs = new Dictionary<string, dynamic>
-            {
-                { GlueSchemaRegistryConstants.DataFormatType, GlueSchemaRegistryConstants.DataFormat.JSON },
-            };
-
-            KafkaSerializer.Configure(configs);
-            var bytes = KafkaSerializer.Serialize(jsonMessage, "test-topic-json");
+            var jsonSerializer = new GlueSchemaRegistryKafkaSerializer(GetConfigPath("configuration/test-configs/valid-minimal-json.properties"));
+            var bytes = jsonSerializer.Serialize(jsonMessage, "test-topic-json");
 
             Assert.DoesNotThrow(() => Deserializer.CanDecode(bytes));
             Assert.True(Deserializer.CanDecode(bytes));
@@ -90,14 +105,7 @@ namespace AWSGsrSerDe.Tests.deserializer
         {
             var avroRecord = RecordGenerator.GetTestAvroRecord();
 
-            // Avro Data encoded
-            var configs = new Dictionary<string, dynamic>
-            {
-                { GlueSchemaRegistryConstants.AvroRecordType, AvroRecordType.GenericRecord },
-                { GlueSchemaRegistryConstants.DataFormatType, GlueSchemaRegistryConstants.DataFormat.AVRO },
-            };
-
-            KafkaSerializer.Configure(configs);
+            // Avro Data encoded - using the static KafkaSerializer which is already configured for AVRO
             var bytes = KafkaSerializer.Serialize(avroRecord, "test-topic-avro");
 
             Assert.DoesNotThrow(() => Deserializer.CanDecode(bytes));
@@ -133,15 +141,8 @@ namespace AWSGsrSerDe.Tests.deserializer
             var protobufMessage = (IMessage)ProtobufGenerator.BASIC_REFERENCING_MESSAGE;
 
             // Protobuf Data encoded
-            var configs = new Dictionary<string, dynamic>
-            {
-                { GlueSchemaRegistryConstants.ProtobufMessageDescriptor, protobufMessage.Descriptor },
-                { GlueSchemaRegistryConstants.DataFormatType, GlueSchemaRegistryConstants.DataFormat.PROTOBUF },
-            };
-
-            KafkaSerializer.Configure(configs);
-
-            var bytes = KafkaSerializer.Serialize(protobufMessage, protobufMessage.Descriptor.FullName);
+            var protobufSerializer = new GlueSchemaRegistryKafkaSerializer(PROTOBUF_CONFIG_PATH);
+            var bytes = protobufSerializer.Serialize(protobufMessage, protobufMessage.Descriptor.FullName);
 
             Assert.DoesNotThrow(() => Deserializer.CanDecode(bytes));
             Assert.True(Deserializer.CanDecode(bytes));
@@ -166,6 +167,17 @@ namespace AWSGsrSerDe.Tests.deserializer
             Assert.IsTrue(exception.Message.StartsWith("Data is not compatible with schema registry"));
             exception = Assert.Throws(typeof(AwsSchemaRegistryException), () => Deserializer.Decode(bytes));
             Assert.IsTrue(exception.Message.StartsWith("Data is not compatible with schema registry"));
+        }
+
+        /// <summary>
+        /// Tests that the constructor works with null dataConfig parameter
+        /// </summary>
+        [Test]
+        public void TestDeserializerConstructor_WithNullDataConfig()
+        {
+            // Constructor should work exactly as before with null dataConfig
+            var deserializer = new GlueSchemaRegistryKafkaDeserializer(PROTOBUF_CONFIG_PATH, null);
+            Assert.IsNotNull(deserializer);
         }
     }
 }

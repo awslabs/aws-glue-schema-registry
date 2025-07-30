@@ -32,7 +32,7 @@ namespace AWSGsrSerDe.serializer.avro
         /// Initializes a new instance of the <see cref="AvroSerializer"/> class.
         /// </summary>
         /// <param name="configuration">configuration elements</param>
-        public AvroSerializer(GlueSchemaRegistryConfiguration configuration = null)
+        public AvroSerializer(GlueSchemaRegistryDataFormatConfiguration configuration = null)
             : this()
         {
         }

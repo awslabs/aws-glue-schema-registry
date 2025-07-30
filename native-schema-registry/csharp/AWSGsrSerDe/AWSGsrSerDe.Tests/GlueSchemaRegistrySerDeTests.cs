@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using NUnit.Framework;
 using System.IO;
+using System.Linq;
 using Avro;
 using Avro.Generic;
 using Avro.IO;
@@ -27,13 +28,34 @@ namespace AWSGsrSerDe.Tests
                                               + " ]\n"
                                               + "}";
 
+        /// <summary>
+        /// Finds the project root by looking for .csproj file and returns absolute path to config file
+        /// </summary>
+        /// <param name="relativePath">Relative path from project root</param>
+        /// <returns>Absolute path to the configuration file</returns>
+        private static string GetConfigPath(string relativePath)
+        {
+            var currentDir = new DirectoryInfo(Directory.GetCurrentDirectory());
+            while (currentDir != null && !currentDir.GetFiles("*.csproj").Any())
+            {
+                currentDir = currentDir.Parent;
+            }
+            
+            if (currentDir == null)
+            {
+                throw new DirectoryNotFoundException("Could not find project root directory containing .csproj file");
+            }
+            
+            return Path.Combine(currentDir.FullName, relativePath);
+        }
+
         private static byte[] _data;
 
         [SetUp]
         public void Setup()
         {
-            _serializer = new GlueSchemaRegistrySerializer();
-            _deserializer = new GlueSchemaRegistryDeserializer();
+            _serializer = new GlueSchemaRegistrySerializer(GetConfigPath("configuration/test-configs/valid-minimal.properties"));
+            _deserializer = new GlueSchemaRegistryDeserializer(GetConfigPath("configuration/test-configs/valid-minimal.properties"));
             
             _schema = new GlueSchemaRegistrySchema("TestSchemaName", TestAvroSchema, "AVRO");
             _data = GetAvroMessage();

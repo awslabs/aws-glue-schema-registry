@@ -15,6 +15,8 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
+using System.IO;
+using System.Linq;
 using System.Text.Json.Nodes;
 using Avro;
 using Avro.Generic;
@@ -27,6 +29,7 @@ using AWSGsrSerDe.serializer.protobuf;
 using AWSGsrSerDe.Tests.serializer.json;
 using AWSGsrSerDe.Tests.utils;
 using Google.Protobuf;
+using Google.Protobuf.Reflection;
 using Namotion.Reflection;
 using NUnit.Framework;
 using static AWSGsrSerDe.Tests.utils.ProtobufGenerator;
@@ -53,32 +56,43 @@ namespace AWSGsrSerDe.Tests.serializer
             "geolocation1.json",
             true);
 
-        private static readonly Dictionary<string, dynamic> Configs = new Dictionary<string, dynamic>
+        private static readonly string AVRO_CONFIG_PATH = GetConfigPath("configuration/test-configs/valid-minimal.properties");
+        private static readonly string PROTOBUF_CONFIG_PATH = GetConfigPath("configuration/test-configs/valid-minimal-protobuf.properties");
+        private static readonly string JSON_CONFIG_PATH = GetConfigPath("configuration/test-configs/valid-minimal-json.properties");
+
+        /// <summary>
+        /// Finds the project root by looking for .csproj file and returns absolute path to config file
+        /// </summary>
+        /// <param name="relativePath">Relative path from project root</param>
+        /// <returns>Absolute path to the configuration file</returns>
+        private static string GetConfigPath(string relativePath)
         {
-            { GlueSchemaRegistryConstants.AvroRecordType, AvroRecordType.GenericRecord },
-            { GlueSchemaRegistryConstants.DataFormatType, GlueSchemaRegistryConstants.DataFormat.AVRO },
-        };
+            var currentDir = new DirectoryInfo(Directory.GetCurrentDirectory());
+            while (currentDir != null && !currentDir.GetFiles("*.csproj").Any())
+            {
+                currentDir = currentDir.Parent;
+            }
+            
+            if (currentDir == null)
+            {
+                throw new DirectoryNotFoundException("Could not find project root directory containing .csproj file");
+            }
+            
+            return Path.Combine(currentDir.FullName, relativePath);
+        }
+
 
         private static readonly GlueSchemaRegistryKafkaSerializer KafkaSerializer =
-            new GlueSchemaRegistryKafkaSerializer(Configs);
+            new GlueSchemaRegistryKafkaSerializer(AVRO_CONFIG_PATH);
 
         private static readonly GlueSchemaRegistryKafkaDeserializer KafkaDeserializer =
-            new GlueSchemaRegistryKafkaDeserializer(Configs);
+            new GlueSchemaRegistryKafkaDeserializer(AVRO_CONFIG_PATH);
 
 
         [Test]
         public void KafkaSerDeTestForAvroGenericRecord()
         {
             var avroRecord = RecordGenerator.GetTestAvroRecord();
-
-            var configs = new Dictionary<string, dynamic>
-            {
-                { GlueSchemaRegistryConstants.AvroRecordType, AvroRecordType.GenericRecord },
-                { GlueSchemaRegistryConstants.DataFormatType, GlueSchemaRegistryConstants.DataFormat.AVRO },
-            };
-
-            KafkaSerializer.Configure(configs);
-            KafkaDeserializer.Configure(configs);
 
             var bytes = KafkaSerializer.Serialize(avroRecord, "test-topic");
             var deserializeObject = KafkaDeserializer.Deserialize("test-topic", bytes);
@@ -110,19 +124,21 @@ namespace AWSGsrSerDe.Tests.serializer
         [TestCaseSource(nameof(TestMessageProvider))]
         public void KafkaSerDeTestForAllProtobufTypes(IMessage message)
         {
-            var configs = new Dictionary<string, dynamic>
+            // Use new constructor approach:
+            // - Config file provides AWS settings (region, registry, etc.)
+            // - dataConfig provides runtime protobuf descriptor for this specific test
+            var dataConfig = new GlueSchemaRegistryDataFormatConfiguration(new Dictionary<string, dynamic>
             {
-                { GlueSchemaRegistryConstants.ProtobufMessageDescriptor, message.Descriptor },
-                { GlueSchemaRegistryConstants.DataFormatType, GlueSchemaRegistryConstants.DataFormat.PROTOBUF },
-            };
+                { GlueSchemaRegistryConstants.ProtobufMessageDescriptor, message.Descriptor }
+            });
 
-            KafkaSerializer.Configure(configs);
-            KafkaDeserializer.Configure(configs);
+            var protobufSerializer = new GlueSchemaRegistryKafkaSerializer(PROTOBUF_CONFIG_PATH);
+            var protobufDeserializer = new GlueSchemaRegistryKafkaDeserializer(PROTOBUF_CONFIG_PATH, dataConfig);
 
-            var serialized = KafkaSerializer.Serialize(message, message.Descriptor.FullName);
+            var serialized = protobufSerializer.Serialize(message, message.Descriptor.FullName);
 
             var deserializedObject =
-                KafkaDeserializer.Deserialize(message.Descriptor.FullName, serialized);
+                protobufDeserializer.Deserialize(message.Descriptor.FullName, serialized);
             Assert.AreEqual(message, deserializedObject);
         }
 
@@ -130,16 +146,11 @@ namespace AWSGsrSerDe.Tests.serializer
         public void KafkaSerDeTestForJsonMessage()
         {
             var message = RecordGenerator.GetSampleJsonTestData();
-            var configs = new Dictionary<string, dynamic>
-            {
-                { GlueSchemaRegistryConstants.DataFormatType, GlueSchemaRegistryConstants.DataFormat.JSON },
-            };
+            var jsonSerializer = new GlueSchemaRegistryKafkaSerializer(JSON_CONFIG_PATH);
+            var jsonDeserializer = new GlueSchemaRegistryKafkaDeserializer(JSON_CONFIG_PATH);
 
-            KafkaSerializer.Configure(configs);
-            KafkaDeserializer.Configure(configs);
-
-            var serialized = KafkaSerializer.Serialize(message, "test-topic-json");
-            var deserializedObject = KafkaDeserializer.Deserialize("test-topic-json", serialized);
+            var serialized = jsonSerializer.Serialize(message, "test-topic-json");
+            var deserializedObject = jsonDeserializer.Deserialize("test-topic-json", serialized);
 
             Assert.True(deserializedObject is JsonDataWithSchema);
             var deserializedMessage = (JsonDataWithSchema)deserializedObject;
@@ -156,17 +167,18 @@ namespace AWSGsrSerDe.Tests.serializer
         public void KafkaSerDeTestForJsonObject()
         {
             var message = SPECIFIC_TEST_RECORD;
-            var configs = new Dictionary<string, dynamic>
+            
+            // Use new constructor approach with dataConfig to specify the target type for JSON deserialization
+            var dataConfig = new GlueSchemaRegistryDataFormatConfiguration(new Dictionary<string, dynamic>
             {
-                { GlueSchemaRegistryConstants.JsonObjectType, message.GetType() },
-                { GlueSchemaRegistryConstants.DataFormatType, GlueSchemaRegistryConstants.DataFormat.JSON },
-            };
+                { GlueSchemaRegistryConstants.JsonObjectType, typeof(Car) }
+            });
+            
+            var jsonSerializer = new GlueSchemaRegistryKafkaSerializer(JSON_CONFIG_PATH);
+            var jsonDeserializer = new GlueSchemaRegistryKafkaDeserializer(JSON_CONFIG_PATH, dataConfig);
 
-            KafkaSerializer.Configure(configs);
-            KafkaDeserializer.Configure(configs);
-
-            var serialized = KafkaSerializer.Serialize(message, "test-topic-json-car");
-            var deserializedObject = KafkaDeserializer.Deserialize("test-topic-json-car", serialized);
+            var serialized = jsonSerializer.Serialize(message, "test-topic-json-car");
+            var deserializedObject = jsonDeserializer.Deserialize("test-topic-json-car", serialized);
 
             Assert.AreEqual(message.GetType(), deserializedObject.GetType());
             var deserializedMessage = (Car)deserializedObject;
