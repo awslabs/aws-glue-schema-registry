@@ -1,32 +1,33 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Threading.Tasks;
 using AWSGsrSerDe.deserializer;
 using AWSGsrSerDe.common;
 using Google.Protobuf;
 using KafkaFlow;
 
-namespace ProtobufGSRKafkaDemo.GSR;
+namespace AWSGsrSerDe.KafkaFlow;
 
-public class GsrProtobufDeserializer<T> : IDeserializer
+public class GsrKafkaFlowProtobufDeserializer<T> : IDeserializer
     where T : class, IMessage<T>, new()
 {
     private readonly GlueSchemaRegistryKafkaDeserializer _gsrDeserializer;
 
-    public GsrProtobufDeserializer(string configPath)
+    public GsrKafkaFlowProtobufDeserializer(string configPath)
     {
         try
         {
-            Console.WriteLine($"[GSR-{typeof(T).Name}] Initializing deserializer with config: {configPath}");
             var dataConfig = new GlueSchemaRegistryDataFormatConfiguration(new Dictionary<string, dynamic>
             {
                 { GlueSchemaRegistryConstants.ProtobufMessageDescriptor, new T().Descriptor }
             });
             
             _gsrDeserializer = new GlueSchemaRegistryKafkaDeserializer(configPath, dataConfig);
-            Console.WriteLine($"[GSR-{typeof(T).Name}] ✅ Deserializer initialized successfully");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[GSR-{typeof(T).Name}] ❌ Deserializer initialization failed: {ex.Message}");
-            throw;
+            throw new InvalidOperationException($"Failed to initialize GSR KafkaFlow deserializer for {typeof(T).Name}: {ex.Message}", ex);
         }
     }
 
@@ -34,16 +35,11 @@ public class GsrProtobufDeserializer<T> : IDeserializer
     {
         try
         {
-            Console.WriteLine($"[GSR-{typeof(T).Name}] Attempting to deserialize {data.Length} bytes from topic {context.Topic}");
-            var result = _gsrDeserializer.Deserialize(context.Topic, data.ToArray());
-            Console.WriteLine($"[GSR-{typeof(T).Name}] ✅ Deserialization successful: {result}");
-            return result;
+            return _gsrDeserializer.Deserialize(context.Topic, data.ToArray());
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[GSR-{typeof(T).Name}] ❌ Deserialization failed: {ex.Message}");
-            Console.WriteLine($"[GSR-{typeof(T).Name}] Stack trace: {ex.StackTrace}");
-            throw;
+            throw new InvalidOperationException($"Failed to deserialize {typeof(T).Name} from topic {context.Topic}: {ex.Message}", ex);
         }
     }
 
@@ -56,6 +52,7 @@ public class GsrProtobufDeserializer<T> : IDeserializer
 
     public void Dispose()
     {
-        // GlueSchemaRegistryKafkaDeserializer doesn't implement IDisposable
+        // The underlying GlueSchemaRegistryDeserializer implements IDisposable
+        // but GlueSchemaRegistryKafkaDeserializer doesn't expose it, so no disposal needed here
     }
 }

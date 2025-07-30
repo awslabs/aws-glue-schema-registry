@@ -9,6 +9,8 @@
     <ItemGroup>
         <PackageReference Include="Google.Api.CommonProtos" Version="2.6.0" />
         <PackageReference Include="Google.Protobuf" Version="3.21.4" />
+        <PackageReference Include="KafkaFlow" Version="3.0.10" />
+        <PackageReference Include="Moq" Version="4.18.4" />
         <PackageReference Include="Grpc.Tools" Version="2.48.1">
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
