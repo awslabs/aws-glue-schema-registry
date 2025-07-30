@@ -1,3 +1,6 @@
+using System;
+using System.IO;
+using System.Threading.Tasks;
 using AWSGsrSerDe.serializer;
 using AWSGsrSerDe.common;
 using Google.Protobuf;
