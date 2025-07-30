@@ -356,7 +356,9 @@ namespace AWSGsrSerDe.Tests.KafkaFlow
     public class GlueSchemaRegistryKafkaFlowProtobufSerializer<T> : GsrKafkaFlowProtobufSerializer<T>
         where T : class, IMessage<T>, new()
     {
-        public GlueSchemaRegistryKafkaFlowProtobufSerializer(string configPath) : base(configPath) { }
+        public GlueSchemaRegistryKafkaFlowProtobufSerializer(string configPath) : base(configPath) 
+        { 
+        }
     }
 
     /// <summary>
@@ -366,7 +368,9 @@ namespace AWSGsrSerDe.Tests.KafkaFlow
     public class GlueSchemaRegistryKafkaFlowProtobufDeserializer<T> : GsrKafkaFlowProtobufDeserializer<T>
         where T : class, IMessage<T>, new()
     {
-        public GlueSchemaRegistryKafkaFlowProtobufDeserializer(string configPath) : base(configPath) { }
+        public GlueSchemaRegistryKafkaFlowProtobufDeserializer(string configPath) : base(configPath) 
+        { 
+        }
         
         public GlueSchemaRegistryKafkaFlowProtobufDeserializer(string configPath, GlueSchemaRegistryDataFormatConfiguration dataConfig) : base(configPath) 
         {
