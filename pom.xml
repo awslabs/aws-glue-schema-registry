@@ -443,7 +443,7 @@
                 <artifactId>maven-javadoc-plugin</artifactId>
                 <version>3.2.0</version>
                 <configuration>
-                    <excludePackageNames>*.avrodata, *.apicurio</excludePackageNames>
+                    <excludePackageNames>*.avrodata, *.apicurio, com.amazonaws.services.schemaregistry</excludePackageNames>
                     <source>8</source>
                 </configuration>
                 <executions>

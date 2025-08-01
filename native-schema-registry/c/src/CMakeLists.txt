@@ -9,6 +9,10 @@ if (CMAKE_SYSTEM_NAME MATCHES "^(Linux)$")
 endif()
 
 add_library(${AWS_COMMON_MEMALLOC} SHARED memory_allocator.c)
+set_target_properties(${AWS_COMMON_MEMALLOC} PROPERTIES
+    BUILD_RPATH "$ORIGIN"
+    INSTALL_RPATH "$ORIGIN"
+)
 target_link_libraries(${AWS_COMMON_MEMALLOC} PRIVATE ${AWS_C_COMMON})
 
 #Adding modules in the build order.
@@ -18,6 +22,10 @@ add_library(
         read_only_byte_array.c
         mutable_byte_array.c
         glue_schema_registry_error.c
+)
+set_target_properties(${DATA_TYPES_MODULE_NAME} PROPERTIES
+    BUILD_RPATH "$ORIGIN"
+    INSTALL_RPATH "$ORIGIN"
 )
 add_custom_command(
         TARGET ${DATA_TYPES_MODULE_NAME}
@@ -39,12 +47,17 @@ set_target_properties(
         IMPORTED_LOCATION "${LIB_NATIVE_SCHEMA_REGISTRY_PATH}/${LIB_NATIVE_SCHEMA_REGISTRY_LIBRARY_NAME}"
         IMPORTED_IMPLIB "${LIB_NATIVE_SCHEMA_REGISTRY_PATH}/${LIB_NATIVE_SCHEMA_REGISTRY_LIBRARY_OBJ_NAME}"
         INTERFACE_INCLUDE_DIRECTORIES "${LIB_NATIVE_SCHEMA_REGISTRY_PATH}"
+        IMPORTED_NO_SONAME TRUE
 )
 
 add_library(
         ${SERDE_MODULE_NAME} SHARED
         glue_schema_registry_serializer.c
         glue_schema_registry_deserializer.c
+)
+set_target_properties(${SERDE_MODULE_NAME} PROPERTIES
+    BUILD_RPATH "$ORIGIN"
+    INSTALL_RPATH "$ORIGIN"
 )
 
 target_link_libraries(
@@ -89,7 +102,10 @@ set_target_properties(
         PROPERTIES
         INCLUDE_DIRECTORIES "${PROJECT_SOURCE_DIR}/include/"
         SWIG_USE_TARGET_INCLUDE_DIRECTORIES TRUE
+        BUILD_RPATH "$ORIGIN"
+        INSTALL_RPATH "$ORIGIN"
 )
+
 swig_link_libraries(
         ${CSHARP_MODULE_NAME}
         PUBLIC
@@ -110,7 +126,7 @@ add_custom_command(
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${SERDE_MODULE_NAME}> ${CSHARP_GEN_LIB_PATH}/
 )
 
-####Go
+####Go 
 set(GO_MODULE_NAME GsrSerDeGoGen)
 set(GO_ROOT_PATH ${PROJECT_SOURCE_DIR}/../golang)
 set(GO_SOURCE_PATH ${GO_ROOT_PATH}/pkg/GsrSerDe)
@@ -127,6 +143,8 @@ set_target_properties(
         PROPERTIES
         INCLUDE_DIRECTORIES "${PROJECT_SOURCE_DIR}/include/"
         SWIG_USE_TARGET_INCLUDE_DIRECTORIES TRUE
+        BUILD_RPATH "$ORIGIN"
+        INSTALL_RPATH "$ORIGIN"
 )
 swig_link_libraries(
         ${GO_MODULE_NAME}
