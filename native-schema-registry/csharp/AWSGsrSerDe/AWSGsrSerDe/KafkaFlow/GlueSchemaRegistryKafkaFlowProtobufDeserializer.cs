@@ -9,12 +9,12 @@ using KafkaFlow;
 
 namespace AWSGsrSerDe.KafkaFlow;
 
-public class GsrKafkaFlowProtobufDeserializer<T> : IDeserializer
+public class GlueSchemaRegistryKafkaFlowProtobufDeserializer<T> : IDeserializer
     where T : class, IMessage<T>, new()
 {
     private readonly GlueSchemaRegistryKafkaDeserializer _gsrDeserializer;
 
-    public GsrKafkaFlowProtobufDeserializer(string configPath)
+    public GlueSchemaRegistryKafkaFlowProtobufDeserializer(string configPath)
     {
         try
         {
