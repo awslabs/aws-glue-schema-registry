@@ -6,7 +6,7 @@ using Com.Amazonaws.Services.Schemaregistry.Tests.Protobuf.Syntax2;
 using KafkaFlow;
 using NUnit.Framework;
 
-namespace AWSGlueSchemaRegistrySerDe.Tests.KafkaFlow
+namespace AWSGsrSerDe.Tests.KafkaFlow
 {
     [TestFixture]
     public class GlueSchemaRegistryKafkaFlowProtobufSerializerTests
