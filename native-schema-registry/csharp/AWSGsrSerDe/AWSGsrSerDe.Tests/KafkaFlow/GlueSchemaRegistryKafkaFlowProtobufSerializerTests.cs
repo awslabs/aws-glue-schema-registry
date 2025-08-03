@@ -127,7 +127,7 @@ namespace AWSGlueSchemaRegistrySerDe.Tests.KafkaFlow
             Assert.That(exception.ParamName, Is.EqualTo("context"));
         }
         
-        // TODO: Add async tests for SerializeAsync methods
+        // TODO: Add SerializeAsync failure tests for  methods
     }
 
     /// <summary>
