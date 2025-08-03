@@ -10,11 +10,25 @@ The C# serializers / de-serializers (SerDes) are built as bindings over existing
 #### Building the C / Java code
 Follow the instructions in those specific projects to build them.
 
-#### Building C# code
+#### Building C# code 
 
 ```
 dotnet clean .
+# For Debug configuration
+dotnet build .
+# For Release configuration
 dotnet build . --configuration Release
+```
+
+### Running C# tests
+
+```
+# Set AWS environment credentials and verify that the 'test-registry' exists in AWS Glue.
+# This ensures that libnativeschemaregistry.so can locate its dependent .so files.
+
+export LD_LIBRARY_PATH=/workspaces/aws-glue-schema-registry/native-schema-registry/csharp/AWSGsrSerDe/AWSGsrSerDe/bin/Release/net8.0
+
+# Run the test suite
 dotnet test .
 ```
 
