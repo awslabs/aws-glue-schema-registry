@@ -6,7 +6,7 @@ using Com.Amazonaws.Services.Schemaregistry.Tests.Protobuf.Syntax2;
 using KafkaFlow;
 using NUnit.Framework;
 
-namespace AWSGlueSchemaRegistrySerDe.Tests.KafkaFlow
+namespace AWSGsrSerDe.Tests.KafkaFlow
 {
     [TestFixture]
     public class GlueSchemaRegistryKafkaFlowProtobufDeserializerTests
@@ -92,6 +92,61 @@ namespace AWSGlueSchemaRegistrySerDe.Tests.KafkaFlow
             Assert.AreEqual(originalAddress.City, deserializedAddress.City);
             Assert.AreEqual(originalAddress.Zip, deserializedAddress.Zip);
             Assert.AreEqual(originalAddress, deserializedAddress);
+        }
+
+        [Test]
+        public void Constructor_WithInvalidConfigPath_ThrowsException()
+        {
+            // Arrange
+            var invalidConfigPath = "non-existent-deserializer-config.properties";
+
+            // Act & Assert
+            var exception = Assert.Throws<InvalidOperationException>(() =>
+                new GlueSchemaRegistryKafkaFlowProtobufDeserializer<Customer>(invalidConfigPath));
+
+            Assert.That(exception.Message, Does.Contain("Failed to initialize GSR KafkaFlow deserializer"));
+        }
+
+        [Test]
+        public void Deserialize_WithNullContext_ThrowsException()
+        {
+            // Arrange
+            var deserializer = new GlueSchemaRegistryKafkaFlowProtobufDeserializer<Customer>(ValidConfigPath);
+            var testData = new ReadOnlySpan<byte>(new byte[] { 0x01, 0x02, 0x03 });
+
+            // Act & Assert
+            var exception = Assert.Throws<ArgumentNullException>(() =>
+                deserializer.Deserialize(testData, typeof(Customer), null));
+
+            Assert.That(exception.ParamName, Is.EqualTo("context"));
+        }
+
+        [Test]
+        public void DeserializeAsync_WithNullStream_ThrowsException()
+        {
+            // Arrange
+            var deserializer = new GlueSchemaRegistryKafkaFlowProtobufDeserializer<Customer>(ValidConfigPath);
+            var context = new TestDeserializerContext("test-topic");
+
+            // Act & Assert
+            var exception = Assert.ThrowsAsync<ArgumentNullException>(() =>
+                deserializer.DeserializeAsync(null, typeof(Customer), context)).Result;
+
+            Assert.That(exception.ParamName, Is.EqualTo("input"));
+        }
+
+        [Test]
+        public void DeserializeAsync_WithNullContext_ThrowsException()
+        {
+            // Arrange
+            var deserializer = new GlueSchemaRegistryKafkaFlowProtobufDeserializer<Customer>(ValidConfigPath);
+            using var stream = new MemoryStream(new byte[] { 0x01, 0x02, 0x03 });
+
+            // Act & Assert
+            var exception = Assert.ThrowsAsync<ArgumentNullException>(() =>
+                deserializer.DeserializeAsync(stream, typeof(Customer), null)).Result;
+
+            Assert.That(exception.ParamName, Is.EqualTo("context"));
         }
     }
 

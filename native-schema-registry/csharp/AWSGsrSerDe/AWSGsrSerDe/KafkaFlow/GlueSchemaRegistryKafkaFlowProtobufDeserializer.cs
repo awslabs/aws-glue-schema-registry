@@ -33,6 +33,9 @@ public class GlueSchemaRegistryKafkaFlowProtobufDeserializer<T> : IDeserializer
 
     public object Deserialize(ReadOnlySpan<byte> data, Type type, ISerializerContext context)
     {
+        if (context == null)
+            throw new ArgumentNullException(nameof(context));
+
         try
         {
             return _gsrDeserializer.Deserialize(context.Topic, data.ToArray());
@@ -45,6 +48,11 @@ public class GlueSchemaRegistryKafkaFlowProtobufDeserializer<T> : IDeserializer
 
     public async Task<object> DeserializeAsync(Stream input, Type type, ISerializerContext context)
     {
+        if (input == null)
+            throw new ArgumentNullException(nameof(input));
+        if (context == null)
+            throw new ArgumentNullException(nameof(context));
+
         var data = new byte[input.Length];
         await input.ReadAsync(data);
         return Deserialize(data, type, context);
