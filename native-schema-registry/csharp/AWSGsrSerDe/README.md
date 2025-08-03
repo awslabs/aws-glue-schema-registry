@@ -14,7 +14,7 @@ Follow the instructions in those specific projects to build them.
 
 ```
 dotnet clean .
-dotnet build .
+dotnet build . --configuration Release
 dotnet test .
 ```
 
