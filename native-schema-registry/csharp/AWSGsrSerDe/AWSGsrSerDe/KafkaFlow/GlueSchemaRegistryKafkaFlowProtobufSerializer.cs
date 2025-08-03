@@ -8,12 +8,12 @@ using KafkaFlow;
 
 namespace AWSGsrSerDe.KafkaFlow;
 
-public class GsrKafkaFlowProtobufSerializer<T> : ISerializer
+public class GlueSchemaRegistryKafkaFlowProtobufSerializer<T> : ISerializer
     where T : class, IMessage<T>, new()
 {
     private readonly GlueSchemaRegistryKafkaSerializer _gsrSerializer;
 
-    public GsrKafkaFlowProtobufSerializer(string configPath)
+    public GlueSchemaRegistryKafkaFlowProtobufSerializer(string configPath)
     {
         try
         {

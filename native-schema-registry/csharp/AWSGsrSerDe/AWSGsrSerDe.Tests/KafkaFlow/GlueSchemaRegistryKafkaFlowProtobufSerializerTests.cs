@@ -6,7 +6,7 @@ using Com.Amazonaws.Services.Schemaregistry.Tests.Protobuf.Syntax2;
 using KafkaFlow;
 using NUnit.Framework;
 
-namespace AWSGsrSerDe.Tests.KafkaFlow
+namespace AWSGlueSchemaRegistrySerDe.Tests.KafkaFlow
 {
     [TestFixture]
     public class GlueSchemaRegistryKafkaFlowProtobufSerializerTests
@@ -44,8 +44,8 @@ namespace AWSGsrSerDe.Tests.KafkaFlow
             var originalCustomer = new Customer { Name = "John Doe" };
             var context = new TestSerializerContext("test-topic-kafka-flow");
 
-            var serializer = new GsrKafkaFlowProtobufSerializer<Customer>(ValidConfigPath);
-            var deserializer = new GsrKafkaFlowProtobufDeserializer<Customer>(ValidConfigPath);
+            var serializer = new GlueSchemaRegistryKafkaFlowProtobufSerializer<Customer>(ValidConfigPath);
+            var deserializer = new GlueSchemaRegistryKafkaFlowProtobufDeserializer<Customer>(ValidConfigPath);
 
             // Act - Serialize
             var serializedData = serializer.Serialize(originalCustomer, context);
@@ -67,8 +67,8 @@ namespace AWSGsrSerDe.Tests.KafkaFlow
             var originalCustomer = new Customer { Name = "Jane Smith" };
             var context = new TestSerializerContext("async-test-topic-kafka-flow");
 
-            var serializer = new GsrKafkaFlowProtobufSerializer<Customer>(ValidConfigPath);
-            var deserializer = new GsrKafkaFlowProtobufDeserializer<Customer>(ValidConfigPath);
+            var serializer = new GlueSchemaRegistryKafkaFlowProtobufSerializer<Customer>(ValidConfigPath);
+            var deserializer = new GlueSchemaRegistryKafkaFlowProtobufDeserializer<Customer>(ValidConfigPath);
             using var stream = new MemoryStream();
 
             // Act - Serialize to stream
@@ -94,16 +94,16 @@ namespace AWSGsrSerDe.Tests.KafkaFlow
 
             // Act & Assert
             var exception = Assert.Throws<InvalidOperationException>(() =>
-                new GsrKafkaFlowProtobufSerializer<Customer>(invalidConfigPath));
+                new GlueSchemaRegistryKafkaFlowProtobufSerializer<Customer>(invalidConfigPath));
 
-            Assert.That(exception.Message, Does.Contain("Failed to initialize GSR KafkaFlow serializer"));
+            Assert.That(exception.Message, Does.Contain("Failed to initialize GlueSchemaRegistry KafkaFlow serializer"));
         }
 
         [Test]
         public void Serialize_WithNullMessage_ThrowsException()
         {
             // Arrange
-            var serializer = new GsrKafkaFlowProtobufSerializer<Customer>(ValidConfigPath);
+            var serializer = new GlueSchemaRegistryKafkaFlowProtobufSerializer<Customer>(ValidConfigPath);
             var context = new TestSerializerContext("test-topic-kf-seriailizer");
 
             // Act & Assert
@@ -118,7 +118,7 @@ namespace AWSGsrSerDe.Tests.KafkaFlow
         {
             // Arrange
             var customer = new Customer { Name = "Test Customer" };
-            var serializer = new GsrKafkaFlowProtobufSerializer<Customer>(ValidConfigPath);
+            var serializer = new GlueSchemaRegistryKafkaFlowProtobufSerializer<Customer>(ValidConfigPath);
 
             // Act & Assert
             var exception = Assert.Throws<ArgumentNullException>(() =>

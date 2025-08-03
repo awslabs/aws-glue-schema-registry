@@ -6,7 +6,7 @@ using Com.Amazonaws.Services.Schemaregistry.Tests.Protobuf.Syntax2;
 using KafkaFlow;
 using NUnit.Framework;
 
-namespace AWSGsrSerDe.Tests.KafkaFlow
+namespace AWSGlueSchemaRegistrySerDe.Tests.KafkaFlow
 {
     [TestFixture]
     public class GlueSchemaRegistryKafkaFlowProtobufDeserializerTests
@@ -45,8 +45,8 @@ namespace AWSGsrSerDe.Tests.KafkaFlow
             var originalCustomer = new Customer { Name = "John Doe" };
             var context = new TestDeserializerContext("deserializer-test-topic");
             
-            var serializer = new GsrKafkaFlowProtobufSerializer<Customer>(ValidConfigPath);
-            var deserializer = new GsrKafkaFlowProtobufDeserializer<Customer>(ValidConfigPath);
+            var serializer = new GlueSchemaRegistryKafkaFlowProtobufSerializer<Customer>(ValidConfigPath);
+            var deserializer = new GlueSchemaRegistryKafkaFlowProtobufDeserializer<Customer>(ValidConfigPath);
 
             // First serialize the data
             var serializedData = serializer.Serialize(originalCustomer, context);
@@ -73,8 +73,8 @@ namespace AWSGsrSerDe.Tests.KafkaFlow
             };
             var context = new TestDeserializerContext("deserializer-async-test-topic");
             
-            var serializer = new GsrKafkaFlowProtobufSerializer<Address>(ValidConfigPath);
-            var deserializer = new GsrKafkaFlowProtobufDeserializer<Address>(ValidConfigPath);
+            var serializer = new GlueSchemaRegistryKafkaFlowProtobufSerializer<Address>(ValidConfigPath);
+            var deserializer = new GlueSchemaRegistryKafkaFlowProtobufDeserializer<Address>(ValidConfigPath);
             using var stream = new MemoryStream();
 
             // First serialize the data to stream
