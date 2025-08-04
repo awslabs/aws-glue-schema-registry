@@ -21,7 +21,7 @@ public class GlueSchemaRegistryKafkaFlowProtobufSerializer<T> : ISerializer
         }
         catch (Exception ex)
         {
-            throw new InvalidOperationException($"Failed to initialize GSR KafkaFlow serializer for {typeof(T).Name}: {ex.Message}", ex);
+            throw new InvalidOperationException($"Failed to initialize GlueSchemaRegistry KafkaFlow serializer for {typeof(T).Name}: {ex.Message}", ex);
         }
     }
 
