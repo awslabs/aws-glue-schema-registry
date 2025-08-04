@@ -22,7 +22,7 @@ services:
       - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
       - ALLOW_PLAINTEXT_LISTENER=yes
   demo-csharp-protobuf:
-    build: .
+    image: mcr.microsoft.com/dotnet/sdk:8.0-noble
     depends_on:
       - kafka
     environment:
