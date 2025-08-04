@@ -150,6 +150,7 @@
                                     -g
                                     -H:CLibraryPath=${project.basedir}/c/build/src
                                     -H:ResourceConfigurationFiles=${project.basedir}/src/main/resources/resource-config.json
+                                    -H:Name=libnativeschemaregistry.so
                                 </buildArgs>
                             </buildArgs>
                         </configuration>
