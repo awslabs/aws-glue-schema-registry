@@ -24,6 +24,15 @@
       <PackageReference Include="System.Text.Json" Version="6.0.6" />
     </ItemGroup>
 
+    <ItemGroup>
+      <LinkerArg Include="-Wl,-rpath,../Libs/" />
+      <LinkerArg Include="-L../Libs" />
+      <LinkerArg Include="-lnativeschemaregistry" />
+      <LinkerArg Include="-lnative_schema_registry_c" />
+      <LinkerArg Include="-lnative_schema_registry_c_data_types" />
+      <LinkerArg Include="-laws_common_memalloc" />
+    </ItemGroup>
+
     <Import Project="..\Libs\Libs.projitems" Label="Shared" />
 
 </Project>
