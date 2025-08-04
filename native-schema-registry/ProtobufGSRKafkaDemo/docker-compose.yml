@@ -2,27 +2,35 @@ version: '3.8'
 
 services:
   zookeeper:
-    image: zookeeper:3.9
-    hostname: zookeeper
-    container_name: zookeeper
+    image: 'public.ecr.aws/bitnami/zookeeper:latest'
     ports:
-      - "2181:2181"
+      - '2181:2181'
     environment:
-      ZOO_MY_ID: 1
-      ZOO_PORT: 2181
-      ZOO_SERVERS: server.1=zookeeper:2888:3888
+      - ALLOW_ANONYMOUS_LOGIN=yes
 
   kafka:
-    image: apache/kafka:3.7.0
-    hostname: kafka
-    container_name: kafka
+    image: 'public.ecr.aws/bitnami/kafka:3.5'
+    ports:
+      - '9092:9092'
     depends_on:
       - zookeeper
-    ports:
-      - "9092:9092"
+    container_name: local_kafka
     environment:
-      KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_LISTENERS: PLAINTEXT://:9092
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      - KAFKA_BROKER_ID=1
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+      - KAFKA_LISTENERS=PLAINTEXT://0.0.0.0:9092
+      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
+      - ALLOW_PLAINTEXT_LISTENER=yes
+  demo-csharp-protobuf:
+    build: .
+    depends_on:
+      - kafka
+    environment:
+      - KAFKA_BROKER=kafka:9092
+      - AWS_REGION=${AWS_REGION:-us-east-1}
+    volumes:
+      - ~/.aws:/root/.aws:ro
+      - .:/workplace/ProtobufGSRKafkaDemo
+      - ../csharp:/workplace/csharp
+    working_dir: /workplace/ProtobufGSRKafkaDemo
+    command: ["./run-demo.sh"]

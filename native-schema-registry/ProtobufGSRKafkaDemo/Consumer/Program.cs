@@ -54,16 +54,12 @@ class Program
         }
 
         // Wait for shutdown
-        while (!_shutdown)
-        {
-            Thread.Sleep(1000);
-        }
 
         // Cleanup
         Console.WriteLine("Stopping threads...");
         foreach (var thread in _threads)
         {
-            thread.Join(5000);
+            thread.Join(1000);
         }
 
             await host.StopAsync();
@@ -78,6 +74,7 @@ class Program
 
     static IHost CreateHost()
     {
+        string brokerString = Environment.GetEnvironmentVariable("KAFKA_BROKER") ;
         return Host.CreateDefaultBuilder()
             .ConfigureLogging(logging =>
             {
@@ -88,7 +85,7 @@ class Program
             {
                 services.AddKafkaFlowHostedService(kafka => kafka
                     .AddCluster(cluster => cluster
-                        .WithBrokers(new[] { "localhost:9092" })
+                        .WithBrokers(new[] { brokerString })
                         .AddConsumer(consumer => consumer
                             .Topic("users")
                             .WithGroupId("user-consumer-group")

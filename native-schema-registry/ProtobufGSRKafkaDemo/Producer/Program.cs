@@ -43,11 +43,6 @@ class Program
             thread.Start();
         }
 
-        // Wait for shutdown
-        while (!_shutdown)
-        {
-            Thread.Sleep(1000);
-        }
 
         // Cleanup
         Console.WriteLine("Stopping threads...");
@@ -61,13 +56,15 @@ class Program
     }
 
     static IHost CreateHost()
+
     {
+        string brokerString = Environment.GetEnvironmentVariable("KAFKA_BROKER") ;
         return Host.CreateDefaultBuilder()
             .ConfigureServices(services =>
             {
                 services.AddKafka(kafka => kafka
                     .AddCluster(cluster => cluster
-                        .WithBrokers(new[] { "localhost:9092" })
+                        .WithBrokers(new[] { brokerString })
                         .CreateTopicIfNotExists("users", 1, 1)
                         .CreateTopicIfNotExists("products", 1, 1)
                         .CreateTopicIfNotExists("orders", 1, 1)
@@ -129,7 +126,7 @@ class Program
                 
                 lock (_lock)
                 {
-                    Console.WriteLine($"[UserProducer] Sent: {user.Name} ({user.Id})");
+                    Console.WriteLine($"[UserProducer] Sent: {user.Name} ({user})");
                 }
                 
                 Thread.Sleep(1000);
@@ -142,7 +139,7 @@ class Program
         
         lock (_lock)
         {
-            Console.WriteLine($"[UserProducer] Completed - sent 10 messages");
+            Console.WriteLine($"[UserProducer] Completed");
         }
     }
 
@@ -167,7 +164,7 @@ class Program
                 
                 lock (_lock)
                 {
-                    Console.WriteLine($"[ProductProducer] Sent: {product.Name} (${product.Price})");
+                    Console.WriteLine($"[ProductProducer] Sent: {product.Name} (${product})");
                 }
                 
                 Thread.Sleep(1200);
@@ -180,7 +177,7 @@ class Program
         
         lock (_lock)
         {
-            Console.WriteLine($"[ProductProducer] Completed - sent 10 messages");
+            Console.WriteLine($"[ProductProducer] Completed");
         }
     }
 
@@ -230,7 +227,7 @@ class Program
                 
                 lock (_lock)
                 {
-                    Console.WriteLine($"[OrderProducer] Sent: Order {order.OrderId} (${order.Header.TotalAmount})");
+                    Console.WriteLine($"[OrderProducer] Sent: Order {order.OrderId} (${order.Header})");
                 }
                 
                 Thread.Sleep(1500);
@@ -243,7 +240,7 @@ class Program
         
         lock (_lock)
         {
-            Console.WriteLine($"[OrderProducer] Completed - sent 10 messages");
+            Console.WriteLine($"[OrderProducer] Completed");
         }
     }
 
@@ -298,7 +295,7 @@ class Program
                 
                 lock (_lock)
                 {
-                    Console.WriteLine($"[PaymentProducer] Sent: Payment {payment.PaymentId} (${payment.Amount})");
+                    Console.WriteLine($"[PaymentProducer] Sent: Payment {payment.PaymentId} (${payment})");
                 }
                 
                 Thread.Sleep(1800);
@@ -311,7 +308,7 @@ class Program
         
         lock (_lock)
         {
-            Console.WriteLine($"[PaymentProducer] Completed - sent 10 messages");
+            Console.WriteLine($"[PaymentProducer] Completed");
         }
     }
 
@@ -368,7 +365,7 @@ class Program
                 
                 lock (_lock)
                 {
-                    Console.WriteLine($"[EventProducer] Sent: Event {eventMsg.EventId} ({eventMsg.Type})");
+                    Console.WriteLine($"[EventProducer] Sent: Event {eventMsg.EventId} ({eventMsg})");
                 }
                 
                 Thread.Sleep(800);
@@ -381,7 +378,7 @@ class Program
         
         lock (_lock)
         {
-            Console.WriteLine($"[EventProducer] Completed - sent 10 messages");
+            Console.WriteLine($"[EventProducer] Completed");
         }
     }
 }
