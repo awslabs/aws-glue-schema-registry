@@ -22,6 +22,7 @@ type BaseIntegrationSuite struct {
 	gsr_serializer   *serializer.Serializer
 	gsr_deserializer *deserializer.Deserializer
 	topicName        string
+	topicPrefix      string
 	cleanup          func()
 }
 
@@ -48,7 +49,7 @@ func (s *BaseIntegrationSuite) TearDownSuite() {
 
 // SetupTest is called before each test method
 func (s *BaseIntegrationSuite) SetupTest() {
-	s.topicName = s.generateTestTopicName()
+	s.topicName = fmt.Sprintf("%s-%s",s.topicPrefix, s.generateTestTopicName()) 
 	s.cleanup = s.setupTestInfrastructure()
 
 	s.T().Logf("Test setup complete for topic: %s", s.topicName)

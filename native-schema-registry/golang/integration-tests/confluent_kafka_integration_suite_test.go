@@ -27,6 +27,7 @@ func (s *ConfluentKafkaIntegrationSuite) TestConfluentKafkaProtobufIntegration()
 	if s.shouldSkipIntegrationTests() {
 		s.T().Skip("Skipping integration test")
 	}
+	s.topicPrefix = "confluent-kafka-go-protobuf"
 
 	s.T().Log("--- Starting Confluent Kafka Protobuf Integration Test ---")
 

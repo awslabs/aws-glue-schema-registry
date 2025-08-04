@@ -34,6 +34,7 @@ func (s *JsonIntegrationSuite) TestJsonKafkaIntegration() {
 		s.T().Skip("Skipping integration test")
 	}
 
+	s.topicPrefix = "json-suite"
 	s.T().Log("--- Starting JSON Schema Kafka Integration Test ---")
 
 	// Create test user struct

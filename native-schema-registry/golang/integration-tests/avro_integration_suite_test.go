@@ -31,6 +31,7 @@ func (s *AvroIntegrationSuite) TestAvroKafkaIntegration() {
 	if s.shouldSkipIntegrationTests() {
 		s.T().Skip("Skipping integration test")
 	}
+	s.topicPrefix = "avro-suite"
 
 	s.T().Log("--- Starting AVRO Kafka Integration Test ---")
 

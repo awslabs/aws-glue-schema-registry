@@ -63,7 +63,6 @@ test-integ: setup-dirs generate-protos
 ifdef COVERAGE
 	@echo "Running integration tests with coverage..."
 	cd integration-tests && docker compose up -d 
-	cd integration-tests && sleep 10
 	cd integration-tests && go test -v -coverprofile=../$(COVERAGE_DIR)/integration-tests-coverage.out ./... || (docker compose down && exit 1)
 	cd integration-tests && docker compose down
 	go tool cover -html=$(COVERAGE_DIR)/integration-tests-coverage.out -o $(COVERAGE_DIR)/integration-tests-coverage.html
@@ -71,7 +70,6 @@ ifdef COVERAGE
 else
 	@echo "Running integration tests..."
 	cd integration-tests && docker compose up -d | tee  ../$(BUILD_DIR)/integ-docker-logs.txt
-	cd integration-tests && sleep 10
 	cd integration-tests && stdbuf -oL go test -v -count=1 ./... 2>&1 | tee ../$(BUILD_DIR)/integration-test-output.txt
 	cd integration-tests && docker compose logs > docker-logs.txt
 	cd integration-tests && docker compose down
@@ -144,6 +142,41 @@ clean-protos:
 	@rm -rf $(PROTO_OUT_DIR)
 	@echo "Protobuf files cleaned"
 
+# Alpine-based integration testing (new alternative)
+.PHONY: test-integ-alpine
+test-integ-alpine:  setup-dirs 
+ifdef COVERAGE
+	@echo "Running Alpine integration tests with coverage..."
+	cd integration-tests && COVERAGE=true docker compose -f docker-compose.alpine.yml up --build --abort-on-container-exit
+	cd integration-tests && docker compose -f docker-compose.alpine.yml down
+	@echo "Alpine integration test coverage report: $(COVERAGE_DIR)/alpine-integration-coverage.html"
+else
+	@echo "Running Alpine integration tests..."
+	cd integration-tests && docker compose -f docker-compose.alpine.yml up --build --abort-on-container-exit | tee ../$(BUILD_DIR)/alpine-integ-docker-logs.txt
+	cd integration-tests && docker compose -f docker-compose.alpine.yml logs golang-tests > ../$(BUILD_DIR)/alpine-test-logs.txt 2>&1 || true
+	cd integration-tests && docker compose -f docker-compose.alpine.yml down
+	@echo "Alpine integration test report: $(BUILD_DIR)/alpine-integration-test-output.txt"
+endif
+
+# Alpine coverage wrapper
+.PHONY: cover-test-integ-alpine
+cover-test-integ-alpine: setup-dirs
+	@echo "Running Alpine integration tests with coverage..."
+	$(MAKE) test-integ-alpine COVERAGE=true
+
+# Build Alpine test image only
+.PHONY: build-alpine-test-image
+build-alpine-test-image: setup-dirs generate-protos
+	@echo "Building Alpine test image..."
+	docker build -f integration-tests/Dockerfile.alpine-tests -t golang-gsr-tests:alpine ..
+
+# Clean Alpine containers and images
+.PHONY: clean-alpine
+clean-alpine:
+	@echo "Cleaning Alpine test containers and images..."
+	cd integration-tests && docker compose -f docker-compose.alpine.yml down --remove-orphans || true
+	docker rmi golang-gsr-tests:alpine || true
+
 # Help target
 .PHONY: help
 help:
@@ -151,12 +184,16 @@ help:
 	@echo "  build          - Compile/validate module and create package artifacts"
 	@echo "  test           - Run unit and component tests (excludes integration tests)"
 	@echo "  test-integ     - Run integration tests with Docker"
+	@echo "  test-integ-alpine - Run integration tests in Alpine container"
 	@echo "  test-all       - Run all tests (unit, component, and integration)"
 	@echo "  cover-test     - Run unit and component tests with coverage"
 	@echo "  cover-test-integ - Run integration tests with coverage"
+	@echo "  cover-test-integ-alpine - Run Alpine integration tests with coverage"
 	@echo "  cover-test-all - Run all tests with coverage"
 	@echo "  generate-protos - Generate .pb.go files from .proto files"
 	@echo "  generate-protos-custom - Generate protos with custom variables"
+	@echo "  build-alpine-test-image - Build Alpine test image only"
 	@echo "  clean-protos   - Remove generated .pb.go files"
+	@echo "  clean-alpine   - Clean Alpine containers and images"
 	@echo "  clean          - Remove build directory"
 	@echo "  help           - Show this help message"
