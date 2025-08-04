@@ -15,13 +15,13 @@
     <Content Include="$(MSBuildThisFileDirectory)libnativeschemaregistry.*">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="$(MSBuildThisFileDirectory)native_schema_registry_c.*">
+    <Content Include="$(MSBuildThisFileDirectory)libnative_schema_registry_c.*">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="$(MSBuildThisFileDirectory)native_schema_registry_c_data_types.*">
+    <Content Include="$(MSBuildThisFileDirectory)libnative_schema_registry_c_data_types.*">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="$(MSBuildThisFileDirectory)aws_common_memalloc.*">
+    <Content Include="$(MSBuildThisFileDirectory)libaws_common_memalloc.*">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
