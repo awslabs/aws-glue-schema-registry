@@ -16,4 +16,4 @@ cd Producer/
 cd ../Consumer/
 ./run-consumer.sh | tee ./consumer.log
 
-echo "✅ Tests completed successfully"
+echo "✅ Tests completed"
