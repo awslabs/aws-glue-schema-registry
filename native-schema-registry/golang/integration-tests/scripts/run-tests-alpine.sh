@@ -13,6 +13,6 @@ echo "✅ Kafka is ready"
 # Run tests (protobuf files already generated and copied during image build)
 echo "Running integration tests..."
 cd /app/golang/integration-tests
-go test -v -count=1 ./...
+go test  -count=1 ./...
 
 echo "✅ Tests completed successfully"

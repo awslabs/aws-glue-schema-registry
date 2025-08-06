@@ -17,13 +17,11 @@ type Serializer struct {
 // NewSerializer creates a new serializer instance
 func NewSerializer() (*Serializer, error) {
 	runtime.LockOSThread()
-	// Create error holder
 	err := createErrorHolder()
 	
 	// Create native serializer
 	serializer := GsrSerDe.NewGlue_schema_registry_serializer(err)
 	
-	// Check for errors
 	if err != nil && err.Swigcptr() != 0 {
 		return nil, extractError("create serializer", err)
 	}
@@ -37,8 +35,6 @@ func NewSerializer() (*Serializer, error) {
 		closed:     false,
 	}
 	
-	// Set finalizer as a safety net
-	//runtime.SetFinalizer(s, (*Serializer).finalize)
 	
 	return s, nil
 }
@@ -61,27 +57,22 @@ func (s *Serializer) Encode(data []byte, transportName string, schema *Schema) (
 		return nil, ErrNilSchema
 	}
 	
-	// Create error holder
 	err := createErrorHolder()
 	
-	// Create read-only byte array
 	roba, robaErr := createReadOnlyByteArray(data, err)
 	if robaErr != nil {
 		return nil, robaErr
 	}
 	defer cleanupReadOnlyByteArray(roba)
 	
-	// Create glue schema
 	glueSchema, schemaErr := createGlueSchema(schema, err)
 	if schemaErr != nil {
 		return nil, schemaErr
 	}
 	defer cleanupGlueSchema(glueSchema)
 	
-	// Encode the data
 	mba := s.serializer.Encode(roba, transportName, glueSchema, err)
 	
-	// Check for errors
 	if err != nil && err.Swigcptr() != 0 {
 		return nil, extractError("encode", err)
 	}
@@ -110,8 +101,6 @@ func (s *Serializer) Close() error {
 		s.serializer = nil
 	}
 	
-	// Remove finalizer
-	//runtime.SetFinalizer(s, nil)
 	runtime.UnlockOSThread()
 	
 	return nil

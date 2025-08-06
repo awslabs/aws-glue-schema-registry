@@ -17,13 +17,11 @@ type Deserializer struct {
 // NewDeserializer creates a new deserializer instance
 func NewDeserializer() (*Deserializer, error) {
 	runtime.LockOSThread()
-	// Create error holder
 	err := createErrorHolder()
 	
 	// Create native deserializer
 	deserializer := GsrSerDe.NewGlue_schema_registry_deserializer(err)
 	
-	// Check for errors
 	if err != nil && err.Swigcptr() != 0 {
 		return nil, extractError("create deserializer", err)
 	}
@@ -36,9 +34,6 @@ func NewDeserializer() (*Deserializer, error) {
 		deserializer: deserializer,
 		closed:       false,
 	}
-	
-	// Set finalizer as a safety net
-	//runtime.SetFinalizer(d, (*Deserializer).finalize)
 	
 	return d, nil
 }
@@ -57,10 +52,8 @@ func (d *Deserializer) Decode(data []byte) ([]byte, error) {
 		return nil, ErrEmptyData
 	}
 	
-	// Create error holder
 	err := createErrorHolder()
 	
-	// Create read-only byte array
 	roba, robaErr := createReadOnlyByteArray(data, err)
 	if robaErr != nil {
 		return nil, robaErr
@@ -70,7 +63,6 @@ func (d *Deserializer) Decode(data []byte) ([]byte, error) {
 	// Decode the data
 	mba := d.deserializer.Decode(roba, err)
 	
-	// Check for errors
 	if err != nil && err.Swigcptr() != 0 {
 		return nil, extractError("decode", err)
 	}
@@ -79,7 +71,6 @@ func (d *Deserializer) Decode(data []byte) ([]byte, error) {
 		return nil, wrapError("decode", ErrMemoryAllocation)
 	}
 	
-	// Convert to Go slice and cleanup
 	result := mutableByteArrayToGoSlice(mba)
 	cleanupMutableByteArray(mba)
 	
@@ -100,20 +91,16 @@ func (d *Deserializer) CanDecode(data []byte) (bool, error) {
 		return false, ErrEmptyData
 	}
 	
-	// Create error holder
 	err := createErrorHolder()
 	
-	// Create read-only byte array
 	roba, robaErr := createReadOnlyByteArray(data, err)
 	if robaErr != nil {
 		return false, robaErr
 	}
 	defer cleanupReadOnlyByteArray(roba)
 	
-	// Check if can decode
 	canDecode := d.deserializer.Can_decode(roba, err)
 	
-	// Check for errors
 	if err != nil && err.Swigcptr() != 0 {
 		return false, extractError("can decode", err)
 	}
@@ -135,20 +122,16 @@ func (d *Deserializer) DecodeSchema(data []byte) (*Schema, error) {
 		return nil, ErrEmptyData
 	}
 	
-	// Create error holder
 	err := createErrorHolder()
 	
-	// Create read-only byte array
 	roba, robaErr := createReadOnlyByteArray(data, err)
 	if robaErr != nil {
 		return nil, robaErr
 	}
 	defer cleanupReadOnlyByteArray(roba)
 	
-	// Decode schema
 	glueSchema := d.deserializer.Decode_schema(roba, err)
 	
-	// Check for errors
 	if err != nil && err.Swigcptr() != 0 {
 		return nil, extractError("decode schema", err)
 	}
@@ -177,8 +160,6 @@ func (d *Deserializer) Close() error {
 		d.deserializer = nil
 	}
 	
-	// Remove finalizer
-	//runtime.SetFinalizer(d, nil)
 	runtime.UnlockOSThread()
 	
 	return nil
