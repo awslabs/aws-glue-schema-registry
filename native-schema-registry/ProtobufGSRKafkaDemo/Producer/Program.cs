@@ -73,30 +73,35 @@ class Program
                         .AddProducer("user-producer", producer => producer
                             .DefaultTopic("users")
                             .AddMiddlewares(middlewares => middlewares
+                                .Add<ExceptionMiddleware>()
                                 .AddSerializer(resolver => new GsrProtobufSerializer<User>(CONFIG_PATH))
                             )
                         )
                         .AddProducer("product-producer", producer => producer
                             .DefaultTopic("products")
                             .AddMiddlewares(middlewares => middlewares
+                                .Add<ExceptionMiddleware>()
                                 .AddSerializer(resolver => new GsrProtobufSerializer<Product>(CONFIG_PATH))
                             )
                         )
                         .AddProducer("order-producer", producer => producer
                             .DefaultTopic("orders")
                             .AddMiddlewares(middlewares => middlewares
+                                .Add<ExceptionMiddleware>()
                                 .AddSerializer(resolver => new GsrProtobufSerializer<Order>(CONFIG_PATH))
                             )
                         )
                         .AddProducer("payment-producer", producer => producer
                             .DefaultTopic("payments")
                             .AddMiddlewares(middlewares => middlewares
+                                .Add<ExceptionMiddleware>()
                                 .AddSerializer(resolver => new GsrProtobufSerializer<Payment>(CONFIG_PATH))
                             )
                         )
                         .AddProducer("event-producer", producer => producer
                             .DefaultTopic("events")
                             .AddMiddlewares(middlewares => middlewares
+                                .Add<ExceptionMiddleware>()
                                 .AddSerializer(resolver => new GsrProtobufSerializer<Event>(CONFIG_PATH))
                             )
                         )

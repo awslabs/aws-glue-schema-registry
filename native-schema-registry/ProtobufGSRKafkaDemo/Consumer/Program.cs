@@ -93,6 +93,7 @@ class Program
                             .WithWorkersCount(1)
                             .WithAutoOffsetReset(AutoOffsetReset.Earliest)
                             .AddMiddlewares(middlewares => middlewares
+                                .Add<ExceptionMiddleware>()
                                 .AddDeserializer(resolver => new GsrProtobufDeserializer<User>(CONFIG_PATH))
                                 .AddTypedHandlers(h => h.AddHandler<UserHandler>())
                             )
@@ -104,6 +105,7 @@ class Program
                             .WithWorkersCount(1)
                             .WithAutoOffsetReset(AutoOffsetReset.Earliest)
                             .AddMiddlewares(middlewares => middlewares
+                                .Add<ExceptionMiddleware>() 
                                 .AddDeserializer(resolver => new GsrProtobufDeserializer<Product>(CONFIG_PATH))
                                 .AddTypedHandlers(h => h.AddHandler<ProductHandler>())
                             )
@@ -115,6 +117,7 @@ class Program
                             .WithWorkersCount(1)
                             .WithAutoOffsetReset(AutoOffsetReset.Earliest)
                             .AddMiddlewares(middlewares => middlewares
+                                .Add<ExceptionMiddleware>()
                                 .AddDeserializer(resolver => new GsrProtobufDeserializer<Order>(CONFIG_PATH))
                                 .AddTypedHandlers(h => h.AddHandler<OrderHandler>())
                             )
@@ -126,6 +129,7 @@ class Program
                             .WithWorkersCount(1)
                             .WithAutoOffsetReset(AutoOffsetReset.Earliest)
                             .AddMiddlewares(middlewares => middlewares
+                                .Add<ExceptionMiddleware>()
                                 .AddDeserializer(resolver => new GsrProtobufDeserializer<Payment>(CONFIG_PATH))
                                 .AddTypedHandlers(h => h.AddHandler<PaymentHandler>())
                             )
@@ -136,7 +140,8 @@ class Program
                             .WithBufferSize(100)
                             .WithWorkersCount(1)
                             .WithAutoOffsetReset(AutoOffsetReset.Earliest)
-                            .AddMiddlewares(middlewares => middlewares
+                            .AddMiddlewares(middlewares => middlewares 
+                                .Add<ExceptionMiddleware>()
                                 .AddDeserializer(resolver => new GsrProtobufDeserializer<Event>(CONFIG_PATH))
                                 .AddTypedHandlers(h => h.AddHandler<EventHandler>())
                             )
