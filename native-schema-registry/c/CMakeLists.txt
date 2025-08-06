@@ -26,6 +26,13 @@ set(SERDE_MODULE_NAME native_schema_registry_c)
 set(AWS_COMMON_MEMALLOC aws_common_memalloc)
 set(NATIVE_SCHEMA_REGISTRY_MODULE_NAME libnativeschemaregistry)
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+
+##Global RPATH Configuration for Portable Libraries
+set(CMAKE_SKIP_BUILD_RPATH FALSE)
+set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+set(CMAKE_INSTALL_RPATH "$ORIGIN")
+
 include_directories("include")
 include_directories(${LIB_NATIVE_SCHEMA_REGISTRY_PATH})
 # --- Python Integration ---
