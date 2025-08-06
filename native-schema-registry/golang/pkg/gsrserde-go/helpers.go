@@ -15,10 +15,8 @@ func createReadOnlyByteArray(data []byte, err GsrSerDe.Glue_schema_registry_erro
 	// Get pointer to first byte
 	dataPtr := (*byte)(unsafe.Pointer(&data[0]))
 	
-	// Create read only byte array
 	roba := GsrSerDe.NewRead_only_byte_array(dataPtr, int64(len(data)), err)
 	
-	// Check if error was set
 	if err != nil && err.Swigcptr() != 0 {
 		return nil, extractError("create read only byte array", err)
 	}
@@ -45,7 +43,7 @@ func mutableByteArrayToGoSlice(mba GsrSerDe.Mutable_byte_array) []byte {
 	result := make([]byte, maxLen)
 	
 	// Use unsafe to create a temporary slice view of the C memory
-	cSlice := (*[1 << 30]byte)(unsafe.Pointer(dataPtr))[:maxLen:maxLen]
+	cSlice :=  unsafe.Slice((*byte)(dataPtr), maxLen)
 	copy(result, cSlice)
 	
 	return result
