@@ -4,7 +4,7 @@ include(cmake/FetchAwsCommon.cmake)
 if (CMAKE_SYSTEM_NAME MATCHES "^(Linux)$")
         list(APPEND TEST_COVERAGE "-ftest-coverage -fprofile-arcs")
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${TEST_COVERAGE} -g -O0 -Wall")
-        set(CMAKE_C_CLANG_TIDY clang-tidy -checks=-*,readability-*)
+        set(CMAKE_C_CLANG_TIDY clang-tidy -checks=-*,readability-*,-readability-math-missing-parentheses)
         set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lgcov")
 endif()
 
@@ -24,6 +24,7 @@ add_custom_command(
         POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${DATA_TYPES_MODULE_NAME}> ${LIB_NATIVE_SCHEMA_REGISTRY_PATH}/
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_LINKER_FILE:${DATA_TYPES_MODULE_NAME}> ${LIB_NATIVE_SCHEMA_REGISTRY_PATH}/
+        COMMAND mvn clean install -P native-image WORKING_DIRECTORY ${MAVEN_PROJECT_DIR}/..
 )
 
 #Add reference to the GraalVM generated Native schema registry module.
@@ -41,6 +42,7 @@ set_target_properties(
         INTERFACE_INCLUDE_DIRECTORIES "${LIB_NATIVE_SCHEMA_REGISTRY_PATH}"
 )
 
+
 add_library(
         ${SERDE_MODULE_NAME} SHARED
         glue_schema_registry_serializer.c
@@ -51,6 +53,7 @@ target_link_libraries(
         ${DATA_TYPES_MODULE_NAME}
         ${AWS_COMMON_MEMALLOC}
 )
+
 
 target_link_libraries(
         ${SERDE_MODULE_NAME}
