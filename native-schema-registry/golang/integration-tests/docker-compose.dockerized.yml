@@ -14,7 +14,7 @@ services:
       - '9092:9092'
     depends_on:
       - zookeeper
-    container_name: local_kafka_alpine
+    container_name: local_kafka_dockerized
     environment:
       - KAFKA_BROKER_ID=1
       - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
@@ -25,7 +25,7 @@ services:
   golang-tests:
     build:
       context: ../..
-      dockerfile: golang/integration-tests/Dockerfile.alpine-tests
+      dockerfile: golang/integration-tests/Dockerfile.dockerized-tests
     depends_on:
       - kafka
     environment:

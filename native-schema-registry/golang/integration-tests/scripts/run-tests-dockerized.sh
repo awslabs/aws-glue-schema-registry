@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-echo "=== Alpine Integration Test Runner ==="
+echo "=== Dockerized Integration Test Runner ==="
 echo "Go version: $(go version)"
 
 # Wait for Kafka to be ready
