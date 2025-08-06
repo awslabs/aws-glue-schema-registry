@@ -55,18 +55,3 @@ func extractSchemaFromGlue(glueSchema GsrSerDe.Glue_schema_registry_schema) *Sch
 		AdditionalInfo: glueSchema.Get_additional_schema_info(),
 	}
 }
-
-// extractError extracts error information from SWIG error interface
-func extractError(operation string, err GsrSerDe.Glue_schema_registry_error) error {
-	if err == nil || err.Swigcptr() == 0 {
-		return nil
-	}
-	
-	// Since we can't directly access error fields through SWIG interface,
-	// we create a generic error. In production, you might want to extend
-	// the SWIG interface to expose error details.
-	return wrapError(operation, &SchemaRegistryError{
-		Code:    -1, // Default error code
-		Message: "native schema registry error occurred",
-	})
-}
