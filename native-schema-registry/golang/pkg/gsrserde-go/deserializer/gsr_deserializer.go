@@ -97,30 +97,10 @@ func (d *Deserializer) Deserialize(topic string, data []byte) (interface{}, erro
 		return nil, fmt.Errorf("failed to decode schema: %w", err)
 	}
 
-	// Create configuration from schema information
-	configMap := make(map[string]interface{})
-
-	// Convert schema DataFormat string to DataFormat enum
-	dataFormat, err := stringToDataFormat(schema.DataFormat)
-	if err != nil {
-		return nil, err
-	}
-
-	configMap[common.DataFormatTypeKey] = dataFormat
-
-	// Create configuration object
-	config := common.NewConfiguration(configMap)
-
-	// Get the appropriate format deserializer (mirrors C# factory.GetDeserializer call)
-	formatDeserializer, err := d.formatFactory.GetDeserializer(config)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get deserializer for format %s: %w", schema.DataFormat, err)
-	}
-
 	// Deserialize the actual message content (mirrors C# deserializer.Deserialize call)
-	result, err := formatDeserializer.Deserialize(decodedBytes, schema)
+	result, err := d.formatDeserializer.Deserialize(decodedBytes, schema)
 	if err != nil {
-		return nil, fmt.Errorf("failed to deserialize %s data: %w", dataFormat, err)
+		return nil, fmt.Errorf("failed to deserialize %s data: %w", d.config.DataFormat , err)
 	}
 
 	return result, nil

@@ -68,7 +68,7 @@ func (f *DataFormatSerializerFactory) GetSerializer(config *common.Configuration
 		return nil, fmt.Errorf("configuration cannot be nil")
 	}
 
-	dataFormat := config.DataFormat()
+	dataFormat := config.DataFormat
 	switch dataFormat {
 	case common.DataFormatProtobuf:
 		return protobuf.NewProtobufSerializer(config), nil

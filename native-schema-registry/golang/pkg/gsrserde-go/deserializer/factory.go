@@ -66,7 +66,7 @@ func (f *DataFormatDeserializerFactory) GetDeserializer(config *common.Configura
 		return nil, fmt.Errorf("configuration cannot be nil")
 	}
 
-	dataFormat := config.DataFormat()
+	dataFormat := config.DataFormat
 	switch dataFormat {
 	case common.DataFormatProtobuf:
 		return protobuf.NewProtobufDeserializer(config), nil

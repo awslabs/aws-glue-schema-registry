@@ -14,72 +14,33 @@
 package common
 
 import (
+	"log"
 	"reflect"
+
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
 // Configuration holds the Glue Schema Registry configuration.
 type Configuration struct {
-	dataFormat                DataFormat
-	avroRecordType            AvroRecordType
-	protobufMessageDescriptor protoreflect.MessageDescriptor
-	jsonObjectType            reflect.Type
-	additionalProperties      map[string]interface{}
+	DataFormat                DataFormat
+	AvroRecordType            AvroRecordType
+	ProtobufMessageDescriptor protoreflect.MessageDescriptor
+	JsonObjectType            reflect.Type
+	AdditionalProperties      map[string]interface{}
 }
 
 // NewConfiguration creates a new Configuration from a map of configuration values.
 func NewConfiguration(configs map[string]interface{}) *Configuration {
 	c := &Configuration{
-		dataFormat:           DataFormatUnknown,
-		avroRecordType:       AvroRecordTypeUnknown,
-		additionalProperties: make(map[string]interface{}),
+		DataFormat:           DataFormatUnknown,
+		AvroRecordType:       AvroRecordTypeUnknown,
+		AdditionalProperties: make(map[string]interface{}),
 	}
 	c.buildConfigs(configs)
+	log.Printf("config %#v",c)
 	return c
 }
 
-// DataFormat returns the configured data format.
-func (c *Configuration) DataFormat() DataFormat {
-	return c.dataFormat
-}
-
-// AvroRecordType returns the configured Avro record type.
-func (c *Configuration) AvroRecordType() AvroRecordType {
-	return c.avroRecordType
-}
-
-// ProtobufMessageDescriptor returns the configured Protobuf message descriptor.
-func (c *Configuration) ProtobufMessageDescriptor() protoreflect.MessageDescriptor {
-	return c.protobufMessageDescriptor
-}
-
-// JSONObjectType returns the configured JSON object type.
-func (c *Configuration) JSONObjectType() reflect.Type {
-	return c.jsonObjectType
-}
-
-// AdditionalProperties returns the map of additional properties.
-func (c *Configuration) AdditionalProperties() map[string]interface{} {
-	return c.additionalProperties
-}
-
-// SetAdditionalProperty sets an additional property with the given key and value.
-func (c *Configuration) SetAdditionalProperty(key string, value interface{}) {
-	if c.additionalProperties == nil {
-		c.additionalProperties = make(map[string]interface{})
-	}
-	c.additionalProperties[key] = value
-}
-
-// GetAdditionalProperty gets an additional property by key.
-// Returns the value and a boolean indicating whether the key was found.
-func (c *Configuration) GetAdditionalProperty(key string) (interface{}, bool) {
-	if c.additionalProperties == nil {
-		return nil, false
-	}
-	value, exists := c.additionalProperties[key]
-	return value, exists
-}
 
 func (c *Configuration) buildConfigs(configs map[string]interface{}) {
 	c.validateAndSetAvroRecordType(configs)
@@ -91,7 +52,7 @@ func (c *Configuration) buildConfigs(configs map[string]interface{}) {
 func (c *Configuration) validateAndSetDataFormat(configs map[string]interface{}) {
 	if val, ok := configs[DataFormatTypeKey]; ok {
 		if dataFormat, ok := val.(DataFormat); ok {
-			c.dataFormat = dataFormat
+			c.DataFormat = dataFormat
 		}
 	}
 }
@@ -99,7 +60,7 @@ func (c *Configuration) validateAndSetDataFormat(configs map[string]interface{})
 func (c *Configuration) validateAndSetAvroRecordType(configs map[string]interface{}) {
 	if val, ok := configs[AvroRecordTypeKey]; ok {
 		if avroRecordType, ok := val.(AvroRecordType); ok {
-			c.avroRecordType = avroRecordType
+			c.AvroRecordType = avroRecordType
 		}
 	}
 }
@@ -107,7 +68,7 @@ func (c *Configuration) validateAndSetAvroRecordType(configs map[string]interfac
 func (c *Configuration) validateAndSetProtobufMessageDescriptor(configs map[string]interface{}) {
 	if val, ok := configs[ProtobufMessageDescriptorKey]; ok {
 		if messageDescriptor, ok := val.(protoreflect.MessageDescriptor); ok {
-			c.protobufMessageDescriptor = messageDescriptor
+			c.ProtobufMessageDescriptor = messageDescriptor
 		}
 	}
 }
@@ -115,7 +76,7 @@ func (c *Configuration) validateAndSetProtobufMessageDescriptor(configs map[stri
 func (c *Configuration) validateAndSetJSONObjectType(configs map[string]interface{}) {
 	if val, ok := configs[JSONObjectTypeKey]; ok {
 		if jsonType, ok := val.(reflect.Type); ok {
-			c.jsonObjectType = jsonType
+			c.JsonObjectType = jsonType
 		}
 	}
 }
