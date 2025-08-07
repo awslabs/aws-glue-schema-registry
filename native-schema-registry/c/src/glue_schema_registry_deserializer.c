@@ -3,7 +3,7 @@
 #include "libnativeschemaregistry.h"
 #include <stdlib.h>
 
-glue_schema_registry_deserializer * new_glue_schema_registry_deserializer(glue_schema_registry_error **p_err) {
+glue_schema_registry_deserializer * new_glue_schema_registry_deserializer(const char *config_file_path, glue_schema_registry_error **p_err) {
     glue_schema_registry_deserializer *deserializer = NULL;
     deserializer =
             (glue_schema_registry_deserializer *) aws_common_malloc(sizeof(glue_schema_registry_deserializer));
@@ -14,8 +14,18 @@ glue_schema_registry_deserializer * new_glue_schema_registry_deserializer(glue_s
         throw_error(p_err, "Failed to initialize GraalVM isolate.", ERR_CODE_GRAALVM_INIT_EXCEPTION);
         return NULL;
     }
-    //TODO: Handle errors here when configuration is added.
-    initialize_deserializer(deserializer->instance_context);
+    
+    //Initialize with configuration file (can be NULL for default configuration)
+    int config_result = initialize_deserializer_with_config(deserializer->instance_context, config_file_path, p_err);
+    if (config_result != 0) {
+        delete_glue_schema_registry_deserializer(deserializer);
+        // Only throw an error if one wasn't already set by initialize_deserializer_with_config
+        if (p_err != NULL) {
+            throw_error(p_err, "Failed to initialize deserializer with configuration file.", ERR_CODE_RUNTIME_ERROR);
+        }
+        return NULL;
+    }
+    
     return deserializer;
 }
 
@@ -81,4 +91,3 @@ bool glue_schema_registry_deserializer_can_decode(glue_schema_registry_deseriali
 
     return can_decode(deserializer->instance_context, array, p_err);
 }
-

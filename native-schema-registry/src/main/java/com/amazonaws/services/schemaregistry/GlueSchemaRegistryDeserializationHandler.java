@@ -9,6 +9,7 @@ import com.google.common.collect.ImmutableMap;
 import org.graalvm.nativeimage.IsolateThread;
 import org.graalvm.nativeimage.c.CContext;
 import org.graalvm.nativeimage.c.function.CEntryPoint;
+import org.graalvm.nativeimage.c.type.CCharPointer;
 import org.graalvm.nativeimage.c.type.CTypeConversion;
 import org.graalvm.word.WordFactory;
 import software.amazon.awssdk.services.glue.model.DataFormat;
@@ -43,6 +44,30 @@ public class GlueSchemaRegistryDeserializationHandler {
             new GlueSchemaRegistryConfiguration(configMap);
 
         DeserializerInstance.create(glueSchemaRegistryConfiguration);
+    }
+
+    @CEntryPoint(name = "initialize_deserializer_with_config")
+    public static int initializeDeserializerWithConfig(
+        IsolateThread isolateThread,
+        CCharPointer configFilePath,
+        C_GlueSchemaRegistryErrorPointerHolder errorPointer) {
+        try {
+            if (configFilePath.isNull()) {
+                // Use default configuration when no config file provided
+                initializeDeserializer(isolateThread);
+                return 0;
+            }
+
+            String filePath = CTypeConversion.toJavaString(configFilePath);
+            Map<String, String> configs = ConfigurationFileReader.loadConfigFromFile(filePath);
+            GlueSchemaRegistryConfiguration configuration = new GlueSchemaRegistryConfiguration(configs);
+            DeserializerInstance.create(configuration);
+
+            return 0; // Success
+        } catch (Exception | Error e) {
+            ExceptionWriter.write(errorPointer, e);
+            return 1; // Error
+        }
     }
 
     @CEntryPoint(name = "decode")
