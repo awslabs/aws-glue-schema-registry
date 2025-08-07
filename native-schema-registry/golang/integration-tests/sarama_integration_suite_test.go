@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -43,10 +44,15 @@ func (s *SaramaIntegrationSuite) TestSaramaProtobufIntegration() {
 	// Extract the message descriptor using protobuf reflection
 	messageDescriptor := message.ProtoReflect().Descriptor()
 
+	gsrConfigAbsolutePath, err := filepath.Abs("./gsr.properties")
+	if err != nil {
+		s.T().Fatal("Failed to get absolute path of gsr.properties")
+	}
 	// Create Protobuf configuration
 	configMap := map[string]interface{}{
 		common.DataFormatTypeKey:            common.DataFormatProtobuf,
 		common.ProtobufMessageDescriptorKey: messageDescriptor,
+		common.GSRConfigPathKey:			gsrConfigAbsolutePath,
 	}
 	config := common.NewConfiguration(configMap)
 

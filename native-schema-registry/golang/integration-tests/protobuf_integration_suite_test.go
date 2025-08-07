@@ -45,10 +45,9 @@ func (s *ProtobufIntegrationSuite) TestProtobufKafkaIntegration() {
 		common.DataFormatTypeKey:            common.DataFormatProtobuf,
 		common.ProtobufMessageDescriptorKey: messageDescriptor,
 	}
-	config := common.NewConfiguration(configMap)
 
 	// Run the integration test with validation and configuration
-	s.runKafkaIntegrationTest(message, s.validateProtobufMessage, config)
+	s.runKafkaIntegrationTest(message, s.validateProtobufMessage, configMap)
 
 	s.T().Log("--- Protobuf Kafka Integration Test Complete ---")
 }

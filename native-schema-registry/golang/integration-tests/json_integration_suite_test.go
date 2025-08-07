@@ -102,10 +102,9 @@ func (s *JsonIntegrationSuite) TestJsonKafkaIntegration() {
 	configMap := map[string]interface{}{
 		common.DataFormatTypeKey: common.DataFormatJSON,
 	}
-	config := common.NewConfiguration(configMap)
 
 	// Run the integration test with validation and configuration
-	s.runKafkaIntegrationTest(jsonDataWithSchema, s.validateJsonMessage, config)
+	s.runKafkaIntegrationTest(jsonDataWithSchema, s.validateJsonMessage, configMap)
 
 	s.T().Log("--- JSON Schema Kafka Integration Test Complete ---")
 }
@@ -251,10 +250,9 @@ func (s *JsonIntegrationSuite) TestJsonKafkaIntegrationWithComplexData() {
 	configMap := map[string]interface{}{
 		common.DataFormatTypeKey: common.DataFormatJSON,
 	}
-	config := common.NewConfiguration(configMap)
 
 	// Run the integration test with validation and configuration
-	s.runKafkaIntegrationTest(jsonDataWithSchema, s.validateComplexJsonMessage, config)
+	s.runKafkaIntegrationTest(jsonDataWithSchema, s.validateComplexJsonMessage, configMap)
 
 	s.T().Log("--- JSON Schema Complex Data Integration Test Complete ---")
 }

@@ -15,12 +15,12 @@ type Deserializer struct {
 }
 
 // NewDeserializer creates a new deserializer instance
-func NewDeserializer() (*Deserializer, error) {
+func NewDeserializer(configPath string) (*Deserializer, error) {
 	runtime.LockOSThread()
 	err := createErrorHolder()
 	
 	// Create native deserializer
-	deserializer := GsrSerDe.NewGlue_schema_registry_deserializer(err)
+	deserializer := GsrSerDe.NewGlue_schema_registry_deserializer(configPath,err)
 	
 	if err != nil && err.Swigcptr() != 0 {
 		return nil, extractError("create deserializer", err)

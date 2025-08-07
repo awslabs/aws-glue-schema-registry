@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"fmt"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/segmentio/kafka-go"
@@ -94,8 +95,15 @@ func (s *BaseIntegrationSuite) createDeserializer(config *common.Configuration) 
 func (s *BaseIntegrationSuite) runKafkaIntegrationTest(
 	originalMessage interface{},
 	validate func(original, deserialized interface{}),
-	config *common.Configuration,
+	configMap  map[string]interface{},
 ) {
+
+	gsrConfigAbsolutePath, err := filepath.Abs("./gsr.properties")
+	if err != nil {
+		s.T().Fatal("Failed to get absolute path of gsr.properties")
+	}
+	configMap[common.GSRConfigPathKey] = gsrConfigAbsolutePath 
+	config := common.NewConfiguration(configMap)
 	ctx := context.Background()
 
 	// Step 1: Create Serializer with GSR configuration

@@ -14,7 +14,6 @@
 package common
 
 import (
-	"log"
 	"reflect"
 
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -26,6 +25,7 @@ type Configuration struct {
 	AvroRecordType            AvroRecordType
 	ProtobufMessageDescriptor protoreflect.MessageDescriptor
 	JsonObjectType            reflect.Type
+	GsrConfigPath			  string
 	AdditionalProperties      map[string]interface{}
 }
 
@@ -37,7 +37,6 @@ func NewConfiguration(configs map[string]interface{}) *Configuration {
 		AdditionalProperties: make(map[string]interface{}),
 	}
 	c.buildConfigs(configs)
-	log.Printf("config %#v",c)
 	return c
 }
 
@@ -47,6 +46,14 @@ func (c *Configuration) buildConfigs(configs map[string]interface{}) {
 	c.validateAndSetProtobufMessageDescriptor(configs)
 	c.validateAndSetDataFormat(configs)
 	c.validateAndSetJSONObjectType(configs)
+	c.validateAndSetGsrConfigPath(configs)
+}
+func (c *Configuration) validateAndSetGsrConfigPath(configs map[string]interface{}){
+	if val, ok := configs[GSRConfigPathKey]; ok {
+		if gsrConfigPath, ok := val.(string); ok {
+			c.GsrConfigPath = gsrConfigPath
+		}
+	} 
 }
 
 func (c *Configuration) validateAndSetDataFormat(configs map[string]interface{}) {

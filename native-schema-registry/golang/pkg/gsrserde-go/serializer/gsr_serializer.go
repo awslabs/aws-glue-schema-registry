@@ -40,8 +40,10 @@ func NewSerializer(config *common.Configuration) (*Serializer, error) {
 		return nil, fmt.Errorf("configuration cannot be nil")
 	}
 
+
+	coreSerializer, err := gsrserde.NewSerializer(config.GsrConfigPath)
+
 	// Create core serializer for GSR operations
-	coreSerializer, err := gsrserde.NewSerializer()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create core serializer: %w", err)
 	}
@@ -248,35 +250,17 @@ func (s *Serializer) getSchemaFromData(data interface{}, topic string) (*gsrserd
 		}
 	}
 
-	// Create configuration from schema information
-	configMap := make(map[string]interface{})
 	
-	// Convert schema DataFormat string to DataFormat enum
-	dataFormat, err := stringToDataFormat(schema.DataFormat)
-	if err != nil {
-		return nil, err
-	}
-	
-	configMap[common.DataFormatTypeKey] = dataFormat
-	
-	// Create configuration object
-	config := common.NewConfiguration(configMap)
-	
-	// Get the format serializer to populate schema details
-	formatSerializer, err := s.formatFactory.GetSerializer(config)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get serializer for format %s: %w", schema.DataFormat, err)
-	}
 
 	// Get schema definition from the data
-	definition, err := formatSerializer.GetSchemaDefinition(data)
+	definition, err := s.formatSerializer.GetSchemaDefinition(data)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get schema definition: %w", err)
 	}
 	schema.Definition = definition
 
 	// Set additional schema info
-	if err := formatSerializer.SetAdditionalSchemaInfo(data, schema); err != nil {
+	if err := s.formatSerializer.SetAdditionalSchemaInfo(data, schema); err != nil {
 		return nil, fmt.Errorf("failed to set additional schema info: %w", err)
 	}
 

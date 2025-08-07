@@ -67,10 +67,9 @@ func (s *AvroIntegrationSuite) TestAvroKafkaIntegration() {
 	configMap := map[string]interface{}{
 		common.DataFormatTypeKey: common.DataFormatAvro,
 	}
-	config := common.NewConfiguration(configMap)
 
 	// Run the integration test with validation and configuration
-	s.runKafkaIntegrationTest(avroRecord, s.validateAvroMessage, config)
+	s.runKafkaIntegrationTest(avroRecord, s.validateAvroMessage, configMap)
 
 	s.T().Log("--- AVRO Kafka Integration Test Complete ---")
 }

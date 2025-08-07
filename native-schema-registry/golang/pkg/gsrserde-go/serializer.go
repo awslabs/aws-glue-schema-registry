@@ -15,12 +15,14 @@ type Serializer struct {
 }
 
 // NewSerializer creates a new serializer instance
-func NewSerializer() (*Serializer, error) {
+func NewSerializer(configPath string) (*Serializer, error) {
 	runtime.LockOSThread()
 	err := createErrorHolder()
+
+	var serializer GsrSerDe.Glue_schema_registry_serializer
 	
 	// Create native serializer
-	serializer := GsrSerDe.NewGlue_schema_registry_serializer(err)
+	serializer = GsrSerDe.NewGlue_schema_registry_serializer(configPath,err)
 	
 	if err != nil && err.Swigcptr() != 0 {
 		return nil, extractError("create serializer", err)
