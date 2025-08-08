@@ -22,7 +22,7 @@ services:
       - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
       - ALLOW_PLAINTEXT_LISTENER=yes
 
-  golang-tests:
+  golang-demo:
     build:
       context: ..
       dockerfile: ./GolangDemoGSRKafka/dockerfile

@@ -104,7 +104,7 @@ go run cmd/consumer/main.go \
 
 ### GSR Integration Pattern
 
-The demo follows the same pattern as the integration tests:
+Example usage
 
 ```go
 // Get message descriptor via reflection

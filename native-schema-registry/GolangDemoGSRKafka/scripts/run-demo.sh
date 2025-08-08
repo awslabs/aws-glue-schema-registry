@@ -12,4 +12,4 @@ go run ./cmd/producer/main.go -brokers $KAFKA_BROKER 2>&1  | tee ./logs/producer
 
 go run ./cmd/consumer/main.go -brokers $KAFKA_BROKER 2>&1  | tee ./logs/consumer.log
 
-
+exit

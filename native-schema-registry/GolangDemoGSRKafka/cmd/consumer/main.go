@@ -56,7 +56,7 @@ func main() {
 	}
 
 	// Handle graceful shutdown
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(30 * time.Second))
 	defer cancel()
 
 	// Set up signal handling
