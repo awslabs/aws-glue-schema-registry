@@ -63,9 +63,9 @@ test-integ: setup-dirs generate-protos
 ifdef COVERAGE
 	@echo "Running integration tests with coverage..."
 	cd integration-tests && docker compose up -d 
-	cd integration-tests && go test -v -coverprofile=../$(COVERAGE_DIR)/integration-tests-coverage.out ./... || (docker compose down && exit 1)
+	cd integration-tests && go test -v -coverpkg=../pkg/gsrserde-go/...,../pkg/GsrSerDe/... -coverprofile=../$(COVERAGE_DIR)/integration-tests-coverage.out ./...
 	cd integration-tests && docker compose down
-	go tool cover -html=$(COVERAGE_DIR)/integration-tests-coverage.out -o $(COVERAGE_DIR)/integration-tests-coverage.html
+	cd integration-tests && go tool cover -html=../$(COVERAGE_DIR)/integration-tests-coverage.out -o ../$(COVERAGE_DIR)/integration-tests-coverage.html
 	@echo "Integration test coverage report: $(COVERAGE_DIR)/integration-tests-coverage.html"
 else
 	@echo "Running integration tests..."

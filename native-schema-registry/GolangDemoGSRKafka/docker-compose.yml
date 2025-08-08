@@ -30,8 +30,6 @@ services:
       - kafka
     environment:
       - KAFKA_BROKER=kafka:9092
-      - AWS_REGION=${AWS_REGION:-us-east-1}
-      - COVERAGE=${COVERAGE:-false}
     volumes:
       - ../golang:/app/golang
       - ./logs:/app/GolangDemoGSRKafka/logs
