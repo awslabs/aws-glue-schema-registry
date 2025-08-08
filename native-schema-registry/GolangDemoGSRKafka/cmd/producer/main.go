@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"time"
 
@@ -16,19 +15,26 @@ import (
 	pb "github.com/awslabs/aws-glue-schema-registry/native-schema-registry/GolangDemoGSRKafka/pkg/proto"
 	"github.com/awslabs/aws-glue-schema-registry/native-schema-registry/golang/pkg/gsrserde-go/common"
 	"github.com/awslabs/aws-glue-schema-registry/native-schema-registry/golang/pkg/gsrserde-go/serializer"
+
+	_ "embed"
 )
 
+//go:embed data/orders.json
+var ordersData []byte
+
+//go:embed data/users.json
+var usersData []byte
 func main() {
 	// Command line arguments
 	var (
 		brokers    = flag.String("brokers", "localhost:9092", "Kafka brokers (comma-separated)")
 		userTopic  = flag.String("user-topic", "user-events", "Topic for user messages")
 		orderTopic = flag.String("order-topic", "order-events", "Topic for order messages")
-		awsRegion  = flag.String("aws-region", "us-east-1", "AWS region for GSR")
+		configPath = flag.String("config", "./gsr.properties", "Path to the config file")
 	)
 	flag.Parse()
 
-	cfg := config.NewConfig(*brokers, *userTopic, *orderTopic, *awsRegion)
+	cfg := config.NewConfig(*brokers, *userTopic, *orderTopic,  *configPath)
 
 	log.Printf("Starting Kafka Producer with GSR...")
 	log.Printf("Kafka Brokers: %v", cfg.Kafka.Brokers)
@@ -72,10 +78,7 @@ func main() {
 
 func processUsers(cfg *config.Config, writer *kafka.Writer) error {
 	// Read user data from JSON file
-	usersData, err := ioutil.ReadFile("data/users.json")
-	if err != nil {
-		return fmt.Errorf("failed to read users.json: %w", err)
-	}
+	
 
 	var users []map[string]interface{}
 	if err := json.Unmarshal(usersData, &users); err != nil {
@@ -90,6 +93,7 @@ func processUsers(cfg *config.Config, writer *kafka.Writer) error {
 	configMap := map[string]interface{}{
 		common.DataFormatTypeKey:            common.DataFormatProtobuf,
 		common.ProtobufMessageDescriptorKey: messageDescriptor,
+		common.GSRConfigPathKey: 			cfg.AWS.ConfigPath,
 	}
 	config := common.NewConfiguration(configMap)
 
@@ -146,11 +150,6 @@ func processUsers(cfg *config.Config, writer *kafka.Writer) error {
 }
 
 func processOrders(cfg *config.Config, writer *kafka.Writer) error {
-	// Read order data from JSON file
-	ordersData, err := ioutil.ReadFile("data/orders.json")
-	if err != nil {
-		return fmt.Errorf("failed to read orders.json: %w", err)
-	}
 
 	var orders []map[string]interface{}
 	if err := json.Unmarshal(ordersData, &orders); err != nil {
@@ -165,6 +164,7 @@ func processOrders(cfg *config.Config, writer *kafka.Writer) error {
 	configMap := map[string]interface{}{
 		common.DataFormatTypeKey:            common.DataFormatProtobuf,
 		common.ProtobufMessageDescriptorKey: messageDescriptor,
+		common.GSRConfigPathKey: 			cfg.AWS.ConfigPath,
 	}
 	config := common.NewConfiguration(configMap)
 

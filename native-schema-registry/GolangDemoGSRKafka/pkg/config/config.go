@@ -17,9 +17,10 @@ type KafkaConfig struct {
 
 type AWSConfig struct {
 	Region string
+	ConfigPath string
 }
 
-func NewConfig(brokers, userTopic, orderTopic, awsRegion string) *Config {
+func NewConfig(brokers, userTopic, orderTopic,  configPath string) *Config {
 	return &Config{
 		Kafka: KafkaConfig{
 			Brokers:    parseBrokers(brokers),
@@ -27,7 +28,7 @@ func NewConfig(brokers, userTopic, orderTopic, awsRegion string) *Config {
 			OrderTopic: orderTopic,
 		},
 		AWS: AWSConfig{
-			Region: awsRegion,
+			ConfigPath: configPath,
 		},
 	}
 }

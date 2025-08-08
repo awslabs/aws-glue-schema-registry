@@ -75,7 +75,7 @@ go run cmd/consumer/main.go \
 - `-brokers`: Kafka brokers (comma-separated) - default: `localhost:9092`
 - `-user-topic`: Topic for user messages - default: `user-events`
 - `-order-topic`: Topic for order messages - default: `order-events`
-- `-aws-region`: AWS region for GSR - default: `us-east-1`
+- `config`: path to the gsr serde config file - default `./gsr.properties`
 
 ### Consumer
 
@@ -84,7 +84,7 @@ go run cmd/consumer/main.go \
 - `-order-topic`: Topic for order messages - default: `order-events`
 - `-topics`: Topics to consume (comma-separated) - default: `user-events,order-events`
 - `-group-id`: Consumer group ID - default: `gsr-demo-consumer`
-- `-aws-region`: AWS region for GSR - default: `us-east-1`
+- `config`: path to the gsr serde config file - default `./gsr.properties`
 
 ## How It Works
 
@@ -162,6 +162,10 @@ Ensure you have:
 4. Add serialization/deserialization logic in producer/consumer
 5. Create corresponding JSON data file
 
-### Testing
+# Dockerized Demo
 
-The implementation follows the same patterns as the integration tests in `../golang/integration-tests/`. Reference those tests for validation and troubleshooting.
+If you do not have golang set up locally we have a docerized environment.
+
+You can run it through
+
+`docker compose up --build --force-recreate`

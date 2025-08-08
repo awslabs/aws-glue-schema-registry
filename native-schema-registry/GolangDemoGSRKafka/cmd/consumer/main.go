@@ -26,13 +26,13 @@ func main() {
 		brokers    = flag.String("brokers", "localhost:9092", "Kafka brokers (comma-separated)")
 		userTopic  = flag.String("user-topic", "user-events", "Topic for user messages")
 		orderTopic = flag.String("order-topic", "order-events", "Topic for order messages")
-		awsRegion  = flag.String("aws-region", "us-east-1", "AWS region for GSR")
 		groupID    = flag.String("group-id", "gsr-demo-consumer", "Consumer group ID")
 		topics     = flag.String("topics", "user-events,order-events", "Topics to consume (comma-separated)")
+		configPath = flag.String("config", "./gsr.properties", "Path to the config file")
 	)
 	flag.Parse()
 
-	cfg := config.NewConfig(*brokers, *userTopic, *orderTopic, *awsRegion)
+	cfg := config.NewConfig(*brokers, *userTopic, *orderTopic, *configPath)
 
 	log.Printf("Starting Kafka Consumer with GSR...")
 	log.Printf("Kafka Brokers: %v", cfg.Kafka.Brokers)
@@ -70,12 +70,12 @@ func main() {
 		go func(topicName string, r *kafka.Reader) {
 			defer r.Close()
 
-			userDeserializer, err := createUserDeserializer()
+			userDeserializer, err := createUserDeserializer(cfg.AWS.ConfigPath)
 			if err != nil {
 				log.Fatalf("Failed to create user deserializer: %v", err)
 			}
 
-			orderDeserializer, err := createOrderDeserializer()
+			orderDeserializer, err := createOrderDeserializer(cfg.AWS.ConfigPath)
 			if err != nil {
 				log.Fatalf("Failed to create order deserializer: %v", err)
 			}
@@ -131,15 +131,17 @@ func main() {
 }
 
 // createUserDeserializer creates a GSR deserializer for User messages
-func createUserDeserializer() (*deserializer.Deserializer, error) {
+func createUserDeserializer(gsrConfigAbsolutePath string) (*deserializer.Deserializer, error) {
 	// Create a sample User message to get the message descriptor
 	sampleUser := &pb.User{}
 	messageDescriptor := sampleUser.ProtoReflect().Descriptor()
+
 
 	// Create Protobuf configuration (same as integration test)
 	configMap := map[string]interface{}{
 		common.DataFormatTypeKey:            common.DataFormatProtobuf,
 		common.ProtobufMessageDescriptorKey: messageDescriptor,
+		common.GSRConfigPathKey: 			gsrConfigAbsolutePath, 
 	}
 	config := common.NewConfiguration(configMap)
 
@@ -153,7 +155,7 @@ func createUserDeserializer() (*deserializer.Deserializer, error) {
 }
 
 // createOrderDeserializer creates a GSR deserializer for Order messages
-func createOrderDeserializer() (*deserializer.Deserializer, error) {
+func createOrderDeserializer(gsrConfigAbsolutePath string) (*deserializer.Deserializer, error) {
 	// Create a sample Order message to get the message descriptor
 	sampleOrder := &pb.Order{}
 	messageDescriptor := sampleOrder.ProtoReflect().Descriptor()
@@ -162,6 +164,7 @@ func createOrderDeserializer() (*deserializer.Deserializer, error) {
 	configMap := map[string]interface{}{
 		common.DataFormatTypeKey:            common.DataFormatProtobuf,
 		common.ProtobufMessageDescriptorKey: messageDescriptor,
+		common.GSRConfigPathKey: 			gsrConfigAbsolutePath, 
 	}
 	config := common.NewConfiguration(configMap)
 

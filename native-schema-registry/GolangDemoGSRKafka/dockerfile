@@ -1,0 +1,21 @@
+FROM golang:1.20.14-bookworm
+
+# Set Go environment
+ENV GOPATH=/go
+ENV PATH=$GOPATH/bin:/usr/local/go/bin:$PATH
+ENV CGO_ENABLED=1
+ENV GOPROXY=direct
+ENV GOSUMDB=sum.golang.org
+
+# Copy the entire GolangDemoGSRKafka directory (since context is parent dir)
+COPY ./GolangDemoGSRKafka /app/GolangDemoGSRKafka
+
+# Set working directory
+WORKDIR /app/GolangDemoGSRKafka
+
+# Now we can access and modify the script
+RUN chmod +x ./scripts/run-demo.sh
+RUN cp ./scripts/run-demo.sh /usr/local/bin/run-demo.sh
+
+# Default command
+CMD ["run-demo.sh"]
