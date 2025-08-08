@@ -118,9 +118,13 @@ func main() {
 
 	log.Println("Consumer started. Press Ctrl+C to stop...")
 
-	// Wait for interrupt signal
-	<-sigChan
-	log.Println("Received interrupt signal, shutting down...")
+	// Wait for either signal or timeout
+	select {
+	case <-sigChan:
+		log.Println("Received interrupt signal, shutting down...")
+	case <-ctx.Done():
+		log.Println("Timeout reached, shutting down...")
+	}
 
 	// Cancel context to stop all consumers
 	cancel()
