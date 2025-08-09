@@ -7,6 +7,7 @@ echo "Go version: $(go version)"
 # Run tests (protobuf files already generated and copied during image build)
 cd /app/GolangDemoGSRKafka
 
+echo $KAFKA_BROKER
 
 go run ./cmd/producer/main.go -brokers $KAFKA_BROKER 2>&1  | tee ./logs/producer.log
 

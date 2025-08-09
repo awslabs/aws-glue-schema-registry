@@ -9,6 +9,7 @@ ENV GOSUMDB=sum.golang.org
 
 # Copy the entire GolangDemoGSRKafka directory (since context is parent dir)
 COPY ./GolangDemoGSRKafka /app/GolangDemoGSRKafka
+COPY ./golang /app/golang
 
 # Set working directory
 WORKDIR /app/GolangDemoGSRKafka

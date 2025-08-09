@@ -55,7 +55,7 @@ go run cmd/producer/main.go \
 ```
 
 ### 3. Run the Consumer
-
+The consumer for this demo has a short timeout. Can be adjusted in the consumer main.go file.
 ```bash
 # Using defaults
 go run cmd/consumer/main.go
@@ -133,7 +133,7 @@ The demo expects JSON data files in the `data/` directory:
 
 Ensure you have:
 
-1. AWS credentials configured (via AWS CLI, environment variables, or IAM roles)
+1. AWS credentials configured (via AWS CLI, environment variables)
 2. AWS Glue Schema Registry set up in your region
 3. Appropriate permissions to read/write schemas
 
@@ -143,7 +143,7 @@ Ensure you have:
 
 1. **Import errors**: Run `go mod tidy` to resolve dependencies
 2. **Protobuf generation**: Ensure `protoc` is installed and in PATH
-3. **AWS permissions**: Check GSR permissions in AWS console
+3. **AWS permissions**: Check GSR permissions in AWS console. Additionally confirm that permissions are in either environment variables or in the `~/.aws/` directory
 4. **Kafka connectivity**: Verify Kafka is running and accessible
 
 ### Debugging
@@ -168,4 +168,9 @@ If you do not have golang set up locally we have a docerized environment.
 
 You can run it through
 
-`docker compose up --build --force-recreate`
+`docker compose up --build --force-recreate --abort-on-container-exit`
+
+example.env is where you can put values for variables you want available in the docker environment.
+
+This beta version does not have the capacity to work with instance credential providers that come default with EC2. But has confirmed to work with aws cli credential files in `~/.aws/` and with environment variables for credentials.
+

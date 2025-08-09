@@ -28,11 +28,10 @@ services:
       dockerfile: ./GolangDemoGSRKafka/dockerfile
     depends_on:
       - kafka
-    environment:
-      - KAFKA_BROKER=kafka:9092
     volumes:
-      - ../golang:/app/golang
       - ./logs:/app/GolangDemoGSRKafka/logs
       - ~/.aws:/root/.aws:ro
     networks:
       - default
+    env_file:
+      - example.env
