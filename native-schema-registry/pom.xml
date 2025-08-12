@@ -151,6 +151,8 @@
                                     -H:CLibraryPath=${project.basedir}/c/build/src
                                     -H:ResourceConfigurationFiles=${project.basedir}/src/main/resources/resource-config.json
                                     -H:Name=libnativeschemaregistry.so
+                                    --enable-url-protocols=http,https
+                                    --enable-all-security-services
                                 </buildArgs>
                             </buildArgs>
                         </configuration>
