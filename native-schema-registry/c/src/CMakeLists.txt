@@ -39,6 +39,7 @@ add_custom_command(
         TARGET ${DATA_TYPES_MODULE_NAME}
         POST_BUILD
         COMMENT "copying data types for maven project build"
+        COMMENT "copying data types for maven project build"
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${DATA_TYPES_MODULE_NAME}> ${LIB_NATIVE_SCHEMA_REGISTRY_PATH}/
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_LINKER_FILE:${DATA_TYPES_MODULE_NAME}> ${LIB_NATIVE_SCHEMA_REGISTRY_PATH}/
         COMMENT "building maven project, native image target for ${BUILD_TARGET}"
@@ -65,6 +66,10 @@ endif()
 
 #Add reference to the GraalVM generated Native schema registry module.
 #First, fix the include path in GraalVM generated header file.
+execute_process(
+        COMMAND sed -ie "s/<graal_isolate.h>/\"graal_isolate.h\"/" ${LIB_NATIVE_SCHEMA_REGISTRY_PATH}/libnativeschemaregistry.h
+        COMMENT "fixed include path in GraalVM generated header file"
+)
 execute_process(
         COMMAND sed -ie "s/<graal_isolate.h>/\"graal_isolate.h\"/" ${LIB_NATIVE_SCHEMA_REGISTRY_PATH}/libnativeschemaregistry.h
         COMMENT "fixed include path in GraalVM generated header file"
