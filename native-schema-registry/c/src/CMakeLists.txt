@@ -4,7 +4,7 @@ include(cmake/FetchAwsCommon.cmake)
 if (CMAKE_SYSTEM_NAME MATCHES "^(Linux)$")
         list(APPEND TEST_COVERAGE "-ftest-coverage -fprofile-arcs")
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${TEST_COVERAGE} -g -O0 -Wall")
-        set(CMAKE_C_CLANG_TIDY clang-tidy -checks=-*,readability-*)
+        set(CMAKE_C_CLANG_TIDY clang-tidy -checks=-*,readability-*,-readability-math-missing-parentheses)
         set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lgcov")
 endif()
 
@@ -30,13 +30,19 @@ set_target_properties(${DATA_TYPES_MODULE_NAME} PROPERTIES
 add_custom_command(
         TARGET ${DATA_TYPES_MODULE_NAME}
         POST_BUILD
+        COMMENT "copying data types for maven project build"
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${DATA_TYPES_MODULE_NAME}> ${LIB_NATIVE_SCHEMA_REGISTRY_PATH}/
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_LINKER_FILE:${DATA_TYPES_MODULE_NAME}> ${LIB_NATIVE_SCHEMA_REGISTRY_PATH}/
+        COMMENT "building maven project, native image target"
+        COMMAND mvn clean install -P native-image WORKING_DIRECTORY ${MAVEN_PROJECT_DIR}/..
 )
 
 #Add reference to the GraalVM generated Native schema registry module.
 #First, fix the include path in GraalVM generated header file.
-execute_process(COMMAND sed -ie "s/<graal_isolate.h>/\"graal_isolate.h\"/" ${LIB_NATIVE_SCHEMA_REGISTRY_PATH}/libnativeschemaregistry.h)
+execute_process(
+        COMMAND sed -ie "s/<graal_isolate.h>/\"graal_isolate.h\"/" ${LIB_NATIVE_SCHEMA_REGISTRY_PATH}/libnativeschemaregistry.h
+        COMMENT "fixed include path in GraalVM generated header file"
+)
 add_library(
         ${NATIVE_SCHEMA_REGISTRY_MODULE_NAME} SHARED
         IMPORTED
