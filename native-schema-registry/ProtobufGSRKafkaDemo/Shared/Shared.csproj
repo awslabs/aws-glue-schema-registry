@@ -14,9 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="AWSGsrSerDe">
-      <HintPath>../../csharp/AWSGsrSerDe/AWSGsrSerDe/bin/Release/net8.0/AWSGsrSerDe.dll</HintPath>
-    </Reference>
+    <PackageReference Include="AWSGsrSerDe" Version="1.1.10" />
   </ItemGroup>
 
   <ItemGroup>
