@@ -6,6 +6,7 @@
     <RootNamespace>ProtobufGSRKafkaDemo.Consumer</RootNamespace>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <AWSGsrSerDeVersion>1.1.10</AWSGsrSerDeVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -19,7 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="AWSGsrSerDe" Version="1.1.10" />
+    <PackageReference Include="AWSGsrSerDe" Version="$(AWSGsrSerDeVersion)" />
   </ItemGroup>
 
 </Project>
