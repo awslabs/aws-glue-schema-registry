@@ -3,9 +3,10 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net8.0</TargetFramework>
-    <RootNamespace>ProtobufGSRKafkaDemo.Consumer</RootNamespace>
+    <RootNamespace>ProtobufGSRKafkaDemo.Producer</RootNamespace>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <AWSGsrSerDeVersion>1.1.10</AWSGsrSerDeVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -16,6 +17,10 @@
 
   <ItemGroup>
     <ProjectReference Include="../Shared/Shared.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="AWSGsrSerDe" Version="$(AWSGsrSerDeVersion)" />
   </ItemGroup>
 
 </Project>
