@@ -20,6 +20,15 @@ dotnet build .
 dotnet build . --configuration Release
 ```
 
+#### Releasing as a nupkg 
+After the build steps are successful, do the following:
+
+```
+dotnet pack -c Release --no-build
+```
+
+This outputs: ./bin/Release/AWSGsrSerDe.1.1.10.nupkg
+
 #### Running C# tests
 
 ```
