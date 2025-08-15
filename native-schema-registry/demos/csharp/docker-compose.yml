@@ -22,7 +22,7 @@ services:
       - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
       - ALLOW_PLAINTEXT_LISTENER=yes
   demo-csharp-protobuf:
-    image: mcr.microsoft.com/dotnet/sdk:8.0-noble
+    image: mcr.microsoft.com/dotnet/sdk:8.0
     depends_on:
       - kafka
     environment:
@@ -30,7 +30,7 @@ services:
       - AWS_REGION=${AWS_REGION:-us-east-1}
     volumes:
       - ~/.aws:/root/.aws:ro
-      - .:/workplace/ProtobufGSRKafkaDemo
-      - ../csharp:/workplace/csharp
-    working_dir: /workplace/ProtobufGSRKafkaDemo
+      - .:/workplace/demos/csharp
+      - ../../csharp:/workplace/csharp
+    working_dir: /workplace/demos/csharp
     command: ["./run-demo.sh"]
