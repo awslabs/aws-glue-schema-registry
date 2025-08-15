@@ -30,7 +30,7 @@ services:
       - AWS_REGION=${AWS_REGION:-us-east-1}
     volumes:
       - ~/.aws:/root/.aws:ro
-      - .:/workplace/ProtobufGSRKafkaDemo
-      - ../csharp:/workplace/csharp
-    working_dir: /workplace/ProtobufGSRKafkaDemo
+      - .:/workplace/demos/csharp
+      - ../../csharp:/workplace/csharp
+    working_dir: /workplace/demos/csharp
     command: ["./run-demo.sh"]
