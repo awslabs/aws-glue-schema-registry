@@ -27,15 +27,16 @@ set_target_properties(${DATA_TYPES_MODULE_NAME} PROPERTIES
     BUILD_RPATH "$ORIGIN"
     INSTALL_RPATH "$ORIGIN"
 )
-add_custom_command(
-        TARGET ${DATA_TYPES_MODULE_NAME}
-        POST_BUILD
-        COMMENT "copying data types for maven project build"
-        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${DATA_TYPES_MODULE_NAME}> ${LIB_NATIVE_SCHEMA_REGISTRY_PATH}/
-        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_LINKER_FILE:${DATA_TYPES_MODULE_NAME}> ${LIB_NATIVE_SCHEMA_REGISTRY_PATH}/
-        COMMENT "building maven project, native image target"
-        COMMAND mvn clean install -P native-image WORKING_DIRECTORY ${MAVEN_PROJECT_DIR}/..
-)
+# We should revert from this way of compiling Java from C dir because we would be compiling Java in a separate graalvm image for the musl variant of the library
+# add_custom_command(
+#         TARGET ${DATA_TYPES_MODULE_NAME}
+#         POST_BUILD
+#         COMMENT "copying data types for maven project build"
+#         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${DATA_TYPES_MODULE_NAME}> ${LIB_NATIVE_SCHEMA_REGISTRY_PATH}/
+#         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_LINKER_FILE:${DATA_TYPES_MODULE_NAME}> ${LIB_NATIVE_SCHEMA_REGISTRY_PATH}/
+#         COMMENT "building maven project, native image target"
+#         COMMAND mvn clean install -P native-image WORKING_DIRECTORY ${MAVEN_PROJECT_DIR}/..
+# )
 
 #Add reference to the GraalVM generated Native schema registry module.
 #First, fix the include path in GraalVM generated header file.

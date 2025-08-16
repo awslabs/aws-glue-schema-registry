@@ -30,7 +30,7 @@
     <parent>
         <groupId>software.amazon.glue</groupId>
         <artifactId>schema-registry-parent</artifactId>
-        <version>1.1.10</version>
+        <version>1.1.24</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -151,6 +151,42 @@
                                     -H:CLibraryPath=${project.basedir}/c/build/src
                                     -H:ResourceConfigurationFiles=${project.basedir}/src/main/resources/resource-config.json
                                     -H:Name=libnativeschemaregistry.so
+                                    --enable-url-protocols=http
+                                </buildArgs>
+                            </buildArgs>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>native-image-musl</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.graalvm.nativeimage</groupId>
+                        <artifactId>native-image-maven-plugin</artifactId>
+                        <version>${graalvm.version}</version>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>native-image</goal>
+                                </goals>
+                                <phase>package</phase>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <imageName>libnativeschemaregistry</imageName>
+                            <buildArgs combine.children="append">
+                                <buildArgs>
+                                    --verbose
+                                    --no-fallback
+                                    --shared
+                                    -g
+                                    -H:CLibraryPath=${project.basedir}/c/build/src
+                                    -H:ResourceConfigurationFiles=${project.basedir}/src/main/resources/resource-config.json
+                                    -H:Name=libnativeschemaregistry.so
+                                    --libc=musl
                                     --enable-url-protocols=http
                                 </buildArgs>
                             </buildArgs>
