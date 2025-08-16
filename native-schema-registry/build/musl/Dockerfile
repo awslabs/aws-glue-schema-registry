@@ -29,7 +29,9 @@ RUN microdnf install -y dnf dnf-plugins-core && \
 # Build core Java library
 RUN mvn -U clean install -Dcheckstyle.skip=true -DskipTests
 RUN pwd
-# Build  C native libraries
+
+# TODO: remove this workaround when we have a straightforward way to build java first and then c
+# Build  C native libraries - just for java build to work as there is a dependency on c headers
 WORKDIR /tmp/native-schema-registry/c
 RUN cmake -S . -B build \
   -DCMAKE_C_COMPILER=x86_64-linux-musl-gcc \
