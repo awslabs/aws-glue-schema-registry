@@ -13,13 +13,11 @@ type KafkaDeserializer = deserializer.Deserializer
 type KafkaSerializer = serializer.Serializer
 
 // NewKafkaDeserializer creates a new Kafka deserializer instance
-// This is a convenience function that mirrors the C# implementation structure
 func NewKafkaDeserializer(config *common.Configuration) (*KafkaDeserializer, error) {
 	return deserializer.NewDeserializer(config)
 }
 
 // NewKafkaSerializer creates a new Kafka serializer instance
-// This is a convenience function that mirrors the C# implementation structure
 func NewKafkaSerializer(config *common.Configuration) (*KafkaSerializer, error) {
 	return serializer.NewSerializer(config)
 }

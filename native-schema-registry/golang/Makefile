@@ -3,13 +3,13 @@ BUILD_DIR := build
 COVERAGE_DIR := $(BUILD_DIR)/coverage
 PKG_DIR := $(BUILD_DIR)/pkg
 
+
 # Proto generation variables
 PROTO_SRC_DIR := ../shared/test/protos
 PROTO_OUT_DIR := integration-tests/testpb
 GO_MODULE_PATH := github.com/awslabs/aws-glue-schema-registry/native-schema-registry/golang
 GO_MODULE_PREFIX := github.com/awslabs/aws-glue-schema-registry/native-schema-registry/golang/integration-tests/testpb
 PACKAGE_PREFIX_TO_TRIM := com.amazonaws.services.schemaregistry.tests.protobuf
-
 # Default target
 .PHONY: all
 all: build
