@@ -48,6 +48,28 @@ public class GlueSchemaRegistrySerializationHandler {
         SerializerInstance.create(glueSchemaRegistryConfiguration);
     }
 
+    @CEntryPoint(name = "initialize_serializer_with_config")
+    public static int initializeSerializerWithConfig(
+        IsolateThread isolateThread,
+        CCharPointer configFilePath,
+        C_GlueSchemaRegistryErrorPointerHolder errorPointer) {
+        try {
+            if (configFilePath.isNull()) {
+                // Use default configuration when no config file provided
+                initializeSerializer(isolateThread);
+                return 0;
+            }
+            String filePath = CTypeConversion.toJavaString(configFilePath);
+            Map<String, String> configs = ConfigurationFileReader.loadConfigFromFile(filePath);
+            GlueSchemaRegistryConfiguration configuration = new GlueSchemaRegistryConfiguration(configs);
+            SerializerInstance.create(configuration);
+            return 0;
+        } catch (Exception e) {
+            ExceptionWriter.write(errorPointer, e);
+            return 1; // Error
+        }
+    }
+
     @CEntryPoint(name = "encode_with_schema")
     public static C_MutableByteArray encodeWithSchema(
         IsolateThread isolateThread,
