@@ -94,8 +94,8 @@ public class SchemaByDefinitionFetcher {
             } else {
                 String msg =
                     String.format(
-                        "Exception occurred while fetching or registering schema definition = %s, schema name = %s ",
-                        schemaDefinition, schemaName);
+                        "Exception occurred while fetching or registering schema definition = %s, schema name = %s. Error: %s",
+                        schemaDefinition, schemaName, exceptionCauseMessage);
                 throw new AWSSchemaRegistryException(msg, schemaRegistryException);
             }
             schemaDefinitionToVersionCache.put(schema, schemaVersionId);
