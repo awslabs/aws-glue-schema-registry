@@ -96,3 +96,6 @@ GlueSchemaRegistryKafkaSerializer/GlueSchemaRegistryKafkaDeserializer.
 
 ## Release 1.1.24
 * Upgraded square-wireschema version to fix vulnerabilities
+
+## Release 1.1.25
+* Upgraded aws-sdk version to fix vulnerabilities
