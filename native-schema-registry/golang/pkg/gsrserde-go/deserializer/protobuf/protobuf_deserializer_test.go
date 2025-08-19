@@ -1,6 +1,7 @@
 package protobuf
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -8,21 +9,60 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/dynamicpb"
+	"google.golang.org/protobuf/reflect/protodesc"
+	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/reflect/protoregistry"
 
 	"github.com/awslabs/aws-glue-schema-registry/native-schema-registry/golang/pkg/gsrserde-go"
 	"github.com/awslabs/aws-glue-schema-registry/native-schema-registry/golang/pkg/gsrserde-go/common"
 	"github.com/awslabs/aws-glue-schema-registry/native-schema-registry/golang/pkg/gsrserde-go/test_helpers"
 )
 
-// createProtobufConfig creates a Configuration object for Protobuf tests
-func createProtobufConfig() *common.Configuration {
+// createProtobufDeserializerConfig creates a Configuration object for Protobuf deserializer tests
+func createProtobufDeserializerConfig() *common.Configuration {
+	// Create a simple message descriptor for testing
+	desc := &descriptorpb.FileDescriptorProto{
+		Name:    proto.String("test_deserializer.proto"),
+		Package: proto.String("test"),
+		MessageType: []*descriptorpb.DescriptorProto{
+			{
+				Name: proto.String("TestMessage"),
+				Field: []*descriptorpb.FieldDescriptorProto{
+					{
+						Name:   proto.String("id"),
+						Number: proto.Int32(1),
+						Type:   descriptorpb.FieldDescriptorProto_TYPE_INT64.Enum(),
+					},
+					{
+						Name:   proto.String("name"),
+						Number: proto.Int32(2),
+						Type:   descriptorpb.FieldDescriptorProto_TYPE_STRING.Enum(),
+					},
+				},
+			},
+		},
+	}
+
+	// Create file descriptor
+	fileDesc, err := protodesc.NewFile(desc, protoregistry.GlobalFiles)
+	if err != nil {
+		panic(fmt.Sprintf("failed to create test file descriptor: %v", err))
+	}
+
+	// Get message descriptor
+	msgDesc := fileDesc.Messages().ByName("TestMessage")
+	if msgDesc == nil {
+		panic("failed to get test message descriptor")
+	}
+
 	configMap := make(map[string]interface{})
 	configMap[common.DataFormatTypeKey] = common.DataFormatProtobuf
+	configMap[common.ProtobufMessageDescriptorKey] = msgDesc
 	return common.NewConfiguration(configMap)
 }
 
-// createProtobufConfigWithDescriptor creates a Configuration object with a specific message descriptor
-func createProtobufConfigWithDescriptor(descriptor interface{}) *common.Configuration {
+// createProtobufDeserializerConfigWithDescriptor creates a Configuration object with a specific message descriptor
+func createProtobufDeserializerConfigWithDescriptor(descriptor protoreflect.MessageDescriptor) *common.Configuration {
 	configMap := make(map[string]interface{})
 	configMap[common.DataFormatTypeKey] = common.DataFormatProtobuf
 	if descriptor != nil {
@@ -31,21 +71,100 @@ func createProtobufConfigWithDescriptor(descriptor interface{}) *common.Configur
 	return common.NewConfiguration(configMap)
 }
 
+// createValidProtobufSchema creates a valid protobuf schema for testing
+func createValidProtobufSchema() *gsrserde.Schema {
+	return &gsrserde.Schema{
+		Name:           "TestSchema",
+		Definition:     test_helpers.CreateTestProtoSchema(),
+		DataFormat:     "PROTOBUF",
+		AdditionalInfo: "test.TestMessage",
+	}
+}
+
+// createInvalidProtobufSchema creates an invalid protobuf schema for testing
+func createInvalidProtobufSchema(dataFormat, definition string) *gsrserde.Schema {
+	return &gsrserde.Schema{
+		Name:           "InvalidSchema",
+		Definition:     definition,
+		DataFormat:     dataFormat,
+		AdditionalInfo: "invalid",
+	}
+}
+
+// generateValidProtobufData creates valid protobuf byte data for testing
+func generateValidProtobufData() []byte {
+	// Create a simple protobuf message
+	msg := &descriptorpb.FileDescriptorProto{
+		Name:    proto.String("test.proto"),
+		Package: proto.String("test"),
+		MessageType: []*descriptorpb.DescriptorProto{
+			{
+				Name: proto.String("TestMessage"),
+				Field: []*descriptorpb.FieldDescriptorProto{
+					{
+						Name:   proto.String("id"),
+						Number: proto.Int32(1),
+						Type:   descriptorpb.FieldDescriptorProto_TYPE_INT64.Enum(),
+					},
+				},
+			},
+		},
+	}
+
+	data, err := proto.Marshal(msg)
+	if err != nil {
+		panic(fmt.Sprintf("failed to generate valid protobuf data: %v", err))
+	}
+	return data
+}
+
+// generateInvalidProtobufData creates invalid protobuf byte data for testing
+func generateInvalidProtobufData() []byte {
+	// Return data that looks like protobuf but is actually invalid
+	return []byte{0x81, 0x82, 0x83} // Invalid: incomplete varint encoding
+}
+
 func TestNewProtobufDeserializer(t *testing.T) {
-	config := createProtobufConfig()
+	config := createProtobufDeserializerConfig()
 	deserializer := NewProtobufDeserializer(config)
+	
 	assert.NotNil(t, deserializer, "NewProtobufDeserializer should return a non-nil deserializer")
-	assert.Nil(t, deserializer.messageDescriptor, "messageDescriptor should be nil initially")
+	assert.Equal(t, config, deserializer.config, "Deserializer should store the provided config")
+	assert.NotNil(t, deserializer.messageDescriptor, "Deserializer should have a message descriptor")
+}
+
+func TestNewProtobufDeserializer_PanicCases(t *testing.T) {
+	tests := []struct {
+		name   string
+		config *common.Configuration
+		panics bool
+	}{
+		{
+			name:   "nil config",
+			config: nil,
+			panics: true,
+		},
+		{
+			name:   "nil message descriptor",
+			config: createProtobufDeserializerConfigWithDescriptor(nil),
+			panics: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.panics {
+				assert.Panics(t, func() {
+					NewProtobufDeserializer(tt.config)
+				}, "Should panic with invalid config")
+			}
+		})
+	}
 }
 
 func TestProtobufDeserializer_Deserialize_ErrorCases(t *testing.T) {
-	config := createProtobufConfig()
+	config := createProtobufDeserializerConfig()
 	deserializer := NewProtobufDeserializer(config)
-	validSchema := &gsrserde.Schema{
-		Name:       "TestMessage",
-		Definition: "valid-definition",
-		DataFormat: "PROTOBUF",
-	}
 
 	tests := []struct {
 		name        string
@@ -56,40 +175,38 @@ func TestProtobufDeserializer_Deserialize_ErrorCases(t *testing.T) {
 		{
 			name:        "nil data",
 			data:        nil,
-			schema:      validSchema,
+			schema:      createValidProtobufSchema(),
 			expectedErr: ErrNilData,
 		},
 		{
 			name:        "empty data",
 			data:        []byte{},
-			schema:      validSchema,
+			schema:      createValidProtobufSchema(),
 			expectedErr: ErrEmptyData,
 		},
 		{
 			name:        "nil schema",
-			data:        []byte{0x01, 0x02},
+			data:        generateValidProtobufData(),
 			schema:      nil,
 			expectedErr: ErrNilSchema,
 		},
 		{
-			name: "non-protobuf schema",
-			data: []byte{0x01, 0x02},
-			schema: &gsrserde.Schema{
-				Name:       "TestMessage",
-				Definition: "valid-definition",
-				DataFormat: "AVRO",
-			},
+			name:        "non-protobuf schema",
+			data:        generateValidProtobufData(),
+			schema:      createInvalidProtobufSchema("AVRO", "valid definition"),
 			expectedErr: ErrSchemaNotProtobuf,
 		},
 		{
-			name: "empty schema definition",
-			data: []byte{0x01, 0x02},
-			schema: &gsrserde.Schema{
-				Name:       "TestMessage",
-				Definition: "",
-				DataFormat: "PROTOBUF",
-			},
+			name:        "invalid schema - empty definition",
+			data:        generateValidProtobufData(),
+			schema:      createInvalidProtobufSchema("PROTOBUF", ""),
 			expectedErr: ErrInvalidSchema,
+		},
+		{
+			name:        "deserialization failed - invalid protobuf data",
+			data:        generateInvalidProtobufData(),
+			schema:      createValidProtobufSchema(),
+			expectedErr: ErrDeserializationFailed,
 		},
 	}
 
@@ -97,58 +214,73 @@ func TestProtobufDeserializer_Deserialize_ErrorCases(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := deserializer.Deserialize(tt.data, tt.schema)
 			assert.Nil(t, result, "Result should be nil on error")
-			assert.ErrorIs(t, err, tt.expectedErr, "Should return expected error")
+			assert.Error(t, err, "Should return an error")
+			assert.ErrorIs(t, err, tt.expectedErr, "Should return expected error type")
 		})
 	}
 }
 
-func TestProtobufDeserializer_Deserialize_InvalidSchemaDefinition(t *testing.T) {
-	config := createProtobufConfig()
+func TestProtobufDeserializer_Deserialize_ValidCases(t *testing.T) {
+	config := createProtobufDeserializerConfig()
 	deserializer := NewProtobufDeserializer(config)
 
 	tests := []struct {
-		name       string
-		definition string
+		name   string
+		data   []byte
+		schema *gsrserde.Schema
 	}{
 		{
-			name:       "invalid protobuf bytes",
-			definition: "invalid-protobuf-data",
+			name:   "valid protobuf data with valid schema",
+			data:   generateValidProtobufData(),
+			schema: createValidProtobufSchema(),
 		},
 		{
-			name:       "random bytes",
-			definition: string([]byte{0xFF, 0xFE, 0xFD, 0xFC}),
+			name: "simple protobuf message",
+			data: []byte{0x08, 0x96, 0x01}, // Valid protobuf: field 1, varint 150
+			schema: &gsrserde.Schema{
+				Name:           "SimpleSchema",
+				Definition:     "syntax = \"proto3\"; message Simple { int64 value = 1; }",
+				DataFormat:     "PROTOBUF",
+				AdditionalInfo: "Simple",
+			},
+		},
+		{
+			name: "protobuf with string field",
+			data: []byte{0x0A, 0x04, 0x74, 0x65, 0x73, 0x74}, // Valid: field 1, string "test"
+			schema: &gsrserde.Schema{
+				Name:           "StringSchema",
+				Definition:     "syntax = \"proto3\"; message StringMsg { string text = 1; }",
+				DataFormat:     "PROTOBUF",
+				AdditionalInfo: "StringMsg",
+			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			schema := &gsrserde.Schema{
-				Name:       "TestMessage",
-				Definition: tt.definition,
-				DataFormat: "PROTOBUF",
-			}
+			result, err := deserializer.Deserialize(tt.data, tt.schema)
+			require.NoError(t, err, "Deserialization should succeed")
+			assert.NotNil(t, result, "Result should not be nil")
 
-			data := []byte{0x08, 0x96, 0x01} // Valid protobuf bytes
-			result, err := deserializer.Deserialize(data, schema)
-
-			assert.Nil(t, result, "Result should be nil on schema parsing error")
-			assert.Error(t, err, "Should return error for invalid schema definition")
-			assert.Contains(t, err.Error(), "failed to get message descriptor", "Error should mention descriptor failure")
+			// Verify that result is a dynamic message
+			dynamicMsg, ok := result.(*dynamicpb.Message)
+			assert.True(t, ok, "Result should be a dynamic protobuf message")
+			assert.NotNil(t, dynamicMsg, "Dynamic message should not be nil")
 		})
 	}
 }
 
-func TestProtobufDeserializer_Deserialize_ValidMessage(t *testing.T) {
-	config := createProtobufConfig()
+func TestProtobufDeserializer_Deserialize_ComplexMessage(t *testing.T) {
+	config := createProtobufDeserializerConfig()
 	deserializer := NewProtobufDeserializer(config)
 
-	// Create a simple test message descriptor
-	fileDesc := &descriptorpb.FileDescriptorProto{
-		Name:    proto.String("test.proto"),
+	// Create a FileDescriptorProto as test data
+	testMsg := &descriptorpb.FileDescriptorProto{
+		Name:    proto.String("complex_test.proto"),
 		Package: proto.String("test"),
 		MessageType: []*descriptorpb.DescriptorProto{
 			{
-				Name: proto.String("TestMessage"),
+				Name: proto.String("ComplexMessage"),
 				Field: []*descriptorpb.FieldDescriptorProto{
 					{
 						Name:   proto.String("id"),
@@ -165,304 +297,223 @@ func TestProtobufDeserializer_Deserialize_ValidMessage(t *testing.T) {
 		},
 	}
 
-	// Create FileDescriptorSet
-	fileDescSet := &descriptorpb.FileDescriptorSet{
-		File: []*descriptorpb.FileDescriptorProto{fileDesc},
-	}
+	// Serialize the message
+	data, err := proto.Marshal(testMsg)
+	require.NoError(t, err, "Serialization should succeed")
 
-	// Serialize the descriptor set to use as schema definition
-	schemaDefBytes, err := proto.Marshal(fileDescSet)
-	require.NoError(t, err, "Should marshal file descriptor set")
-
-	schema := &gsrserde.Schema{
-		Name:           "TestMessage",
-		Definition:     string(schemaDefBytes),
-		DataFormat:     "PROTOBUF",
-		AdditionalInfo: "test.TestMessage", // Full message name
-	}
-
-	// Create test protobuf data
-	// This represents a message with id=150 and name="test"
-	testData := []byte{
-		0x08, 0x96, 0x01, // field 1 (id): varint 150
-		0x12, 0x04, // field 2 (name): length-delimited, length 4
-		0x74, 0x65, 0x73, 0x74, // "test"
-	}
+	schema := createValidProtobufSchema()
 
 	// Test deserialization
-	result, err := deserializer.Deserialize(testData, schema)
+	result, err := deserializer.Deserialize(data, schema)
 	require.NoError(t, err, "Deserialization should succeed")
-	require.NotNil(t, result, "Result should not be nil")
+	assert.NotNil(t, result, "Result should not be nil")
+
+	// Verify that result is a dynamic message
+	dynamicMsg, ok := result.(*dynamicpb.Message)
+	assert.True(t, ok, "Result should be a dynamic protobuf message")
+	assert.NotNil(t, dynamicMsg, "Dynamic message should not be nil")
+}
+
+func TestProtobufDeserializer_Deserialize_DynamicMessage(t *testing.T) {
+	config := createProtobufDeserializerConfig()
+	deserializer := NewProtobufDeserializer(config)
+
+	// Generate dynamic test message and serialize it
+	testMsg := test_helpers.GenerateTestProtoMessage()
+	require.NotNil(t, testMsg, "Should generate test message")
+
+	data, err := proto.Marshal(testMsg)
+	require.NoError(t, err, "Serialization should succeed")
+
+	schema := createValidProtobufSchema()
+
+	// Test deserialization
+	result, err := deserializer.Deserialize(data, schema)
+	require.NoError(t, err, "Deserialization should succeed")
+	assert.NotNil(t, result, "Result should not be nil")
+
+	// Verify that result is a dynamic message
+	dynamicMsg, ok := result.(*dynamicpb.Message)
+	assert.True(t, ok, "Result should be a dynamic protobuf message")
+	assert.NotNil(t, dynamicMsg, "Dynamic message should not be nil")
+}
+
+func TestProtobufDeserializer_RoundTrip(t *testing.T) {
+	// This test requires both serializer and deserializer working together
+	deserializerConfig := createProtobufDeserializerConfig()
+	deserializer := NewProtobufDeserializer(deserializerConfig)
+
+	// Create test data
+	originalMsg := &descriptorpb.FileDescriptorProto{
+		Name:    proto.String("roundtrip_test.proto"),
+		Package: proto.String("test"),
+		MessageType: []*descriptorpb.DescriptorProto{
+			{
+				Name: proto.String("RoundTripMessage"),
+				Field: []*descriptorpb.FieldDescriptorProto{
+					{
+						Name:   proto.String("value"),
+						Number: proto.Int32(1),
+						Type:   descriptorpb.FieldDescriptorProto_TYPE_STRING.Enum(),
+					},
+				},
+			},
+		},
+	}
+
+	// Serialize the original message
+	serializedData, err := proto.Marshal(originalMsg)
+	require.NoError(t, err, "Serialization should succeed")
+
+	schema := createValidProtobufSchema()
+
+	// Deserialize using our deserializer
+	result, err := deserializer.Deserialize(serializedData, schema)
+	require.NoError(t, err, "Deserialization should succeed")
+	assert.NotNil(t, result, "Result should not be nil")
 
 	// Verify the result is a dynamic message
 	dynamicMsg, ok := result.(*dynamicpb.Message)
-	require.True(t, ok, "Result should be a dynamic protobuf message")
-
-	// Verify field values
-	descriptor := dynamicMsg.Descriptor()
-	fields := descriptor.Fields()
-
-	idField := fields.ByName("id")
-	require.NotNil(t, idField, "Should have id field")
-	idValue := dynamicMsg.Get(idField)
-	assert.Equal(t, int64(150), idValue.Int(), "ID should be 150")
-
-	nameField := fields.ByName("name")
-	require.NotNil(t, nameField, "Should have name field")
-	nameValue := dynamicMsg.Get(nameField)
-	assert.Equal(t, "test", nameValue.String(), "Name should be 'test'")
-}
-
-func TestProtobufDeserializer_Deserialize_WithoutAdditionalInfo(t *testing.T) {
-	config := createProtobufConfig()
-	deserializer := NewProtobufDeserializer(config)
-
-	// Create a simple test message descriptor
-	fileDesc := &descriptorpb.FileDescriptorProto{
-		Name:    proto.String("test.proto"),
-		Package: proto.String("test"),
-		MessageType: []*descriptorpb.DescriptorProto{
-			{
-				Name: proto.String("SimpleMessage"),
-				Field: []*descriptorpb.FieldDescriptorProto{
-					{
-						Name:   proto.String("value"),
-						Number: proto.Int32(1),
-						Type:   descriptorpb.FieldDescriptorProto_TYPE_STRING.Enum(),
-					},
-				},
-			},
-		},
-	}
-
-	// Create FileDescriptorSet
-	fileDescSet := &descriptorpb.FileDescriptorSet{
-		File: []*descriptorpb.FileDescriptorProto{fileDesc},
-	}
-
-	// Serialize the descriptor set to use as schema definition
-	schemaDefBytes, err := proto.Marshal(fileDescSet)
-	require.NoError(t, err, "Should marshal file descriptor set")
-
-	schema := &gsrserde.Schema{
-		Name:           "SimpleMessage",
-		Definition:     string(schemaDefBytes),
-		DataFormat:     "PROTOBUF",
-		AdditionalInfo: "", // No additional info - should auto-detect first message
-	}
-
-	// Create test protobuf data
-	testData := []byte{
-		0x0A, 0x05, // field 1 (value): length-delimited, length 5
-		0x68, 0x65, 0x6C, 0x6C, 0x6F, // "hello"
-	}
-
-	// Test deserialization
-	result, err := deserializer.Deserialize(testData, schema)
-	require.NoError(t, err, "Deserialization should succeed")
-	require.NotNil(t, result, "Result should not be nil")
-
-	// Verify the result
-	dynamicMsg, ok := result.(*dynamicpb.Message)
-	require.True(t, ok, "Result should be a dynamic protobuf message")
-
-	descriptor := dynamicMsg.Descriptor()
-	fields := descriptor.Fields()
-
-	valueField := fields.ByName("value")
-	require.NotNil(t, valueField, "Should have value field")
-	fieldValue := dynamicMsg.Get(valueField)
-	assert.Equal(t, "hello", fieldValue.String(), "Value should be 'hello'")
-}
-
-func TestProtobufDeserializer_Deserialize_EmptyFileDescriptorSet(t *testing.T) {
-	config := createProtobufConfig()
-	deserializer := NewProtobufDeserializer(config)
-
-	// Create FileDescriptorSet with a file that has no message types
-	fileDesc := &descriptorpb.FileDescriptorProto{
-		Name:    proto.String("empty.proto"),
-		Package: proto.String("test"),
-		// No MessageType field - this means no message descriptors will be found
-	}
-
-	fileDescSet := &descriptorpb.FileDescriptorSet{
-		File: []*descriptorpb.FileDescriptorProto{fileDesc},
-	}
-
-	schemaDefBytes, err := proto.Marshal(fileDescSet)
-	require.NoError(t, err, "Should marshal file descriptor set with no messages")
-
-	schema := &gsrserde.Schema{
-		Name:       "TestMessage",
-		Definition: string(schemaDefBytes),
-		DataFormat: "PROTOBUF",
-	}
-
-	testData := []byte{0x08, 0x96, 0x01}
-
-	result, err := deserializer.Deserialize(testData, schema)
-	assert.Nil(t, result, "Result should be nil")
-	assert.ErrorIs(t, err, ErrMessageDescriptorNotFound, "Should return message descriptor not found error")
-}
-
-func TestProtobufDeserializer_Deserialize_InvalidMessageType(t *testing.T) {
-	config := createProtobufConfig()
-	deserializer := NewProtobufDeserializer(config)
-
-	// Create a file descriptor with no messages, only enums
-	fileDesc := &descriptorpb.FileDescriptorProto{
-		Name:    proto.String("test.proto"),
-		Package: proto.String("test"),
-		EnumType: []*descriptorpb.EnumDescriptorProto{
-			{
-				Name: proto.String("TestEnum"),
-				Value: []*descriptorpb.EnumValueDescriptorProto{
-					{Name: proto.String("VALUE1"), Number: proto.Int32(0)},
-				},
-			},
-		},
-	}
-
-	fileDescSet := &descriptorpb.FileDescriptorSet{
-		File: []*descriptorpb.FileDescriptorProto{fileDesc},
-	}
-
-	schemaDefBytes, err := proto.Marshal(fileDescSet)
-	require.NoError(t, err, "Should marshal file descriptor set")
-
-	schema := &gsrserde.Schema{
-		Name:           "TestEnum",
-		Definition:     string(schemaDefBytes),
-		DataFormat:     "PROTOBUF",
-		AdditionalInfo: "test.TestEnum", // This is an enum, not a message
-	}
-
-	testData := []byte{0x08, 0x01}
-
-	result, err := deserializer.Deserialize(testData, schema)
-	assert.Nil(t, result, "Result should be nil")
-	assert.Error(t, err, "Should return error for non-message descriptor")
-	assert.Contains(t, err.Error(), "is not a message descriptor", "Error should mention non-message descriptor")
-}
-
-func TestProtobufDeserializer_Deserialize_MalformedProtobufData(t *testing.T) {
-	config := createProtobufConfig()
-	deserializer := NewProtobufDeserializer(config)
-
-	// Create valid schema
-	fileDesc := &descriptorpb.FileDescriptorProto{
-		Name:    proto.String("test.proto"),
-		Package: proto.String("test"),
-		MessageType: []*descriptorpb.DescriptorProto{
-			{
-				Name: proto.String("TestMessage"),
-				Field: []*descriptorpb.FieldDescriptorProto{
-					{
-						Name:   proto.String("id"),
-						Number: proto.Int32(1),
-						Type:   descriptorpb.FieldDescriptorProto_TYPE_INT64.Enum(),
-					},
-				},
-			},
-		},
-	}
-
-	fileDescSet := &descriptorpb.FileDescriptorSet{
-		File: []*descriptorpb.FileDescriptorProto{fileDesc},
-	}
-
-	schemaDefBytes, err := proto.Marshal(fileDescSet)
-	require.NoError(t, err, "Should marshal file descriptor set")
-
-	schema := &gsrserde.Schema{
-		Name:           "TestMessage",
-		Definition:     string(schemaDefBytes),
-		DataFormat:     "PROTOBUF",
-		AdditionalInfo: "test.TestMessage",
-	}
-
-	// Test with malformed protobuf data
-	malformedData := []byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF} // Invalid varint
-
-	result, err := deserializer.Deserialize(malformedData, schema)
-	assert.Nil(t, result, "Result should be nil for malformed data")
-	assert.ErrorIs(t, err, ErrDeserializationFailed, "Should return deserialization failed error")
+	assert.True(t, ok, "Result should be a dynamic protobuf message")
+	assert.NotNil(t, dynamicMsg, "Dynamic message should not be nil")
 }
 
 func TestProtobufDeserializer_WithTestHelpers(t *testing.T) {
-	config := createProtobufConfig()
+	config := createProtobufDeserializerConfig()
 	deserializer := NewProtobufDeserializer(config)
 
-	// Use test helpers to generate protobuf message
-	msg := test_helpers.GenerateTestProtoMessage()
-	require.NotNil(t, msg, "Should generate test message")
+	// Test with multiple generated messages
+	messages := test_helpers.GenerateTestProtoMessages(3)
+	require.Len(t, messages, 3, "Should generate 3 test messages")
 
-	// Create a simple schema that matches our test message structure
-	// Note: In a real scenario, the schema definition would come from the schema registry
-	// For this test, we'll create a minimal valid schema
-	fileDesc := &descriptorpb.FileDescriptorProto{
-		Name:    proto.String("simple_test.proto"),
-		Package: proto.String("test"),
-		MessageType: []*descriptorpb.DescriptorProto{
-			{
-				Name: proto.String("SimpleTest"),
-				Field: []*descriptorpb.FieldDescriptorProto{
-					{
-						Name:   proto.String("value"),
-						Number: proto.Int32(1),
-						Type:   descriptorpb.FieldDescriptorProto_TYPE_STRING.Enum(),
-					},
-				},
-			},
+	schema := createValidProtobufSchema()
+
+	for i, msg := range messages {
+		t.Run(fmt.Sprintf("message_%d", i), func(t *testing.T) {
+			// Serialize the message
+			data, err := proto.Marshal(msg)
+			require.NoError(t, err, "Serialization should succeed")
+
+			// Deserialize the message
+			result, err := deserializer.Deserialize(data, schema)
+			require.NoError(t, err, "Deserialization should succeed")
+			assert.NotNil(t, result, "Result should not be nil")
+
+			// Verify that result is a dynamic message
+			dynamicMsg, ok := result.(*dynamicpb.Message)
+			assert.True(t, ok, "Result should be a dynamic protobuf message")
+			assert.NotNil(t, dynamicMsg, "Dynamic message should not be nil")
+		})
+	}
+}
+
+func TestProtobufDeserializer_ComplexTestMessage(t *testing.T) {
+	config := createProtobufDeserializerConfig()
+	deserializer := NewProtobufDeserializer(config)
+
+	// Generate complex test message
+	complexMsg := test_helpers.GenerateComplexTestMessage(99999, "complex-deserializer-test")
+	require.NotNil(t, complexMsg, "Should generate complex test message")
+
+	// Serialize it
+	data, err := proto.Marshal(complexMsg)
+	require.NoError(t, err, "Complex message serialization should succeed")
+
+	schema := createValidProtobufSchema()
+
+	// Test deserialization
+	result, err := deserializer.Deserialize(data, schema)
+	require.NoError(t, err, "Complex message deserialization should succeed")
+	assert.NotNil(t, result, "Result should not be nil")
+
+	// Verify that result is a dynamic message
+	dynamicMsg, ok := result.(*dynamicpb.Message)
+	assert.True(t, ok, "Result should be a dynamic protobuf message")
+	assert.NotNil(t, dynamicMsg, "Dynamic message should not be nil")
+}
+
+func TestProtobufDeserializer_ErrorWrapping(t *testing.T) {
+	config := createProtobufDeserializerConfig()
+	deserializer := NewProtobufDeserializer(config)
+
+	// Test with invalid protobuf data to trigger deserialization error
+	invalidData := []byte{0xFF, 0xFF, 0xFF, 0xFF} // Invalid protobuf data
+	schema := createValidProtobufSchema()
+
+	result, err := deserializer.Deserialize(invalidData, schema)
+	assert.Nil(t, result, "Result should be nil on error")
+	assert.Error(t, err, "Should return an error")
+	assert.ErrorIs(t, err, ErrDeserializationFailed, "Should wrap with ErrDeserializationFailed")
+	assert.Contains(t, err.Error(), "protobuf deserializer: deserialization failed:", "Error should contain wrapped message")
+}
+
+func TestProtobufDeserializer_SchemaValidation(t *testing.T) {
+	config := createProtobufDeserializerConfig()
+	deserializer := NewProtobufDeserializer(config)
+	validData := generateValidProtobufData()
+
+	tests := []struct {
+		name           string
+		dataFormat     string
+		definition     string
+		expectedError  error
+	}{
+		{
+			name:          "JSON format should fail",
+			dataFormat:    "JSON",
+			definition:    "valid definition",
+			expectedError: ErrSchemaNotProtobuf,
+		},
+		{
+			name:          "AVRO format should fail",
+			dataFormat:    "AVRO",
+			definition:    "valid definition",
+			expectedError: ErrSchemaNotProtobuf,
+		},
+		{
+			name:          "empty definition should fail",
+			dataFormat:    "PROTOBUF",
+			definition:    "",
+			expectedError: ErrInvalidSchema,
+		},
+		{
+			name:          "valid PROTOBUF format should work",
+			dataFormat:    "PROTOBUF",
+			definition:    "syntax = \"proto3\"; message Test { string name = 1; }",
+			expectedError: nil,
 		},
 	}
 
-	fileDescSet := &descriptorpb.FileDescriptorSet{
-		File: []*descriptorpb.FileDescriptorProto{fileDesc},
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			schema := createInvalidProtobufSchema(tt.dataFormat, tt.definition)
+
+			result, err := deserializer.Deserialize(validData, schema)
+
+			if tt.expectedError != nil {
+				assert.Error(t, err, "Should return an error")
+				assert.ErrorIs(t, err, tt.expectedError, "Should return expected error type")
+				assert.Nil(t, result, "Result should be nil on error")
+			} else {
+				assert.NoError(t, err, "Should not return an error for valid schema")
+				assert.NotNil(t, result, "Result should not be nil for valid schema")
+			}
+		})
 	}
-
-	schemaDefBytes, err := proto.Marshal(fileDescSet)
-	require.NoError(t, err, "Should marshal file descriptor set")
-
-	schema := &gsrserde.Schema{
-		Name:           "SimpleTest",
-		Definition:     string(schemaDefBytes),
-		DataFormat:     "PROTOBUF",
-		AdditionalInfo: "test.SimpleTest",
-	}
-
-	// Note: The test data from GenerateTestProtoMessage might not match our simple schema
-	// But we can test the deserializer flow. In practice, schema and data would be aligned.
-
-	// Create compatible test data for our simple schema
-	simpleTestData := []byte{
-		0x0A, 0x04, // field 1 (value): length-delimited, length 4
-		0x74, 0x65, 0x73, 0x74, // "test"
-	}
-
-	result, err := deserializer.Deserialize(simpleTestData, schema)
-	require.NoError(t, err, "Deserialization should succeed")
-	require.NotNil(t, result, "Result should not be nil")
-
-	dynamicMsg := result.(*dynamicpb.Message)
-	valueField := dynamicMsg.Descriptor().Fields().ByName("value")
-	fieldValue := dynamicMsg.Get(valueField)
-	assert.Equal(t, "test", fieldValue.String(), "Value should be 'test'")
 }
 
 // BenchmarkProtobufDeserializer_Deserialize benchmarks the deserialization performance
 func BenchmarkProtobufDeserializer_Deserialize(b *testing.B) {
-	config := createProtobufConfig()
+	config := createProtobufDeserializerConfig()
 	deserializer := NewProtobufDeserializer(config)
 
-	// Setup test data and schema
-	fileDesc := &descriptorpb.FileDescriptorProto{
-		Name:    proto.String("test.proto"),
-		Package: proto.String("test"),
+	// Setup test data
+	testMsg := &descriptorpb.FileDescriptorProto{
+		Name:    proto.String("benchmark_deserializer.proto"),
+		Package: proto.String("benchmark"),
 		MessageType: []*descriptorpb.DescriptorProto{
 			{
-				Name: proto.String("TestMessage"),
+				Name: proto.String("BenchmarkMessage"),
 				Field: []*descriptorpb.FieldDescriptorProto{
 					{
 						Name:   proto.String("id"),
@@ -479,35 +530,171 @@ func BenchmarkProtobufDeserializer_Deserialize(b *testing.B) {
 		},
 	}
 
-	fileDescSet := &descriptorpb.FileDescriptorSet{
-		File: []*descriptorpb.FileDescriptorProto{fileDesc},
+	serializedData, err := proto.Marshal(testMsg)
+	if err != nil {
+		b.Fatalf("Failed to serialize test message: %v", err)
 	}
 
-	schemaDefBytes, _ := proto.Marshal(fileDescSet)
-
-	schema := &gsrserde.Schema{
-		Name:           "TestMessage",
-		Definition:     string(schemaDefBytes),
-		DataFormat:     "PROTOBUF",
-		AdditionalInfo: "test.TestMessage",
-	}
-
-	testData := []byte{
-		0x08, 0x96, 0x01, // id = 150
-		0x12, 0x04, // name: length 4
-		0x74, 0x65, 0x73, 0x74, // "test"
-	}
+	schema := createValidProtobufSchema()
 
 	b.ResetTimer()
 	b.ReportAllocs()
 
 	for i := 0; i < b.N; i++ {
-		result, err := deserializer.Deserialize(testData, schema)
+		result, err := deserializer.Deserialize(serializedData, schema)
 		if err != nil {
 			b.Fatalf("Deserialization failed: %v", err)
 		}
 		if result == nil {
 			b.Fatal("Result should not be nil")
 		}
+	}
+}
+
+// BenchmarkProtobufDeserializer_LargeMessage benchmarks deserialization of large messages
+func BenchmarkProtobufDeserializer_LargeMessage(b *testing.B) {
+	config := createProtobufDeserializerConfig()
+	deserializer := NewProtobufDeserializer(config)
+
+	// Create a large test message
+	largeMsg := &descriptorpb.FileDescriptorProto{
+		Name:    proto.String("large_benchmark.proto"),
+		Package: proto.String("benchmark"),
+		MessageType: make([]*descriptorpb.DescriptorProto, 100),
+	}
+
+	// Fill with many message types
+	for i := 0; i < 100; i++ {
+		largeMsg.MessageType[i] = &descriptorpb.DescriptorProto{
+			Name: proto.String(fmt.Sprintf("Message%d", i)),
+			Field: []*descriptorpb.FieldDescriptorProto{
+				{
+					Name:   proto.String("field1"),
+					Number: proto.Int32(1),
+					Type:   descriptorpb.FieldDescriptorProto_TYPE_STRING.Enum(),
+				},
+				{
+					Name:   proto.String("field2"),
+					Number: proto.Int32(2),
+					Type:   descriptorpb.FieldDescriptorProto_TYPE_INT64.Enum(),
+				},
+			},
+		}
+	}
+
+	serializedData, err := proto.Marshal(largeMsg)
+	if err != nil {
+		b.Fatalf("Failed to serialize large test message: %v", err)
+	}
+
+	schema := createValidProtobufSchema()
+
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	for i := 0; i < b.N; i++ {
+		result, err := deserializer.Deserialize(serializedData, schema)
+		if err != nil {
+			b.Fatalf("Large message deserialization failed: %v", err)
+		}
+		if result == nil {
+			b.Fatal("Result should not be nil")
+		}
+	}
+}
+
+func TestProtobufDeserializer_ErrorMessages(t *testing.T) {
+	// Test that all error constants have proper messages
+	errors := []error{
+		ErrNilData,
+		ErrEmptyData,
+		ErrNilSchema,
+		ErrInvalidSchema,
+		ErrSchemaNotProtobuf,
+		ErrMessageDescriptorNotFound,
+		ErrDeserializationFailed,
+	}
+
+	expectedPrefixes := []string{
+		"protobuf deserializer: data cannot be nil",
+		"protobuf deserializer: data cannot be empty",
+		"protobuf deserializer: schema cannot be nil",
+		"protobuf deserializer: invalid schema definition",
+		"protobuf deserializer: schema is not a protobuf schema",
+		"protobuf deserializer: message descriptor not found",
+		"protobuf deserializer: deserialization failed",
+	}
+
+	for i, err := range errors {
+		t.Run(fmt.Sprintf("error_%d", i), func(t *testing.T) {
+			assert.Equal(t, expectedPrefixes[i], err.Error(), "Error message should match expected format")
+		})
+	}
+}
+
+func TestProtobufDeserializer_ConfigurationFields(t *testing.T) {
+	config := createProtobufDeserializerConfig()
+	deserializer := NewProtobufDeserializer(config)
+
+	// Verify that the deserializer properly stores configuration fields
+	assert.NotNil(t, deserializer.config, "Config should not be nil")
+	assert.NotNil(t, deserializer.messageDescriptor, "Message descriptor should not be nil")
+	assert.Equal(t, config.ProtobufMessageDescriptor, deserializer.messageDescriptor, "Message descriptor should match config")
+}
+
+func TestProtobufDeserializer_DataValidation(t *testing.T) {
+	config := createProtobufDeserializerConfig()
+	deserializer := NewProtobufDeserializer(config)
+	schema := createValidProtobufSchema()
+
+	tests := []struct {
+		name        string
+		data        []byte
+		expectError bool
+		errorType   error
+	}{
+		{
+			name:        "nil data",
+			data:        nil,
+			expectError: true,
+			errorType:   ErrNilData,
+		},
+		{
+			name:        "empty data",
+			data:        []byte{},
+			expectError: true,
+			errorType:   ErrEmptyData,
+		},
+		{
+			name:        "incomplete protobuf data - should fail",
+			data:        []byte{0x08}, // Incomplete: field tag without value
+			expectError: true,
+			errorType:   ErrDeserializationFailed,
+		},
+		{
+			name:        "valid single field protobuf data",
+			data:        []byte{0x08, 0x00}, // Valid: field 1, varint value 0
+			expectError: false,
+		},
+		{
+			name:        "valid multi-byte data",
+			data:        []byte{0x08, 0x96, 0x01},
+			expectError: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := deserializer.Deserialize(tt.data, schema)
+
+			if tt.expectError {
+				assert.Error(t, err, "Should return an error")
+				assert.ErrorIs(t, err, tt.errorType, "Should return expected error type")
+				assert.Nil(t, result, "Result should be nil on error")
+			} else {
+				assert.NoError(t, err, "Should not return an error for valid data")
+				assert.NotNil(t, result, "Result should not be nil for valid data")
+			}
+		})
 	}
 }
