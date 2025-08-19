@@ -7,6 +7,7 @@ project(native_schema_registry_c C)
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
+set(MAVEN_PROJECT_DIR "${PROJECT_SOURCE_DIR}/../target")
 ##Global variables
 #Path to GraalVM generated shared library
 set(LIB_NATIVE_SCHEMA_REGISTRY_PATH "${PROJECT_SOURCE_DIR}/../target")
