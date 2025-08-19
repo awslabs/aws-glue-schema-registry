@@ -416,9 +416,10 @@ public class GlueSchemaRegistryKinesisIntegrationTest {
 
             byte[] gsrEncodedBytes = glueSchemaRegistrySerializer.encode(streamName, gsrSchema, serializedBytes);
 
+            String partitionKey = String.valueOf(timestamp.toEpochMilli()) + "-" + i;
             PutRecordRequest putRecordRequest = PutRecordRequest.builder()
                     .streamName(streamName)
-                    .partitionKey(String.valueOf(timestamp.toEpochMilli()))
+                    .partitionKey(partitionKey)
                     .data(SdkBytes.fromByteArray(gsrEncodedBytes))
                     .build();
             shardId = kinesisClient.putRecord(putRecordRequest)
@@ -510,7 +511,8 @@ public class GlueSchemaRegistryKinesisIntegrationTest {
 
             byte[] serializedBytes = dataFormatSerializer.serialize(record);
 
-            putFutures.add(producer.addUserRecord(streamName, Long.toString(timestamp.toEpochMilli()), null,
+            String partitionKey = Long.toString(timestamp.toEpochMilli()) + "-" + i;
+            putFutures.add(producer.addUserRecord(streamName, partitionKey, null,
                                                   ByteBuffer.wrap(serializedBytes),gsrSchema));
         }
 
