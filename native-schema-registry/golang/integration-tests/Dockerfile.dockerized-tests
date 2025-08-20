@@ -1,0 +1,32 @@
+FROM golang:1.20.14-bookworm
+
+
+# Set Go environment
+ENV GOPATH=/go
+ENV PATH=$GOPATH/bin:/usr/local/go/bin:$PATH
+ENV CGO_ENABLED=1
+ENV GOPROXY=direct
+ENV GOSUMDB=sum.golang.org
+
+
+# Create app directory structure
+WORKDIR /app
+
+# Copy only the golang directory
+COPY golang/ ./golang/
+
+# Set up module dependencies - start with parent golang module
+WORKDIR /app/golang
+RUN go mod download
+
+# Now set up integration-tests module
+WORKDIR /app/golang/integration-tests
+RUN go mod download
+
+# Copy and make helper script executable
+RUN chmod +x ./scripts/run-tests-dockerized.sh
+RUN cp ./scripts/run-tests-dockerized.sh /usr/local/bin/run-tests-dockerized.sh
+# Install necessary dependencies for AWS CLI (e.g., unzip)
+
+# Default command
+CMD ["run-tests-dockerized.sh"]
