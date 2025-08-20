@@ -153,8 +153,6 @@ func (d *Deserializer) Close() error {
 		}
 	}
 
-	// No need to clear factory cache since we don't cache instances anymore
-
 	return nil
 }
 

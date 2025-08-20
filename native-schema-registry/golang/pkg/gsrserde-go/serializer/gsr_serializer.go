@@ -90,7 +90,7 @@ func (s *Serializer) Serialize(topic string, data interface{}) ([]byte, error) {
 	}
 
 	// Validate the object before serialization
-	if err := s.formatSerializer.ValidateObject(data); err != nil {
+	if err := s.ValidateData(data); err != nil {
 		return nil, fmt.Errorf("data validation failed: %w", err)
 	}
 
@@ -110,62 +110,6 @@ func (s *Serializer) Serialize(topic string, data interface{}) ([]byte, error) {
 	return encodedData, nil
 }
 
-// SerializeWithSchema serializes a message with an explicit schema
-// This provides more control over the schema used for serialization
-func (s *Serializer) SerializeWithSchema(topic string, data interface{}, schema *gsrserde.Schema) ([]byte, error) {
-	if s.closed {
-		return nil, gsrserde.ErrClosed
-	}
-
-	// Handle nil data case
-	if data == nil {
-		return nil, nil
-	}
-
-	if schema == nil {
-		return nil, gsrserde.ErrNilSchema
-	}
-
-	// Create configuration from schema information
-	configMap := make(map[string]interface{})
-	
-	// Convert schema DataFormat string to DataFormat enum
-	dataFormat, err := stringToDataFormat(schema.DataFormat)
-	if err != nil {
-		return nil, err
-	}
-	
-	configMap[common.DataFormatTypeKey] = dataFormat
-	
-	// Create configuration object
-	config := common.NewConfiguration(configMap)
-	
-	// Get the appropriate format serializer
-	formatSerializer, err := s.formatFactory.GetSerializer(config)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get serializer for format %s: %w", schema.DataFormat, err)
-	}
-
-	// Validate the object before serialization
-	if err := formatSerializer.ValidateObject(data); err != nil {
-		return nil, fmt.Errorf("data validation failed: %w", err)
-	}
-
-	// Serialize the message content
-	serializedData, err := formatSerializer.Serialize(data)
-	if err != nil {
-		return nil, fmt.Errorf("failed to serialize %s data: %w", dataFormat, err)
-	}
-
-	// Wrap with GSR header using transport name (topic)
-	encodedData, err := s.coreSerializer.Encode(serializedData, topic, schema)
-	if err != nil {
-		return nil, fmt.Errorf("failed to encode GSR data: %w", err)
-	}
-
-	return encodedData, nil
-}
-
 // ValidateData validates that the provided data can be serialized
 func (s *Serializer) ValidateData(data interface{}) error {
 	if s.closed {
@@ -176,50 +120,14 @@ func (s *Serializer) ValidateData(data interface{}) error {
 		return gsrserde.ErrNilData
 	}
 
-	// Create schema to determine data format
-	schema, err := s.getSchemaFromData(data, "")
-	if err != nil {
-		return fmt.Errorf("failed to create schema from data: %w", err)
-	}
-
-	// Create configuration from schema information
-	configMap := make(map[string]interface{})
-	
-	// Convert schema DataFormat string to DataFormat enum
-	dataFormat, err := stringToDataFormat(schema.DataFormat)
-	if err != nil {
-		return err
-	}
-	
-	configMap[common.DataFormatTypeKey] = dataFormat
-	
-	// Create configuration object
-	config := common.NewConfiguration(configMap)
-	
 	// Get the appropriate format serializer
-	formatSerializer, err := s.formatFactory.GetSerializer(config)
-	if err != nil {
-		return fmt.Errorf("failed to get serializer for format %s: %w", schema.DataFormat, err)
-	}
+	formatSerializer := s.formatSerializer
 
 	// Validate the object
 	return formatSerializer.ValidateObject(data)
 }
 
-// GetSchemaFromData extracts schema information from the provided data
-func (s *Serializer) GetSchemaFromData(data interface{}) (*gsrserde.Schema, error) {
-	if s.closed {
-		return nil, gsrserde.ErrClosed
-	}
 
-	if data == nil {
-		return nil, gsrserde.ErrNilData
-	}
-
-	return s.getSchemaFromData(data, "")
-}
-
-// getSchemaFromData creates a schema based on the data type
 // This determines the appropriate data format based on the Go type
 func (s *Serializer) getSchemaFromData(data interface{}, topic string) (*gsrserde.Schema, error) {
 	if data == nil {
@@ -249,9 +157,7 @@ func (s *Serializer) getSchemaFromData(data interface{}, topic string) (*gsrserd
 			schema.DataFormat = "JSON"
 		}
 	}
-
 	
-
 	// Get schema definition from the data
 	definition, err := s.formatSerializer.GetSchemaDefinition(data)
 	if err != nil {
@@ -292,8 +198,6 @@ func (s *Serializer) Close() error {
 			return fmt.Errorf("failed to close core serializer: %w", err)
 		}
 	}
-
-	// No need to clear factory cache since we don't cache instances anymore
 
 	return nil
 }

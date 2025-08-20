@@ -60,6 +60,8 @@ func (s *BaseIntegrationSuite) SetupTest() {
 func (s *BaseIntegrationSuite) TearDownTest() {
 	s.T().Log("Starting test teardown...")
 
+	s.gsr_deserializer.Close()
+	s.gsr_serializer.Close()
 	s.gsr_serializer = nil
 	s.gsr_deserializer = nil
 	s.T().Log("✓ Cleared serializer/deserializer references")
