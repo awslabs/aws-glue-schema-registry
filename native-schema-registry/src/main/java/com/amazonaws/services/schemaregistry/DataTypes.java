@@ -9,6 +9,8 @@ import org.graalvm.nativeimage.c.type.CCharPointer;
 import org.graalvm.word.PointerBase;
 
 import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -21,7 +23,6 @@ public class DataTypes {
      */
     static class HandlerDirectives implements CContext.Directives {
 
-        public static final String INCLUDE_PATH = "<ABSOLUTE_PATH>/native-schema-registry/c/include/";
         public static final String LIB_PATH = "";
         //Intentionally blank.
         public static final String PROJECT_NAME = "";
@@ -40,13 +41,20 @@ public class DataTypes {
 
         @Override
         public List<String> getHeaderFiles() {
+            Path dir = Paths.get(System.getProperty("user.dir"));
+
+            // Construct path to c/include directory
+            Path includePath = dir.getParent().resolve("c").resolve("include");
+
+            // Use the include path for header files
+            String includePathStr = includePath.toString() + "/";
             return Stream.of(
                 "glue_schema_registry_schema.h",
                 "read_only_byte_array.h",
                 "mutable_byte_array.h",
                 "glue_schema_registry_error.h"
             )
-                .map(header -> "\"" + INCLUDE_PATH + header + "\"")
+                .map(header -> "\"" + includePathStr + header + "\"")
                 .collect(Collectors.toList());
         }
     }
