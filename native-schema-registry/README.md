@@ -11,6 +11,7 @@ Change `/native-schema-registry/src/main/java/com/amazonaws/services/schemaregis
 ## Build command for multi-lang GSR
 mvn install -P native-image
 Note: If you get any issues due to JAVA_HOME not found, just set it to graalvm java 17 installation path.
+Note: For musl based alpine images, please use the script `./build/musl/build-musl.sh`
 
 
 Usually, the process is as follows:

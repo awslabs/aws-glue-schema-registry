@@ -1,6 +1,8 @@
 #!/bin/bash
 set -euo pipefail
 
+echo "Building native schema registry with musl..."
+
 # Get absolute path three levels up
 HOST_SOURCE_DIR="$(realpath ../../..)"
 SCRIPT_PATH="$(realpath ./build-musl-inner.sh)"
