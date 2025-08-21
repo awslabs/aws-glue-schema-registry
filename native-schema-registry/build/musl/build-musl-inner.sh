@@ -19,10 +19,10 @@ cp libz.a /usr/local/musl/lib/libz.a
 
 # Build Java lib
 cd /workspace
-# First generate protobuf classes and compile main sources
+# First generate protobuf classes
 mvn clean compile -Dcheckstyle.skip=true || true
-# Then install without cleaning (to keep generated protobuf classes) and skip tests
-mvn install -Dcheckstyle.skip=true -DskipTests || true
+# Then build without tests to avoid protobuf compilation issues
+mvn -U clean install -Dcheckstyle.skip=true -DskipTests || true
 
 # Build C lib
 cd /workspace/native-schema-registry/c
@@ -32,4 +32,4 @@ cmake --build . || true
 
 # Build native image
 cd /workspace/native-schema-registry
-mvn clean install -P native-image-musl -DskipTests -Dcheckstyle.skip=true
+mvn install -P native-image-musl -DskipTests -Dcheckstyle.skip=true 

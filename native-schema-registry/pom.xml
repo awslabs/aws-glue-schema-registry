@@ -125,7 +125,7 @@
 
     <profiles>
         <profile>
-            <id>native-image</id>
+            <id>native-image-glibc</id>
             <build>
                 <plugins>
                     <plugin>
@@ -152,6 +152,42 @@
                                     -H:ResourceConfigurationFiles=${project.basedir}/src/main/resources/resource-config.json
                                     -H:Name=libnativeschemaregistry.so
                                     --enable-url-protocols=http
+                                </buildArgs>
+                            </buildArgs>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>native-image-musl</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.graalvm.nativeimage</groupId>
+                        <artifactId>native-image-maven-plugin</artifactId>
+                        <version>${graalvm.version}</version>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>native-image</goal>
+                                </goals>
+                                <phase>package</phase>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <imageName>libnativeschemaregistry</imageName>
+                            <buildArgs combine.children="append">
+                                <buildArgs>
+                                    --verbose
+                                    --no-fallback
+                                    --shared
+                                    -g
+                                    -H:CLibraryPath=${project.basedir}/c/build/src
+                                    -H:ResourceConfigurationFiles=${project.basedir}/src/main/resources/resource-config.json
+                                    -H:Name=libnativeschemaregistry.so
+                                    --enable-url-protocols=http
+                                    --libc=musl
                                 </buildArgs>
                             </buildArgs>
                         </configuration>
