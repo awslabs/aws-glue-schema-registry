@@ -111,10 +111,11 @@ Example usage
 messageDescriptor := message.ProtoReflect().Descriptor()
 
 // Create GSR configuration
-configMap := map[string]interface{}{
-    common.DataFormatTypeKey:            common.DataFormatProtobuf,
-    common.ProtobufMessageDescriptorKey: messageDescriptor,
-}
+	configMap := map[string]interface{}{
+		common.DataFormatTypeKey:            common.DataFormatProtobuf,
+		common.ProtobufMessageDescriptorKey: messageDescriptor,
+		common.GSRConfigPathKey: 			"<Path to GSR config properties file>", 
+	}
 config := common.NewConfiguration(configMap)
 
 // Create serializer/deserializer
