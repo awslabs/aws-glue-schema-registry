@@ -1,0 +1,199 @@
+<!--
+/*
+ * Copyright 2022 Amazon.com, Inc. or its affiliates.
+ * Licensed under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+  -->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>${parent.groupId}</groupId>
+    <artifactId>native-schema-registry</artifactId>
+    <name>Native AWS Schema Registry</name>
+    <description>AWS Glue Schema Registry native shared library wrapper</description>
+    <url>https://aws.amazon.com/glue</url>
+    <version>${parent.version}</version>
+    <packaging>jar</packaging>
+
+    <parent>
+        <groupId>software.amazon.glue</groupId>
+        <artifactId>schema-registry-parent</artifactId>
+        <version>1.1.10</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <scm>
+        <connection>scm:git:https://github.com/aws/aws-glue-schema-registry.git</connection>
+        <developerConnection>scm:git:git@github.com:aws/aws-glue-schema-registry.git</developerConnection>
+        <url>https://github.com/awslabs/aws-glue-schema-registry.git</url>
+    </scm>
+
+    <licenses>
+        <license>
+            <name>Apache License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
+        <maven.shade.plugin.version>3.2.1</maven.shade.plugin.version>
+        <maven.compiler.plugin.version>3.6.1</maven.compiler.plugin.version>
+        <exec-maven-plugin.version>1.6.0</exec-maven-plugin.version>
+        <slf4j.version>1.7.28</slf4j.version>
+        <graalvm.version>21.0.0</graalvm.version>
+        <junit5.version>5.4.2</junit5.version>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>url-connection-client</artifactId>
+        </dependency>
+        
+
+        <dependency>
+            <!-- Optimize this dependency for reducing the shared library size -->
+            <groupId>${parent.groupId}</groupId>
+            <artifactId>schema-registry-serde</artifactId>
+            <version>${parent.version}</version>
+        </dependency>
+
+        <dependency>
+            <!-- TODO: Revisit logging -->
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+
+        <dependency>
+            <!-- TODO: Revisit logging -->
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.graalvm.sdk</groupId>
+            <artifactId>graal-sdk</artifactId>
+            <version>${graalvm.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.graalvm.nativeimage</groupId>
+            <artifactId>svm</artifactId>
+            <version>${graalvm.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- Test Dependencies -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>${junit5.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>${maven.compiler.plugin.version}</version>
+            </plugin>
+        </plugins>
+    </build>
+
+    <profiles>
+        <profile>
+            <id>native-image-glibc</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.graalvm.nativeimage</groupId>
+                        <artifactId>native-image-maven-plugin</artifactId>
+                        <version>${graalvm.version}</version>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>native-image</goal>
+                                </goals>
+                                <phase>package</phase>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <imageName>libnativeschemaregistry</imageName>
+                            <buildArgs combine.children="append">
+                                <buildArgs>
+                                    --verbose
+                                    --no-fallback
+                                    --shared
+                                    -H:CLibraryPath=${project.basedir}/c/build/src
+                                    -H:ResourceConfigurationFiles=${project.basedir}/src/main/resources/resource-config.json
+                                    -H:Name=libnativeschemaregistry.so
+                                    --enable-url-protocols=http
+                                </buildArgs>
+                            </buildArgs>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>native-image-musl</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.graalvm.nativeimage</groupId>
+                        <artifactId>native-image-maven-plugin</artifactId>
+                        <version>${graalvm.version}</version>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>native-image</goal>
+                                </goals>
+                                <phase>package</phase>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <imageName>libnativeschemaregistry</imageName>
+                            <buildArgs combine.children="append">
+                                <buildArgs>
+                                    --verbose
+                                    --no-fallback
+                                    --shared
+                                    -g
+                                    -H:CLibraryPath=${project.basedir}/c/build/src
+                                    -H:ResourceConfigurationFiles=${project.basedir}/src/main/resources/resource-config.json
+                                    -H:Name=libnativeschemaregistry.so
+                                    --enable-url-protocols=http
+                                    --libc=musl
+                                </buildArgs>
+                            </buildArgs>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+</project>
