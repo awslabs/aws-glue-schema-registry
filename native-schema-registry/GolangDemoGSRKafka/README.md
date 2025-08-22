@@ -164,13 +164,11 @@ Ensure you have:
 
 # Dockerized Demo
 
-If you do not have golang set up locally we have a docerized environment.
+If you do not have golang set up locally we have a dockerized environment.
 
 You can run it through
 
 `docker compose up --build --force-recreate --abort-on-container-exit`
 
 example.env is where you can put values for variables you want available in the docker environment.
-
-This beta version does not have the capacity to work with instance credential providers that come default with EC2. But has confirmed to work with aws cli credential files in `~/.aws/` and with environment variables for credentials.
 

@@ -200,6 +200,7 @@ func (p *ProtobufSerializer) GetSchemaDefinition(data interface{}) (string, erro
 // Validate validates serialized protobuf data against a schema definition.
 // This is a basic validation that attempts to unmarshal the data.
 //
+// Currently this is not implemented. Only performs a null check on data.
 // Parameters:
 //
 //	schemaDefinition: The schema definition (currently not used for validation)
@@ -219,20 +220,6 @@ func (p *ProtobufSerializer) Validate(schemaDefinition string, data []byte) erro
 	if len(data) == 0 {
 		return &ProtobufValidationError{
 			Message: "data cannot be empty",
-			Cause:   ErrValidation,
-		}
-	}
-
-	// For now, we perform basic validation by checking if the data
-	// appears to be valid protobuf format. A more sophisticated
-	// implementation would parse the schema definition and validate
-	// against the specific message type.
-
-	// Basic protobuf format validation - check if it starts with valid varint
-	// This is a simplified check and may not catch all invalid protobuf data
-	if data[0] > 0x80 && len(data) < 2 {
-		return &ProtobufValidationError{
-			Message: "invalid protobuf format: incomplete varint",
 			Cause:   ErrValidation,
 		}
 	}
