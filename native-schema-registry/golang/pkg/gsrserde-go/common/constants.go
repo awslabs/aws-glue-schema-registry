@@ -23,8 +23,6 @@ const (
 	ProtobufMessageDescriptorKey = "protobufMessageDescriptor"
 	// JSONObjectTypeKey is the configuration key for JSON object type.
 	JSONObjectTypeKey = "jsonObjectType"
-	// CacheItemExpirationTimeKey is the configuration key for cache item expiration time.
-	CacheItemExpirationTimeKey = "cacheItemExpirationTime"
 	// GSRConfigPathKey is the configuration key for GSR configuration path.
 	GSRConfigPathKey = "gsrConfigPath"
 )
