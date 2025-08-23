@@ -50,7 +50,11 @@ func (s *BaseIntegrationSuite) TearDownSuite() {
 
 // SetupTest is called before each test method
 func (s *BaseIntegrationSuite) SetupTest() {
-	s.topicName = fmt.Sprintf("%s-%s",s.topicPrefix, s.generateTestTopicName()) 
+	if s.topicName != "" {
+		s.T().Logf("Skipping test topic name generation setup for topic: %s", s.topicName)
+	} else {
+		s.topicName = fmt.Sprintf("%s-%s", s.topicPrefix, s.generateTestTopicName())
+	}
 	s.cleanup = s.setupTestInfrastructure()
 
 	s.T().Logf("Test setup complete for topic: %s", s.topicName)
@@ -97,14 +101,14 @@ func (s *BaseIntegrationSuite) createDeserializer(config *common.Configuration) 
 func (s *BaseIntegrationSuite) runKafkaIntegrationTest(
 	originalMessage interface{},
 	validate func(original, deserialized interface{}),
-	configMap  map[string]interface{},
+	configMap map[string]interface{},
 ) {
 
 	gsrConfigAbsolutePath, err := filepath.Abs("./gsr.properties")
 	if err != nil {
 		s.T().Fatal("Failed to get absolute path of gsr.properties")
 	}
-	configMap[common.GSRConfigPathKey] = gsrConfigAbsolutePath 
+	configMap[common.GSRConfigPathKey] = gsrConfigAbsolutePath
 	config := common.NewConfiguration(configMap)
 	ctx := context.Background()
 
@@ -215,7 +219,7 @@ func (s *BaseIntegrationSuite) setupTestInfrastructure() func() {
 // waitForTopicReady waits until a Kafka topic is ready and available for operations
 func (s *BaseIntegrationSuite) waitForTopicReady(ctx context.Context, topicName string) {
 	s.T().Logf("Waiting for topic %s to be ready...", topicName)
-	
+
 	timeoutCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
@@ -227,7 +231,7 @@ func (s *BaseIntegrationSuite) waitForTopicReady(ctx context.Context, topicName 
 	if err == nil {
 		partitions, err := conn.ReadPartitions(topicName)
 		conn.Close()
-		
+
 		if err == nil && len(partitions) > 0 {
 			s.T().Logf("✅ Topic %s is ready with %d partition(s)", topicName, len(partitions))
 			return
@@ -238,7 +242,7 @@ func (s *BaseIntegrationSuite) waitForTopicReady(ctx context.Context, topicName 
 	for {
 		select {
 		case <-timeoutCtx.Done():
-			require.Fail(s.T(), "Timeout waiting for topic to be ready", 
+			require.Fail(s.T(), "Timeout waiting for topic to be ready",
 				"Topic %s was not ready after 30 seconds", topicName)
 			return
 		case <-ticker.C:
@@ -250,12 +254,12 @@ func (s *BaseIntegrationSuite) waitForTopicReady(ctx context.Context, topicName 
 
 			partitions, err := conn.ReadPartitions(topicName)
 			conn.Close()
-			
+
 			if err == nil && len(partitions) > 0 {
 				s.T().Logf("✅ Topic %s is ready with %d partition(s)", topicName, len(partitions))
 				return
 			}
-			
+
 			s.T().Logf("Topic %s not ready yet, retrying in 5s...", topicName)
 		}
 	}

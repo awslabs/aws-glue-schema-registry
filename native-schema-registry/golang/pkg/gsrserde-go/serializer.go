@@ -15,6 +15,9 @@ type Serializer struct {
 }
 
 // NewSerializer creates a new serializer instance
+// Locks the goroutine to the thread until .Close() is called. 
+// As cleanup of these resources must come from the same thread
+// .Close() will free memory and the underlying C structs. And must be called at some point to prevent memory leaks.
 func NewSerializer(configPath string) (*Serializer, error) {
 	runtime.LockOSThread()
 	err := createErrorHolder()
@@ -38,7 +41,11 @@ func NewSerializer(configPath string) (*Serializer, error) {
 	}
 	
 	
+	runtime.SetFinalizer(s,cleanupSerializer)
 	return s, nil
+}
+func cleanupSerializer (s *Serializer) {
+	s.finalize()
 }
 
 // Encode serializes data with the given schema

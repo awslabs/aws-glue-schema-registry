@@ -15,6 +15,9 @@ type Deserializer struct {
 }
 
 // NewDeserializer creates a new deserializer instance
+// Locks the goroutine to the thread until .Close() is called. 
+// As cleanup of these resources must come from the same thread
+// .Close() will free memory and the underlying C structs. And must be called at some point to prevent memory leaks.
 func NewDeserializer(configPath string) (*Deserializer, error) {
 	runtime.LockOSThread()
 	err := createErrorHolder()
