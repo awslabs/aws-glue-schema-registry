@@ -41,8 +41,8 @@ func (s *BaseIntegrationSuite) SetupSuite() {
 func (s *BaseIntegrationSuite) TearDownSuite() {
 	s.T().Log("=== Starting Base Suite Teardown ===")
 
-	s.gsr_serializer = nil
-	s.gsr_deserializer = nil
+	s.gsr_deserializer.Close();
+	s.gsr_serializer.Close();
 	s.T().Log("✓ Cleared all serializer/deserializer references")
 
 	s.T().Log("=== Base Suite Teardown Complete ===")
@@ -66,8 +66,6 @@ func (s *BaseIntegrationSuite) TearDownTest() {
 
 	s.gsr_deserializer.Close()
 	s.gsr_serializer.Close()
-	s.gsr_serializer = nil
-	s.gsr_deserializer = nil
 	s.T().Log("✓ Cleared serializer/deserializer references")
 
 	// Execute Kafka topic cleanup function

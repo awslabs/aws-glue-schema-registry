@@ -76,5 +76,6 @@ func cleanupGlueSchema(schema GsrSerDe.Glue_schema_registry_schema) {
 func createErrorHolder() GsrSerDe.Glue_schema_registry_error {
 	// In the SWIG interface, we just pass nil for the error parameter
 	// The C code will allocate error if needed
-	return nil
+	ptr := new(GsrSerDe.Glue_schema_registry_error)
+	return *ptr
 }

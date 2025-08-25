@@ -99,6 +99,9 @@ func (s *Serializer) Encode(data []byte, transportName string, schema *Schema) (
 
 // Close releases all resources associated with the serializer
 func (s *Serializer) Close() error {
+	if s == nil {
+		return nil
+	}
 	if s.closed {
 		return nil
 	}
