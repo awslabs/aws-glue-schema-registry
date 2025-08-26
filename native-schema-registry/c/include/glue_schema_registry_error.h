@@ -31,6 +31,11 @@ void delete_glue_schema_registry_error(glue_schema_registry_error *error);
 //Copies the given error's msg into dst array trimming the size as necessary.
 void glue_schema_registry_error_get_msg(glue_schema_registry_error *error, char *dst, size_t len);
 
+// Gets the error code from the error struct.
+int glue_schema_registry_error_get_code(glue_schema_registry_error *error);
+
+char *glue_schema_registry_error_get_msgs(glue_schema_registry_error *error);
+
 /**
  * Creates an instance of glue_schema_registry_error and writes it to the given
  * glue_schema_registry_error pointer holder (*p_err). It is expected that *p_err

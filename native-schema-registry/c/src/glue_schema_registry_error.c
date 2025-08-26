@@ -56,6 +56,14 @@ void glue_schema_registry_error_get_msg(glue_schema_registry_error *error, char 
         dst[len - 1] = '\0';
     }
 }
+int glue_schema_registry_error_get_code(glue_schema_registry_error *error)
+{
+    return error->code;
+}
+char *glue_schema_registry_error_get_msgs(glue_schema_registry_error *error)
+{
+    return error->msg;
+}
 
 //Create and set the error to the glue_schema_registry_error pointer holder.
 void throw_error(glue_schema_registry_error **p_err, const char *msg, int code) {
