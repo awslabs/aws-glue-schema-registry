@@ -1,7 +1,7 @@
 package com.amazonaws.services.schemaregistry;
 
 import com.amazonaws.services.schemaregistry.common.Schema;
-import com.amazonaws.services.schemaregistry.common.configs.GlueSchemaRegistryConfiguration;
+import com.amazonaws.services.schemaregistry.config.NativeGlueSchemaRegistryConfiguration;
 import com.amazonaws.services.schemaregistry.serializers.GlueSchemaRegistrySerializer;
 import org.graalvm.nativeimage.IsolateThread;
 import org.graalvm.nativeimage.c.type.CCharPointer;
@@ -45,7 +45,8 @@ class GlueSchemaRegistrySerializationHandlerTest {
         Exception exception = assertThrows(IllegalStateException.class, SerializerInstance::get);
         assertEquals("Serializer is not initialized.", exception.getMessage());
 
-        GlueSchemaRegistryConfiguration expectedConfiguration = new GlueSchemaRegistryConfiguration("us-east-1");
+        NativeGlueSchemaRegistryConfiguration expectedConfiguration =
+            new NativeGlueSchemaRegistryConfiguration("us-east-1");
         expectedConfiguration.setSchemaAutoRegistrationEnabled(true);
 
         //Verify config is passed as it is.

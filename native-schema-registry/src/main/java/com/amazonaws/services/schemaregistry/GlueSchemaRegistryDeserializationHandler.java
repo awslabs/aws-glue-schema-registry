@@ -1,11 +1,15 @@
 package com.amazonaws.services.schemaregistry;
 
 import com.amazonaws.services.schemaregistry.common.Schema;
-import com.amazonaws.services.schemaregistry.common.configs.GlueSchemaRegistryConfiguration;
+import com.amazonaws.services.schemaregistry.config.NativeGlueSchemaRegistryConfiguration;
+import com.amazonaws.services.schemaregistry.config.ConfigurationFileReader;
 import com.amazonaws.services.schemaregistry.deserializer.ProtobufPostprocessor;
 import com.amazonaws.services.schemaregistry.deserializers.GlueSchemaRegistryDeserializer;
 import com.amazonaws.services.schemaregistry.utils.AWSSchemaRegistryConstants;
 import com.google.common.collect.ImmutableMap;
+
+import lombok.extern.slf4j.Slf4j;
+
 import org.graalvm.nativeimage.IsolateThread;
 import org.graalvm.nativeimage.c.CContext;
 import org.graalvm.nativeimage.c.function.CEntryPoint;
@@ -29,6 +33,7 @@ import static com.amazonaws.services.schemaregistry.DataTypes.newGlueSchemaRegis
  * Entry point class for the serialization methods of GSR shared library.
  */
 @CContext(HandlerDirectives.class)
+@Slf4j
 public class GlueSchemaRegistryDeserializationHandler {
 
     @CEntryPoint(name = "initialize_deserializer")
@@ -40,8 +45,8 @@ public class GlueSchemaRegistryDeserializationHandler {
                 AWSSchemaRegistryConstants.AWS_REGION,
                 "us-east-1"
             );
-        GlueSchemaRegistryConfiguration glueSchemaRegistryConfiguration =
-            new GlueSchemaRegistryConfiguration(configMap);
+        NativeGlueSchemaRegistryConfiguration glueSchemaRegistryConfiguration = new NativeGlueSchemaRegistryConfiguration(
+                configMap);
 
         DeserializerInstance.create(glueSchemaRegistryConfiguration);
     }
@@ -60,11 +65,12 @@ public class GlueSchemaRegistryDeserializationHandler {
 
             String filePath = CTypeConversion.toJavaString(configFilePath);
             Map<String, String> configs = ConfigurationFileReader.loadConfigFromFile(filePath);
-            GlueSchemaRegistryConfiguration configuration = new GlueSchemaRegistryConfiguration(configs);
+            NativeGlueSchemaRegistryConfiguration configuration = new NativeGlueSchemaRegistryConfiguration(configs);
             DeserializerInstance.create(configuration);
 
             return 0; // Success
         } catch (Exception | Error e) {
+            log.error("Error while initializing deserializer with config", e);
             ExceptionWriter.write(errorPointer, e);
             return 1; // Error
         }
@@ -94,6 +100,7 @@ public class GlueSchemaRegistryDeserializationHandler {
 
             return toCMutableByteArray(decodedBytes, errorPointer);
         } catch (Exception | Error e) {
+            log.error("Error while decoding data", e);
             ExceptionWriter.write(errorPointer, e);
             return WordFactory.nullPointer();
         }
@@ -135,6 +142,7 @@ public class GlueSchemaRegistryDeserializationHandler {
 
             return c_glueSchemaRegistrySchema;
         } catch (Exception | Error e) {
+            log.error("Error while decoding schema", e);
             ExceptionWriter.write(errorPointer, e);
             return WordFactory.nullPointer();
         }
@@ -158,6 +166,7 @@ public class GlueSchemaRegistryDeserializationHandler {
             }
             return CTypeConversion.toCBoolean(canDeserialize);
         } catch (Exception | Error e) {
+            log.error("Error while can_decode ", e);
             ExceptionWriter.write(errorPointer, e);
             return CTypeConversion.toCBoolean(false);
         }
