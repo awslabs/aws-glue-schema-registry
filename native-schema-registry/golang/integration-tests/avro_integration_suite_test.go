@@ -32,6 +32,7 @@ func (s *AvroIntegrationSuite) TestAvroKafkaIntegration() {
 		s.T().Skip("Skipping integration test")
 	}
 	s.topicPrefix = "avro-suite"
+	s.BaseIntegrationSuite.topicPrefix = s.topicPrefix
 
 	s.T().Log("--- Starting AVRO Kafka Integration Test ---")
 
@@ -70,7 +71,7 @@ func (s *AvroIntegrationSuite) TestAvroKafkaIntegration() {
 
 	// Run the integration test with validation and configuration
 	s.runKafkaIntegrationTest(avroRecord, s.validateAvroMessage, configMap)
-
+	s.T().Logf("topicName %s",s.topicName)
 	s.T().Log("--- AVRO Kafka Integration Test Complete ---")
 }
 

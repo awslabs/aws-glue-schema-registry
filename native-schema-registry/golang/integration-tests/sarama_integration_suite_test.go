@@ -32,6 +32,7 @@ func (s *SaramaIntegrationSuite) TestSaramaProtobufIntegration() {
 	s.T().Log("--- Starting Sarama Protobuf Integration Test ---")
 
 	s.topicPrefix = "sarama-protobuf-test"
+	s.BaseIntegrationSuite.topicPrefix = s.topicPrefix
 	// Create protobuf test message
 	message := &testpb.TestMessage{
 		Id:    "sarama-test-789",

@@ -28,6 +28,7 @@ func (s *ProtobufIntegrationSuite) TestProtobufKafkaIntegration() {
 	s.T().Log("--- Starting Protobuf Kafka Integration Test ---")
 
 	s.topicPrefix = "protobuf-suite"
+	s.BaseIntegrationSuite.topicPrefix = s.topicPrefix
 	// Create protobuf test message
 	message := &testpb.TestMessage{
 		Id:    "protobuf-suite-test-123",

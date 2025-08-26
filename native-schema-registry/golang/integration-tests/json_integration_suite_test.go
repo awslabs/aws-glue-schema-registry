@@ -35,6 +35,7 @@ func (s *JsonIntegrationSuite) TestJsonKafkaIntegration() {
 	}
 
 	s.topicPrefix = "json-suite"
+	s.BaseIntegrationSuite.topicPrefix = s.topicPrefix
 	s.T().Log("--- Starting JSON Schema Kafka Integration Test ---")
 
 	// Create test user struct

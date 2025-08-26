@@ -50,10 +50,12 @@ func (s *BaseIntegrationSuite) TearDownSuite() {
 
 // SetupTest is called before each test method
 func (s *BaseIntegrationSuite) SetupTest() {
+	s.T().Logf("Setting up Test %s",s.T().Name())
 	if s.topicName != "" {
 		s.T().Logf("Skipping test topic name generation setup for topic: %s", s.topicName)
 	} else {
 		s.topicName = fmt.Sprintf("%s-%s", s.topicPrefix, s.generateTestTopicName())
+		s.T().Logf("Test topicName: %s", s.topicName)
 	}
 	s.cleanup = s.setupTestInfrastructure()
 
