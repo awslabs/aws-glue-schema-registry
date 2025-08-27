@@ -1,8 +1,19 @@
 package gsrserde
 
 import (
-	"github.com/awslabs/aws-glue-schema-registry/native-schema-registry/golang/pkg/GsrSerDe"
+	"unsafe"
 )
+
+/*
+#cgo CFLAGS: -w
+#cgo CFLAGS: -I../../lib/include
+#cgo LDFLAGS: -Wl,-rpath,${SRCDIR}/../../lib
+#cgo LDFLAGS: -L../../lib -lnativeschemaregistry -lnative_schema_registry_c -lnative_schema_registry_c_data_types -laws_common_memalloc
+#include "../../lib/include/glue_schema_registry_schema.h"
+#include "../../lib/include/glue_schema_registry_error.h"
+#include <stdlib.h>
+*/
+import "C"
 
 // Schema represents a schema for serialization/deserialization
 type Schema struct {
@@ -19,39 +30,56 @@ type Schema struct {
 	AdditionalInfo string
 }
 
-// createGlueSchema converts a Schema to a SWIG Glue_schema_registry_schema
-func createGlueSchema(schema *Schema, err GsrSerDe.Glue_schema_registry_error) (GsrSerDe.Glue_schema_registry_schema, error) {
+// createGlueSchema converts a Schema to a C glue_schema_registry_schema
+func createGlueSchema(schema *Schema) (*C.glue_schema_registry_schema, error) {
+
+	errHolder := C.new_glue_schema_registry_error_holder()
+	defer C.delete_glue_schema_registry_error_holder(errHolder)
+
 	if schema == nil {
 		return nil, ErrNilSchema
 	}
 	
-	// Create schema using SWIG-generated constructor
-	glueSchema := GsrSerDe.NewGlue_schema_registry_schema(
-		schema.Name,
-		schema.Definition,
-		schema.DataFormat,
-		schema.AdditionalInfo,
-		err,
+	// Convert strings to C strings
+	cSchemaName := C.CString(schema.Name)
+	defer C.free(unsafe.Pointer(cSchemaName))
+	
+	cSchemaDef := C.CString(schema.Definition)
+	defer C.free(unsafe.Pointer(cSchemaDef))
+	
+	cDataFormat := C.CString(schema.DataFormat)
+	defer C.free(unsafe.Pointer(cDataFormat))
+	
+	cAdditionalInfo := C.CString(schema.AdditionalInfo)
+	defer C.free(unsafe.Pointer(cAdditionalInfo))
+	
+	// Create schema using C API
+	glueSchema := C.new_glue_schema_registry_schema(
+		cSchemaName,
+		cSchemaDef,
+		cDataFormat,
+		cAdditionalInfo,
+		errHolder,
 	)
 	
 	// Check if error was set
-	if err != nil && err.Swigcptr() != 0 {
-		return nil, extractError("create schema", err)
+	if *errHolder != nil {
+		return nil, extractError("create schema", *errHolder)
 	}
 	
 	return glueSchema, nil
 }
 
-// extractSchemaFromGlue converts a SWIG Glue_schema_registry_schema to Schema
-func extractSchemaFromGlue(glueSchema GsrSerDe.Glue_schema_registry_schema) *Schema {
-	if glueSchema == nil || glueSchema.Swigcptr() == 0 {
+// extractSchemaFromGlue converts a C glue_schema_registry_schema to Schema
+func extractSchemaFromGlue(glueSchema *C.glue_schema_registry_schema) *Schema {
+	if glueSchema == nil {
 		return nil
 	}
 	
 	return &Schema{
-		Name:           glueSchema.Get_schema_name(),
-		Definition:     glueSchema.Get_schema_def(),
-		DataFormat:     glueSchema.Get_data_format(),
-		AdditionalInfo: glueSchema.Get_additional_schema_info(),
+		Name:           C.GoString(C.glue_schema_registry_schema_get_schema_name(glueSchema)),
+		Definition:     C.GoString(C.glue_schema_registry_schema_get_schema_def(glueSchema)),
+		DataFormat:     C.GoString(C.glue_schema_registry_schema_get_data_format(glueSchema)),
+		AdditionalInfo: C.GoString(C.glue_schema_registry_schema_get_additional_schema_info(glueSchema)),
 	}
 }

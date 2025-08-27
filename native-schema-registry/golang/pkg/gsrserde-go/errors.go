@@ -4,12 +4,14 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"unsafe"
-	
-	"github.com/awslabs/aws-glue-schema-registry/native-schema-registry/golang/pkg/GsrSerDe"
 )
 
 /*
+#cgo CFLAGS: -w
+#cgo CFLAGS: -I../../lib/include
+#cgo LDFLAGS: -Wl,-rpath,${SRCDIR}/../../lib
+#cgo LDFLAGS: -L../../lib -lnativeschemaregistry -lnative_schema_registry_c -lnative_schema_registry_c_data_types -laws_common_memalloc
+#include "../../lib/include/glue_schema_registry_error.h"
 #include <stdlib.h>
 #include <string.h>
 */
@@ -26,16 +28,6 @@ const (
 	ErrRuntimeError ErrorCode = 5005
 )
 
-// cGlueSchemaRegistryError represents the C struct layout for glue_schema_registry_error
-// This matches the struct defined in glue_schema_registry_error.h:
-// typedef struct glue_schema_registry_error {
-//     char * msg;
-//     int code;
-// } glue_schema_registry_error;
-type cGlueSchemaRegistryError struct {
-	msg  *C.char
-	code C.int
-}
 
 var (
 	// ErrClosed is returned when operations are attempted on a closed resource
@@ -70,9 +62,9 @@ func (e *SchemaRegistryError) Error() string {
 	return fmt.Sprintf("schema registry error (code %d): %s", e.Code, e.Message)
 }
 
-// extractError extracts error information from SWIG error interface with memory safety
-func extractError(operation string, err GsrSerDe.Glue_schema_registry_error) error {
-	if err == nil || err.Swigcptr() == 0 {
+// extractError extracts error information from C error pointer with memory safety
+func extractError(operation string, err *C.glue_schema_registry_error) error {
+	if err == nil {
 		return nil
 	}
 	
@@ -83,26 +75,8 @@ func extractError(operation string, err GsrSerDe.Glue_schema_registry_error) err
 		}
 	}()
 	
-	// Validate SWIG pointer is non-zero and seems reasonable
-	swigPtr := err.Swigcptr()
-	if swigPtr == 0 {
-		return &SchemaRegistryError{
-			Code:    ErrRuntimeError,
-			Message: "null error pointer",
-		}
-	}
-	
-	// Cast SWIG pointer to C struct - this is the unsafe part
-	cErr := (*cGlueSchemaRegistryError)(unsafe.Pointer(swigPtr))
-	if cErr == nil {
-		return &SchemaRegistryError{
-			Code:    ErrRuntimeError,
-			Message: "failed to cast error pointer",
-		}
-	}
-	
 	// Extract error code with validation
-	rawCode := int(cErr.code)
+	rawCode := int(C.glue_schema_registry_error_get_code(err))
 	var code ErrorCode
 	
 	// Validate error code is in expected range
@@ -127,9 +101,10 @@ func extractError(operation string, err GsrSerDe.Glue_schema_registry_error) err
 	
 	// Extract message with safety checks
 	var message string
-	if cErr.msg != nil {
+	cMsgPtr := C.glue_schema_registry_error_get_msgs(err)
+	if cMsgPtr != nil {
 		// Copy C string to Go memory immediately to avoid dangling pointer
-		message = C.GoString(cErr.msg)
+		message = C.GoString(cMsgPtr)
 		if message == "" {
 			message = fmt.Sprintf("native schema registry error (code %d)", rawCode)
 		}
@@ -141,12 +116,4 @@ func extractError(operation string, err GsrSerDe.Glue_schema_registry_error) err
 		Code:    code,
 		Message: message,
 	}
-}
-
-// wrapError wraps a native error with context
-func wrapError(operation string, err error) error {
-	if err == nil {
-		return nil
-	}
-	return fmt.Errorf("%s: %w", operation, err)
 }

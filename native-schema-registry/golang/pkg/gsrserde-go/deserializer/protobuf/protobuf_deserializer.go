@@ -98,7 +98,6 @@ func (pd *ProtobufDeserializer) Deserialize(data []byte, schema *gsrserde.Schema
 	// Create a new dynamic message instance
 	dynamicMessage := dynamicpb.NewMessage(pd.messageDescriptor)
 
-
 	// Unmarshal the protobuf data
 	if err := proto.Unmarshal(data, dynamicMessage); err != nil {
 		return nil, fmt.Errorf("%w: %v", ErrDeserializationFailed, err)
@@ -106,4 +105,5 @@ func (pd *ProtobufDeserializer) Deserialize(data []byte, schema *gsrserde.Schema
 
 	return dynamicMessage, nil
 }
+
 

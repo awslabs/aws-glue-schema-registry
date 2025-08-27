@@ -2,37 +2,51 @@ package gsrserde
 
 import (
 	"unsafe"
-
-	"github.com/awslabs/aws-glue-schema-registry/native-schema-registry/golang/pkg/GsrSerDe"
 )
 
-// createReadOnlyByteArray creates a SWIG Read_only_byte_array from Go byte slice
-func createReadOnlyByteArray(data []byte, err GsrSerDe.Glue_schema_registry_error) (GsrSerDe.Read_only_byte_array, error) {
+/*
+#cgo CFLAGS: -w
+#cgo CFLAGS: -I../../lib/include
+#cgo LDFLAGS: -Wl,-rpath,${SRCDIR}/../../lib
+#cgo LDFLAGS: -L../../lib -lnativeschemaregistry -lnative_schema_registry_c -lnative_schema_registry_c_data_types -laws_common_memalloc
+#include "../../lib/include/read_only_byte_array.h"
+#include "../../lib/include/mutable_byte_array.h"
+#include "../../lib/include/glue_schema_registry_schema.h"
+#include "../../lib/include/glue_schema_registry_error.h"
+#include <stdlib.h>
+*/
+import "C"
+
+// createReadOnlyByteArray creates a C read_only_byte_array from Go byte slice
+func createReadOnlyByteArray(data []byte) (*C.read_only_byte_array, error) {
+
+	errHolder := C.new_glue_schema_registry_error_holder()
+	defer C.delete_glue_schema_registry_error_holder(errHolder)
 	if len(data) == 0 {
 		return nil, ErrEmptyData
 	}
 	
 	// Get pointer to first byte
-	dataPtr := (*byte)(unsafe.Pointer(&data[0]))
+	dataPtr := (*C.uchar)(unsafe.Pointer(&data[0]))
 	
-	roba := GsrSerDe.NewRead_only_byte_array(dataPtr, int64(len(data)), err)
+	roba := C.new_read_only_byte_array(dataPtr, C.size_t(len(data)), errHolder)
 	
-	if err != nil && err.Swigcptr() != 0 {
-		return nil, extractError("create read only byte array", err)
+	if *errHolder != nil {
+		return nil, extractError("create read only byte array", *errHolder)
 	}
 	
 	return roba, nil
 }
 
-// mutableByteArrayToGoSlice converts a SWIG Mutable_byte_array to Go byte slice
-func mutableByteArrayToGoSlice(mba GsrSerDe.Mutable_byte_array) []byte {
-	if mba == nil || mba.Swigcptr() == 0 {
+// mutableByteArrayToGoSlice converts a C mutable_byte_array to Go byte slice
+func mutableByteArrayToGoSlice(mba *C.mutable_byte_array) []byte {
+	if mba == nil {
 		return nil
 	}
 	
 	// Get the data pointer and length
-	dataPtr := mba.Get_data()
-	maxLen := mba.Get_max_len()
+	dataPtr := C.mutable_byte_array_get_data(mba)
+	maxLen := C.mutable_byte_array_get_max_len(mba)
 	
 	if dataPtr == nil || maxLen <= 0 {
 		return nil
@@ -43,39 +57,29 @@ func mutableByteArrayToGoSlice(mba GsrSerDe.Mutable_byte_array) []byte {
 	result := make([]byte, maxLen)
 	
 	// Use unsafe to create a temporary slice view of the C memory
-	cSlice :=  unsafe.Slice((*byte)(dataPtr), maxLen)
+	cSlice := unsafe.Slice((*byte)(dataPtr), maxLen)
 	copy(result, cSlice)
 	
 	return result
 }
 
 // cleanupMutableByteArray safely deletes a mutable byte array
-func cleanupMutableByteArray(mba GsrSerDe.Mutable_byte_array) {
-	if mba != nil && mba.Swigcptr() != 0 {
-		GsrSerDe.DeleteMutable_byte_array(mba)
+func cleanupMutableByteArray(mba *C.mutable_byte_array) {
+	if mba != nil {
+		C.delete_mutable_byte_array(mba)
 	}
 }
 
 // cleanupReadOnlyByteArray safely deletes a read only byte array
-func cleanupReadOnlyByteArray(roba GsrSerDe.Read_only_byte_array) {
-	if roba != nil && roba.Swigcptr() != 0 {
-		GsrSerDe.DeleteRead_only_byte_array(roba)
+func cleanupReadOnlyByteArray(roba *C.read_only_byte_array) {
+	if roba != nil {
+		C.delete_read_only_byte_array(roba)
 	}
 }
 
 // cleanupGlueSchema safely deletes a glue schema
-func cleanupGlueSchema(schema GsrSerDe.Glue_schema_registry_schema) {
-	if schema != nil && schema.Swigcptr() != 0 {
-		GsrSerDe.DeleteGlue_schema_registry_schema(schema)
+func cleanupGlueSchema(schema *C.glue_schema_registry_schema) {
+	if schema != nil {
+		C.delete_glue_schema_registry_schema(schema)
 	}
-}
-
-// createErrorHolder creates a new error holder for C functions
-// Note: In the SWIG bindings, the error is passed as a parameter, not returned
-// We'll use a nil error for normal operations
-func createErrorHolder() GsrSerDe.Glue_schema_registry_error {
-	// In the SWIG interface, we just pass nil for the error parameter
-	// The C code will allocate error if needed
-	ptr := new(GsrSerDe.Glue_schema_registry_error)
-	return *ptr
 }

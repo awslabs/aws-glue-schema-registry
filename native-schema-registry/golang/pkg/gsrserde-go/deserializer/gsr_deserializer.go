@@ -139,6 +139,9 @@ func (d *Deserializer) GetConfiguration() *common.Configuration {
 
 // Close releases all resources associated with the deserializer
 func (d *Deserializer) Close() error {
+	if d == nil {
+		return nil
+	}
 	if d.closed {
 		return nil
 	}

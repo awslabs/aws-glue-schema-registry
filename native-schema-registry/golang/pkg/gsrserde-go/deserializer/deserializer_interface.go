@@ -22,4 +22,5 @@ type DataFormatDeserializer interface {
 	//   interface{}: The deserialized object (type depends on format)
 	//   error: Any error that occurred during deserialization
 	Deserialize(data []byte, schema *gsrserde.Schema) (interface{}, error)
+
 }

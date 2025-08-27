@@ -2,15 +2,28 @@ package gsrserde
 
 import (
 	"runtime"
-
-	"github.com/awslabs/aws-glue-schema-registry/native-schema-registry/golang/pkg/GsrSerDe"
+	"unsafe"
 )
+
+/*
+#cgo CFLAGS: -w
+#cgo CFLAGS: -I../../lib/include
+#cgo LDFLAGS: -Wl,-rpath,${SRCDIR}/../../lib
+#cgo LDFLAGS: -L../../lib -lnativeschemaregistry -lnative_schema_registry_c -lnative_schema_registry_c_data_types -laws_common_memalloc
+#include "../../lib/include/glue_schema_registry_serializer.h"
+#include "../../lib/include/glue_schema_registry_error.h"
+#include "../../lib/include/mutable_byte_array.h"
+#include "../../lib/include/read_only_byte_array.h"
+#include "../../lib/include/glue_schema_registry_schema.h"
+#include <stdlib.h>
+*/
+import "C"
 
 // Serializer is a wrapper around the native schema registry serializer
 // NOTE: This wrapper is NOT thread-safe. Each instance should be used by
 // only one context/operation to comply with native library constraints.
 type Serializer struct {
-	serializer GsrSerDe.Glue_schema_registry_serializer
+	serializer *C.glue_schema_registry_serializer
 	closed     bool
 }
 
@@ -20,18 +33,21 @@ type Serializer struct {
 // .Close() will free memory and the underlying C structs. And must be called at some point to prevent memory leaks.
 func NewSerializer(configPath string) (*Serializer, error) {
 	runtime.LockOSThread()
-	err := createErrorHolder()
-
-	var serializer GsrSerDe.Glue_schema_registry_serializer
 	
-	// Create native serializer
-	serializer = GsrSerDe.NewGlue_schema_registry_serializer(configPath,err)
+	cString := C.CString(configPath)
+	defer C.free(unsafe.Pointer(cString))
 	
-	if err != nil && err.Swigcptr() != 0 {
-		return nil, extractError("create serializer", err)
+	errHolder := C.new_glue_schema_registry_error_holder()
+	defer C.delete_glue_schema_registry_error_holder(errHolder)
+	
+	serializer := C.new_glue_schema_registry_serializer(cString, errHolder)
+	
+	// Check for errors
+	if *errHolder != nil {
+		return nil,extractError("create serializer", *errHolder) 
 	}
 	
-	if serializer == nil || serializer.Swigcptr() == 0 {
+	if serializer == nil {
 		return nil, ErrInitializationFailed
 	}
 	
@@ -41,15 +57,18 @@ func NewSerializer(configPath string) (*Serializer, error) {
 	}
 	
 	
-	runtime.SetFinalizer(s,cleanupSerializer)
 	return s, nil
 }
-func cleanupSerializer (s *Serializer) {
+
+func cleanupSerializer(s *Serializer) {
 	s.finalize()
 }
 
 // Encode serializes data with the given schema
 func (s *Serializer) Encode(data []byte, transportName string, schema *Schema) ([]byte, error) {
+
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
 	if s.closed {
 		return nil, ErrClosed
 	}
@@ -66,28 +85,36 @@ func (s *Serializer) Encode(data []byte, transportName string, schema *Schema) (
 		return nil, ErrNilSchema
 	}
 	
-	err := createErrorHolder()
 	
-	roba, robaErr := createReadOnlyByteArray(data, err)
+	// Create read-only byte array from Go byte slice
+	roba, robaErr := createReadOnlyByteArray(data)
 	if robaErr != nil {
 		return nil, robaErr
 	}
 	defer cleanupReadOnlyByteArray(roba)
 	
-	glueSchema, schemaErr := createGlueSchema(schema, err)
+	// Create glue schema from Schema struct
+	glueSchema, schemaErr := createGlueSchema(schema)
 	if schemaErr != nil {
 		return nil, schemaErr
 	}
 	defer cleanupGlueSchema(glueSchema)
 	
-	mba := s.serializer.Encode(roba, transportName, glueSchema, err)
+	// Convert transport name to C string
+	cTransportName := C.CString(transportName)
+	defer C.free(unsafe.Pointer(cTransportName))
 	
-	if err != nil && err.Swigcptr() != 0 {
-		return nil, extractError("encode", err)
-	}
 	
-	if mba == nil || mba.Swigcptr() == 0 {
-		return nil, wrapError("encode", ErrMemoryAllocation)
+	// Create error holder for this operation
+	errHolder := C.new_glue_schema_registry_error_holder()
+	defer C.delete_glue_schema_registry_error_holder(errHolder)
+
+	// Call C encode function
+	mba := C.glue_schema_registry_serializer_encode(s.serializer, roba, cTransportName, glueSchema, errHolder)
+	
+	// Check for errors
+	if *errHolder != nil {
+		return nil, extractError("encode", *errHolder)
 	}
 	
 	// Convert to Go slice and cleanup
@@ -108,8 +135,8 @@ func (s *Serializer) Close() error {
 	
 	s.closed = true
 	
-	if s.serializer != nil && s.serializer.Swigcptr() != 0 {
-		GsrSerDe.DeleteGlue_schema_registry_serializer(s.serializer)
+	if s.serializer != nil {
+		C.delete_glue_schema_registry_serializer(s.serializer)
 		s.serializer = nil
 	}
 	

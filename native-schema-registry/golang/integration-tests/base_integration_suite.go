@@ -37,16 +37,6 @@ func (s *BaseIntegrationSuite) SetupSuite() {
 	s.T().Log("=== Base Integration Suite Setup Complete ===")
 }
 
-// TearDownSuite is called once after all tests in the suite
-func (s *BaseIntegrationSuite) TearDownSuite() {
-	s.T().Log("=== Starting Base Suite Teardown ===")
-
-	s.gsr_deserializer.Close();
-	s.gsr_serializer.Close();
-	s.T().Log("✓ Cleared all serializer/deserializer references")
-
-	s.T().Log("=== Base Suite Teardown Complete ===")
-}
 
 // SetupTest is called before each test method
 func (s *BaseIntegrationSuite) SetupTest() {
@@ -113,7 +103,11 @@ func (s *BaseIntegrationSuite) runKafkaIntegrationTest(
 	ctx := context.Background()
 
 	// Step 1: Create Serializer with GSR configuration
-	s.gsr_serializer = s.createSerializer(config)
+	s.gsr_serializer, err= serializer.NewSerializer(config)
+	defer s.gsr_serializer.Close()
+	if err != nil {
+		s.T().Fatal("Failed to create serializer")
+	}
 
 	// Step 2: Serialize the message (auto-registers schema with GSR)
 	s.T().Logf("Serializing %T message", originalMessage)
@@ -131,7 +125,11 @@ func (s *BaseIntegrationSuite) runKafkaIntegrationTest(
 	require.Equal(s.T(), gsrEncodedData, consumedData, "Data consumed from Kafka should match published data")
 
 	// Step 5: Create Deserializer and deserialize the GSR-encoded data
-	s.gsr_deserializer = s.createDeserializer(config)
+	s.gsr_deserializer, err= deserializer.NewDeserializer(config)
+	defer s.gsr_deserializer.Close()
+	if err != nil {
+		s.T().Fatal("Failed to create deserializer")
+	}
 
 	// Verify the data can be deserialized
 	canDeserialize, err := s.gsr_deserializer.CanDeserialize(consumedData)
