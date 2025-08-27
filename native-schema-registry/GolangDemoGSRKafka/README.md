@@ -1,3 +1,4 @@
+Disclaimer - The private beta environment does not meet AWS Service Level Agreements for support and durability. This feature is provided as a 'Beta Service' as defined in the AWS Service Terms. It is governed by your Agreement with AWS and the AWS Service Terms. Before using this Beta Service, please review the Betas and Previews terms found here. In particular, please note that the Beta Service is confidential and you may not discuss the features, functionality, or documentation related to the Beta Service with any parties that are not authorized by AWS. The Beta Service is subject to change and cancellation. 
 # Golang Demo with AWS Glue Schema Registry and Kafka
 
 This demo showcases how to use AWS Glue Schema Registry (GSR) with Protocol Buffers and Kafka in Go, using the kafka-go library.

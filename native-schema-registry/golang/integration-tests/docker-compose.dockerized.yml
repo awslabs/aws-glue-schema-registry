@@ -1,5 +1,3 @@
-version: '2'
-
 services:
   zookeeper:
     image: 'public.ecr.aws/bitnami/zookeeper:latest'
