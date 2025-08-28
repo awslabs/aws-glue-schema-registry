@@ -22,7 +22,6 @@ func stringToDataFormat(dataFormatStr string) (common.DataFormat, error) {
 	}
 }
 
-// Serializer is a high-level serializer that mirrors the C# implementation
 // It provides a high-level interface for serializing messages using AWS Glue Schema Registry
 // NOTE: This serializer is NOT thread-safe. Each instance should be used by
 // only one context/operation to comply with native library constraints.
@@ -67,13 +66,11 @@ func NewSerializer(config *common.Configuration) (*Serializer, error) {
 }
 
 // Serialize serializes a message using AWS Glue Schema Registry
-// This method mirrors the C# GlueSchemaRegistryKafkaSerializer.Serialize method
 func (s *Serializer) Serialize(topic string, data interface{}) ([]byte, error) {
 	if s.closed {
 		return nil, gsrserde.ErrClosed
 	}
 
-	// Handle nil data case (mirrors C# behavior)
 	if data == nil {
 		return nil, nil
 	}
@@ -94,14 +91,12 @@ func (s *Serializer) Serialize(topic string, data interface{}) ([]byte, error) {
 		return nil, fmt.Errorf("data validation failed: %w", err)
 	}
 
-	// Serialize the message content (mirrors C# serializer.Serialize call)
 	serializedData, err := s.formatSerializer.Serialize(data)
 	if err != nil {
 		return nil, fmt.Errorf("failed to serialize data: %w", err)
 	}
 
 	// Wrap with GSR header using transport name (topic)
-	// This mirrors the C# Encode call with transport name
 	encodedData, err := s.coreSerializer.Encode(serializedData, topic, schema)
 	if err != nil {
 		return nil, fmt.Errorf("failed to encode GSR data: %w", err)
