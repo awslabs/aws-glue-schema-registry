@@ -147,8 +147,7 @@ func (s *Serializer) getSchemaFromData(data interface{}, topic string) (*gsrserd
 		if _, ok := data.(interface{ ProtoMessage() }); ok {
 			schema.DataFormat = "PROTOBUF"
 		} else {
-			// For other types that need JSON serialization, use JSON
-			// Note: JSON serializer is not yet implemented
+			// Last possible format is JSON
 			schema.DataFormat = "JSON"
 		}
 	}
