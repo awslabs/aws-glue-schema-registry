@@ -21,6 +21,7 @@ var (
 
 	// ErrInvalidSchema is returned when schema is invalid
 	ErrInvalidSchema = fmt.Errorf("invalid avro schema")
+
 )
 
 // AvroDeserializationError represents an error that occurred during AVRO deserialization
@@ -48,13 +49,13 @@ type AvroDeserializer struct {
 }
 
 // NewAvroDeserializer creates a new AVRO deserializer instance.
-func NewAvroDeserializer(config *common.Configuration) *AvroDeserializer {
+func NewAvroDeserializer(config *common.Configuration) (*AvroDeserializer, error) {
 	if config == nil {
-		panic("configuration cannot be nil")
+		return nil, common.ErrNilConfig
 	}
 	return &AvroDeserializer{
 		config: config,
-	}
+	}, nil
 }
 
 // Deserialize deserializes AVRO binary data to Go struct using goavro.

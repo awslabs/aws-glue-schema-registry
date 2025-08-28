@@ -126,7 +126,8 @@ func generateInvalidProtobufData() []byte {
 
 func TestNewProtobufDeserializer(t *testing.T) {
 	config := createProtobufDeserializerConfig()
-	deserializer := NewProtobufDeserializer(config)
+	deserializer, err := NewProtobufDeserializer(config)
+	assert.Nil(t,err,"err should be nil")
 	
 	assert.NotNil(t, deserializer, "NewProtobufDeserializer should return a non-nil deserializer")
 	assert.Equal(t, config, deserializer.config, "Deserializer should store the provided config")
@@ -164,7 +165,8 @@ func TestNewProtobufDeserializer_PanicCases(t *testing.T) {
 
 func TestProtobufDeserializer_Deserialize_ErrorCases(t *testing.T) {
 	config := createProtobufDeserializerConfig()
-	deserializer := NewProtobufDeserializer(config)
+	deserializer, err := NewProtobufDeserializer(config)
+	assert.Nil(t,err,"err should be nil")
 
 	tests := []struct {
 		name        string
@@ -222,7 +224,8 @@ func TestProtobufDeserializer_Deserialize_ErrorCases(t *testing.T) {
 
 func TestProtobufDeserializer_Deserialize_ValidCases(t *testing.T) {
 	config := createProtobufDeserializerConfig()
-	deserializer := NewProtobufDeserializer(config)
+	deserializer, err := NewProtobufDeserializer(config)
+	assert.Nil(t,err,"err should be nil")
 
 	tests := []struct {
 		name   string
@@ -272,7 +275,8 @@ func TestProtobufDeserializer_Deserialize_ValidCases(t *testing.T) {
 
 func TestProtobufDeserializer_Deserialize_ComplexMessage(t *testing.T) {
 	config := createProtobufDeserializerConfig()
-	deserializer := NewProtobufDeserializer(config)
+	deserializer, err := NewProtobufDeserializer(config)
+	assert.Nil(t,err,"err should be nil")
 
 	// Create a FileDescriptorProto as test data
 	testMsg := &descriptorpb.FileDescriptorProto{
@@ -316,7 +320,8 @@ func TestProtobufDeserializer_Deserialize_ComplexMessage(t *testing.T) {
 
 func TestProtobufDeserializer_Deserialize_DynamicMessage(t *testing.T) {
 	config := createProtobufDeserializerConfig()
-	deserializer := NewProtobufDeserializer(config)
+	deserializer, err := NewProtobufDeserializer(config)
+	assert.Nil(t,err,"err should be nil")
 
 	// Generate dynamic test message and serialize it
 	testMsg := test_helpers.GenerateTestProtoMessage()
@@ -340,8 +345,9 @@ func TestProtobufDeserializer_Deserialize_DynamicMessage(t *testing.T) {
 
 func TestProtobufDeserializer_RoundTrip(t *testing.T) {
 	// This test requires both serializer and deserializer working together
-	deserializerConfig := createProtobufDeserializerConfig()
-	deserializer := NewProtobufDeserializer(deserializerConfig)
+	config := createProtobufDeserializerConfig()
+	deserializer, err := NewProtobufDeserializer(config)
+	assert.Nil(t,err,"err should be nil")
 
 	// Create test data
 	originalMsg := &descriptorpb.FileDescriptorProto{
@@ -380,7 +386,8 @@ func TestProtobufDeserializer_RoundTrip(t *testing.T) {
 
 func TestProtobufDeserializer_WithTestHelpers(t *testing.T) {
 	config := createProtobufDeserializerConfig()
-	deserializer := NewProtobufDeserializer(config)
+	deserializer, err := NewProtobufDeserializer(config)
+	assert.Nil(t,err,"err should be nil")
 
 	// Test with multiple generated messages
 	messages := test_helpers.GenerateTestProtoMessages(3)
@@ -409,7 +416,8 @@ func TestProtobufDeserializer_WithTestHelpers(t *testing.T) {
 
 func TestProtobufDeserializer_ComplexTestMessage(t *testing.T) {
 	config := createProtobufDeserializerConfig()
-	deserializer := NewProtobufDeserializer(config)
+	deserializer, err := NewProtobufDeserializer(config)
+	assert.Nil(t,err,"err should be nil")
 
 	// Generate complex test message
 	complexMsg := test_helpers.GenerateComplexTestMessage(99999, "complex-deserializer-test")
@@ -434,7 +442,8 @@ func TestProtobufDeserializer_ComplexTestMessage(t *testing.T) {
 
 func TestProtobufDeserializer_ErrorWrapping(t *testing.T) {
 	config := createProtobufDeserializerConfig()
-	deserializer := NewProtobufDeserializer(config)
+	deserializer, err := NewProtobufDeserializer(config)
+	assert.Nil(t,err,"err should be nil")
 
 	// Test with invalid protobuf data to trigger deserialization error
 	invalidData := []byte{0xFF, 0xFF, 0xFF, 0xFF} // Invalid protobuf data
@@ -449,7 +458,8 @@ func TestProtobufDeserializer_ErrorWrapping(t *testing.T) {
 
 func TestProtobufDeserializer_SchemaValidation(t *testing.T) {
 	config := createProtobufDeserializerConfig()
-	deserializer := NewProtobufDeserializer(config)
+	deserializer, err := NewProtobufDeserializer(config)
+	assert.Nil(t,err,"err should be nil")
 	validData := generateValidProtobufData()
 
 	tests := []struct {
@@ -505,7 +515,8 @@ func TestProtobufDeserializer_SchemaValidation(t *testing.T) {
 // BenchmarkProtobufDeserializer_Deserialize benchmarks the deserialization performance
 func BenchmarkProtobufDeserializer_Deserialize(b *testing.B) {
 	config := createProtobufDeserializerConfig()
-	deserializer := NewProtobufDeserializer(config)
+	deserializer, err := NewProtobufDeserializer(config)
+	assert.Nil(b,err,"err should be nil")
 
 	// Setup test data
 	testMsg := &descriptorpb.FileDescriptorProto{
@@ -554,7 +565,8 @@ func BenchmarkProtobufDeserializer_Deserialize(b *testing.B) {
 // BenchmarkProtobufDeserializer_LargeMessage benchmarks deserialization of large messages
 func BenchmarkProtobufDeserializer_LargeMessage(b *testing.B) {
 	config := createProtobufDeserializerConfig()
-	deserializer := NewProtobufDeserializer(config)
+	deserializer, err := NewProtobufDeserializer(config)
+	assert.Nil(b,err,"err should be nil")
 
 	// Create a large test message
 	largeMsg := &descriptorpb.FileDescriptorProto{
@@ -634,7 +646,8 @@ func TestProtobufDeserializer_ErrorMessages(t *testing.T) {
 
 func TestProtobufDeserializer_ConfigurationFields(t *testing.T) {
 	config := createProtobufDeserializerConfig()
-	deserializer := NewProtobufDeserializer(config)
+	deserializer, err := NewProtobufDeserializer(config)
+	assert.Nil(t,err,"err should be nil")
 
 	// Verify that the deserializer properly stores configuration fields
 	assert.NotNil(t, deserializer.config, "Config should not be nil")
@@ -644,7 +657,8 @@ func TestProtobufDeserializer_ConfigurationFields(t *testing.T) {
 
 func TestProtobufDeserializer_DataValidation(t *testing.T) {
 	config := createProtobufDeserializerConfig()
-	deserializer := NewProtobufDeserializer(config)
+	deserializer, err := NewProtobufDeserializer(config)
+	assert.Nil(t,err,"err should be nil")
 	schema := createValidProtobufSchema()
 
 	tests := []struct {

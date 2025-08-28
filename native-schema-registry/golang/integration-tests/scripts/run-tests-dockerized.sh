@@ -14,5 +14,3 @@ echo "✅ Kafka is ready"
 echo "Running integration tests..."
 cd /app/golang/integration-tests
 go test --tags musl -count=1 -v ./...
-
-echo "✅ Tests completed successfully"

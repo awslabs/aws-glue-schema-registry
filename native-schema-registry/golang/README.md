@@ -1,4 +1,3 @@
-Disclaimer - The private beta environment does not meet AWS Service Level Agreements for support and durability. This feature is provided as a 'Beta Service' as defined in the AWS Service Terms. It is governed by your Agreement with AWS and the AWS Service Terms. Before using this Beta Service, please review the Betas and Previews terms found here. In particular, please note that the Beta Service is confidential and you may not discuss the features, functionality, or documentation related to the Beta Service with any parties that are not authorized by AWS. The Beta Service is subject to change and cancellation. 
 # AWS Glue Schema Registry - Go Module
 
 This is a standalone Go module for the AWS Glue Schema Registry, providing high-performance serialization and deserialization capabilities through native bindings.
@@ -131,33 +130,12 @@ schema := gsrserde.NewGlue_schema_registry_schema(...)
 defer gsrserde.DeleteGlue_schema_registry_schema(schema) // Always cleanup
 ```
 
-## Integration with AWS
-
-These bindings provide the core serialization/deserialization functionality. For full AWS integration:
-
-1. **AWS SDK**: Use AWS SDK for Go to interact with Glue Schema Registry service
-2. **Schema Management**: Register/retrieve schemas via AWS APIs
-3. **Configuration**: Set up AWS credentials and region
-4. **Production Usage**: Combine with Kafka, Kinesis, or other data streaming services
-
-## Performance Notes
-
-- **Zero-Copy Operations**: Direct memory access where possible
-- **Minimal Allocations**: Efficient memory usage patterns
-- **Native Library Speed**: Leverages optimized native implementation
-- **Concurrent Safe**: Multiple goroutines can use separate instances
-
 ## Requirements
 
-- Go 1.21+
+- Go 1.20+
 - CGO enabled (`CGO_ENABLED=1`)
 - Platform-specific native libraries (included in release)
 
-## Platform Support
-
-- Linux: amd64, arm64
-- macOS: amd64 (Intel), arm64 (Apple Silicon)
-- Windows: amd64
 
 ## Troubleshooting
 

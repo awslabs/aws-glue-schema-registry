@@ -14,6 +14,7 @@
 package common
 
 import (
+	"fmt"
 	"reflect"
 
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -28,6 +29,10 @@ type Configuration struct {
 	GsrConfigPath			  string
 	AdditionalProperties      map[string]interface{}
 }
+var (
+
+	ErrNilConfig = fmt.Errorf("config cannot be nil")
+)
 
 // NewConfiguration creates a new Configuration from a map of configuration values.
 func NewConfiguration(configs map[string]interface{}) *Configuration {

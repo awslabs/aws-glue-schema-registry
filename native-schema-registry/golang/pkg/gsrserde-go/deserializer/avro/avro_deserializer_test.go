@@ -31,21 +31,23 @@ func createAvroData(schema, data interface{}) ([]byte, error) {
 func TestNewAvroDeserializer(t *testing.T) {
 	t.Run("ValidConfiguration", func(t *testing.T) {
 		config := createAvroConfig()
-		deserializer := NewAvroDeserializer(config)
+		deserializer, err := NewAvroDeserializer(config)
+		assert.Nil(t,err, "err should be nil")
 		assert.NotNil(t, deserializer, "NewAvroDeserializer should return a non-nil deserializer")
 		assert.Equal(t, config, deserializer.config)
 	})
 
 	t.Run("NilConfiguration", func(t *testing.T) {
-		assert.Panics(t, func() {
-			NewAvroDeserializer(nil)
-		}, "NewAvroDeserializer should panic with nil config")
+		deserializer, err := NewAvroDeserializer(nil)
+		assert.Nil(t, deserializer, "deserializer should be nil")
+		assert.EqualError(t,err,common.ErrNilConfig.Error())
 	})
 }
 
 func TestAvroDeserializer_Deserialize(t *testing.T) {
 	config := createAvroConfig()
-	deserializer := NewAvroDeserializer(config)
+			deserializer, err := NewAvroDeserializer(config)
+		assert.Nil(t,err, "err should be nil")
 
 	// Test schemas
 	stringSchema := `"string"`
@@ -184,7 +186,8 @@ func TestAvroDeserializer_Deserialize(t *testing.T) {
 
 func TestAvroDeserializer_ValidateData(t *testing.T) {
 	config := createAvroConfig()
-	deserializer := NewAvroDeserializer(config)
+			deserializer, err := NewAvroDeserializer(config)
+		assert.Nil(t,err, "err should be nil")
 
 	stringSchema := `"string"`
 	recordSchema := `{
@@ -271,7 +274,8 @@ func TestAvroDeserializer_ValidateData(t *testing.T) {
 
 func TestAvroDeserializer_ValidateSchema(t *testing.T) {
 	config := createAvroConfig()
-	deserializer := NewAvroDeserializer(config)
+			deserializer, err := NewAvroDeserializer(config)
+		assert.Nil(t,err, "err should be nil")
 
 	tests := []struct {
 		name          string
@@ -358,7 +362,8 @@ func TestAvroDeserializer_ValidateSchema(t *testing.T) {
 
 func TestAvroDeserializer_GetConfiguration(t *testing.T) {
 	config := createAvroConfig()
-	deserializer := NewAvroDeserializer(config)
+			deserializer, err := NewAvroDeserializer(config)
+		assert.Nil(t,err, "err should be nil")
 
 	result := deserializer.GetConfiguration()
 	assert.Equal(t, config, result)
@@ -366,7 +371,8 @@ func TestAvroDeserializer_GetConfiguration(t *testing.T) {
 
 func TestAvroDeserializer_ComplexScenarios(t *testing.T) {
 	config := createAvroConfig()
-	deserializer := NewAvroDeserializer(config)
+			deserializer, err := NewAvroDeserializer(config)
+		assert.Nil(t,err, "err should be nil")
 
 	t.Run("NestedRecordSchema", func(t *testing.T) {
 		schema := `{
@@ -548,7 +554,8 @@ func TestAvroDeserializer_ErrorTypes(t *testing.T) {
 
 func TestAvroDeserializer_ConcurrentAccess(t *testing.T) {
 	config := createAvroConfig()
-	deserializer := NewAvroDeserializer(config)
+			deserializer, err := NewAvroDeserializer(config)
+		assert.Nil(t,err, "err should be nil")
 
 	schema := `{
 		"type": "record",
@@ -607,7 +614,8 @@ func TestAvroDeserializer_ConcurrentAccess(t *testing.T) {
 
 func TestAvroDeserializer_PrimitiveTypes(t *testing.T) {
 	config := createAvroConfig()
-	deserializer := NewAvroDeserializer(config)
+			deserializer, err := NewAvroDeserializer(config)
+		assert.Nil(t,err, "err should be nil")
 
 	tests := []struct {
 		name     string
@@ -678,7 +686,8 @@ func TestAvroDeserializer_PrimitiveTypes(t *testing.T) {
 // BenchmarkAvroDeserializer_Deserialize benchmarks the deserialization performance
 func BenchmarkAvroDeserializer_Deserialize(b *testing.B) {
 	config := createAvroConfig()
-	deserializer := NewAvroDeserializer(config)
+			deserializer, err := NewAvroDeserializer(config)
+		assert.Nil(b,err, "err should be nil")
 
 	schema := `{
 		"type": "record",
@@ -724,7 +733,8 @@ func BenchmarkAvroDeserializer_Deserialize(b *testing.B) {
 // BenchmarkAvroDeserializer_ValidateData benchmarks data validation performance
 func BenchmarkAvroDeserializer_ValidateData(b *testing.B) {
 	config := createAvroConfig()
-	deserializer := NewAvroDeserializer(config)
+			deserializer, err := NewAvroDeserializer(config)
+		assert.Nil(b,err, "err should be nil")
 
 	schema := `{
 		"type": "record",
@@ -759,7 +769,8 @@ func BenchmarkAvroDeserializer_ValidateData(b *testing.B) {
 // BenchmarkAvroDeserializer_ValidateSchema benchmarks schema validation performance
 func BenchmarkAvroDeserializer_ValidateSchema(b *testing.B) {
 	config := createAvroConfig()
-	deserializer := NewAvroDeserializer(config)
+			deserializer, err := NewAvroDeserializer(config)
+		assert.Nil(b,err, "err should be nil")
 
 	schema := `{
 		"type": "record",

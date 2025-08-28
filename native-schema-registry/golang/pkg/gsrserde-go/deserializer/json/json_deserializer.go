@@ -70,13 +70,13 @@ type JsonDeserializer struct {
 }
 
 // NewJsonDeserializer creates a new JSON deserializer instance.
-func NewJsonDeserializer(config *common.Configuration) *JsonDeserializer {
+func NewJsonDeserializer(config *common.Configuration) (*JsonDeserializer, error) {
 	if config == nil {
-		panic("configuration cannot be nil")
+		return nil, common.ErrNilConfig
 	}
 	return &JsonDeserializer{
 		config: config,
-	}
+	}, nil
 }
 
 // Deserialize deserializes JSON data bytes and returns the validated JSON payload as a string.

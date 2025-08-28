@@ -69,11 +69,11 @@ func (f *DataFormatDeserializerFactory) GetDeserializer(config *common.Configura
 	dataFormat := config.DataFormat
 	switch dataFormat {
 	case common.DataFormatProtobuf:
-		return protobuf.NewProtobufDeserializer(config), nil
+		return protobuf.NewProtobufDeserializer(config)
 	case common.DataFormatAvro:
-		return avro.NewAvroDeserializer(config), nil
+		return avro.NewAvroDeserializer(config)
 	case common.DataFormatJSON:
-		return json.NewJsonDeserializer(config), nil
+		return json.NewJsonDeserializer(config)
 	default:
 		return nil, fmt.Errorf("%w: %v", ErrUnsupportedDataFormat, dataFormat)
 	}

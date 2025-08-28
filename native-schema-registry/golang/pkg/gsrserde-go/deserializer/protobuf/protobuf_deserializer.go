@@ -45,9 +45,9 @@ type ProtobufDeserializer struct {
 
 // NewProtobufDeserializer creates a new ProtobufDeserializer instance.
 // The configuration must contain the protobuf message descriptor for deserialization.
-func NewProtobufDeserializer(config *common.Configuration ) *ProtobufDeserializer {
+func NewProtobufDeserializer(config *common.Configuration ) (*ProtobufDeserializer, error) {
 	if config == nil {
-		panic("configuration cannot be nil")
+		return nil, common.ErrNilConfig
 	}
 	if config.ProtobufMessageDescriptor == nil {
 		panic("protobuf message descriptor cannot be nil")
@@ -56,7 +56,7 @@ func NewProtobufDeserializer(config *common.Configuration ) *ProtobufDeserialize
 	return &ProtobufDeserializer{
 		config:            config,
 		messageDescriptor: config.ProtobufMessageDescriptor,
-	}
+	}, nil
 }
 
 // Deserialize takes encoded protobuf data and a schema, and returns the deserialized message.

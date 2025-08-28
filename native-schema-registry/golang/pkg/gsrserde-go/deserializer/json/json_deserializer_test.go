@@ -14,7 +14,9 @@ import (
 func TestNewJsonDeserializer(t *testing.T) {
 	t.Run("ValidConfiguration", func(t *testing.T) {
 		config := &common.Configuration{}
-		deserializer := NewJsonDeserializer(config)
+		deserializer , err:= NewJsonDeserializer(config)
+		assert.Nil(t, err, "error should be nil")
+		assert.Nil(t, err, "error should be nil")
 		assert.NotNil(t, deserializer)
 		assert.Equal(t, config, deserializer.config)
 	})
@@ -28,7 +30,8 @@ func TestNewJsonDeserializer(t *testing.T) {
 
 func TestJsonDeserializer_Deserialize(t *testing.T) {
 	config := &common.Configuration{}
-	deserializer := NewJsonDeserializer(config)
+		deserializer ,err:= NewJsonDeserializer(config)
+		assert.Nil(t, err, "error should be nil")
 
 	validSchema := `{
 		"$schema": "http://json-schema.org/draft-07/schema#",
@@ -157,7 +160,8 @@ func TestJsonDeserializer_Deserialize(t *testing.T) {
 
 func TestJsonDeserializer_validateAgainstSchema(t *testing.T) {
 	config := &common.Configuration{}
-	deserializer := NewJsonDeserializer(config)
+		deserializer ,err:= NewJsonDeserializer(config)
+		assert.Nil(t, err, "error should be nil")
 
 	validSchema := `{
 		"type": "object",
@@ -233,7 +237,8 @@ func TestJsonDeserializer_validateAgainstSchema(t *testing.T) {
 
 func TestJsonDeserializer_ComplexScenarios(t *testing.T) {
 	config := &common.Configuration{}
-	deserializer := NewJsonDeserializer(config)
+		deserializer ,err:= NewJsonDeserializer(config)
+		assert.Nil(t, err, "error should be nil")
 
 	t.Run("ComplexNestedSchema", func(t *testing.T) {
 		schema := `{
@@ -332,7 +337,8 @@ func TestJsonDeserializer_ComplexScenarios(t *testing.T) {
 
 func TestJsonDeserializer_ErrorTypes(t *testing.T) {
 	config := &common.Configuration{}
-	deserializer := NewJsonDeserializer(config)
+		deserializer ,err:= NewJsonDeserializer(config)
+		assert.Nil(t, err, "error should be nil")
 
 	t.Run("JsonDeserializationError", func(t *testing.T) {
 		_, err := deserializer.Deserialize(nil, &gsrserde.Schema{Definition: "{}"})
@@ -357,7 +363,8 @@ func TestJsonDeserializer_ErrorTypes(t *testing.T) {
 
 func TestJsonDeserializer_ConcurrentAccess(t *testing.T) {
 	config := &common.Configuration{}
-	deserializer := NewJsonDeserializer(config)
+		deserializer ,err:= NewJsonDeserializer(config)
+		assert.Nil(t, err, "error should be nil")
 
 	schema := `{"type": "object", "properties": {"id": {"type": "integer"}}}`
 
