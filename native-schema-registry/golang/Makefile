@@ -70,7 +70,7 @@ ifdef COVERAGE
 else
 	@echo "Running integration tests..."
 	cd integration-tests && docker compose up -d | tee  ../$(BUILD_DIR)/integ-docker-logs.txt
-	cd integration-tests && stdbuf -oL go test -v -count=1 ./... 2>&1 | tee ../$(BUILD_DIR)/integration-test-output.txt
+	cd integration-tests && stdbuf -oL go test -v -count=1  ./... 2>&1 | tee ../$(BUILD_DIR)/integration-test-output.txt
 	cd integration-tests && docker compose logs > docker-logs.txt
 	cd integration-tests && docker compose down
 	@echo "Integration test report: $(BUILD_DIR)/integration-test-output.txt"
@@ -248,12 +248,12 @@ cover-%: setup-dirs
 test: setup-dirs
 ifdef COVERAGE
 	@echo "Running unit and component tests with coverage..."
-	go test -v -coverprofile=$(COVERAGE_DIR)/unit-coverage.out $(shell go list ./... | grep -v integration-tests)
+	go test -v --count=1 -coverprofile=$(COVERAGE_DIR)/unit-coverage.out $(shell go list ./... | grep -v integration-tests)
 	go tool cover -html=$(COVERAGE_DIR)/unit-coverage.out -o $(COVERAGE_DIR)/unit-coverage.html
 	@echo "Unit and component test coverage report: $(COVERAGE_DIR)/unit-coverage.html"
 else
 	@echo "Running unit and component tests..."
-	go test -v $(shell go list ./... | grep -v integration-tests) 2>&1 | tee $(BUILD_DIR)/unit-test-output.txt
+	go test -v -count=1 $(shell go list ./... | grep -v integration-tests) 2>&1 | tee $(BUILD_DIR)/unit-test-output.txt
 endif
 
 # Integration tests with Docker (integration-tests/ directory only)
