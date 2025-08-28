@@ -123,10 +123,11 @@ func (d *Deserializer) CanDecode(data []byte) (bool, error) {
 	defer C.delete_glue_schema_registry_error_holder(errHolder)
 
 	roba, robaErr := createReadOnlyByteArray(data)
+	defer cleanupReadOnlyByteArray(roba)
 	if robaErr != nil {
 		return false, robaErr
 	}
-	defer cleanupReadOnlyByteArray(roba)
+
 
 	canDecode := C.glue_schema_registry_deserializer_can_decode(d.deserializer, roba, errHolder)
 
@@ -141,7 +142,6 @@ func (d *Deserializer) CanDecode(data []byte) (bool, error) {
 func (d *Deserializer) DecodeSchema(data []byte) (*Schema, error) {
 
 	runtime.LockOSThread()
-	defer runtime.UnlockOSThread()
 	if d.closed {
 		return nil, ErrClosed
 	}
