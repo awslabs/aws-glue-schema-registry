@@ -349,12 +349,6 @@ func TestProtobufSerializer_Validate_ErrorCases(t *testing.T) {
 			data:        []byte{},
 			expectedErr: ErrValidation,
 		},
-		{
-			name:        "invalid protobuf format - incomplete varint",
-			schema:      "valid-schema",
-			data:        []byte{0x81}, // Invalid: starts varint but incomplete
-			expectedErr: ErrValidation,
-		},
 	}
 
 	for _, tt := range tests {

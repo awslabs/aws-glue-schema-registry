@@ -22,9 +22,9 @@ func TestNewJsonDeserializer(t *testing.T) {
 	})
 
 	t.Run("NilConfiguration", func(t *testing.T) {
-		assert.Panics(t, func() {
-			NewJsonDeserializer(nil)
-		})
+		deserializer, err := NewJsonDeserializer(nil)
+		assert.Nil(t, deserializer)
+		assert.Error(t, err, "error should not be nil")
 	})
 }
 

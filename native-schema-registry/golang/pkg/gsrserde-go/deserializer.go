@@ -172,7 +172,7 @@ func (d *Deserializer) DecodeSchema(data []byte) (*Schema, error) {
 	}
 
 	if glueSchema == nil {
-		return nil, fmt.Errorf("decode schema", ErrInvalidSchema)
+		return nil, fmt.Errorf("decode schema %v", ErrInvalidSchema)
 	}
 
 	// Convert to Schema and cleanup
