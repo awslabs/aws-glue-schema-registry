@@ -80,14 +80,15 @@ func (d *Deserializer) Decode(data []byte) ([]byte, error) {
 	defer C.delete_glue_schema_registry_error_holder(errHolder)
 
 	roba, robaErr := createReadOnlyByteArray(data)
+	defer cleanupReadOnlyByteArray(roba)
 	if robaErr != nil {
 		return nil, robaErr
 	}
-	defer cleanupReadOnlyByteArray(roba)
+	
 
 	// Decode the data
 	mba := C.glue_schema_registry_deserializer_decode(d.deserializer, roba, errHolder)
-
+	defer cleanupMutableByteArray(mba)
 	if *errHolder != nil {
 		return nil, extractError("decode", *errHolder)
 	}
@@ -97,7 +98,7 @@ func (d *Deserializer) Decode(data []byte) ([]byte, error) {
 	}
 
 	result := mutableByteArrayToGoSlice(mba)
-	cleanupMutableByteArray(mba)
+	
 
 	return result, nil
 }
@@ -158,13 +159,14 @@ func (d *Deserializer) DecodeSchema(data []byte) (*Schema, error) {
 	defer C.delete_glue_schema_registry_error_holder(errHolder)
 
 	roba, robaErr := createReadOnlyByteArray(data)
+	defer cleanupReadOnlyByteArray(roba)
 	if robaErr != nil {
 		return nil, robaErr
 	}
-	defer cleanupReadOnlyByteArray(roba)
+	
 
 	glueSchema := C.glue_schema_registry_deserializer_decode_schema(d.deserializer, roba, errHolder)
-
+	defer cleanupGlueSchema(glueSchema)
 	if *errHolder != nil {
 		return nil, extractError("decode schema", *errHolder)
 	}
@@ -175,7 +177,7 @@ func (d *Deserializer) DecodeSchema(data []byte) (*Schema, error) {
 
 	// Convert to Schema and cleanup
 	result := extractSchemaFromGlue(glueSchema)
-	cleanupGlueSchema(glueSchema)
+	
 
 	return result, nil
 }
