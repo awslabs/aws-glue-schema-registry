@@ -1,0 +1,72 @@
+[
+  {
+    "id": 1001,
+    "name": "Alice Johnson",
+    "email": "alice.johnson@example.com",
+    "age": 28,
+    "hobbies": ["reading", "photography", "hiking"],
+    "address": {
+      "street": "123 Oak Street",
+      "city": "Seattle",
+      "state": "WA",
+      "zip_code": "98101",
+      "country": "USA"
+    }
+  },
+  {
+    "id": 1002,
+    "name": "Bob Smith",
+    "email": "bob.smith@example.com",
+    "age": 35,
+    "hobbies": ["cooking", "gaming", "cycling"],
+    "address": {
+      "street": "456 Pine Avenue",
+      "city": "Portland",
+      "state": "OR",
+      "zip_code": "97201",
+      "country": "USA"
+    }
+  },
+  {
+    "id": 1003,
+    "name": "Carol Williams",
+    "email": "carol.williams@example.com",
+    "age": 42,
+    "hobbies": ["yoga", "painting", "traveling"],
+    "address": {
+      "street": "789 Maple Drive",
+      "city": "San Francisco",
+      "state": "CA",
+      "zip_code": "94102",
+      "country": "USA"
+    }
+  },
+  {
+    "id": 1004,
+    "name": "David Brown",
+    "email": "david.brown@example.com",
+    "age": 29,
+    "hobbies": ["music", "swimming", "chess"],
+    "address": {
+      "street": "321 Elm Boulevard",
+      "city": "Denver",
+      "state": "CO",
+      "zip_code": "80201",
+      "country": "USA"
+    }
+  },
+  {
+    "id": 1005,
+    "name": "Eva Martinez",
+    "email": "eva.martinez@example.com",
+    "age": 31,
+    "hobbies": ["dancing", "gardening", "writing"],
+    "address": {
+      "street": "654 Cedar Lane",
+      "city": "Austin",
+      "state": "TX",
+      "zip_code": "73301",
+      "country": "USA"
+    }
+  }
+]
