@@ -33,9 +33,27 @@ add_custom_command(
         COMMENT "copying data types for maven project build"
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${DATA_TYPES_MODULE_NAME}> ${LIB_NATIVE_SCHEMA_REGISTRY_PATH}/
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_LINKER_FILE:${DATA_TYPES_MODULE_NAME}> ${LIB_NATIVE_SCHEMA_REGISTRY_PATH}/
-        COMMENT "building maven project, native image target"
-#        COMMAND mvn install -P native-image-musl WORKING_DIRECTORY ${MAVEN_PROJECT_DIR}/..
+        COMMENT "building maven project, native image target for ${BUILD_TARGET}"
 )
+
+# Build target-specific Maven integration
+if(BUILD_TARGET STREQUAL "glibc")
+    message(STATUS "Building with glibc target using native-image-glibc Maven profile")
+    add_custom_command(
+        TARGET ${DATA_TYPES_MODULE_NAME}
+        POST_BUILD
+        COMMENT "Building GraalVM native image with glibc"
+        COMMAND mvn install -P native-image-glibc WORKING_DIRECTORY ${MAVEN_PROJECT_DIR}/..
+    )
+elseif(BUILD_TARGET STREQUAL "musl")
+    message(STATUS "Building with musl target using native-image-musl Maven profile")
+    add_custom_command(
+        TARGET ${DATA_TYPES_MODULE_NAME}
+        POST_BUILD
+        COMMENT "Building GraalVM native image with musl"
+        COMMAND mvn install -P native-image-musl WORKING_DIRECTORY ${MAVEN_PROJECT_DIR}/..
+    )
+endif()
 
 #Add reference to the GraalVM generated Native schema registry module.
 #First, fix the include path in GraalVM generated header file.
@@ -97,38 +115,15 @@ file(
 unset(CMAKE_C_CLANG_TIDY)
 
 
-####Go 
-set(GO_MODULE_NAME GsrSerDeGoGen)
+####Go - Copy libraries and headers only (no SWIG generation)
 set(GO_ROOT_PATH ${PROJECT_SOURCE_DIR}/../golang)
-set(GO_SOURCE_PATH ${GO_ROOT_PATH}/pkg/GsrSerDe)
 set(GO_LIB_PATH ${GO_ROOT_PATH}/lib)
-swig_add_library(
-        ${GO_MODULE_NAME}
-        TYPE SHARED
-        LANGUAGE go
-        OUTPUT_DIR "${GO_SOURCE_PATH}"
-        SOURCES ${GsrSerDeSrc}
-)
-set_target_properties(
-        ${GO_MODULE_NAME}
-        PROPERTIES
-        INCLUDE_DIRECTORIES "${PROJECT_SOURCE_DIR}/include/"
-        SWIG_USE_TARGET_INCLUDE_DIRECTORIES TRUE
-        BUILD_RPATH "$ORIGIN"
-        INSTALL_RPATH "$ORIGIN"
-)
-swig_link_libraries(
-        ${GO_MODULE_NAME}
-        PUBLIC
-        ${DATA_TYPES_MODULE_NAME}
-        ${SERDE_MODULE_NAME}
-        ${AWS_COMMON_MEMALLOC}
-        ${NATIVE_SCHEMA_REGISTRY_MODULE_NAME}
-)
-# Copy shared libraries to lib directory
+
+# Copy shared libraries and headers to golang lib directory
 add_custom_command(
-        TARGET ${GO_MODULE_NAME}
+        TARGET ${SERDE_MODULE_NAME}
         POST_BUILD
+        COMMENT "copying shared libraries and headers for golang integration"
         COMMAND ${CMAKE_COMMAND} -E make_directory ${GO_LIB_PATH}
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${DATA_TYPES_MODULE_NAME}> ${GO_LIB_PATH}/
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${NATIVE_SCHEMA_REGISTRY_MODULE_NAME}> ${GO_LIB_PATH}/

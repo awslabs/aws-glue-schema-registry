@@ -26,7 +26,7 @@ mvn -U clean install -Dcheckstyle.skip=true -DskipTests || true
 
 # Build C lib
 cd /workspace/native-schema-registry/c
-cmake -S . -B build -DCMAKE_C_COMPILER=x86_64-linux-musl-gcc -DCMAKE_POSITION_INDEPENDENT_CODE=ON 
+cmake -S . -B build -DCMAKE_C_COMPILER=x86_64-linux-musl-gcc -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DBUILD_TARGET=musl-cross
 cd build
 cmake --build . || true
 
