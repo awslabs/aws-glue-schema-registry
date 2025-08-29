@@ -80,14 +80,15 @@ func (d *Deserializer) Decode(data []byte) ([]byte, error) {
 	defer C.delete_glue_schema_registry_error_holder(errHolder)
 
 	roba, robaErr := createReadOnlyByteArray(data)
+	defer cleanupReadOnlyByteArray(roba)
 	if robaErr != nil {
 		return nil, robaErr
 	}
-	defer cleanupReadOnlyByteArray(roba)
+	
 
 	// Decode the data
 	mba := C.glue_schema_registry_deserializer_decode(d.deserializer, roba, errHolder)
-
+	defer cleanupMutableByteArray(mba)
 	if *errHolder != nil {
 		return nil, extractError("decode", *errHolder)
 	}
@@ -97,7 +98,7 @@ func (d *Deserializer) Decode(data []byte) ([]byte, error) {
 	}
 
 	result := mutableByteArrayToGoSlice(mba)
-	cleanupMutableByteArray(mba)
+	
 
 	return result, nil
 }
@@ -123,10 +124,11 @@ func (d *Deserializer) CanDecode(data []byte) (bool, error) {
 	defer C.delete_glue_schema_registry_error_holder(errHolder)
 
 	roba, robaErr := createReadOnlyByteArray(data)
+	defer cleanupReadOnlyByteArray(roba)
 	if robaErr != nil {
 		return false, robaErr
 	}
-	defer cleanupReadOnlyByteArray(roba)
+
 
 	canDecode := C.glue_schema_registry_deserializer_can_decode(d.deserializer, roba, errHolder)
 
@@ -141,7 +143,6 @@ func (d *Deserializer) CanDecode(data []byte) (bool, error) {
 func (d *Deserializer) DecodeSchema(data []byte) (*Schema, error) {
 
 	runtime.LockOSThread()
-	defer runtime.UnlockOSThread()
 	if d.closed {
 		return nil, ErrClosed
 	}
@@ -158,24 +159,25 @@ func (d *Deserializer) DecodeSchema(data []byte) (*Schema, error) {
 	defer C.delete_glue_schema_registry_error_holder(errHolder)
 
 	roba, robaErr := createReadOnlyByteArray(data)
+	defer cleanupReadOnlyByteArray(roba)
 	if robaErr != nil {
 		return nil, robaErr
 	}
-	defer cleanupReadOnlyByteArray(roba)
+	
 
 	glueSchema := C.glue_schema_registry_deserializer_decode_schema(d.deserializer, roba, errHolder)
-
+	defer cleanupGlueSchema(glueSchema)
 	if *errHolder != nil {
 		return nil, extractError("decode schema", *errHolder)
 	}
 
 	if glueSchema == nil {
-		return nil, fmt.Errorf("decode schema", ErrInvalidSchema)
+		return nil, fmt.Errorf("decode schema %v", ErrInvalidSchema)
 	}
 
 	// Convert to Schema and cleanup
 	result := extractSchemaFromGlue(glueSchema)
-	cleanupGlueSchema(glueSchema)
+	
 
 	return result, nil
 }

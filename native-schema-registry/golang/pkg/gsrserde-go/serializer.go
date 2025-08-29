@@ -88,17 +88,19 @@ func (s *Serializer) Encode(data []byte, transportName string, schema *Schema) (
 	
 	// Create read-only byte array from Go byte slice
 	roba, robaErr := createReadOnlyByteArray(data)
+	defer cleanupReadOnlyByteArray(roba)
 	if robaErr != nil {
 		return nil, robaErr
 	}
-	defer cleanupReadOnlyByteArray(roba)
+
 	
 	// Create glue schema from Schema struct
 	glueSchema, schemaErr := createGlueSchema(schema)
+	defer cleanupGlueSchema(glueSchema)
 	if schemaErr != nil {
 		return nil, schemaErr
 	}
-	defer cleanupGlueSchema(glueSchema)
+	
 	
 	// Convert transport name to C string
 	cTransportName := C.CString(transportName)
