@@ -1,0 +1,101 @@
+[
+  {
+    "id": 2001,
+    "user_id": 1001,
+    "items": [
+      {
+        "product_id": 3001,
+        "product_name": "Wireless Headphones",
+        "quantity": 1,
+        "unit_price": 89.99
+      },
+      {
+        "product_id": 3002,
+        "product_name": "Phone Case",
+        "quantity": 2,
+        "unit_price": 15.99
+      }
+    ],
+    "total_amount": 121.97,
+    "status": 1,
+    "created_at": "2025-01-15T10:30:00Z"
+  },
+  {
+    "id": 2002,
+    "user_id": 1002,
+    "items": [
+      {
+        "product_id": 3003,
+        "product_name": "Bluetooth Speaker",
+        "quantity": 1,
+        "unit_price": 45.50
+      }
+    ],
+    "total_amount": 45.50,
+    "status": 2,
+    "created_at": "2025-01-14T14:45:00Z"
+  },
+  {
+    "id": 2003,
+    "user_id": 1003,
+    "items": [
+      {
+        "product_id": 3004,
+        "product_name": "Laptop Stand",
+        "quantity": 1,
+        "unit_price": 35.00
+      },
+      {
+        "product_id": 3005,
+        "product_name": "USB Cable",
+        "quantity": 3,
+        "unit_price": 8.99
+      },
+      {
+        "product_id": 3006,
+        "product_name": "Mouse Pad",
+        "quantity": 1,
+        "unit_price": 12.99
+      }
+    ],
+    "total_amount": 74.96,
+    "status": 3,
+    "created_at": "2025-01-13T09:15:00Z"
+  },
+  {
+    "id": 2004,
+    "user_id": 1004,
+    "items": [
+      {
+        "product_id": 3007,
+        "product_name": "Mechanical Keyboard",
+        "quantity": 1,
+        "unit_price": 125.00
+      }
+    ],
+    "total_amount": 125.00,
+    "status": 0,
+    "created_at": "2025-01-16T16:20:00Z"
+  },
+  {
+    "id": 2005,
+    "user_id": 1005,
+    "items": [
+      {
+        "product_id": 3008,
+        "product_name": "Tablet",
+        "quantity": 1,
+        "unit_price": 299.99
+      },
+      {
+        "product_id": 3009,
+        "product_name": "Screen Protector",
+        "quantity": 1,
+        "unit_price": 9.99
+      }
+    ],
+    "total_amount": 309.98,
+    "status": 1,
+    "created_at": "2025-01-15T12:00:00Z"
+  }
+]
