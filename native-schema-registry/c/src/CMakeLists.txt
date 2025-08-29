@@ -115,38 +115,15 @@ file(
 unset(CMAKE_C_CLANG_TIDY)
 
 
-####Go 
-set(GO_MODULE_NAME GsrSerDeGoGen)
+####Go - Copy libraries and headers only (no SWIG generation)
 set(GO_ROOT_PATH ${PROJECT_SOURCE_DIR}/../golang)
-set(GO_SOURCE_PATH ${GO_ROOT_PATH}/pkg/GsrSerDe)
 set(GO_LIB_PATH ${GO_ROOT_PATH}/lib)
-swig_add_library(
-        ${GO_MODULE_NAME}
-        TYPE SHARED
-        LANGUAGE go
-        OUTPUT_DIR "${GO_SOURCE_PATH}"
-        SOURCES ${GsrSerDeSrc}
-)
-set_target_properties(
-        ${GO_MODULE_NAME}
-        PROPERTIES
-        INCLUDE_DIRECTORIES "${PROJECT_SOURCE_DIR}/include/"
-        SWIG_USE_TARGET_INCLUDE_DIRECTORIES TRUE
-        BUILD_RPATH "$ORIGIN"
-        INSTALL_RPATH "$ORIGIN"
-)
-swig_link_libraries(
-        ${GO_MODULE_NAME}
-        PUBLIC
-        ${DATA_TYPES_MODULE_NAME}
-        ${SERDE_MODULE_NAME}
-        ${AWS_COMMON_MEMALLOC}
-        ${NATIVE_SCHEMA_REGISTRY_MODULE_NAME}
-)
-# Copy shared libraries to lib directory
+
+# Copy shared libraries and headers to golang lib directory
 add_custom_command(
-        TARGET ${GO_MODULE_NAME}
+        TARGET ${SERDE_MODULE_NAME}
         POST_BUILD
+        COMMENT "copying shared libraries and headers for golang integration"
         COMMAND ${CMAKE_COMMAND} -E make_directory ${GO_LIB_PATH}
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${DATA_TYPES_MODULE_NAME}> ${GO_LIB_PATH}/
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${NATIVE_SCHEMA_REGISTRY_MODULE_NAME}> ${GO_LIB_PATH}/
