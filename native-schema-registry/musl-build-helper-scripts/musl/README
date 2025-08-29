@@ -6,3 +6,13 @@ These utilize the graalvm community musl docker image and a musl based image for
 
 # Troubleshooting
 Commonly because the docker containers set ownership permissions of the resulting libraries. Operations like mvn clean and cmake clean will fail due to lacking permissions on some files and directories. This can be resolved with a `sudo chown -R <username> .` in the root of this repository.
+
+
+# usage
+Ensure that `native-schema-registry/c/build` is deleted
+
+Ensure that docker is installed
+
+run `./build-musl.sh` 
+
+The artifacts should be in each of the polygot language libs folders.
