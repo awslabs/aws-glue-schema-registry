@@ -33,9 +33,27 @@ add_custom_command(
         COMMENT "copying data types for maven project build"
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${DATA_TYPES_MODULE_NAME}> ${LIB_NATIVE_SCHEMA_REGISTRY_PATH}/
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_LINKER_FILE:${DATA_TYPES_MODULE_NAME}> ${LIB_NATIVE_SCHEMA_REGISTRY_PATH}/
-        COMMENT "building maven project, native image target"
-        COMMAND mvn clean install -P native-image WORKING_DIRECTORY ${MAVEN_PROJECT_DIR}/..
+        COMMENT "building maven project, native image target for ${BUILD_TARGET}"
 )
+
+# Build target-specific Maven integration
+if(BUILD_TARGET STREQUAL "glibc")
+    message(STATUS "Building with glibc target using native-image-glibc Maven profile")
+    add_custom_command(
+        TARGET ${DATA_TYPES_MODULE_NAME}
+        POST_BUILD
+        COMMENT "Building GraalVM native image with glibc"
+        COMMAND mvn install -P native-image-glibc WORKING_DIRECTORY ${MAVEN_PROJECT_DIR}/..
+    )
+elseif(BUILD_TARGET STREQUAL "musl")
+    message(STATUS "Building with musl target using native-image-musl Maven profile")
+    add_custom_command(
+        TARGET ${DATA_TYPES_MODULE_NAME}
+        POST_BUILD
+        COMMENT "Building GraalVM native image with musl"
+        COMMAND mvn install -P native-image-musl WORKING_DIRECTORY ${MAVEN_PROJECT_DIR}/..
+    )
+endif()
 
 #Add reference to the GraalVM generated Native schema registry module.
 #First, fix the include path in GraalVM generated header file.
@@ -132,6 +150,24 @@ add_custom_command(
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${NATIVE_SCHEMA_REGISTRY_MODULE_NAME}> ${CSHARP_GEN_LIB_PATH}/
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${AWS_COMMON_MEMALLOC}> ${CSHARP_GEN_LIB_PATH}/
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${SERDE_MODULE_NAME}> ${CSHARP_GEN_LIB_PATH}/
+)
+
+####Go - Copy libraries and headers only (no SWIG generation)
+set(GO_ROOT_PATH ${PROJECT_SOURCE_DIR}/../golang)
+set(GO_LIB_PATH ${GO_ROOT_PATH}/lib)
+
+# Copy shared libraries and headers to golang lib directory
+add_custom_command(
+        TARGET ${SERDE_MODULE_NAME}
+        POST_BUILD
+        COMMENT "copying shared libraries and headers for golang integration"
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${GO_LIB_PATH}
+        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${DATA_TYPES_MODULE_NAME}> ${GO_LIB_PATH}/
+        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${NATIVE_SCHEMA_REGISTRY_MODULE_NAME}> ${GO_LIB_PATH}/
+        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${AWS_COMMON_MEMALLOC}> ${GO_LIB_PATH}/
+        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${SERDE_MODULE_NAME}> ${GO_LIB_PATH}/
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${GO_LIB_PATH}/include
+        COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/include/ ${GO_LIB_PATH}/include/
 )
 
 if(CMAKE_C_COMPILER_ID MATCHES "GNU")

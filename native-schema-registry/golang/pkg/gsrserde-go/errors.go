@@ -76,7 +76,7 @@ func extractError(operation string, err *C.glue_schema_registry_error) error {
 	}()
 	
 	// Extract error code with validation
-	rawCode := int(C.glue_schema_registry_error_get_code(err))
+	rawCode := int(err.code)
 	var code ErrorCode
 	
 	// Validate error code is in expected range
@@ -101,10 +101,9 @@ func extractError(operation string, err *C.glue_schema_registry_error) error {
 	
 	// Extract message with safety checks
 	var message string
-	cMsgPtr := C.glue_schema_registry_error_get_msgs(err)
-	if cMsgPtr != nil {
+	if err.msg != nil {
 		// Copy C string to Go memory immediately to avoid dangling pointer
-		message = C.GoString(cMsgPtr)
+		message = C.GoString(err.msg)
 		if message == "" {
 			message = fmt.Sprintf("native schema registry error (code %d)", rawCode)
 		}

@@ -31,7 +31,7 @@ services:
       - AWS_REGION=${AWS_REGION:-us-east-1}
       - COVERAGE=${COVERAGE:-false}
     volumes:
-      - ../build:/app/native-schema-registry/golang/build
+      - ../build:/app/golang/build
       - ./docker-logs.txt:/app/native-schema-registry/golang/integration-tests/docker-logs.txt
       - ~/.aws:/root/.aws:ro
     networks:

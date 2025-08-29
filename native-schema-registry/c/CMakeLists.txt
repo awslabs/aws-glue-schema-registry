@@ -7,6 +7,23 @@ project(native_schema_registry_c C)
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
+# Build target configuration
+set(BUILD_TARGET "glibc" CACHE STRING "Build target: glibc (default), musl, or musl-cross")
+set_property(CACHE BUILD_TARGET PROPERTY STRINGS "glibc" "musl" "musl-cross")
+
+# Validate build target
+if(NOT BUILD_TARGET MATCHES "^(glibc|musl|musl-cross)$")
+    message(FATAL_ERROR 
+        "Invalid BUILD_TARGET: ${BUILD_TARGET}\n"
+        "Valid options are:\n"
+        "  glibc      - Standard glibc build (default)\n"
+        "  musl       - Native musl build\n"
+        "  musl-cross - Cross-compile musl on glibc system using Docker"
+    )
+endif()
+
+message(STATUS "Build target: ${BUILD_TARGET}")
+
 set(MAVEN_PROJECT_DIR "${PROJECT_SOURCE_DIR}/../target")
 ##Global variables
 #Path to GraalVM generated shared library
