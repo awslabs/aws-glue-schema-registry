@@ -143,6 +143,7 @@ func (d *Deserializer) CanDecode(data []byte) (bool, error) {
 func (d *Deserializer) DecodeSchema(data []byte) (*Schema, error) {
 
 	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
 	if d.closed {
 		return nil, ErrClosed
 	}
