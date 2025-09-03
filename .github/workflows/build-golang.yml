@@ -2,11 +2,11 @@ name: Build Golang
 
 on:
   push:
-    branches: [ master, native-schema-registry-2025, native-schema-registry-csharp, native-schema-registry-golang ]
+    branches: [ master, native-schema-registry-2025, native-schema-registry-csharp, native-schema-registry-golang, native-schema-trunk ]
   pull_request:
-    branches: [ master, native-schema-registry-2025, native-schema-registry-csharp, native-schema-registry-golang ]
+    branches: [ master, native-schema-registry-2025, native-schema-registry-csharp, native-schema-registry-golang, native-schema-trunk ]
   release:
-    branches: [ master, native-schema-registry-2025, native-schema-registry-csharp, native-schema-registry-golang ]
+    branches: [ master, native-schema-registry-2025, native-schema-registry-csharp, native-schema-registry-golang, native-schema-trunk ]
     types: [ created ]
 
 jobs:
@@ -73,7 +73,12 @@ jobs:
           cmake -S . -Bbuild
           cd build
           cmake --build .
-
+      - name: configure aws credentials
+        uses: aws-actions/configure-aws-credentials@v4.3.1
+        with:
+          role-to-assume: ${{ secrets.INTEGRATION_TEST_ROLE_ARN }}
+          role-session-name: github-golang-build-workflow
+          aws-region: us-east-1
       - name: Test Golang
         shell: bash
         run: |
