@@ -1,6 +1,7 @@
 #Ignore IntelliJ files
 .idea/
 .DS_Store
+.DS_Store
 *.iml
 
 #Ignore Maven files
@@ -51,4 +52,8 @@ native-schema-registry/golang/lib/libnative_schema_registry_c_data_types.so
 native-schema-registry/golang/lib/libnative_schema_registry_c.so
 native-schema-registry/golang/lib/libnativeschemaregistry.so
 native-schema-registry/golang/pkg/GsrSerDe/glue_schema_registry_serdeGO_wrap.c
-native-schema-registry/golang/pkg/GsrSerDe/GsrSerDe.go
+native-schema-registry/golang/pkg/GsrSerDe/GsrSerDe.go**/.settings
+**/*.project
+**/*.classpath
+**/*.factorypath
+**/dependency-reduced-pom.xml

@@ -229,7 +229,7 @@ public class KafkaHelper {
         final KafkaStreams streams = new KafkaStreams(builder.build(), properties);
         streams.cleanUp();
         streams.start();
-        Thread.sleep(1000L);
+        Thread.sleep(5000L);
         streams.close();
 
         log.info("Finish processing {} message streaming via Kafka.", producerProperties.getDataFormat());
@@ -360,9 +360,9 @@ public class KafkaHelper {
 
     private Properties getKafkaStreamsProperties(final ProducerProperties producerProperties) {
         Properties properties = new Properties();
-        properties.put(StreamsConfig.APPLICATION_ID_CONFIG, "kafka-streams-test");
+        properties.put(StreamsConfig.APPLICATION_ID_CONFIG, "kafka-streams-test-"+producerProperties.getDataFormat());
         properties.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapBrokers);
-        properties.put(StreamsConfig.CACHE_MAX_BYTES_BUFFERING_CONFIG, 0);
+        properties.put(StreamsConfig.STATESTORE_CACHE_MAX_BYTES_CONFIG, 0);
         properties.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass().getName());
         properties.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, GlueSchemaRegistryKafkaStreamsSerde.class);
         properties.put(AWSSchemaRegistryConstants.DATA_FORMAT, producerProperties.getDataFormat());

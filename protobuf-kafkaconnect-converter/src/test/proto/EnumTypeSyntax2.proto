@@ -1,0 +1,38 @@
+syntax = "proto2";
+
+package com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax2;
+
+message EnumTest {
+  enum Corpus {
+    UNIVERSAL = 0;
+    WEB = 1;
+    IMAGES = 2;
+    LOCAL = 3;
+    NEWS = 4;
+    PRODUCTS = 5;
+    VIDEO = 6;
+  }
+  required Corpus corpus = 1;
+
+  enum ShapesWithParam {
+    SQUARE = 0;
+    CIRCLE = 1;
+    TRIANGLE = 2;
+  }
+  required ShapesWithParam shapes = 12345;
+
+  enum Colors {
+    BLACK = 0;
+    RED = 1;
+    GREEN = 2;
+    BLUE = 3;
+  }
+  optional Colors color = 2;
+
+  enum FruitsWithDefault {
+    APPLE = 0;
+    ORANGE = 1;
+    BANANA = 2;
+  }
+  required FruitsWithDefault fruits = 3;
+}
