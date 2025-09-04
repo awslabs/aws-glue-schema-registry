@@ -45,8 +45,8 @@ jobs:
           echo "Ref: ${{ github.ref }}"
           echo "SHA: ${{ github.sha }}"
           echo "Event: ${{ github.event_name }}"
-          echo "RoleArn: ${{ secrets.INTEGRATION_TEST_ROLE_ARN }}
-          echo "RoleToAssumeArn ${{ secrets.ROLE_ARN_TO_ASSUME }}
+          echo "RoleArn: ${{ secrets.INTEGRATION_TEST_ROLE_ARN }}"
+          echo "RoleToAssumeArn ${{ secrets.ROLE_ARN_TO_ASSUME }}"
       - name: configure aws credentials
         uses: aws-actions/configure-aws-credentials@v4.3.1
         with:
