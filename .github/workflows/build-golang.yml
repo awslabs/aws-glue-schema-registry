@@ -21,6 +21,8 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: amazonlinux:2023
+    env:
+      ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
     services:
       zookeeper:
         image: bitnami/zookeeper:latest
