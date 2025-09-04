@@ -13,8 +13,10 @@ permissions:
   contents: read
 jobs:
   build-golang:
-
-    continue-on-error: false
+    permissions:
+      id-token: write
+      contents: read
+      continue-on-error: false
     timeout-minutes: 60
     runs-on: ubuntu-latest
     container:
