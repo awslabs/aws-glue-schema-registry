@@ -102,7 +102,7 @@ target_link_libraries(
 
 ##Swig compilation
 
-set(CMAKE_SWIG_FLAGS -intgosize 64)
+set(CMAKE_SWIG_FLAGS)
 find_package(SWIG 4.0.0 REQUIRED)
 include(UseSWIG)
 
