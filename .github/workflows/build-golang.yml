@@ -38,6 +38,18 @@ jobs:
           KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
           ALLOW_PLAINTEXT_LISTENER: yes
     steps:
+      - name: Debug GitHub Context
+        run: |
+          echo "Repository: ${{ github.repository }}"
+          echo "Ref: ${{ github.ref }}"
+          echo "SHA: ${{ github.sha }}"
+          echo "Event: ${{ github.event_name }}"
+      - name: configure aws credentials
+        uses: aws-actions/configure-aws-credentials@v4.3.1
+        with:
+          role-to-assume: ${{ secrets.INTEGRATION_TEST_ROLE_ARN }}
+          role-session-name: github-golang-build-workflow
+          aws-region: us-east-1
       - name: Install required utilities
         run: |
           yum install -y zip unzip tar findutils gzip clang-tools-extra nodejs wget
@@ -83,13 +95,9 @@ jobs:
           cmake -S . -Bbuild
           cd build
           cmake --build .
-      - name: configure aws credentials
-        uses: aws-actions/configure-aws-credentials@v4.3.1
-        with:
-          role-to-assume: ${{ secrets.INTEGRATION_TEST_ROLE_ARN }}
-          role-session-name: github-golang-build-workflow
-          aws-region: us-east-1
       - name: Test Golang
+        env:
+          KAFKA_BROKER: kafka:9092
         shell: bash
         run: |
           cd native-schema-registry/golang
