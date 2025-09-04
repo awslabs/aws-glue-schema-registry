@@ -47,7 +47,7 @@ jobs:
       - name: configure aws credentials
         uses: aws-actions/configure-aws-credentials@v4.3.1
         with:
-          role-to-assume: ${{ secrets.INTEGRATION_TEST_ROLE_ARN }}
+          role-to-assume: arn:aws:iam::747156111546:role/aws-glue-schema-registry-github-actions-role-prod
           role-session-name: github-golang-build-workflow
           aws-region: us-east-1
       - name: Install required utilities
