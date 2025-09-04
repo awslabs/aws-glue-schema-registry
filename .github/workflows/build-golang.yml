@@ -19,8 +19,6 @@ jobs:
     continue-on-error: false
     timeout-minutes: 60
     runs-on: ubuntu-latest
-    container:
-      image: amazonlinux:2023
     env:
       ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
     services:
@@ -54,17 +52,14 @@ jobs:
           role-to-assume: arn:aws:iam::747156111546:role/aws-glue-schema-registry-github-actions-role-prod
           role-session-name: github-golang-build-workflow
           aws-region: us-east-1
-      - name: Install required utilities
-        run: |
-          yum install -y zip unzip tar findutils gzip clang-tools-extra nodejs wget
-
       - name: Checkout code
         uses: actions/checkout@v2
         
-      - name: Install CMake and dependencies
+      - name: Install required utilities and dependencies
         run: |
-          yum install -y cmake gcc gcc-c++ git lcov pcre2-devel 
-          yum groupinstall -y "Development Tools"
+          sudo apt-get update
+          sudo apt-get install -y zip unzip tar findutils gzip clang-tools nodejs wget
+          sudo apt-get install -y cmake gcc g++ git lcov libpcre2-dev build-essential
       - name: Set up Java
         uses: graalvm/setup-graalvm@v1
         with:
@@ -99,13 +94,17 @@ jobs:
           cmake -S . -Bbuild
           cd build
           cmake --build .
+      - name: Install Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.20'
+          
       - name: Test Golang
         env:
           KAFKA_BROKER: kafka:9092
         shell: bash
         run: |
           cd native-schema-registry/golang
-          yum install -y golang
           go mod tidy
           # Ensure Go bin directory is in PATH
           export PATH=$PATH:$(go env GOPATH)/bin
