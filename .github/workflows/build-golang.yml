@@ -1,12 +1,13 @@
 name: Build Golang
 
 on:
-  workflow_dispatch:
-    inputs:
-      pr_branch:
-        description: 'Branch to test'
-        required: true
-  
+  push:
+    branches: [ master, native-schema-registry-2025, native-schema-registry-csharp, native-schema-registry-golang, native-schema-trunk ]
+  pull_request:
+    branches: [ master, native-schema-registry-2025, native-schema-registry-csharp, native-schema-registry-golang, native-schema-trunk ]
+  release:
+    branches: [ master, native-schema-registry-2025, native-schema-registry-csharp, native-schema-registry-golang, native-schema-trunk ]
+    types: [ created ]
 permissions:
   id-token: write
   contents: read
