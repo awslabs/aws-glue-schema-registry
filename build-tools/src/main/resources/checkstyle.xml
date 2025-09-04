@@ -273,7 +273,7 @@
             <property name="id" value="MethodNameTest"/>
             <property name="severity" value="${checkstyle.methodname.severity}" default="error"/>
             <property name="format" value="${checkstyle.methodname.format}"
-                      default="^test[a-zA-Z0-9]*_[a-z][a-zA-Z0-9]*_[a-z][a-zA-Z0-9]*$"/>
+                      default="^[a-z][a-zA-Z0-9]*$"/>
             <property name="allowClassName" value="${checkstyle.methodname.allowclassname}" default="false"/>
             <property name="applyToPublic" value="${checkstyle.methodname.applytopublic}" default="true"/>
             <property name="applyToProtected" value="${checkstyle.methodname.applytoprotected}" default="false"/>

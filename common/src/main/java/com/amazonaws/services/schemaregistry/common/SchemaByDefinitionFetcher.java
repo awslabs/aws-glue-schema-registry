@@ -74,7 +74,9 @@ public class SchemaByDefinitionFetcher {
             return schemaDefinitionToVersionCache.get(schema);
         } catch (Exception ex) {
             Throwable schemaRegistryException = ex.getCause();
-            String exceptionCauseMessage = schemaRegistryException.getCause().getMessage();
+            String exceptionCauseMessage = schemaRegistryException.getCause() != null
+                ? schemaRegistryException.getCause().getMessage()
+                : schemaRegistryException.getMessage();
 
             if (exceptionCauseMessage.contains(AWSSchemaRegistryConstants.SCHEMA_VERSION_NOT_FOUND_MSG)) {
                 if (!glueSchemaRegistryConfiguration.isSchemaAutoRegistrationEnabled()) {

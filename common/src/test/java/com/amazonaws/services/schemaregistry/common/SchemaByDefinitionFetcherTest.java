@@ -193,7 +193,7 @@ public class SchemaByDefinitionFetcherTest {
         assertTrue(
             exception.getMessage().contains("Exception occurred while fetching or registering schema definition"));
         assertTrue(
-            exception.getMessage().contains("Error: Unknown"));
+            exception.getMessage().contains("Error: java.lang.RuntimeException: Unknown"));
     }
 
     @Test

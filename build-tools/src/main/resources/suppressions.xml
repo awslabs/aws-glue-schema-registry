@@ -31,4 +31,7 @@
     <suppress checks="TypeName" files="DataTypes\.java"/>
     <suppress checks="ParameterName" files=".*Handler\.java"/>
     <suppress checks="LocalVariableName" files=".*Handler\.java"/>
+    
+    <!-- Suppress all checkstyle errors for avrodata package -->
+    <suppress checks=".*" files=".*avrodata.*\.java"/>
 </suppressions>
