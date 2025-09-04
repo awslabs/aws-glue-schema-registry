@@ -16,7 +16,7 @@ jobs:
     permissions:
       id-token: write
       contents: read
-      continue-on-error: false
+    continue-on-error: false
     timeout-minutes: 60
     runs-on: ubuntu-latest
     container:
