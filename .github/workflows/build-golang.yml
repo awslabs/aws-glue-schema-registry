@@ -8,12 +8,12 @@ on:
   release:
     branches: [ master, native-schema-registry-2025, native-schema-registry-csharp, native-schema-registry-golang, native-schema-trunk ]
     types: [ created ]
-
+permissions:
+  id-token: write
+  contents: read
 jobs:
   build-golang:
-    permissions:
-      id-token: write
-      contents: read
+
     continue-on-error: false
     timeout-minutes: 60
     runs-on: ubuntu-latest
