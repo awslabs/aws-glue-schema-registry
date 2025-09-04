@@ -49,8 +49,6 @@ jobs:
       - name: configure aws credentials
         uses: aws-actions/configure-aws-credentials@v3
         with:
-          role-to-assume: arn:aws:iam::747156111546:role/aws-glue-schema-registry-github-actions-role-prod
-          role-session-name: github-golang-build-workflow
           aws-region: us-east-1
       - name: Checkout code
         uses: actions/checkout@v2
