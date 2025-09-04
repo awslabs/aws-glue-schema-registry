@@ -19,6 +19,24 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: amazonlinux:2023
+    services:
+      zookeeper:
+        image: bitnami/zookeeper:latest
+        ports:
+          - 2181:2181
+        env:
+          ALLOW_ANONYMOUS_LOGIN: yes
+          
+      kafka:
+        image: bitnami/kafka:3.5
+        ports:
+          - 9092:9092
+        env:
+          KAFKA_BROKER_ID: 1
+          KAFKA_CFG_ZOOKEEPER_CONNECT: zookeeper:2181
+          KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
+          KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+          ALLOW_PLAINTEXT_LISTENER: yes
     steps:
       - name: Install required utilities
         run: |
@@ -31,14 +49,6 @@ jobs:
         run: |
           yum install -y cmake gcc gcc-c++ git lcov pcre2-devel 
           yum groupinstall -y "Development Tools"
-          wget https://sourceforge.net/projects/swig/files/swig/swig-4.3.0/swig-4.3.0.tar.gz
-          tar -xzf swig-4.3.0.tar.gz
-          cd swig-4.3.0
-          ./configure --prefix=/usr/local
-          make -j$(nproc) 
-          make install 
-          swig -version
-
       - name: Set up Java
         uses: graalvm/setup-graalvm@v1
         with:
@@ -85,4 +95,8 @@ jobs:
           cd native-schema-registry/golang
           yum install -y golang
           go mod tidy
-          make test
+          # Ensure Go bin directory is in PATH
+          export PATH=$PATH:$(go env GOPATH)/bin
+          # Run integration tests
+          cd integration-tests
+          go test -v -timeout 30m ./...
