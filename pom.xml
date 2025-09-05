@@ -70,7 +70,6 @@
         <module>kafkastreams-serde</module>
         <module>avro-kafkaconnect-converter</module>
         <module>avro-flink-serde</module>
-        <module>native-schema-registry</module>
         <module>examples</module>
         <module>integration-tests</module>
         <module>jsonschema-kafkaconnect-converter</module>
