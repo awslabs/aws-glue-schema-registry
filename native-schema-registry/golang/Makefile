@@ -125,6 +125,8 @@ generate-protos: setup-dirs
 			fi; \
 		fi; \
 	done
+	@echo "Generating integration test protobuf files..."
+	@/usr/local/bin/protoc --proto_path=integration-tests --go_out=integration-tests/testpb --go_opt=paths=source_relative integration-tests/test_message.proto
 	@echo "Protobuf generation complete"
 
 # Allow overriding variables for custom proto generation
