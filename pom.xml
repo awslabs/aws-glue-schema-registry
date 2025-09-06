@@ -75,7 +75,6 @@
         <module>integration-tests</module>
         <module>jsonschema-kafkaconnect-converter</module>
         <module>protobuf-kafkaconnect-converter</module>
-        <module>native-schema-registry</module>
     </modules>
 
     <properties>
