@@ -13,10 +13,6 @@ set_target_properties(${AWS_COMMON_MEMALLOC} PROPERTIES
     BUILD_RPATH "$ORIGIN"
     INSTALL_RPATH "$ORIGIN"
 )
-set_target_properties(${AWS_COMMON_MEMALLOC} PROPERTIES
-    BUILD_RPATH "$ORIGIN"
-    INSTALL_RPATH "$ORIGIN"
-)
 target_link_libraries(${AWS_COMMON_MEMALLOC} PRIVATE ${AWS_C_COMMON})
 
 #Adding modules in the build order.
@@ -31,14 +27,9 @@ set_target_properties(${DATA_TYPES_MODULE_NAME} PROPERTIES
     BUILD_RPATH "$ORIGIN"
     INSTALL_RPATH "$ORIGIN"
 )
-set_target_properties(${DATA_TYPES_MODULE_NAME} PROPERTIES
-    BUILD_RPATH "$ORIGIN"
-    INSTALL_RPATH "$ORIGIN"
-)
 add_custom_command(
         TARGET ${DATA_TYPES_MODULE_NAME}
         POST_BUILD
-        COMMENT "copying data types for maven project build"
         COMMENT "copying data types for maven project build"
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${DATA_TYPES_MODULE_NAME}> ${LIB_NATIVE_SCHEMA_REGISTRY_PATH}/
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_LINKER_FILE:${DATA_TYPES_MODULE_NAME}> ${LIB_NATIVE_SCHEMA_REGISTRY_PATH}/
@@ -70,10 +61,6 @@ execute_process(
         COMMAND sed -ie "s/<graal_isolate.h>/\"graal_isolate.h\"/" ${LIB_NATIVE_SCHEMA_REGISTRY_PATH}/libnativeschemaregistry.h
         COMMENT "fixed include path in GraalVM generated header file"
 )
-execute_process(
-        COMMAND sed -ie "s/<graal_isolate.h>/\"graal_isolate.h\"/" ${LIB_NATIVE_SCHEMA_REGISTRY_PATH}/libnativeschemaregistry.h
-        COMMENT "fixed include path in GraalVM generated header file"
-)
 add_library(
         ${NATIVE_SCHEMA_REGISTRY_MODULE_NAME} SHARED
         IMPORTED
@@ -93,10 +80,6 @@ add_library(
         ${SERDE_MODULE_NAME} SHARED
         glue_schema_registry_serializer.c
         glue_schema_registry_deserializer.c
-)
-set_target_properties(${SERDE_MODULE_NAME} PROPERTIES
-    BUILD_RPATH "$ORIGIN"
-    INSTALL_RPATH "$ORIGIN"
 )
 set_target_properties(${SERDE_MODULE_NAME} PROPERTIES
     BUILD_RPATH "$ORIGIN"
@@ -147,10 +130,7 @@ set_target_properties(
         SWIG_USE_TARGET_INCLUDE_DIRECTORIES TRUE
         BUILD_RPATH "$ORIGIN"
         INSTALL_RPATH "$ORIGIN"
-        BUILD_RPATH "$ORIGIN"
-        INSTALL_RPATH "$ORIGIN"
 )
-
 
 swig_link_libraries(
         ${CSHARP_MODULE_NAME}
