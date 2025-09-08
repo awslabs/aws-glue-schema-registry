@@ -83,10 +83,10 @@ namespace AWSGsrSerDe.Tests.serializer.avro
                 { GlueSchemaRegistryConstants.AvroRecordType, AvroRecordType.SpecificRecord }
             };
 
-            var genericConfiguration = new GlueSchemaRegistryConfiguration(genericDeserializerConfigs);
+            var genericConfiguration = new GlueSchemaRegistryDataFormatConfiguration(genericDeserializerConfigs);
             _avroGenericDeserializer = new AvroDeserializer(genericConfiguration);
             
-            var specificConfiguration = new GlueSchemaRegistryConfiguration(specificDeserializerConfigs);
+            var specificConfiguration = new GlueSchemaRegistryDataFormatConfiguration(specificDeserializerConfigs);
             _avroSpecificDeserializer = new AvroDeserializer(specificConfiguration);
             
         }

@@ -13,12 +13,15 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Text;
 using AWSGsrSerDe.common;
 using AWSGsrSerDe.deserializer.protobuf;
 using AWSGsrSerDe.serializer.protobuf;
 using Com.Amazonaws.Services.Schemaregistry.Tests.Protobuf.Syntax2.Basic;
 using Google.Protobuf;
+using Google.Protobuf.Reflection;
 using NUnit.Framework;
 using static AWSGsrSerDe.common.GlueSchemaRegistryConstants.DataFormat;
 using static AWSGsrSerDe.Tests.utils.ProtobufGenerator;
@@ -38,7 +41,7 @@ namespace AWSGsrSerDe.Tests.deserializer.protobuf
         [Test]
         public void TestConstruct_ValidArg_Succeed()
         {
-            var config = new GlueSchemaRegistryConfiguration(new Dictionary<string, dynamic>
+            var config = new GlueSchemaRegistryDataFormatConfiguration(new Dictionary<string, dynamic>
             {
                 { GlueSchemaRegistryConstants.ProtobufMessageDescriptor, Phone.Descriptor },
             });
@@ -49,7 +52,7 @@ namespace AWSGsrSerDe.Tests.deserializer.protobuf
         [Test]
         public void TestDeserialize_NullArgs_ThrowsException()
         {
-            var config = new GlueSchemaRegistryConfiguration(new Dictionary<string, dynamic>
+            var config = new GlueSchemaRegistryDataFormatConfiguration(new Dictionary<string, dynamic>
             {
                 { GlueSchemaRegistryConstants.ProtobufMessageDescriptor, Phone.Descriptor },
             });
@@ -93,10 +96,8 @@ namespace AWSGsrSerDe.Tests.deserializer.protobuf
         [TestCaseSource(nameof(TestDeserializationMessageProvider))]
         public void TestDeserialize_Succeed_ForAllTypesOfMessages(IMessage message)
         {
-            var config = new GlueSchemaRegistryConfiguration(new Dictionary<string, dynamic>
-            {
-                { GlueSchemaRegistryConstants.ProtobufMessageDescriptor, message.Descriptor },
-            });
+            // Use hybrid approach: load base config from properties file and add dynamic protobuf descriptor
+            var config = CreateProtobufTestConfig(message.Descriptor);
             var protobufSerializer = new ProtobufSerializer();
             var serializedBytes = protobufSerializer.Serialize(message);
 
@@ -110,7 +111,7 @@ namespace AWSGsrSerDe.Tests.deserializer.protobuf
         [Test]
         public void TestDeserialize_InvalidBytes_ThrowsException()
         {
-            var config = new GlueSchemaRegistryConfiguration(new Dictionary<string, dynamic>
+            var config = new GlueSchemaRegistryDataFormatConfiguration(new Dictionary<string, dynamic>
             {
                 { GlueSchemaRegistryConstants.ProtobufMessageDescriptor, Phone.Descriptor },
             });
@@ -120,6 +121,102 @@ namespace AWSGsrSerDe.Tests.deserializer.protobuf
                 Encoding.Default.GetBytes(invalid),
                 new GlueSchemaRegistrySchema("dummy", "dummy schema def", PROTOBUF.ToString())));
             Assert.AreEqual("Exception occurred while de-serializing Protobuf message", ex.Message);
+        }
+
+        /// <summary>
+        /// Finds the project root by looking for .csproj file and returns absolute path to config file.
+        /// This method is borrowed from ConfigFileValidationTests to maintain consistency with other tests.
+        /// </summary>
+        /// <param name="relativePath">Relative path from project root</param>
+        /// <returns>Absolute path to the configuration file</returns>
+        private static string GetConfigPath(string relativePath)
+        {
+            var currentDir = new DirectoryInfo(Directory.GetCurrentDirectory());
+            while (currentDir != null && !currentDir.GetFiles("*.csproj").Any())
+            {
+                currentDir = currentDir.Parent;
+            }
+            
+            if (currentDir == null)
+            {
+                throw new DirectoryNotFoundException("Could not find project root directory containing .csproj file");
+            }
+            
+            return Path.Combine(currentDir.FullName, relativePath);
+        }
+
+        /// <summary>
+        /// Parses a Java-style properties file into a dictionary.
+        /// This method handles the basic key=value format used by the test configuration files.
+        /// </summary>
+        /// <param name="filePath">Path to the properties file</param>
+        /// <returns>Dictionary containing the parsed key-value pairs</returns>
+        private static Dictionary<string, dynamic> ParsePropertiesFile(string filePath)
+        {
+            var properties = new Dictionary<string, dynamic>();
+            
+            if (!File.Exists(filePath))
+            {
+                throw new FileNotFoundException($"Properties file not found: {filePath}");
+            }
+
+            foreach (var line in File.ReadAllLines(filePath))
+            {
+                var trimmedLine = line.Trim();
+                
+                // Skip empty lines and comments
+                if (string.IsNullOrEmpty(trimmedLine) || trimmedLine.StartsWith("#") || trimmedLine.StartsWith("//"))
+                {
+                    continue;
+                }
+
+                var delimiterIndex = trimmedLine.IndexOf('=');
+                if (delimiterIndex > 0)
+                {
+                    var key = trimmedLine.Substring(0, delimiterIndex).Trim();
+                    var value = trimmedLine.Substring(delimiterIndex + 1).Trim();
+                    
+                    // Parse common value types
+                    if (bool.TryParse(value, out var boolValue))
+                    {
+                        properties[key] = boolValue;
+                    }
+                    else if (int.TryParse(value, out var intValue))
+                    {
+                        properties[key] = intValue;
+                    }
+                    else
+                    {
+                        properties[key] = value;
+                    }
+                }
+            }
+
+            return properties;
+        }
+
+        /// <summary>
+        /// Creates a protobuf test configuration by combining file-based config with dynamic protobuf descriptor.
+        /// 
+        /// This hybrid approach is necessary because:
+        /// 1. The move to config file approach broke protobuf tests since each test needs a different MessageDescriptor
+        /// 2. Config files are static and cannot specify different protobuf descriptors per test case
+        /// 3. This method maintains compatibility with the config file approach while enabling dynamic protobuf configuration
+        /// 4. It loads base settings (region, registry name, etc.) from the properties file and adds the test-specific descriptor
+        /// </summary>
+        /// <param name="descriptor">The protobuf message descriptor for this specific test case</param>
+        /// <returns>GlueSchemaRegistryDataFormatConfiguration with both file-based and dynamic settings</returns>
+        private GlueSchemaRegistryDataFormatConfiguration CreateProtobufTestConfig(MessageDescriptor descriptor)
+        {
+            // Load base configuration from the protobuf properties file
+            var configPath = GetConfigPath("configuration/test-configs/valid-minimal-protobuf.properties");
+            var baseConfigDict = ParsePropertiesFile(configPath);
+            
+            // Add the dynamic protobuf descriptor that each test case requires
+            // This is the critical missing piece that caused the original test failures
+            baseConfigDict[GlueSchemaRegistryConstants.ProtobufMessageDescriptor] = descriptor;
+            
+            return new GlueSchemaRegistryDataFormatConfiguration(baseConfigDict);
         }
     }
 }

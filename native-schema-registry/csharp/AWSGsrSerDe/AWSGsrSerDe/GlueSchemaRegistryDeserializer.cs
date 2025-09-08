@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 
 namespace AWSGsrSerDe
 {
@@ -9,11 +10,26 @@ namespace AWSGsrSerDe
     {
         private readonly glue_schema_registry_deserializer _deserializer;
 
-        public GlueSchemaRegistryDeserializer()
-        {
-            //p_err will be set by Swig automatically.
-            _deserializer = new glue_schema_registry_deserializer(p_err: null);
-            
+        /// <summary>
+        /// Initializes a new instance of the <see cref="GlueSchemaRegistryDeserializer"/> class with configuration file.
+        /// </summary>
+        /// <param name="configFilePath">Path to the configuration properties file.</param>
+        public GlueSchemaRegistryDeserializer(string configFilePath)
+        {   
+            try
+            {
+                _deserializer = new glue_schema_registry_deserializer(configFilePath, null);
+            }
+            catch (Exception e)
+            {
+                // Check for specific error conditions that should throw specific exceptions
+                if (e.Message.Contains("No such file") || e.Message.Contains("does not exist"))
+                {
+                    throw new FileNotFoundException($"Configuration file not found: {configFilePath}", configFilePath);
+                }
+                
+                throw new AwsSchemaRegistryException($"Failed to initialize deserializer: {e.Message}");
+            }
         }
 
         ~GlueSchemaRegistryDeserializer()

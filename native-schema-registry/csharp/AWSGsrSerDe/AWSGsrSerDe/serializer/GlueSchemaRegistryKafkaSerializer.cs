@@ -13,6 +13,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using AWSGsrSerDe.common;
 
 namespace AWSGsrSerDe.serializer
@@ -24,31 +25,21 @@ namespace AWSGsrSerDe.serializer
     {
         private readonly GlueSchemaRegistrySerializer _glueSchemaRegistrySerializer;
         
-        private GlueSchemaRegistryConfiguration _configuration;
         private string _dataFormat;
         private ISchemaNameStrategy _schemaNamingStrategy;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="GlueSchemaRegistryKafkaSerializer"/> class.
         /// </summary>
-        /// <param name="configs">configuration elements for serializer</param>
-        public GlueSchemaRegistryKafkaSerializer(Dictionary<string, dynamic> configs)
+        /// <param name="configFilePath">Path to the configuration properties file</param>
+        public GlueSchemaRegistryKafkaSerializer(string configFilePath)
         {
-            Configure(configs);
+            _dataFormat = ConfigFileReader.GetConfigValue(configFilePath, "dataFormat") ?? "AVRO";
+            _schemaNamingStrategy = new DefaultSchemaNameStrategy();
             
-            _glueSchemaRegistrySerializer = new GlueSchemaRegistrySerializer();
+            _glueSchemaRegistrySerializer = new GlueSchemaRegistrySerializer(configFilePath);
         }
         
-        /// <summary>
-        /// Configures the <see cref="GlueSchemaRegistryKafkaSerializer"/> instance
-        /// </summary>
-        /// <param name="configs">configuration elements for serializer</param>
-        public void Configure(Dictionary<string, dynamic> configs)
-        {
-            _configuration = new GlueSchemaRegistryConfiguration(configs);
-            _dataFormat = _configuration.DataFormat.ToString();
-            _schemaNamingStrategy = new DefaultSchemaNameStrategy();
-        }
 
         /// <summary>
         /// serializes the given Object to an byte array.

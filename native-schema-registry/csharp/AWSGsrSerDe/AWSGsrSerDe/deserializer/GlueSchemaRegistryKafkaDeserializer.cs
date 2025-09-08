@@ -11,7 +11,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using System.Collections.Generic;
+using System.IO;
 using AWSGsrSerDe.common;
 
 namespace AWSGsrSerDe.deserializer
@@ -26,27 +28,40 @@ namespace AWSGsrSerDe.deserializer
 
         private readonly GlueSchemaRegistryDeserializer _glueSchemaRegistryDeserializer;
         
-        private GlueSchemaRegistryConfiguration _configuration;
-
+        private readonly GlueSchemaRegistryDataFormatConfiguration _configuration;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="GlueSchemaRegistryKafkaDeserializer"/> class.
         /// </summary>
-        /// <param name="configs">configuration elements for de-serializer</param>
-        public GlueSchemaRegistryKafkaDeserializer(Dictionary<string, dynamic> configs)
+        /// <param name="configFilePath">Path to the configuration properties file</param>
+        /// <param name="dataConfig">Optional data format configuration for runtime settings (protobuf descriptors, etc.)</param>
+        public GlueSchemaRegistryKafkaDeserializer(string configFilePath, GlueSchemaRegistryDataFormatConfiguration dataConfig = null)
         {
-            Configure(configs);
-            _glueSchemaRegistryDeserializer = new GlueSchemaRegistryDeserializer();
+            // Load base config as dictionary
+            var baseConfigDict = ConfigFileReader.LoadConfigurationDictionary(configFilePath);
+            
+            // If dataConfig provided, overlay its non-null properties
+            if (dataConfig != null)
+            {
+                if (dataConfig.ProtobufMessageDescriptor != null)
+                    baseConfigDict[GlueSchemaRegistryConstants.ProtobufMessageDescriptor] = dataConfig.ProtobufMessageDescriptor;
+                
+                if (dataConfig.JsonObjectType != null)
+                    baseConfigDict[GlueSchemaRegistryConstants.JsonObjectType] = dataConfig.JsonObjectType;
+                
+                if (dataConfig.DataFormat != default)
+                    baseConfigDict[GlueSchemaRegistryConstants.DataFormatType] = dataConfig.DataFormat;
+                
+                if (dataConfig.AvroRecordType != default)
+                    baseConfigDict[GlueSchemaRegistryConstants.AvroRecordType] = dataConfig.AvroRecordType;
+            }
+            
+            // Create final merged configuration
+            _configuration = new GlueSchemaRegistryDataFormatConfiguration(baseConfigDict);
+            
+            _glueSchemaRegistryDeserializer = new GlueSchemaRegistryDeserializer(configFilePath);
         }
 
-        /// <summary>
-        /// Configures the <see cref="GlueSchemaRegistryKafkaDeserializer"/> instance
-        /// </summary>
-        /// <param name="configs">configuration elements for de-serializer</param>
-        public void Configure(Dictionary<string, dynamic> configs)
-        {
-            _configuration = new GlueSchemaRegistryConfiguration(configs);
-        }
 
         /// <summary>
         /// De-serialize operation for de-serializing the byte array to an Object.
