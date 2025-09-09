@@ -3,15 +3,6 @@
     "includes": [
       {
         "pattern": ".*/.*proto$"
-      },
-      {
-        "pattern": "google/.*\\.proto$"
-      },
-      {
-        "pattern": "google/protobuf/.*\\.proto$"
-      },
-      {
-        "pattern": "\\.proto$"
       }
     ]
   }
