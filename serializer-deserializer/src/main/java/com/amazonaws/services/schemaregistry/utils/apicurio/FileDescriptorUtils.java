@@ -51,20 +51,6 @@ public class FileDescriptorUtils {
 
     public static final Location DEFAULT_LOCATION = Location.get("");
 
-    // Check if getCtype method exists to handle compatibility across different protobuf versions.
-    // The getCtype method was deprecated and removed in newer protobuf versions, causing
-    // NoSuchMethodException in native compilation environments like GraalVM.
-    private static final boolean HAS_CTYPE_METHOD = checkCtypeMethodExists();
-
-    private static boolean checkCtypeMethodExists() {
-        try {
-            FieldOptions.class.getMethod("getCtype");
-            return true;
-        } catch (NoSuchMethodException e) {
-            return false;
-        }
-    }
-
     private static final String PROTO2 = "proto2";
     private static final String PROTO3 = "proto3";
     private static final String ALLOW_ALIAS_OPTION = "allow_alias";
@@ -953,7 +939,7 @@ public class FileDescriptorUtils {
                 false);
             options.add(option);
         }
-        if (HAS_CTYPE_METHOD && fieldDescriptorOptions.hasCtype()) {
+        if (fieldDescriptorOptions.hasCtype()) {
             OptionElement option = new OptionElement(CTYPE_OPTION, enumKind, fieldDescriptorOptions.getCtype(), false);
             options.add(option);
         }
