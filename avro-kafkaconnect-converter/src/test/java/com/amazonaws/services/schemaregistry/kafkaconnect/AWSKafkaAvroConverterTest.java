@@ -227,6 +227,35 @@ public class AWSKafkaAvroConverterTest {
     }
 
     /**
+     * Test that the fix for secondary deserializer schema extraction works with GSR data.
+     * This ensures backward compatibility is maintained.
+     */
+    @Test
+    void testConverter_toConnectData_GSRData_BackwardCompatibility() {
+        Struct expected = createStructRecord();
+        String avroSchemaDefinition = avroData.fromConnectSchema(expected.schema()).toString();
+        Object avroData = this.avroData.fromConnectData(expected.schema(), expected);
+
+        AWSKafkaAvroSerializer awsKafkaAvroSerializer = createSerializer(avroSchemaDefinition, schemaVersionIdForTesting);
+        AWSKafkaAvroDeserializer awsKafkaAvroDeserializer = createDeserializer(avroData, genericBytes, avroSchemaDefinition);
+        
+        // Mock canDeserialize to return true for GSR data
+        when(awsKafkaAvroDeserializer.getGlueSchemaRegistryDeserializationFacade().canDeserialize(genericBytes))
+                .thenReturn(true);
+        
+        converter = new AWSKafkaAvroConverter(awsKafkaAvroSerializer, awsKafkaAvroDeserializer, this.avroData);
+
+        byte[] serializedData = converter.fromConnectData(testTopic, expected.schema(), expected);
+        SchemaAndValue structRecord = converter.toConnectData(testTopic, serializedData);
+
+        assertEquals(expected, structRecord.value());
+        
+        // Verify that GSR schema extraction was used
+        verify(awsKafkaAvroDeserializer.getGlueSchemaRegistryDeserializationFacade()).canDeserialize(genericBytes);
+        verify(awsKafkaAvroDeserializer.getGlueSchemaRegistryDeserializationFacade()).getSchemaDefinition(eq(genericBytes));
+    }
+
+    /**
      * To create a AWSKafkaAvroSerializer instance with mocked parameters.
      *
      * @return a mocked AWSKafkaAvroSerializer instance
@@ -266,7 +295,7 @@ public class AWSKafkaAvroConverterTest {
                 .build();
 
         when(glueSchemaRegistryDeserializationFacade.deserialize(awsDeserializerInput)).thenReturn(record);
-        when(glueSchemaRegistryDeserializationFacade.getSchemaDefinition(bytes)).thenReturn(schemaDefinition);
+        when(glueSchemaRegistryDeserializationFacade.getSchemaDefinition(eq(bytes))).thenReturn(schemaDefinition);
         AWSKafkaAvroDeserializer awsKafkaAvroDeserializer = new AWSKafkaAvroDeserializer(mockCredProvider, null);
         awsKafkaAvroDeserializer.configure(configs, true);
 
