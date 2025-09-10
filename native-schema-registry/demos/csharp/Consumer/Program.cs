@@ -91,11 +91,14 @@ class Program
                             .Topic("users")
                             .WithGroupId("user-consumer-group")
                             .WithBufferSize(100)
-                            .WithWorkersCount(1)
+                            .WithWorkersCount(10)
                             .WithAutoOffsetReset(AutoOffsetReset.Earliest)
                             .AddMiddlewares(middlewares => middlewares
                                 .Add<ExceptionMiddleware>()
-                                .AddDeserializer(resolver => new GlueSchemaRegistryKafkaFlowProtobufDeserializer<User>(CONFIG_PATH))
+                                .Add(
+                                resolver => new GlueSchemaRegistryKafkaFlowProtobufDeserializeMiddleware<User>(CONFIG_PATH),
+                                MiddlewareLifetime.Worker
+                            )
                                 .AddTypedHandlers(h => h.AddHandler<UserHandler>())
                             )
                         )
@@ -103,11 +106,14 @@ class Program
                             .Topic("products")
                             .WithGroupId("product-consumer-group")
                             .WithBufferSize(100)
-                            .WithWorkersCount(1)
+                            .WithWorkersCount(10)
                             .WithAutoOffsetReset(AutoOffsetReset.Earliest)
                             .AddMiddlewares(middlewares => middlewares
                                 .Add<ExceptionMiddleware>() 
-                                .AddDeserializer(resolver => new GlueSchemaRegistryKafkaFlowProtobufDeserializer<Product>(CONFIG_PATH))
+                                .Add(
+                                resolver => new GlueSchemaRegistryKafkaFlowProtobufDeserializeMiddleware<Product>(CONFIG_PATH),
+                                MiddlewareLifetime.Worker
+                            )
                                 .AddTypedHandlers(h => h.AddHandler<ProductHandler>())
                             )
                         )
@@ -115,11 +121,14 @@ class Program
                             .Topic("orders")
                             .WithGroupId("order-consumer-group")
                             .WithBufferSize(100)
-                            .WithWorkersCount(1)
+                            .WithWorkersCount(10)
                             .WithAutoOffsetReset(AutoOffsetReset.Earliest)
                             .AddMiddlewares(middlewares => middlewares
                                 .Add<ExceptionMiddleware>()
-                                .AddDeserializer(resolver => new GlueSchemaRegistryKafkaFlowProtobufDeserializer<Order>(CONFIG_PATH))
+                                .Add(
+                                resolver => new GlueSchemaRegistryKafkaFlowProtobufDeserializeMiddleware<Order>(CONFIG_PATH),
+                                MiddlewareLifetime.Worker
+                            )
                                 .AddTypedHandlers(h => h.AddHandler<OrderHandler>())
                             )
                         )
@@ -127,11 +136,14 @@ class Program
                             .Topic("payments")
                             .WithGroupId("payment-consumer-group")
                             .WithBufferSize(100)
-                            .WithWorkersCount(1)
+                            .WithWorkersCount(10)
                             .WithAutoOffsetReset(AutoOffsetReset.Earliest)
                             .AddMiddlewares(middlewares => middlewares
                                 .Add<ExceptionMiddleware>()
-                                .AddDeserializer(resolver => new GlueSchemaRegistryKafkaFlowProtobufDeserializer<Payment>(CONFIG_PATH))
+                                .Add(
+                                resolver => new GlueSchemaRegistryKafkaFlowProtobufDeserializeMiddleware<Payment>(CONFIG_PATH),
+                                MiddlewareLifetime.Worker
+                            )
                                 .AddTypedHandlers(h => h.AddHandler<PaymentHandler>())
                             )
                         )
@@ -139,12 +151,15 @@ class Program
                             .Topic("events")
                             .WithGroupId("event-consumer-group")
                             .WithBufferSize(100)
-                            .WithWorkersCount(1)
+                            .WithWorkersCount(10)
                             .WithAutoOffsetReset(AutoOffsetReset.Earliest)
                             .AddMiddlewares(middlewares => middlewares 
-                                .Add<ExceptionMiddleware>()
-                                .AddDeserializer(resolver => new GlueSchemaRegistryKafkaFlowProtobufDeserializer<Event>(CONFIG_PATH))
-                                .AddTypedHandlers(h => h.AddHandler<EventHandler>())
+                            .Add<ExceptionMiddleware>()
+                            .Add(
+                                resolver => new GlueSchemaRegistryKafkaFlowProtobufDeserializeMiddleware<Event>(CONFIG_PATH),
+                                MiddlewareLifetime.Worker
+                            )
+                            .AddTypedHandlers(h => h.AddHandler<EventHandler>())
                             )
                         )
                     )
