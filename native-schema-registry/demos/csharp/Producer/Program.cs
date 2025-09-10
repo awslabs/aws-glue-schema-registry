@@ -116,7 +116,7 @@ class Program
     {
         var producer = host.Services.GetRequiredService<IProducerAccessor>().GetProducer("user-producer");
         
-        for (int counter = 1; counter <= 10 && !_shutdown; counter++)
+        for (int counter = 1; counter <= 1000 && !_shutdown; counter++)
         {
             try
             {
@@ -130,12 +130,9 @@ class Program
 
                 producer.Produce(user.Id, user);
                 
-                lock (_lock)
-                {
-                    Console.WriteLine($"[UserProducer] Sent: {user.Name} ({user})");
-                }
+                Console.WriteLine($"[UserProducer] Sent: {user.Name} ({user})");
                 
-                Thread.Sleep(1000);
+                
             }
             catch (Exception ex)
             {
@@ -153,7 +150,7 @@ class Program
     {
         var producer = host.Services.GetRequiredService<IProducerAccessor>().GetProducer("product-producer");
         
-        for (int counter = 1; counter <= 10 && !_shutdown; counter++)
+        for (int counter = 1; counter <= 1000 && !_shutdown; counter++)
         {
             try
             {
@@ -168,12 +165,9 @@ class Program
 
                 producer.Produce(product.Sku, product);
                 
-                lock (_lock)
-                {
-                    Console.WriteLine($"[ProductProducer] Sent: {product.Name} (${product})");
-                }
+                Console.WriteLine($"[ProductProducer] Sent: {product.Name} (${product})");
                 
-                Thread.Sleep(1200);
+                
             }
             catch (Exception ex)
             {
@@ -191,7 +185,7 @@ class Program
     {
         var producer = host.Services.GetRequiredService<IProducerAccessor>().GetProducer("order-producer");
         
-        for (int counter = 1; counter <= 10 && !_shutdown; counter++)
+        for (int counter = 1; counter <= 1000 && !_shutdown; counter++)
         {
             try
             {
@@ -231,12 +225,8 @@ class Program
 
                 producer.Produce(order.OrderId, order);
                 
-                lock (_lock)
-                {
-                    Console.WriteLine($"[OrderProducer] Sent: Order {order.OrderId} (${order.Header})");
-                }
+                Console.WriteLine($"[OrderProducer] Sent: Order {order.OrderId} (${order.Header})");
                 
-                Thread.Sleep(1500);
             }
             catch (Exception ex)
             {
@@ -254,7 +244,7 @@ class Program
     {
         var producer = host.Services.GetRequiredService<IProducerAccessor>().GetProducer("payment-producer");
         
-        for (int counter = 1; counter <= 10 && !_shutdown; counter++)
+        for (int counter = 1; counter <= 1000 && !_shutdown; counter++)
         {
             try
             {
@@ -299,12 +289,9 @@ class Program
 
                 producer.Produce(payment.PaymentId, payment);
                 
-                lock (_lock)
-                {
-                    Console.WriteLine($"[PaymentProducer] Sent: Payment {payment.PaymentId} (${payment})");
-                }
+                Console.WriteLine($"[PaymentProducer] Sent: Payment {payment.PaymentId} (${payment})");
                 
-                Thread.Sleep(1800);
+                
             }
             catch (Exception ex)
             {
@@ -322,7 +309,7 @@ class Program
     {
         var producer = host.Services.GetRequiredService<IProducerAccessor>().GetProducer("event-producer");
         
-        for (int counter = 1; counter <= 10 && !_shutdown; counter++)
+        for (int counter = 1; counter <= 1000 && !_shutdown; counter++)
         {
             try
             {
@@ -369,12 +356,8 @@ class Program
 
                 producer.Produce(eventMsg.EventId, eventMsg);
                 
-                lock (_lock)
-                {
-                    Console.WriteLine($"[EventProducer] Sent: Event {eventMsg.EventId} ({eventMsg})");
-                }
+                Console.WriteLine($"[EventProducer] Sent: Event {eventMsg.EventId} ({eventMsg})");
                 
-                Thread.Sleep(800);
             }
             catch (Exception ex)
             {
