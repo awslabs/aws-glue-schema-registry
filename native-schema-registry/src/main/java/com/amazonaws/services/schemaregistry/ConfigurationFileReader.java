@@ -1,4 +1,4 @@
-package com.amazonaws.services.schemaregistry.config;
+package com.amazonaws.services.schemaregistry;
 
 import java.io.FileInputStream;
 import java.io.IOException;

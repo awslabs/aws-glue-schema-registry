@@ -1,16 +1,12 @@
 package com.amazonaws.services.schemaregistry;
 
 import com.amazonaws.services.schemaregistry.common.Schema;
-import com.amazonaws.services.schemaregistry.config.NativeGlueSchemaRegistryConfiguration;
-import com.amazonaws.services.schemaregistry.config.ConfigurationFileReader;
+import com.amazonaws.services.schemaregistry.common.configs.GlueSchemaRegistryConfiguration;
 import com.amazonaws.services.schemaregistry.serializer.ProtobufPreprocessor;
 import com.amazonaws.services.schemaregistry.serializers.GlueSchemaRegistrySerializer;
 import com.amazonaws.services.schemaregistry.utils.AWSSchemaRegistryConstants;
 import com.google.common.collect.ImmutableMap;
 import com.oracle.svm.core.c.CConst;
-
-import lombok.extern.slf4j.Slf4j;
-
 import org.graalvm.nativeimage.IsolateThread;
 import org.graalvm.nativeimage.c.CContext;
 import org.graalvm.nativeimage.c.function.CEntryPoint;
@@ -33,7 +29,6 @@ import static com.amazonaws.services.schemaregistry.DataTypes.HandlerDirectives;
  * Entry point class for the serialization methods of GSR shared library.
  */
 @CContext(HandlerDirectives.class)
-@Slf4j
 public class GlueSchemaRegistrySerializationHandler {
 
     @CEntryPoint(name = "initialize_serializer")
@@ -47,8 +42,8 @@ public class GlueSchemaRegistrySerializationHandler {
                 AWSSchemaRegistryConstants.SCHEMA_AUTO_REGISTRATION_SETTING,
                 "true"
             );
-        NativeGlueSchemaRegistryConfiguration glueSchemaRegistryConfiguration =
-            new NativeGlueSchemaRegistryConfiguration(configMap);
+        GlueSchemaRegistryConfiguration glueSchemaRegistryConfiguration =
+            new GlueSchemaRegistryConfiguration(configMap);
 
         SerializerInstance.create(glueSchemaRegistryConfiguration);
     }
@@ -66,11 +61,10 @@ public class GlueSchemaRegistrySerializationHandler {
             }
             String filePath = CTypeConversion.toJavaString(configFilePath);
             Map<String, String> configs = ConfigurationFileReader.loadConfigFromFile(filePath);
-            NativeGlueSchemaRegistryConfiguration configuration = new NativeGlueSchemaRegistryConfiguration(configs);
+            GlueSchemaRegistryConfiguration configuration = new GlueSchemaRegistryConfiguration(configs);
             SerializerInstance.create(configuration);
             return 0;
         } catch (Exception e) {
-            log.error("Error while initializing serializer with config", e);
             ExceptionWriter.write(errorPointer, e);
             return 1; // Error
         }
@@ -120,7 +114,6 @@ public class GlueSchemaRegistrySerializationHandler {
             return toCMutableByteArray(encodedBytes, errorPointerHolder);
         } catch (Exception | Error e) {
 
-            log.error("Error while encoding data with schema", e);
             ExceptionWriter.write(errorPointerHolder, e);
 
             return WordFactory.nullPointer();
