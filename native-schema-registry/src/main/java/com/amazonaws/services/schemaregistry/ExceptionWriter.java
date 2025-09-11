@@ -53,15 +53,15 @@ public class ExceptionWriter {
         StringJoiner messageJoiner = new StringJoiner("\n");
         Boolean shouldAppendStackTrace = false;
 
+        if (throwable.getStackTrace() != null) {
+            shouldAppendStackTrace = true;
+        }
         if (throwable == null) {
             throwableMessage = "NULL is thrown";
         } else if (throwable.getMessage() == null) {
             throwableMessage = throwable.getClass().getName() + " is thrown, but there is no detail message";
         } else {
             throwableMessage = throwable.getMessage();
-            if (throwable.getStackTrace() != null) {
-                shouldAppendStackTrace = true;
-            }
         }
         messageJoiner.add(throwableMessage);
 

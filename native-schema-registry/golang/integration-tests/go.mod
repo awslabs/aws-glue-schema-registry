@@ -2,7 +2,6 @@ module github.com/awslabs/aws-glue-schema-registry/native-schema-registry/golang
 
 go 1.20
 
-
 require (
 	github.com/IBM/sarama v1.43.2
 	github.com/awslabs/aws-glue-schema-registry/native-schema-registry/golang v0.0.0
