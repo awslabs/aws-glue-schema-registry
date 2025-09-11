@@ -1,4 +1,4 @@
-FROM ghcr.io/graalvm/native-image-community:17-muslib
+FROM ghcr.io/graalvm/native-image-community:21-muslib
 
 # Build PIC-compatible zlib to fix shared library linking
 

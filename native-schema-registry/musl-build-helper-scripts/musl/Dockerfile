@@ -1,7 +1,7 @@
 # ==========================
 # Stage 1 — Java build (GraalVM musl)
 # ==========================
-FROM ghcr.io/graalvm/native-image-community:17-muslib AS java-build
+FROM ghcr.io/graalvm/native-image-community:21-muslib AS java-build
 
 WORKDIR /tmp
 
