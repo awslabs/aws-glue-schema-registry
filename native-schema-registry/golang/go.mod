@@ -2,7 +2,6 @@ module github.com/awslabs/aws-glue-schema-registry/native-schema-registry/golang
 
 go 1.20
 
-
 require (
 	github.com/hamba/avro/v2 v2.25.1
 	github.com/stretchr/testify v1.10.0
