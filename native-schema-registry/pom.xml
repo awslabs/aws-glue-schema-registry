@@ -171,6 +171,22 @@
                     <skip>true</skip>
                 </configuration>
             </plugin>
+            <plugin>
+            <artifactId>maven-clean-plugin</artifactId>
+            <version>3.5.0</version> <!-- Use the latest version -->
+            <configuration>
+                <filesets>
+                <fileset>
+                    <directory>c/build</directory>
+
+                    <includes>
+                    <include>**/*</include> <!-- Include all files and subdirectories -->
+                    </includes>
+                    <followSymlinks>false</followSymlinks>
+                </fileset>
+                </filesets>
+            </configuration>
+            </plugin>
         </plugins>
     </build>
 
