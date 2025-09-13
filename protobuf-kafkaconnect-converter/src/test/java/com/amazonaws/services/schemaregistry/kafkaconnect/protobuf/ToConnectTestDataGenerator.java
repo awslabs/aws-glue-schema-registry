@@ -34,6 +34,8 @@ import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax2.TimeType
 import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax3.TimeTypeSyntax3;
 import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax2.DecimalTypeSyntax2;
 import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax3.DecimalTypeSyntax3;
+import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax2.RecursiveTypeSyntax2;
+import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax3.RecursiveTypeSyntax3;
 import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Message;
@@ -919,5 +921,14 @@ public class ToConnectTestDataGenerator {
                 .put("decimalWithScale", Decimal.builder(10).parameter(PROTOBUF_TAG,"24")
                         .parameter("connect.decimal.scale", "10").optional().build())
                 .build();
+    }
+
+    public static List<Message> getRecursiveProtobufMessages() {
+        return Arrays.asList(
+            RecursiveTypeSyntax3.RecursiveType.newBuilder().setName("test").build(),
+            RecursiveTypeSyntax2.RecursiveType.newBuilder().setName("test").build(),
+            RecursiveTypeSyntax3.TreeNode.newBuilder().setValue(42).build(),
+            RecursiveTypeSyntax2.TreeNode.newBuilder().setValue(42).build()
+        );
     }
 }
