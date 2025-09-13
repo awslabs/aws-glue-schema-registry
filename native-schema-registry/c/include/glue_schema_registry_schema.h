@@ -44,4 +44,4 @@ const char * glue_schema_registry_schema_get_data_format(glue_schema_registry_sc
 
 const char * glue_schema_registry_schema_get_additional_schema_info(glue_schema_registry_schema * schema);
 
-#endif //GLUE_SCHEMA_REGISTRY_SCHEMA_H
+#endif // GLUE_SCHEMA_REGISTRY_SCHEMA_H

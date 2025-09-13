@@ -91,7 +91,7 @@ class Program
                             .Topic("users")
                             .WithGroupId("user-consumer-group")
                             .WithBufferSize(100)
-                            .WithWorkersCount(1)
+                            .WithWorkersCount(15)
                             .WithAutoOffsetReset(AutoOffsetReset.Earliest)
                             .AddMiddlewares(middlewares => middlewares
                                 .Add<ExceptionMiddleware>()
@@ -103,7 +103,7 @@ class Program
                             .Topic("products")
                             .WithGroupId("product-consumer-group")
                             .WithBufferSize(100)
-                            .WithWorkersCount(1)
+                            .WithWorkersCount(15)
                             .WithAutoOffsetReset(AutoOffsetReset.Earliest)
                             .AddMiddlewares(middlewares => middlewares
                                 .Add<ExceptionMiddleware>() 
@@ -115,7 +115,7 @@ class Program
                             .Topic("orders")
                             .WithGroupId("order-consumer-group")
                             .WithBufferSize(100)
-                            .WithWorkersCount(1)
+                            .WithWorkersCount(15)
                             .WithAutoOffsetReset(AutoOffsetReset.Earliest)
                             .AddMiddlewares(middlewares => middlewares
                                 .Add<ExceptionMiddleware>()
@@ -127,7 +127,7 @@ class Program
                             .Topic("payments")
                             .WithGroupId("payment-consumer-group")
                             .WithBufferSize(100)
-                            .WithWorkersCount(1)
+                            .WithWorkersCount(15)
                             .WithAutoOffsetReset(AutoOffsetReset.Earliest)
                             .AddMiddlewares(middlewares => middlewares
                                 .Add<ExceptionMiddleware>()
@@ -139,7 +139,7 @@ class Program
                             .Topic("events")
                             .WithGroupId("event-consumer-group")
                             .WithBufferSize(100)
-                            .WithWorkersCount(1)
+                            .WithWorkersCount(15)
                             .WithAutoOffsetReset(AutoOffsetReset.Earliest)
                             .AddMiddlewares(middlewares => middlewares 
                                 .Add<ExceptionMiddleware>()
@@ -201,7 +201,8 @@ public class UserHandler : IMessageHandler<User>
     {
         try
         {
-            Console.WriteLine($"[UserConsumer] SUCCESS: Received {message.Name} ({message.Id}) - Status: {message.Status}");
+            var workerId = Thread.CurrentThread.ManagedThreadId;
+            Console.WriteLine($"[UserConsumer-W{workerId}] SUCCESS: Received {message.Name} ({message.Id}) - Status: {message.Status}");
         }
         catch (Exception ex)
         {
@@ -217,7 +218,8 @@ public class ProductHandler : IMessageHandler<Product>
     {
         try
         {
-            Console.WriteLine($"[ProductConsumer] SUCCESS: Received {message.Name} (${message.Price}) - Category: {message.Category}");
+            var workerId = Thread.CurrentThread.ManagedThreadId;
+            Console.WriteLine($"[ProductConsumer-W{workerId}] SUCCESS: Received {message.Name} (${message.Price}) - Category: {message.Category}");
         }
         catch (Exception ex)
         {
@@ -233,7 +235,8 @@ public class OrderHandler : IMessageHandler<Order>
     {
         try
         {
-            Console.WriteLine($"[OrderConsumer] SUCCESS: Received Order {message.OrderId} - Total: ${message.Header.TotalAmount} - Items: {message.Items.Count}");
+            var workerId = Thread.CurrentThread.ManagedThreadId;
+            Console.WriteLine($"[OrderConsumer-W{workerId}] SUCCESS: Received Order {message.OrderId} - Total: ${message.Header.TotalAmount} - Items: {message.Items.Count}");
         }
         catch (Exception ex)
         {
@@ -249,6 +252,7 @@ public class PaymentHandler : IMessageHandler<Payment>
     {
         try
         {
+            var workerId = Thread.CurrentThread.ManagedThreadId;
             var paymentMethod = message.PaymentMethodCase switch
             {
                 Payment.PaymentMethodOneofCase.CreditCard => "Credit Card",
@@ -257,7 +261,7 @@ public class PaymentHandler : IMessageHandler<Payment>
                 _ => "Unknown"
             };
             
-            Console.WriteLine($"[PaymentConsumer] SUCCESS: Received Payment {message.PaymentId} - ${message.Amount} via {paymentMethod}");
+            Console.WriteLine($"[PaymentConsumer-W{workerId}] SUCCESS: Received Payment {message.PaymentId} - ${message.Amount} via {paymentMethod}");
         }
         catch (Exception ex)
         {
@@ -273,7 +277,8 @@ public class EventHandler : IMessageHandler<Event>
     {
         try
         {
-            Console.WriteLine($"[EventConsumer] SUCCESS: Received Event {message.EventId} - Type: {message.Type} - User: {message.UserId}");
+            var workerId = Thread.CurrentThread.ManagedThreadId;
+            Console.WriteLine($"[EventConsumer-W{workerId}] SUCCESS: Received Event {message.EventId} - Type: {message.Type} - User: {message.UserId}");
         }
         catch (Exception ex)
         {

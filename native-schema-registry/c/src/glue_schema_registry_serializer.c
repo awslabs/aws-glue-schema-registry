@@ -3,44 +3,63 @@
 #include "libnativeschemaregistry.h"
 #include <stdlib.h>
 
+typedef struct {
+    graal_isolate_t *isolate;
+} serializer_context;
+
 glue_schema_registry_serializer *new_glue_schema_registry_serializer(const char *config_file_path, glue_schema_registry_error **p_err) {
     glue_schema_registry_serializer *serializer = NULL;
     serializer = (glue_schema_registry_serializer *) aws_common_malloc(sizeof(glue_schema_registry_serializer));
+    serializer->instance_context = NULL;
 
-    //Initializes a GraalVM instance to call the entry points.
-    int ret = graal_create_isolate(NULL, NULL, (graal_isolatethread_t **) &serializer->instance_context);
+    serializer_context *ctx = aws_common_malloc(sizeof(serializer_context));
+    ctx->isolate = NULL;
+    graal_isolatethread_t *thread = NULL;
+
+    //Creates isolate that can be shared across threads
+    int ret = graal_create_isolate(NULL, &ctx->isolate, &thread);
 
     if (ret != 0) {
+        aws_common_free(ctx);
         delete_glue_schema_registry_serializer(serializer);
         throw_error(p_err, "Failed to initialize GraalVM isolate.", ERR_CODE_GRAALVM_INIT_EXCEPTION);
         return NULL;
     }
+
+    serializer->instance_context = ctx;
+
+    //Initialize with configuration file using main thread
+    int config_result = initialize_serializer_with_config(thread, (char*)config_file_path, p_err);
     
-    //Initialize with configuration file (can be NULL for default configuration)
-    int config_result = initialize_serializer_with_config(serializer->instance_context, config_file_path, p_err);
     if (config_result != 0) {
         delete_glue_schema_registry_serializer(serializer);
-        // Only throw an error if one wasn't already set by initialize_serializer_with_config
         if (p_err != NULL) {
             throw_error(p_err, "Failed to initialize serializer with configuration file.", ERR_CODE_RUNTIME_ERROR);
         }
         return NULL;
     }
-    
+
     return serializer;
 }
 
 void delete_glue_schema_registry_serializer(glue_schema_registry_serializer *serializer) {
-    //Tear down the GraalVM instance.
     if (serializer == NULL) {
         log_warn("Serializer is NULL", ERR_CODE_NULL_PARAMETERS);
         return;
     }
     if (serializer->instance_context != NULL) {
-        int ret = graal_tear_down_isolate(serializer->instance_context);
-        if (ret != 0) {
-            log_warn("Error tearing down the graal isolate instance.", ERR_CODE_GRAALVM_TEARDOWN_EXCEPTION);
+        serializer_context *ctx = (serializer_context*)serializer->instance_context;
+
+        if (ctx->isolate != NULL) {
+            graal_isolatethread_t *thread = NULL;
+            if (graal_attach_thread(ctx->isolate, &thread) == 0) {
+                if (graal_tear_down_isolate(thread) != 0) {
+                    log_warn("Failed to tear down GraalVM isolate in serializer", ERR_CODE_GRAALVM_TEARDOWN_EXCEPTION);
+                }
+            }
         }
+
+        aws_common_free(ctx);
         serializer->instance_context = NULL;
     }
 
@@ -68,5 +87,19 @@ mutable_byte_array *glue_schema_registry_serializer_encode(
         return NULL;
     }
 
-    return encode_with_schema(serializer->instance_context, array, transport_name, gsr_schema, p_err);
+    serializer_context *ctx = (serializer_context*)serializer->instance_context;
+    graal_isolatethread_t *thread = NULL;
+
+    if (graal_attach_thread(ctx->isolate, &thread) != 0) {
+        throw_error(p_err, "Failed to attach thread to GraalVM isolate", ERR_CODE_GRAAL_ATTACH_FAILED);
+        return NULL;
+    }
+
+    mutable_byte_array *result = encode_with_schema(thread, array, (char*)transport_name, gsr_schema, p_err);
+
+    if (graal_detach_thread(thread) != 0) {
+        log_warn("Failed to detach thread from GraalVM isolate in serializer", ERR_CODE_GRAAL_DETACH_FAILED);
+    }
+
+    return result;
 }

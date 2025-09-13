@@ -6,21 +6,53 @@ This module provides a C language based API for the schema registry serializer /
 We use CMake to build the targets in this module.
 
 ### Compile
-```asm
+```bash
 #Run in c directory
 
 cmake -S. -Bbuild 
 cd build 
 cmake --build .
+```
+
+**Note:** Quality gates (tests, static analysis, and coverage) run automatically by default on every build.
 
 #### Clean
+```bash
 cmake --build . --target clean
 ```
+
 ### Testing
-```asm
+```bash
 ctest .
 #Re-run failed tests with verbose output
 ctest --rerun-failed --output-on-failure
+```
+
+### Quality Gates
+Quality gates include tests, static analysis (clang-tidy), and code coverage checks.
+
+#### Default Behavior (Automatic Quality Gates)
+Quality gates run automatically on every build:
+```bash
+cmake -S. -Bbuild
+cd build
+cmake --build .  # Quality gates run automatically
+```
+
+#### Manual Quality Gates Only
+Run quality gates manually when needed:
+```bash
+cd build
+make quality_gates
+```
+
+#### Disable Automatic Quality Gates
+If you need to disable automatic quality gates (e.g., for faster development builds):
+```bash
+cmake -S. -Bbuild -DDISABLE_QUALITY_GATES=ON
+cd build
+cmake --build .  # Quality gates won't run automatically
+make quality_gates  # But you can still run them manually
 ```
 
 ### Code Analysis
