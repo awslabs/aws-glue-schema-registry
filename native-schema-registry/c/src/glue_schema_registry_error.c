@@ -48,11 +48,11 @@ void glue_schema_registry_error_get_msg(glue_schema_registry_error *error, char 
     //Using strncpy as safer strlcpy is not cross-platform.
     //Fit the message into fix array. We are doing this as MSVC doesn't support non-constant arrays.
     if (len >= required_len) {
-        strncpy(dst, error->msg, err_msg_len);
+        memcpy(dst, error->msg, err_msg_len);
         dst[err_msg_len] = '\0';
     } else {
         //Truncate the message
-        strncpy(dst, error->msg, len - 1);
+        memcpy(dst, error->msg, len - 1);
         dst[len - 1] = '\0';
     }
 }
@@ -61,6 +61,11 @@ void glue_schema_registry_error_get_msg(glue_schema_registry_error *error, char 
 void throw_error(glue_schema_registry_error **p_err, const char *msg, int code) {
     if (p_err == NULL) {
         return;
+    }
+
+    // Free existing error if present to prevent memory leak
+    if (*p_err != NULL) {
+        delete_glue_schema_registry_error(*p_err);
     }
 
     glue_schema_registry_error *err = new_glue_schema_registry_error(msg, code);

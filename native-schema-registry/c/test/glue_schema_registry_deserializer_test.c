@@ -37,7 +37,7 @@ static void test_new_glue_schema_registry_deserializer_config_init_fails_throws_
     glue_schema_registry_deserializer *gsr_deserializer = new_glue_schema_registry_deserializer(NULL, p_err);
 
     assert_null(gsr_deserializer);
-    assert_error_and_clear(p_err, "Configuration initialization failed for deserializer", ERR_CODE_RUNTIME_ERROR);
+    assert_error_and_clear(p_err, "Failed to initialize deserializer with configuration file.", ERR_CODE_RUNTIME_ERROR);
 
     delete_glue_schema_registry_deserializer(gsr_deserializer);
 
@@ -314,6 +314,113 @@ static void test_new_glue_schema_registry_deserializer_can_decode_arr_null_throw
     clear_mock_state();
 }
 
+static void test_deserializer_decode_attach_thread_failure(void **state) {
+    set_mock_state(GRAAL_VM_INIT_SUCCESS);
+    glue_schema_registry_deserializer *deserializer = new_glue_schema_registry_deserializer(NULL, NULL);
+
+    set_mock_state(ATTACH_THREAD_FAIL);
+
+    glue_schema_registry_error **p_err = new_glue_schema_registry_error_holder();
+    mutable_byte_array *array = new_mutable_byte_array(10, NULL);
+
+    mutable_byte_array *result = glue_schema_registry_deserializer_decode(deserializer, array, p_err);
+
+    assert_null(result);
+    assert_error_and_clear(p_err, "Failed to attach thread to GraalVM isolate", ERR_CODE_GRAAL_ATTACH_FAILED);
+
+    delete_mutable_byte_array(array);
+    delete_glue_schema_registry_deserializer(deserializer);
+    clear_mock_state();
+}
+
+static void test_deserializer_decode_schema_attach_thread_failure(void **state) {
+    set_mock_state(GRAAL_VM_INIT_SUCCESS);
+    glue_schema_registry_deserializer *deserializer = new_glue_schema_registry_deserializer(NULL, NULL);
+
+    set_mock_state(ATTACH_THREAD_FAIL);
+
+    glue_schema_registry_error **p_err = new_glue_schema_registry_error_holder();
+    mutable_byte_array *array = new_mutable_byte_array(10, NULL);
+
+    glue_schema_registry_schema *result = glue_schema_registry_deserializer_decode_schema(deserializer, array, p_err);
+
+    assert_null(result);
+    assert_error_and_clear(p_err, "Failed to attach thread to GraalVM isolate", ERR_CODE_GRAAL_ATTACH_FAILED);
+
+    delete_mutable_byte_array(array);
+    delete_glue_schema_registry_deserializer(deserializer);
+    clear_mock_state();
+}
+
+static void test_deserializer_can_decode_attach_thread_failure(void **state) {
+    set_mock_state(GRAAL_VM_INIT_SUCCESS);
+    glue_schema_registry_deserializer *deserializer = new_glue_schema_registry_deserializer(NULL, NULL);
+
+    set_mock_state(ATTACH_THREAD_FAIL);
+
+    glue_schema_registry_error **p_err = new_glue_schema_registry_error_holder();
+    mutable_byte_array *array = new_mutable_byte_array(10, NULL);
+
+    bool result = glue_schema_registry_deserializer_can_decode(deserializer, array, p_err);
+
+    assert_false(result);
+    assert_error_and_clear(p_err, "Failed to attach thread to GraalVM isolate", ERR_CODE_GRAAL_ATTACH_FAILED);
+
+    delete_mutable_byte_array(array);
+    delete_glue_schema_registry_deserializer(deserializer);
+    clear_mock_state();
+}
+
+static void test_deserializer_decode_detach_thread_failure(void **state) {
+    set_mock_state(GRAAL_VM_INIT_SUCCESS);
+    glue_schema_registry_deserializer *deserializer = new_glue_schema_registry_deserializer(NULL, NULL);
+
+    set_mock_state(DETACH_THREAD_FAIL);
+
+    mutable_byte_array *array = new_mutable_byte_array(10, NULL);
+
+    // Should succeed but log warning (detach failure doesn't prevent operation success)
+    mutable_byte_array *result = glue_schema_registry_deserializer_decode(deserializer, array, NULL);
+
+    delete_mutable_byte_array(array);
+    if (result) delete_mutable_byte_array(result);
+    delete_glue_schema_registry_deserializer(deserializer);
+    clear_mock_state();
+}
+
+static void test_deserializer_decode_schema_detach_thread_failure(void **state) {
+    set_mock_state(GRAAL_VM_INIT_SUCCESS);
+    glue_schema_registry_deserializer *deserializer = new_glue_schema_registry_deserializer(NULL, NULL);
+
+    set_mock_state(DETACH_THREAD_FAIL);
+
+    mutable_byte_array *array = new_mutable_byte_array(10, NULL);
+
+    // Should succeed but log warning (detach failure doesn't prevent operation success)
+    glue_schema_registry_schema *result = glue_schema_registry_deserializer_decode_schema(deserializer, array, NULL);
+
+    delete_mutable_byte_array(array);
+    if (result) delete_glue_schema_registry_schema(result);
+    delete_glue_schema_registry_deserializer(deserializer);
+    clear_mock_state();
+}
+
+static void test_deserializer_can_decode_detach_thread_failure(void **state) {
+    set_mock_state(GRAAL_VM_INIT_SUCCESS);
+    glue_schema_registry_deserializer *deserializer = new_glue_schema_registry_deserializer(NULL, NULL);
+
+    set_mock_state(DETACH_THREAD_FAIL);
+
+    mutable_byte_array *array = new_mutable_byte_array(10, NULL);
+
+    // Should succeed but log warning (detach failure doesn't prevent operation success)
+    bool result = glue_schema_registry_deserializer_can_decode(deserializer, array, NULL);
+
+    delete_mutable_byte_array(array);
+    delete_glue_schema_registry_deserializer(deserializer);
+    clear_mock_state();
+}
+
 int main(void) {
     const struct CMUnitTest tests[] = {
             cmocka_unit_test(test_new_glue_schema_registry_deserializer_created_successfully),
@@ -333,7 +440,13 @@ int main(void) {
             cmocka_unit_test(test_new_glue_schema_registry_deserializer_can_decode_successfully),
             cmocka_unit_test(test_new_glue_schema_registry_deserializer_can_decode_deserializer_null_throws_exception),
             cmocka_unit_test(test_new_glue_schema_registry_deserializer_can_decode_arr_null_throws_exception),
-            cmocka_unit_test(test_new_glue_schema_registry_deserializer_can_decode_throws_exception)
+            cmocka_unit_test(test_new_glue_schema_registry_deserializer_can_decode_throws_exception),
+            cmocka_unit_test(test_deserializer_decode_attach_thread_failure),
+            cmocka_unit_test(test_deserializer_decode_schema_attach_thread_failure),
+            cmocka_unit_test(test_deserializer_can_decode_attach_thread_failure),
+            cmocka_unit_test(test_deserializer_decode_detach_thread_failure),
+            cmocka_unit_test(test_deserializer_decode_schema_detach_thread_failure),
+            cmocka_unit_test(test_deserializer_can_decode_detach_thread_failure)
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);

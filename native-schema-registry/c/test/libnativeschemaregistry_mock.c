@@ -5,10 +5,13 @@
 #include "glue_schema_registry_test_helper.h"
 #include "libnativeschemaregistry.h"
 #include "libnativeschemaregistry_mock.h"
+#include "memory_allocator.h"
 
 //Mocks the functions provided by GraalVM image.
 
 static int MOCK_STATE = UNINITIALIZED;
+static graal_isolate_t* current_isolate = NULL;
+static graal_isolatethread_t* main_thread = NULL;
 
 void set_mock_state(int state) {
     MOCK_STATE = state;
@@ -16,6 +19,17 @@ void set_mock_state(int state) {
 
 void clear_mock_state(void) {
     MOCK_STATE = UNINITIALIZED;
+    
+    // Clean up any remaining allocated resources to prevent memory leaks
+    if (main_thread != NULL) {
+        aws_common_free(main_thread);
+        main_thread = NULL;
+    }
+    
+    if (current_isolate != NULL) {
+        aws_common_free(current_isolate);
+        current_isolate = NULL;
+    }
 }
 
 static void validate_mock_state() {
@@ -29,23 +43,66 @@ int graal_create_isolate(graal_create_isolate_params_t* params, graal_isolate_t*
     validate_mock_state();
 
     assert_null(params);
-    assert_null(isolate);
+    assert_non_null(isolate);
     assert_non_null(thread);
 
-    *thread = (graal_isolatethread_t*) malloc(sizeof(graal_isolatethread_t*));
     if (MOCK_STATE == GRAAL_VM_INIT_FAIL) {
         return -1;
     }
+    current_isolate = (graal_isolate_t*)aws_common_malloc(8);
+    main_thread = (graal_isolatethread_t*)aws_common_malloc(8);
+    *isolate = current_isolate;
+    *thread = main_thread;
     return 0;
 }
 
 int graal_tear_down_isolate(graal_isolatethread_t* isolateThread) {
     validate_mock_state();
 
-    free(isolateThread);
+    // Clean up tracked resources
+    if (main_thread != NULL) {
+        aws_common_free(main_thread);
+        main_thread = NULL;
+    }
+    
+    if (current_isolate != NULL) {
+        aws_common_free(current_isolate);
+        current_isolate = NULL;
+    }
+    
+    // Free the passed thread only if it's different from main_thread to avoid double-free
+    if (isolateThread != NULL && isolateThread != main_thread) {
+        aws_common_free(isolateThread);
+    }
+    
     if (MOCK_STATE == TEAR_DOWN_FAIL) {
         return -1;
     }
+    return 0;
+}
+
+int graal_attach_thread(graal_isolate_t* isolate, graal_isolatethread_t** thread) {
+    validate_mock_state();
+
+    if (MOCK_STATE == ATTACH_THREAD_FAIL) {
+        return -1;
+    }
+
+    *thread = (graal_isolatethread_t*)aws_common_malloc(8);
+    return 0;
+}
+
+int graal_detach_thread(graal_isolatethread_t* thread) {
+    validate_mock_state();
+
+    if (thread != NULL) {
+        aws_common_free(thread);
+    }
+
+    if (MOCK_STATE == DETACH_THREAD_FAIL) {
+        return -1;
+    }
+
     return 0;
 }
 
@@ -70,7 +127,7 @@ int initialize_serializer_with_config(graal_isolatethread_t* thread, char* confi
     // config_file_path can be NULL for default configuration
 
     if (MOCK_STATE == CONFIG_INIT_SERIALIZER_FAIL) {
-        *p_err = new_glue_schema_registry_error("Configuration initialization failed for serializer", ERR_CODE_RUNTIME_ERROR);
+        *p_err = new_glue_schema_registry_error("Failed to initialize serializer with configuration file.", ERR_CODE_RUNTIME_ERROR);
         return -1;
     }
 

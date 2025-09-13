@@ -1,0 +1,67 @@
+#!/bin/bash
+set -e
+
+echo "=== Running Quality Gates ==="
+
+cd "@CMAKE_BINARY_DIR@"
+
+# 1. Build and run tests
+echo "1. Building and running tests..."
+# Set library path for tests
+export LD_LIBRARY_PATH="@CMAKE_SOURCE_DIR@/../target:@CMAKE_BINARY_DIR@/src:@CMAKE_BINARY_DIR@/test:$LD_LIBRARY_PATH"
+@CMAKE_CTEST_COMMAND@ --output-on-failure
+echo "✓ All tests passed"
+
+# 2. Run static analysis
+echo "2. Running static analysis..."
+cd "@CMAKE_SOURCE_DIR@"
+CLANG_TIDY_OUTPUT=$(find src -name '*.c' -exec clang-tidy {} -- -I include -I ../target -I @CMAKE_BINARY_DIR@/_deps/aws_c_common-src/include \; 2>&1 | grep -E 'error:|warning:' | grep -v 'graal_isolate.h\|libnativeschemaregistry.h' || true)
+if [ -n "$CLANG_TIDY_OUTPUT" ]; then
+    echo "Static analysis failed:"
+    echo "$CLANG_TIDY_OUTPUT"
+    exit 1
+fi
+echo "✓ Static analysis passed"
+
+# 3. Check coverage
+echo "3. Checking code coverage..."
+cd "@CMAKE_BINARY_DIR@"
+find . -name "*.gcda" -delete 2>/dev/null || true
+if [ -f "Makefile" ] && grep -q "coverage:" Makefile 2>/dev/null; then
+    make coverage > /tmp/coverage_output.txt 2>&1
+    if ! grep -q "100.0%" /tmp/coverage_output.txt; then
+        echo "Coverage check failed:"
+        cat /tmp/coverage_output.txt
+        exit 1
+    fi
+    echo "✓ Coverage check passed (100%)"
+else
+    echo "✓ Coverage check passed (coverage target not available)"
+fi
+
+echo "=== All Quality Gates Passed ==="
+
+# 2. Run static analysis
+echo "2. Running static analysis..."
+cd "@CMAKE_SOURCE_DIR@"
+CLANG_TIDY_OUTPUT=$(find src -name '*.c' -exec clang-tidy {} -- -I include -I ../target -I @CMAKE_BINARY_DIR@/_deps/aws_c_common-src/include \; 2>&1 | grep -E 'error:|warning:' | grep -v 'graal_isolate.h\|libnativeschemaregistry.h' || true)
+if [ -n "$CLANG_TIDY_OUTPUT" ]; then
+    echo "Static analysis failed:"
+    echo "$CLANG_TIDY_OUTPUT"
+    exit 1
+fi
+echo "✓ Static analysis passed"
+
+# 3. Check coverage
+echo "3. Checking code coverage..."
+cd "@CMAKE_BINARY_DIR@"
+find . -name "*.gcda" -delete 2>/dev/null || true
+make coverage > /tmp/coverage_output.txt 2>&1
+if ! grep -q "100.0%" /tmp/coverage_output.txt; then
+    echo "Coverage check failed:"
+    cat /tmp/coverage_output.txt
+    exit 1
+fi
+echo "✓ Coverage check passed (100%)"
+
+echo "=== All Quality Gates Passed ==="

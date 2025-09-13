@@ -32,4 +32,4 @@ unsigned char * read_only_byte_array_get_data(read_only_byte_array * array);
  */
 size_t read_only_byte_array_get_len(read_only_byte_array * array);
 
-#endif //READ_ONLY_BYTE_ARRAY_H
+#endif // READ_ONLY_BYTE_ARRAY_H

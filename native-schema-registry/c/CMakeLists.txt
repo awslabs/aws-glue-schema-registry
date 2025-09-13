@@ -58,3 +58,45 @@ add_subdirectory("src")
 include (CTest)
 enable_testing()
 add_subdirectory("test")
+
+# Create a script that runs all quality checks
+configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/quality_check.sh.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/quality_check.sh"
+    @ONLY
+)
+
+# Option to disable quality gates (they run by default)
+option(DISABLE_QUALITY_GATES "Disable automatic quality gates on build" OFF)
+
+# Define test targets that need to be built
+set(TEST_TARGETS 
+    glue_schema_registry_schema_test
+    read_only_byte_array_test
+    mutable_byte_array_test
+    glue_schema_registry_error_test
+    glue_schema_registry_serializer_test
+    glue_schema_registry_deserializer_test
+)
+
+# Manual quality gates target (always available)
+add_custom_target(quality_gates
+    COMMAND bash "${CMAKE_CURRENT_BINARY_DIR}/quality_check.sh"
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+    COMMENT "Running quality gates: tests, static analysis, and coverage"
+    VERBATIM
+)
+
+# Add dependencies to all main targets and tests
+add_dependencies(quality_gates ${SERDE_MODULE_NAME} ${DATA_TYPES_MODULE_NAME} ${TEST_TARGETS} copy-libs-for-tests)
+
+if(NOT DISABLE_QUALITY_GATES)
+    # Add quality gates to run automatically on every build
+    add_custom_target(quality_gates_auto ALL
+        COMMAND bash "${CMAKE_CURRENT_BINARY_DIR}/quality_check.sh"
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+        COMMENT "Running quality gates: tests, static analysis, and coverage"
+        VERBATIM
+    )
+    add_dependencies(quality_gates_auto ${SERDE_MODULE_NAME} ${DATA_TYPES_MODULE_NAME} ${TEST_TARGETS} copy-libs-for-tests)
+endif()
