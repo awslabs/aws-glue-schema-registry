@@ -1,6 +1,7 @@
 package com.amazonaws.services.schemaregistry;
 
 import com.amazonaws.services.schemaregistry.common.configs.GlueSchemaRegistryConfiguration;
+import com.amazonaws.services.schemaregistry.config.NativeGlueSchemaRegistryConfiguration;
 import com.amazonaws.services.schemaregistry.serializers.GlueSchemaRegistrySerializer;
 import com.amazonaws.services.schemaregistry.serializers.GlueSchemaRegistrySerializerImpl;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
@@ -11,9 +12,8 @@ import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 public class SerializerInstance {
     private static GlueSchemaRegistrySerializer instance = null;
 
-    public static void create(GlueSchemaRegistryConfiguration configuration) {
-        //TODO: Evaluate if credentials need to be configurable.
-        instance = new GlueSchemaRegistrySerializerImpl(DefaultCredentialsProvider.builder().build(), configuration);
+    public static void create(NativeGlueSchemaRegistryConfiguration configuration) {
+        instance = new GlueSchemaRegistrySerializerImpl(configuration.getAwsCredentialsProvider(), configuration);
     }
 
     public static GlueSchemaRegistrySerializer get() {

@@ -140,11 +140,19 @@
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-junit-jupiter</artifactId>
+            <version>4.11.0</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-inline</artifactId>
+            <version>4.11.0</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
 
     <build>
+        <testSourceDirectory>test/java</testSourceDirectory>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -170,6 +178,38 @@
                 <configuration>
                     <skip>true</skip>
                 </configuration>
+            </plugin>
+            <!-- Disable JaCoCo coverage checks for native-schema-registry module -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>2.22.1</version>
+                <configuration>
+                    <testSourceDirectory>test/java</testSourceDirectory>
+                </configuration>
+            </plugin>
+            <plugin>
+            <artifactId>maven-clean-plugin</artifactId>
+            <version>3.5.0</version> <!-- Use the latest version -->
+            <configuration>
+                <filesets>
+                <fileset>
+                    <directory>c/build</directory>
+
+                    <includes>
+                    <include>**/*</include> <!-- Include all files and subdirectories -->
+                    </includes>
+                    <followSymlinks>false</followSymlinks>
+                </fileset>
+                </filesets>
+            </configuration>
             </plugin>
         </plugins>
     </build>

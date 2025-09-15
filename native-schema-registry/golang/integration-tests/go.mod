@@ -1,8 +1,6 @@
 module github.com/awslabs/aws-glue-schema-registry/native-schema-registry/golang/integration-tests
 
-go 1.21
-
-toolchain go1.21.13
+go 1.20
 
 require (
 	github.com/IBM/sarama v1.43.2

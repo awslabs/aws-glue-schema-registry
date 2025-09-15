@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/segmentio/kafka-go"
@@ -44,7 +45,7 @@ func (s *BaseIntegrationSuite) SetupTest() {
 	if s.topicName != "" {
 		s.T().Logf("Skipping test topic name generation setup for topic: %s", s.topicName)
 	} else {
-		s.topicName = fmt.Sprintf("%s-%s", s.topicPrefix, s.generateTestTopicName())
+		s.topicName = fmt.Sprintf("%s", s.generateTestTopicName())
 		s.T().Logf("Test topicName: %s", s.topicName)
 	}
 	s.cleanup = s.setupTestInfrastructure()
@@ -305,7 +306,9 @@ func (s *BaseIntegrationSuite) deleteKafkaTopic(ctx context.Context, topicName s
 func (s *BaseIntegrationSuite) generateTestTopicName() string {
 	randomBytes := make([]byte, 4)
 	rand.Read(randomBytes)
-	return fmt.Sprintf("golang-integration-test-suite-%x", randomBytes)
+	prefix := fmt.Sprintf("%s-golang-integration-test-suite", s.T().Name() )
+	prefix = strings.ReplaceAll(prefix, "/", "-")
+	return fmt.Sprintf("%s-%x", prefix, randomBytes)
 }
 
 // getKafkaBroker returns the Kafka broker address

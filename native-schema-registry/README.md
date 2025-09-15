@@ -10,7 +10,7 @@ Change `/native-schema-registry/src/main/java/com/amazonaws/services/schemaregis
 
 ## Build command for multi-lang GSR
 mvn install -P native-image
-Note: If you get any issues due to JAVA_HOME not found, just set it to graalvm java 17 installation path.
+Note: If you get any issues due to JAVA_HOME not found, just set it to graalvm java 21 installation path.
 
 
 Usually, the process is as follows:
@@ -23,7 +23,7 @@ On Amazon Linux, you might need to install cmake, Python, lcov, llvm etc and set
 
 The versions we've used when building the native schema registry library are:
 - Maven 3.8.7
-- Java (GraalVM) 17.0.12
+- Java (GraalVM Community Edition) 21.0.2
 - gcov 13.3.0
 - llvm 18.1.3
 - lcov 2.0-1

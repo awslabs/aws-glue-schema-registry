@@ -1,8 +1,6 @@
 module github.com/awslabs/aws-glue-schema-registry/native-schema-registry/golang
 
-go 1.21
-
-toolchain go1.21.13
+go 1.20
 
 require (
 	github.com/hamba/avro/v2 v2.25.1
