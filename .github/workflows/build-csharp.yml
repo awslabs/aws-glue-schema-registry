@@ -2,14 +2,53 @@ name: Build CSharp
 
 on:
   push:
-    branches: [ master, native-schema-registry-2025, native-schema-registry-csharp, native-schema-registry-golang ]
+    branches: [ master, native-schema-registry-release ]
   pull_request:
-    branches: [ master, native-schema-registry-2025, native-schema-registry-csharp, native-schema-registry-golang ]
+    branches: [ master, native-schema-registry-release ]
   release:
-    branches: [ master, native-schema-registry-2025, native-schema-registry-csharp, native-schema-registry-golang ]
+    branches: [ master, native-schema-registry-release ]
     types: [ created ]
 
 jobs:
+  git-secrets-scan:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install git-secrets
+        run: |
+          git clone https://github.com/awslabs/git-secrets.git
+          cd git-secrets
+          sudo make install
+
+      - name: Configure git-secrets
+        run: |
+          git secrets --register-aws
+          git secrets --install
+
+          # Add custom patterns
+          git secrets --add 'api[_-]?key\s*=\s*.+'
+          git secrets --add 'secret[_-]?key\s*=\s*.+'
+          git secrets --add 'token\s*=\s*.+'
+
+          # Enhanced AWS credential patterns
+          git secrets --add 'AWS_ACCESS_KEY_ID\s*=\s*[A-Z0-9]{20}'
+          git secrets --add 'AWS_SECRET_ACCESS_KEY\s*=\s*[A-Za-z0-9/+=]{40}'
+          git secrets --add 'AWS_SESSION_TOKEN\s*=\s*[A-Za-z0-9/+=]+'
+          git secrets --add 'AWS_SECURITY_TOKEN\s*=\s*[A-Za-z0-9/+=]+'
+          
+          # AWS Account and ARN patterns
+          git secrets --add 'AWS_ACCOUNT_ID\s*=\s*[0-9]{12}'
+
+      - name: Scan repository
+        run: |
+          git secrets --scan-history
+          git secrets --scan
+
   build-csharp:
     continue-on-error: false
     timeout-minutes: 60
