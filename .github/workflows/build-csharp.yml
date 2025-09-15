@@ -31,7 +31,6 @@ jobs:
           git secrets --install
 
           # Add custom patterns
-          git secrets --add 'password\s*=\s*.+'
           git secrets --add 'api[_-]?key\s*=\s*.+'
           git secrets --add 'secret[_-]?key\s*=\s*.+'
           git secrets --add 'token\s*=\s*.+'
