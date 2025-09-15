@@ -257,7 +257,7 @@ public class AWSSchemaRegistryClient {
         } catch (Exception e) {
             String errorMessage = String.format(
                     "Create schema :: Call failed when creating the schema with the schema registry for"
-                    + " schema name = %s", schemaName);
+                    + " schema name = %s. Error = %s", schemaName, e.getMessage());
             throw new AWSSchemaRegistryException(errorMessage, e);
         }
 
