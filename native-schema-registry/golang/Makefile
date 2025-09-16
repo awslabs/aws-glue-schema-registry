@@ -70,7 +70,7 @@ ifdef COVERAGE
 else
 	@echo "Running integration tests..."
 	cd integration-tests && docker compose up -d | tee  ../$(BUILD_DIR)/integ-docker-logs.txt
-	cd integration-tests && stdbuf -oL go test -v -count=1 ./... 2>&1 | tee ../$(BUILD_DIR)/integration-test-output.txt
+	cd integration-tests && go test -v -count=1 ./... | tee ../$(BUILD_DIR)/integration-test-output.txt
 	cd integration-tests && docker compose logs > docker-logs.txt
 	cd integration-tests && docker compose down
 	@echo "Integration test report: $(BUILD_DIR)/integration-test-output.txt"
