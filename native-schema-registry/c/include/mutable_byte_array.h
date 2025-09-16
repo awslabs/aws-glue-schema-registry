@@ -42,4 +42,4 @@ void mutable_byte_array_write(mutable_byte_array * array, size_t index, unsigned
  */
 size_t mutable_byte_array_get_max_len(mutable_byte_array * array);
 
-#endif //MUTABLE_BYTE_ARRAY_H
+#endif // MUTABLE_BYTE_ARRAY_H

@@ -28,7 +28,6 @@ DartConfiguration.tcl
 CTestTestfile.cmake
 compile_commands.json
 Makefile
-*.cmake
 
 # SWIG generated files
 *_wrap.c

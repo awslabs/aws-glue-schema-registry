@@ -1,5 +1,5 @@
-#ifndef NATIVE_SCHEMA_REGISTRY_GLUE_SCHEMA_REGISTRY_ERROR_H
-#define NATIVE_SCHEMA_REGISTRY_GLUE_SCHEMA_REGISTRY_ERROR_H
+#ifndef GLUE_SCHEMA_REGISTRY_ERROR_H
+#define GLUE_SCHEMA_REGISTRY_ERROR_H
 
 #include <stdio.h>
 
@@ -10,6 +10,8 @@
 #define ERR_CODE_GRAALVM_TEARDOWN_EXCEPTION 5003
 #define ERR_CODE_INVALID_PARAMETERS 5004
 #define ERR_CODE_RUNTIME_ERROR 5005
+#define ERR_CODE_GRAAL_DETACH_FAILED 5006
+#define ERR_CODE_GRAAL_ATTACH_FAILED 5007
 
 //TODO: Improve error reporting to respect logging levels.
 #define log_warn(msg, code) fprintf(stderr, "WARN: %s, Code: %d\n", msg, code)
@@ -51,4 +53,4 @@ glue_schema_registry_error **new_glue_schema_registry_error_holder(void);
  */
 void delete_glue_schema_registry_error_holder(glue_schema_registry_error **p_err);
 
-#endif //NATIVE_SCHEMA_REGISTRY_GLUE_SCHEMA_REGISTRY_ERROR_H
+#endif // GLUE_SCHEMA_REGISTRY_ERROR_H

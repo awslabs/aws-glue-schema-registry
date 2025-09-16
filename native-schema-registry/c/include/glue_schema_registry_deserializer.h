@@ -29,4 +29,4 @@ bool glue_schema_registry_deserializer_can_decode(glue_schema_registry_deseriali
                                                   read_only_byte_array *array,
                                                   glue_schema_registry_error **p_err);
 
-#endif //GLUE_SCHEMA_REGISTRY_DESERIALIZER_H
+#endif // GLUE_SCHEMA_REGISTRY_DESERIALIZER_H
