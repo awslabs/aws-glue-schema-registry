@@ -85,7 +85,7 @@ func (s *MultiThreadedIntegrationSuite) TestConcurrentSerializationDeserializati
 	
 	s.T().Log("--- Starting Concurrent Serialization/Deserialization Test ---")
 	
-	const numGoroutines = 2 // As specified by user: "Let's have n be 2"
+	const numGoroutines = 2 
 	
 	// Create GSR configuration
 	gsrConfigAbsolutePath, err := filepath.Abs("./gsr.properties")

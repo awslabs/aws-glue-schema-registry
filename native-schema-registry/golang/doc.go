@@ -21,7 +21,6 @@
 //	if err != nil {
 //		log.Fatal(err)
 //	}
-//	defer serializer.Close()
 //
 //	// Encode data
 //	encoded, err := serializer.Encode("transport-name", schema, data)
@@ -34,7 +33,6 @@
 //	if err != nil {
 //		log.Fatal(err)
 //	}
-//	defer deserializer.Close()
 //
 //	// Decode data
 //	decoded, err := deserializer.Decode(encoded)
