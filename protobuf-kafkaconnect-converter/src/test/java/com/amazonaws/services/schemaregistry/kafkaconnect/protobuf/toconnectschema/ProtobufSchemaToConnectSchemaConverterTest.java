@@ -43,6 +43,7 @@ import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConn
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getTimeSchema;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getDecimalProtobufMessages;
 import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getDecimalSchema;
+import static com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.ToConnectTestDataGenerator.getRecursiveProtobufMessages;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -85,6 +86,10 @@ public class ProtobufSchemaToConnectSchemaConverterTest {
 
     private static Stream<Arguments> getAllTypesTestCases() {
         return getAllTypesProtobufMessages().stream().map(Arguments::of);
+    }
+
+    private static Stream<Arguments> getRecursiveTestCases() {
+        return getRecursiveProtobufMessages().stream().map(Arguments::of);
     }
 
     @BeforeEach
@@ -170,6 +175,28 @@ public class ProtobufSchemaToConnectSchemaConverterTest {
         Schema actualConnectSchema = PROTOBUF_SCHEMA_TO_CONNECT_SCHEMA_CONVERTER.toConnectSchema(message);
         Schema expectedConnectSchema = getAllTypesSchema(packageName);
         assertEquals(expectedConnectSchema, actualConnectSchema);
+    }
+
+    @ParameterizedTest
+    @MethodSource("getRecursiveTestCases")
+    public void toConnectSchema_convertsRecursiveSchema(Message message) {
+        Schema actualConnectSchema = PROTOBUF_SCHEMA_TO_CONNECT_SCHEMA_CONVERTER.toConnectSchema(message);
+        assertEquals(Schema.Type.STRUCT, actualConnectSchema.type());
+        
+        String messageName = message.getDescriptorForType().getName();
+        assertEquals(messageName, actualConnectSchema.name());
+        
+        if ("RecursiveType".equals(messageName)) {
+            assertEquals(3, actualConnectSchema.fields().size());
+            assertEquals("name", actualConnectSchema.field("name").name());
+            assertEquals("parent", actualConnectSchema.field("parent").name());
+            assertEquals("children", actualConnectSchema.field("children").name());
+        } else if ("TreeNode".equals(messageName)) {
+            assertEquals(3, actualConnectSchema.fields().size());
+            assertEquals("value", actualConnectSchema.field("value").name());
+            assertEquals("left", actualConnectSchema.field("left").name());
+            assertEquals("right", actualConnectSchema.field("right").name());
+        }
     }
 
     @Test
