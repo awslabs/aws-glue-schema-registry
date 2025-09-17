@@ -924,11 +924,19 @@ public class ToConnectTestDataGenerator {
     }
 
     public static List<Message> getRecursiveProtobufMessages() {
+        RecursiveTypeSyntax2.RecursiveType childNode1 = RecursiveTypeSyntax2.RecursiveType.newBuilder().setName("child1").build();
+        RecursiveTypeSyntax2.TreeNode treeChild1 = RecursiveTypeSyntax2.TreeNode.newBuilder().setValue(1).build();
+        RecursiveTypeSyntax3.RecursiveType childNode2 = RecursiveTypeSyntax3.RecursiveType.newBuilder().setName("child2").build();
+        RecursiveTypeSyntax3.TreeNode treeChild2 = RecursiveTypeSyntax3.TreeNode.newBuilder().setValue(2).build();
         return Arrays.asList(
             RecursiveTypeSyntax3.RecursiveType.newBuilder().setName("test").build(),
             RecursiveTypeSyntax2.RecursiveType.newBuilder().setName("test").build(),
+            RecursiveTypeSyntax2.RecursiveType.newBuilder().setName("2LevelTest").addChildren(childNode1).build(),
+                    RecursiveTypeSyntax3.RecursiveType.newBuilder().setName("2LevelTest").addChildren(childNode2).build(),
             RecursiveTypeSyntax3.TreeNode.newBuilder().setValue(42).build(),
-            RecursiveTypeSyntax2.TreeNode.newBuilder().setValue(42).build()
+            RecursiveTypeSyntax2.TreeNode.newBuilder().setValue(42).build(),
+                    RecursiveTypeSyntax2.TreeNode.newBuilder().setRight(treeChild1).setValue(4).build(),
+            RecursiveTypeSyntax3.TreeNode.newBuilder().setLeft(treeChild2).setValue(3).build()
         );
     }
 }
