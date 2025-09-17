@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"runtime"
 	"unsafe"
+
+	"github.com/awslabs/aws-glue-schema-registry/native-schema-registry/golang/pkg/gsrserde-go/common"
 )
 
 /*
@@ -28,7 +30,7 @@ func NewDeserializer(configPath string) (*Deserializer, error) {
 	cString := C.CString(configPath)
 	defer C.free(unsafe.Pointer(cString))
 	
-	cUserAgent := C.CString("native-schema-registry-go")
+	cUserAgent := C.CString(common.UserAgentString)
 	defer C.free(unsafe.Pointer(cUserAgent))
 
 	errHolder := C.new_glue_schema_registry_error_holder()
