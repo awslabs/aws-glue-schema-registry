@@ -57,9 +57,6 @@ func (s *BaseIntegrationSuite) SetupTest() {
 func (s *BaseIntegrationSuite) TearDownTest() {
 	s.T().Log("Starting test teardown...")
 
-	s.gsr_deserializer.Close()
-	s.gsr_serializer.Close()
-	s.T().Log("✓ Cleared serializer/deserializer references")
 
 	// Execute Kafka topic cleanup function
 	if s.cleanup != nil {
@@ -105,7 +102,6 @@ func (s *BaseIntegrationSuite) runKafkaIntegrationTest(
 
 	// Step 1: Create Serializer with GSR configuration
 	s.gsr_serializer, err= serializer.NewSerializer(config)
-	defer s.gsr_serializer.Close()
 	if err != nil {
 		s.T().Fatal("Failed to create serializer")
 	}
@@ -127,7 +123,6 @@ func (s *BaseIntegrationSuite) runKafkaIntegrationTest(
 
 	// Step 5: Create Deserializer and deserialize the GSR-encoded data
 	s.gsr_deserializer, err= deserializer.NewDeserializer(config)
-	defer s.gsr_deserializer.Close()
 	if err != nil {
 		s.T().Fatal("Failed to create deserializer")
 	}

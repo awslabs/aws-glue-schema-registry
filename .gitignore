@@ -19,7 +19,6 @@ integration-tests/volume/lib/kinesis-local/0.4.12/package-lock.json
 integration-tests/volume/cache/server.test.pem.crt
 integration-tests/volume/cache/server.test.pem.key
 integration-tests/volume/lib/kinesis-local/0.4.12/package.json
-docker-compose.yml
 golang-gsr-bundle.zip
 .devcontainer/devcontainer.json
 .vscode/launch.json
