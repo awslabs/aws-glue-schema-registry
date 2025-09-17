@@ -144,7 +144,7 @@ namespace AWSGsrSerDe
 
         private void ReleaseUnmanagedResources()
         {
-            _deserializer.Dispose();
+            _deserializer?.Dispose();
         }
 
         private void Dispose(bool disposing)
