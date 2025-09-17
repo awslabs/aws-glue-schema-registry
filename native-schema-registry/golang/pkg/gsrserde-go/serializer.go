@@ -31,10 +31,13 @@ func NewSerializer(configPath string) (*Serializer, error) {
 	cString := C.CString(configPath)
 	defer C.free(unsafe.Pointer(cString))
 	
+	cUserAgent := C.CString("native-schema-registry-go")
+	defer C.free(unsafe.Pointer(cUserAgent))
+
 	errHolder := C.new_glue_schema_registry_error_holder()
 	defer C.delete_glue_schema_registry_error_holder(errHolder)
 	
-	serializer := C.new_glue_schema_registry_serializer(cString, errHolder)
+	serializer := C.new_glue_schema_registry_serializer(cString, cUserAgent, errHolder)
 	
 	// Check for errors
 	if *errHolder != nil {
