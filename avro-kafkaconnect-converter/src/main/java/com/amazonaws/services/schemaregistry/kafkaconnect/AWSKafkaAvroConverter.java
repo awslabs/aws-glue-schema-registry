@@ -139,10 +139,57 @@ public class AWSKafkaAvroConverter implements Converter {
             throw new DataException("Converting byte[] to Kafka Connect data failed due to serialization error: ", e);
         }
 
-        org.apache.avro.Schema.Parser parser = new org.apache.avro.Schema.Parser();
-        org.apache.avro.Schema avroSchema = parser.parse(deserializer.getGlueSchemaRegistryDeserializationFacade().getSchemaDefinition(value));
-
+        org.apache.avro.Schema avroSchema = extractAvroSchema(value, deserialized);
         return avroData.toConnectData(avroSchema, deserialized);
+    }
+
+    /**
+     * Extracts the Avro schema from either GSR metadata or the deserialized Avro object.
+     * For GSR data, extracts schema from registry metadata. For secondary deserializer data,
+     * extracts schema from the Avro object itself.
+     *
+     * @param value the original serialized byte array
+     * @param deserialized the deserialized Avro object
+     * @return the Avro schema
+     * @throws DataException if schema extraction fails
+     */
+    @VisibleForTesting
+    protected org.apache.avro.Schema extractAvroSchema(final byte[] value, final Object deserialized) {
+        final org.apache.avro.Schema.Parser parser = new org.apache.avro.Schema.Parser();
+
+        // Check if this is GSR data that can be processed by GSR deserialization facade
+        if (deserializer.getGlueSchemaRegistryDeserializationFacade().canDeserialize(value)) {
+            // GSR data: extract schema from registry metadata
+            try {
+                final String schemaDefinition = deserializer.getGlueSchemaRegistryDeserializationFacade().getSchemaDefinition(value);
+                return parser.parse(schemaDefinition);
+            } catch (final Exception e) {
+                throw new DataException("Failed to extract schema from GSR metadata", e);
+            }
+        } else {
+            // Secondary deserializer data: extract schema from Avro object
+            return extractSchemaFromAvroObject(deserialized);
+        }
+    }
+
+    /**
+     * Extracts the Avro schema from a deserialized Avro object.
+     * Supports both GenericRecord and SpecificRecord types.
+     *
+     * @param avroObject the deserialized Avro object
+     * @return the Avro schema
+     * @throws DataException if the object is not a valid Avro record or schema extraction fails
+     */
+    @VisibleForTesting
+    protected org.apache.avro.Schema extractSchemaFromAvroObject(final Object avroObject) {
+        if (avroObject instanceof org.apache.avro.generic.GenericRecord) {
+            return ((org.apache.avro.generic.GenericRecord) avroObject).getSchema();
+        } else if (avroObject instanceof org.apache.avro.specific.SpecificRecord) {
+            return ((org.apache.avro.specific.SpecificRecord) avroObject).getSchema();
+        } else {
+            throw new DataException("Deserialized object is not a valid Avro record. Expected GenericRecord or SpecificRecord, got: "
+                + (avroObject != null ? avroObject.getClass().getName() : "null"));
+        }
     }
 
     @VisibleForTesting
