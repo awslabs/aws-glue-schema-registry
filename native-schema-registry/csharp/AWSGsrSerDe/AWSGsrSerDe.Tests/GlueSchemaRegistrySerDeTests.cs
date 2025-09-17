@@ -208,7 +208,7 @@ namespace AWSGsrSerDe.Tests
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
             finalize?.Invoke(serializer, null);
             
-            Assert.Pass("Constructor failure handled gracefully");
+            Assert.Pass("Disposal failure handled gracefully");
         }
 
         /// <summary>
@@ -228,7 +228,7 @@ namespace AWSGsrSerDe.Tests
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
             finalize?.Invoke(deserializer, null);
             
-            Assert.Pass("Deserializer finalizer handled disposal without issues");
+            Assert.Pass("Disposal failure handled gracefully");
         }
 
         private static GenericRecord GetTestAvroRecord()
