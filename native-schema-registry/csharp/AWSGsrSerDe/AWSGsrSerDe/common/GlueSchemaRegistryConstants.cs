@@ -25,6 +25,7 @@ namespace AWSGsrSerDe.common
         public const string ProtobufMessageDescriptor = "protobufMessageDescriptor";
         public const string JsonObjectType = "jsonObjectType";
         public const string CacheItemExpirationTime = "cacheItemExpirationTime";
+        public const string CSharpUserAgentString = "native-schema-registry-csharp";
 
         // TODO: need to expose it from Java to avoid code duplication
         public enum DataFormat
