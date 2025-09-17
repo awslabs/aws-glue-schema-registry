@@ -30,24 +30,21 @@ namespace AWSGsrSerDe.Tests.Configuration
             var topicName = $"test-topic-{Guid.NewGuid():N}";
             var expectedSchemaName = topicName; // GSR uses topic name as schema name by default
             var registryName = "default-registry";
-            string tempConfigPath = null;
+            string configPath = null;
 
             try
             {
-                // 1. Create temporary config file with auto-registration enabled and no registry specification
-                tempConfigPath = Path.GetTempFileName();
-                var tempConfigContent = $@"region=us-east-1
-                dataFormat=AVRO
-                schemaAutoRegistrationEnabled=true";
-
-                await File.WriteAllTextAsync(tempConfigPath, tempConfigContent);
+                // 1. Use shared config file with auto-registration enabled and no registry specification
+                var assemblyDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)!;
+                configPath = Path.Combine(assemblyDir, "../../../../../../shared/test/configs/minimal-auto-registration-default-registry.properties");
+                configPath = Path.GetFullPath(configPath);
 
                 // 2. Create AWS Glue client for verification and cleanup
                 var glueClient = new AmazonGlueClient(RegionEndpoint.USEast1);
 
                 // 3. Create GSR serializer with auto-registration enabled
-                Console.WriteLine($"Creating GSR serializer with temporary config...");
-                var serializer = new GlueSchemaRegistryKafkaSerializer(tempConfigPath);
+                Console.WriteLine($"Creating GSR serializer with config...");
+                var serializer = new GlueSchemaRegistryKafkaSerializer(configPath);
 
                 // 4. Create Avro record to serialize
                 var avroRecord = RecordGenerator.GetTestAvroRecord();
@@ -106,22 +103,6 @@ namespace AWSGsrSerDe.Tests.Configuration
             {
                 Assert.Fail($"Unexpected error during auto-registration test: {ex.Message}");
             }
-            finally
-            {
-                // 11. Cleanup temporary config file
-                if (tempConfigPath != null && File.Exists(tempConfigPath))
-                {
-                    try
-                    {
-                        File.Delete(tempConfigPath);
-                        Console.WriteLine($"✓ Cleaned up temporary config file: {tempConfigPath}");
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"Warning: Could not delete temporary config file: {ex.Message}");
-                    }
-                }
-            }
         }
 
         [Test]
@@ -138,7 +119,7 @@ namespace AWSGsrSerDe.Tests.Configuration
             var topicName = $"test-topic-custom-{Guid.NewGuid():N}";
             var expectedSchemaName = topicName; // GSR uses topic name as schema name by default
             var registryName = "native-test-registry";
-            string tempConfigPath = null;
+            string configPath = null;
             bool registryCreatedByTest = false;
 
             try
@@ -173,17 +154,13 @@ namespace AWSGsrSerDe.Tests.Configuration
                     registryCreatedByTest = true;
                 }
 
-                // 3. Create temporary config file with auto-registration enabled for custom registry (native-test-registry)
-                tempConfigPath = Path.GetTempFileName();
-                var tempConfigContent = $@"region=us-east-1
-                    registry.name={registryName}
-                    dataFormat=AVRO
-                    schemaAutoRegistrationEnabled=true";
-
-                await File.WriteAllTextAsync(tempConfigPath, tempConfigContent);
+                // 3. Use shared config file with auto-registration enabled for custom registry (native-test-registry)
+                var assemblyDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)!;
+                configPath = Path.Combine(assemblyDir, "../../../../../../shared/test/configs/minimal-auto-registration-custom-registry.properties");
+                configPath = Path.GetFullPath(configPath);
 
                 // 4. Create GSR serializer with auto-registration enabled for custom registry
-                var serializer = new GlueSchemaRegistryKafkaSerializer(tempConfigPath);
+                var serializer = new GlueSchemaRegistryKafkaSerializer(configPath);
 
                 // 5. Create Avro record to serialize
                 var avroRecord = RecordGenerator.GetTestAvroRecord();
@@ -256,22 +233,6 @@ namespace AWSGsrSerDe.Tests.Configuration
             {
                 Assert.Fail($"Unexpected error during custom registry auto-registration test: {ex.Message}");
             }
-            finally
-            {
-                // 13. Always cleanup temporary config file
-                if (tempConfigPath != null && File.Exists(tempConfigPath))
-                {
-                    try
-                    {
-                        File.Delete(tempConfigPath);
-                        Console.WriteLine($"✓ Cleaned up temporary config file: {tempConfigPath}");
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"Warning: Could not delete temporary config file: {ex.Message}");
-                    }
-                }
-            }
         }
 
         [Test]
@@ -286,23 +247,18 @@ namespace AWSGsrSerDe.Tests.Configuration
 
             // Generate unique topic name
             var topicName = $"test-topic-mismatch-{Guid.NewGuid():N}";
-            string tempConfigPath = null;
+            string configPath = null;
 
             try
             {
-                // 1. Create temporary config file with mismatched region and endpoint
-                tempConfigPath = Path.GetTempFileName();
-                var tempConfigContent = @"region=eu-west-2
-                registry.name=default-registry
-                endpoint=https://glue.eu-west-1.amazonaws.com
-                dataFormat=AVRO
-                schemaAutoRegistrationEnabled=true";
-
-                await File.WriteAllTextAsync(tempConfigPath, tempConfigContent);
+                // 1. Use shared config file with mismatched region and endpoint
+                var assemblyDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)!;
+                configPath = Path.Combine(assemblyDir, "../../../../../../shared/test/configs/region-endpoint-mismatch.properties");
+                configPath = Path.GetFullPath(configPath);
 
                 // 2. Create GSR serializer with mismatched config
                 TestContext.WriteLine("Creating GSR serializer with mismatched region/endpoint config...");
-                var serializer = new GlueSchemaRegistryKafkaSerializer(tempConfigPath);
+                var serializer = new GlueSchemaRegistryKafkaSerializer(configPath);
 
                 // 3. Create Avro record to serialize
                 var avroRecord = RecordGenerator.GetTestAvroRecord();
@@ -321,22 +277,6 @@ namespace AWSGsrSerDe.Tests.Configuration
                 // Expected - this is exactly what we want to test for region/endpoint mismatch
                 Assert.Pass($"Successfully validated region/endpoint mismatch results in credential scoping error: {ex.Message}");
             }
-            finally
-            {
-                // Always cleanup temporary config file (no schema/registry cleanup needed since operation should fail)
-                if (tempConfigPath != null && File.Exists(tempConfigPath))
-                {
-                    try
-                    {
-                        File.Delete(tempConfigPath);
-                        Console.WriteLine($"✓ Cleaned up temporary config file: {tempConfigPath}");
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"Warning: Could not delete temporary config file: {ex.Message}");
-                    }
-                }
-            }
         }
 
         [Test]
@@ -351,21 +291,17 @@ namespace AWSGsrSerDe.Tests.Configuration
 
             // Generate unique topic name
             var topicName = $"test-topic-invalid-region-{Guid.NewGuid():N}";
-            string tempConfigPath = null;
+            string configPath = null;
 
             try
             {
-                // 1. Create temporary config file with invalid region
-                tempConfigPath = Path.GetTempFileName();
-                var tempConfigContent = @"region=us-east-99
-                registry.name=default-registry
-                dataFormat=AVRO
-                schemaAutoRegistrationEnabled=true";
-
-                await File.WriteAllTextAsync(tempConfigPath, tempConfigContent);
+                // 1. Use shared config file with invalid region
+                var assemblyDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)!;
+                configPath = Path.Combine(assemblyDir, "../../../../../../shared/test/configs/invalid-region.properties");
+                configPath = Path.GetFullPath(configPath);
 
                 // 2. Create GSR serializer with invalid region config
-                var serializer = new GlueSchemaRegistryKafkaSerializer(tempConfigPath);
+                var serializer = new GlueSchemaRegistryKafkaSerializer(configPath);
 
                 // 3. Create Avro record to serialize
                 var avroRecord = RecordGenerator.GetTestAvroRecord();
@@ -373,7 +309,7 @@ namespace AWSGsrSerDe.Tests.Configuration
                 // 4. Attempt to serialize - this should fail due to invalid region
                 // This should throw an exception indicating invalid region
                 var serializedBytes = serializer.Serialize(avroRecord, topicName);
-                
+
                 // If we reach here, the test should fail because we expected an exception
                 Assert.Fail("Expected exception due to invalid region 'us-east-99', but serialization succeeded");
             }
@@ -384,20 +320,48 @@ namespace AWSGsrSerDe.Tests.Configuration
                 // Expected - GSR exception with UnknownHostException for invalid region DNS resolution failure
                 Assert.Pass($"Successfully validated invalid region 'us-east-99' results in UnknownHostException");
             }
-            finally
+        }
+
+        [Test]
+        public async Task Constructor_WithInvalidEndpoint_ThrowsException()
+        {
+            /* Test invalid endpoint scenario
+             * Create config with invalid endpoint URL
+             * Attempt to serialize data 
+             * Should throw exception indicating endpoint connection failure
+             * No cleanup needed as no resources should be created
+             */
+
+            // Generate unique topic name
+            var topicName = $"test-topic-invalid-endpoint-{Guid.NewGuid():N}";
+            string configPath = null;
+
+            try
             {
-                // Always cleanup temporary config file (no schema/registry cleanup needed since operation should fail)
-                if (tempConfigPath != null && File.Exists(tempConfigPath))
-                {
-                    try
-                    {
-                        File.Delete(tempConfigPath);
-                    }
-                    catch (Exception ex)
-                    {
-                        TestContext.WriteLine($"Warning: Could not delete temporary config file: {ex.Message}");
-                    }
-                }
+                // 1. Use shared config file with invalid endpoint
+                var assemblyDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)!;
+                configPath = Path.Combine(assemblyDir, "../../../../../../shared/test/configs/invalid-endpoint.properties");
+                configPath = Path.GetFullPath(configPath);
+
+                // 2. Create GSR serializer with invalid endpoint config
+                var serializer = new GlueSchemaRegistryKafkaSerializer(configPath);
+
+                // 3. Create Avro record to serialize
+                var avroRecord = RecordGenerator.GetTestAvroRecord();
+
+                // 4. Attempt to serialize - this should fail due to invalid endpoint
+                // This should throw an exception indicating connection failure to invalid endpoint
+                var serializedBytes = serializer.Serialize(avroRecord, topicName);
+
+                // If we reach here, the test should fail because we expected an exception
+                Assert.Fail("Expected exception due to invalid endpoint 'https://invalid-endpoint.amazonaws.com', but serialization succeeded");
+            }
+            catch (Exception ex) when (ex.GetType().Name == "AwsSchemaRegistryException" &&
+                                      ex.Message.Contains("UnknownHostException") &&
+                                      ex.Message.Contains("endpoint that is failing to resolve"))
+            {
+                // Expected - GSR exception with UnknownHostException for invalid endpoint DNS resolution failure
+                Assert.Pass($"Successfully validated invalid endpoint 'https://invalid-endpoint.amazonaws.com' results in UnknownHostException");
             }
         }
     }
