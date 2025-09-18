@@ -41,6 +41,7 @@ import org.apache.avro.generic.GenericDatumWriter;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.io.BinaryEncoder;
 import org.apache.avro.io.EncoderFactory;
+import org.apache.commons.collections4.map.SingletonMap;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -591,7 +592,7 @@ public class GlueSchemaRegistryDeserializationFacadeTest {
         configs.put(AWSSchemaRegistryConstants.COMPRESSION_TYPE, compressionType.name());
         configs.put(AWSSchemaRegistryConstants.AVRO_RECORD_TYPE, avroRecordType);
         configs.put(AWSSchemaRegistryConstants.JACKSON_DESERIALIZATION_FEATURES,
-                    Arrays.asList(DeserializationFeature.EAGER_DESERIALIZER_FETCH.name()));
+                new SingletonMap<>(DeserializationFeature.EAGER_DESERIALIZER_FETCH.name(), true));
         byte[] serializedData = createSerializedData(record, dataFormat, inputSchemaDefinition, schemaVersionId);
 
         GetSchemaVersionResponse schemaVersionResponse = GetSchemaVersionResponse.builder()
