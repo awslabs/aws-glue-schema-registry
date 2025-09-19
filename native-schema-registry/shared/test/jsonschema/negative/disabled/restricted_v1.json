@@ -1,0 +1,13 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "f1": {
+      "type": "string"
+    },
+    "f2": {
+      "type": "integer",
+      "maximum": 100
+    }
+  }
+}
