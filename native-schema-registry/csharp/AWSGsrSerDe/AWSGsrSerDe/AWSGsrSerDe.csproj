@@ -5,7 +5,7 @@
         <CodeAnalysisRuleSet>GlueSchemaRegistry.ruleset</CodeAnalysisRuleSet>
          <PackageId>AWSGsrSerDe</PackageId>
          <!-- Matching with java layer version -->
-          <Version>1.1.10</Version>
+          <Version>1.1.25</Version>
           <Company>Amazon</Company>
           <Product>AWS Glue Schema Registry CSharp SerDe</Product>
           <Description>AWS Glue Schema Registry serializers/deserializers for .NET (Avro/JSON/Protobuf).</Description>
