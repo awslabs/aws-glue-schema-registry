@@ -41,6 +41,8 @@ const (
 	DataFormatProtobuf
 )
 
+const UserAgentString = "go"
+
 // String returns the string representation of the DataFormat.
 func (d DataFormat) String() string {
 	switch d {

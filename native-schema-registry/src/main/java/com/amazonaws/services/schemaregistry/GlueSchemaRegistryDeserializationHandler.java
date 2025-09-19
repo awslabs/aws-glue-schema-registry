@@ -28,6 +28,7 @@ import static com.amazonaws.services.schemaregistry.DataTypes.C_MutableByteArray
 import static com.amazonaws.services.schemaregistry.DataTypes.C_ReadOnlyByteArray;
 import static com.amazonaws.services.schemaregistry.DataTypes.HandlerDirectives;
 import static com.amazonaws.services.schemaregistry.DataTypes.newGlueSchemaRegistrySchema;
+import static com.amazonaws.services.schemaregistry.config.NativeGlueSchemaRegistryConfiguration.USER_AGENT_APP_KEY;
 
 /**
  * Entry point class for the serialization methods of GSR shared library.
@@ -55,6 +56,7 @@ public class GlueSchemaRegistryDeserializationHandler {
     public static int initializeDeserializerWithConfig(
         IsolateThread isolateThread,
         CCharPointer configFilePath,
+        CCharPointer userAgentApp,
         C_GlueSchemaRegistryErrorPointerHolder errorPointer) {
         try {
             if (configFilePath.isNull()) {
@@ -63,9 +65,12 @@ public class GlueSchemaRegistryDeserializationHandler {
                 return 0;
             }
 
-            String filePath = CTypeConversion.toJavaString(configFilePath);
-            Map<String, String> configs = ConfigurationFileReader.loadConfigFromFile(filePath);
-            NativeGlueSchemaRegistryConfiguration configuration = new NativeGlueSchemaRegistryConfiguration(configs);
+            final String filePath = CTypeConversion.toJavaString(configFilePath);
+            final String userAgent = CTypeConversion.toJavaString(userAgentApp);
+            final Map<String, String> configs = ConfigurationFileReader.loadConfigFromFile(filePath);
+            configs.put(USER_AGENT_APP_KEY, userAgent);
+            final NativeGlueSchemaRegistryConfiguration configuration =
+                new NativeGlueSchemaRegistryConfiguration(configs);
             DeserializerInstance.create(configuration);
 
             return 0; // Success

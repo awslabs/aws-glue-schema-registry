@@ -16,10 +16,12 @@ class ConfigurationFileReaderTest {
     private static final String REGION_KEY = "region";
     private static final String ROLE_TO_ASSUME_KEY = "roleToAssume";
     private static final String ROLE_SESSION_NAME_KEY = "roleSessionName";
+    private static final String USER_AGENT_APP_KEY = NativeGlueSchemaRegistryConfiguration.USER_AGENT_APP_KEY;
     
     private static final String REGION_VALUE = "us-east-1";
     private static final String ROLE_ARN_VALUE = "arn:aws:iam::123456789012:role/TestRole";
     private static final String SESSION_NAME_VALUE = "custom-session";
+    private static final String CUSTOM_USER_AGENT = "custom-app";
     
     private static final String KEY_WITH_DOTS = "key.with.dots";
     private static final String KEY_WITH_UNDERSCORES = "key_with_underscores";
@@ -85,5 +87,60 @@ class ConfigurationFileReaderTest {
         assertEquals(VALUE_WITH_SPACES, config.get(KEY_WITH_DOTS));
         assertEquals(VALUE_WITH_DASHES, config.get(KEY_WITH_UNDERSCORES));
         assertEquals(VALUE_WITH_EQUALS, config.get(KEY_WITH_COLONS));
+    }
+
+    @Test
+    void testUserAgentAppIsFilteredFromFile() throws IOException {
+        // Create a properties file with userAgentApp and other properties
+        Path propertiesFile = tempDir.resolve("with_user_agent.properties");
+        try (FileWriter writer = new FileWriter(propertiesFile.toFile())) {
+            writer.write(REGION_KEY + "=" + REGION_VALUE + "\n");
+            writer.write(USER_AGENT_APP_KEY + "=" + CUSTOM_USER_AGENT + "\n");
+            writer.write(ROLE_TO_ASSUME_KEY + "=" + ROLE_ARN_VALUE + "\n");
+        }
+
+        Map<String, String> config = ConfigurationFileReader.loadConfigFromFile(propertiesFile.toString());
+
+        // Verify userAgentApp is filtered out
+        assertFalse(config.containsKey(USER_AGENT_APP_KEY));
+        assertNull(config.get(USER_AGENT_APP_KEY));
+        
+        // Verify other properties are preserved
+        assertEquals(REGION_VALUE, config.get(REGION_KEY));
+        assertEquals(ROLE_ARN_VALUE, config.get(ROLE_TO_ASSUME_KEY));
+        assertEquals(2, config.size()); // Should only have 2 properties, not 3
+    }
+
+    @Test
+    void testUserAgentAppOnlyFileResultsInEmptyConfig() throws IOException {
+        // Create a properties file with only userAgentApp
+        Path propertiesFile = tempDir.resolve("only_user_agent.properties");
+        try (FileWriter writer = new FileWriter(propertiesFile.toFile())) {
+            writer.write(USER_AGENT_APP_KEY + "=" + CUSTOM_USER_AGENT + "\n");
+        }
+
+        Map<String, String> config = ConfigurationFileReader.loadConfigFromFile(propertiesFile.toString());
+
+        // Verify config is empty after filtering
+        assertTrue(config.isEmpty());
+        assertFalse(config.containsKey(USER_AGENT_APP_KEY));
+    }
+
+    @Test
+    void testFileWithoutUserAgentAppWorksNormally() throws IOException {
+        // Create a properties file without userAgentApp
+        Path propertiesFile = tempDir.resolve("no_user_agent.properties");
+        try (FileWriter writer = new FileWriter(propertiesFile.toFile())) {
+            writer.write(REGION_KEY + "=" + REGION_VALUE + "\n");
+            writer.write(ROLE_TO_ASSUME_KEY + "=" + ROLE_ARN_VALUE + "\n");
+        }
+
+        Map<String, String> config = ConfigurationFileReader.loadConfigFromFile(propertiesFile.toString());
+
+        // Verify all properties are preserved
+        assertEquals(REGION_VALUE, config.get(REGION_KEY));
+        assertEquals(ROLE_ARN_VALUE, config.get(ROLE_TO_ASSUME_KEY));
+        assertEquals(2, config.size());
+        assertFalse(config.containsKey(USER_AGENT_APP_KEY));
     }
 }

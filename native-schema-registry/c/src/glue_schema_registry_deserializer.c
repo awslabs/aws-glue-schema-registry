@@ -7,7 +7,8 @@ typedef struct {
     graal_isolate_t *isolate;
 } deserializer_context;
 
-glue_schema_registry_deserializer * new_glue_schema_registry_deserializer(const char *config_file_path, glue_schema_registry_error **p_err) {
+glue_schema_registry_deserializer *new_glue_schema_registry_deserializer(const char *config_file_path, const char *user_agent, glue_schema_registry_error **p_err)
+{
     glue_schema_registry_deserializer *deserializer = NULL;
     deserializer =
             (glue_schema_registry_deserializer *) aws_common_malloc(sizeof(glue_schema_registry_deserializer));
@@ -28,8 +29,8 @@ glue_schema_registry_deserializer * new_glue_schema_registry_deserializer(const 
     deserializer->instance_context = ctx;
 
     //Initialize with configuration file (can be NULL for default configuration)
-    int config_result = initialize_deserializer_with_config(thread, (char*)config_file_path, p_err);
-    
+    int config_result = initialize_deserializer_with_config(thread, (char *)config_file_path, (char *)user_agent, p_err);
+
     if (config_result != 0) {
         delete_glue_schema_registry_deserializer(deserializer);
         // Only throw an error if one wasn't already set by initialize_deserializer_with_config

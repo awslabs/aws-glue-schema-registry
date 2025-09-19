@@ -14,8 +14,8 @@ typedef struct glue_schema_registry_deserializer {
     %extend {
         //Exception argument will be intercepted and thrown as exception in target language.
         //It is 2nd argument as there is no '$self' argument passed for constructor methods.
-        %exception new_glue_schema_registry_deserializer %glue_schema_registry_exception_interceptor(arg2)
-        glue_schema_registry_deserializer(const char *config_file_path, glue_schema_registry_error **p_err);
+        %exception new_glue_schema_registry_deserializer %glue_schema_registry_exception_interceptor(arg3)
+        glue_schema_registry_deserializer(const char *config_file_path, const char *user_agent, glue_schema_registry_error **p_err);
 
         ~glue_schema_registry_deserializer();
 
