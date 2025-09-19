@@ -1,4 +1,4 @@
-package GsrSerDe
+package gsrserde
 
 /*
 #cgo CFLAGS: -w
