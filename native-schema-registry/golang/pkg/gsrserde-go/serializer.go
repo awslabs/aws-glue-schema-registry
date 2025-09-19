@@ -6,10 +6,6 @@ import (
 )
 
 /*
-#cgo CFLAGS: -w
-#cgo CFLAGS: -I../../lib/include
-#cgo LDFLAGS: -Wl,-rpath,${SRCDIR}/../../lib
-#cgo LDFLAGS: -L../../lib -lnativeschemaregistry -lnative_schema_registry_c -lnative_schema_registry_c_data_types -laws_common_memalloc
 #include "../../lib/include/glue_schema_registry_serializer.h"
 #include "../../lib/include/glue_schema_registry_error.h"
 #include "../../lib/include/mutable_byte_array.h"
