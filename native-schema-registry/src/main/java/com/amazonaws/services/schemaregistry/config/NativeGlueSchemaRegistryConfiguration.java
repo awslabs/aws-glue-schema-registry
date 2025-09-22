@@ -45,7 +45,7 @@ public class NativeGlueSchemaRegistryConfiguration extends GlueSchemaRegistryCon
     private void validateAndSetRoleConfiguration(Map<String, ?> configs) {
         if (configs.containsKey("roleToAssume")) {
             this.roleToAssume = (String) configs.get("roleToAssume");
-            this.roleSessionName = "native-glue-schema-registry";
+            this.roleSessionName = "native";
         }
         if (configs.containsKey("roleSessionName")) {
             this.roleSessionName = (String) configs.get("roleSessionName"); // this will override the default session
