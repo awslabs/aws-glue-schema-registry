@@ -17,6 +17,209 @@ namespace AWSGsrSerDe.Tests.Configuration
     [TestFixture]
     public class ConfigValidationIntegTests
     {
+        private const string DEFAULT_REGISTRY_NAME = "default-registry";
+        private const string CUSTOM_REGISTRY_NAME = "native-test-registry";
+        private const string DEFAULT_REGION = "us-east-1";
+        
+        // Multi-region client manager - creates and caches clients per region
+        private readonly Dictionary<string, IAmazonGlue> _regionClients = new();
+        private readonly List<(string registryName, string schemaName)> _schemasToCleanup = new();
+        private readonly List<string> _registriesToCleanup = new();
+
+        [SetUp]
+        public async Task SetUp()
+        {
+            // Pre-create custom registry if it doesn't exist (using default region)
+            await EnsureCustomRegistryExists();
+        }
+
+        /// <summary>
+        /// Gets or creates a Glue client for the specified region.
+        /// Caches clients to avoid recreating them for the same region.
+        /// </summary>
+        private IAmazonGlue GetGlueClientForRegion(string region)
+        {
+            if (string.IsNullOrWhiteSpace(region))
+            {
+                region = DEFAULT_REGION;
+            }
+
+            if (!_regionClients.ContainsKey(region))
+            {
+                try
+                {
+                    var regionEndpoint = RegionEndpoint.GetBySystemName(region);
+                    _regionClients[region] = new AmazonGlueClient(regionEndpoint);
+                }
+                catch (ArgumentException ex)
+                {
+                    throw new ArgumentException($"Invalid region '{region}' specified", ex);
+                }
+            }
+            
+            return _regionClients[region];
+        }
+
+        /// <summary>
+        /// Gets a Glue client for the region specified in the config file.
+        /// Falls back to default region if no region is specified in config.
+        /// </summary>
+        private IAmazonGlue GetGlueClientForConfig(string configPath)
+        {
+            var region = ExtractRegionFromConfig(configPath);
+            return GetGlueClientForRegion(region);
+        }
+
+        /// <summary>
+        /// Extracts the region from a config file, returns default region if not found.
+        /// </summary>
+        private string ExtractRegionFromConfig(string configPath)
+        {
+            try
+            {
+                if (!File.Exists(configPath))
+                {
+                    return DEFAULT_REGION;
+                }
+
+                var configLines = File.ReadAllLines(configPath);
+                var regionLine = configLines.FirstOrDefault(line => line.StartsWith("region="));
+                
+                if (regionLine != null)
+                {
+                    var region = regionLine.Split('=')[1].Trim();
+                    return string.IsNullOrWhiteSpace(region) ? DEFAULT_REGION : region;
+                }
+                
+                return DEFAULT_REGION;
+            }
+            catch (Exception)
+            {
+                return DEFAULT_REGION;
+            }
+        }
+
+        private async Task EnsureCustomRegistryExists()
+        {
+            // Use default region client for registry setup
+            var glueClient = GetGlueClientForRegion(DEFAULT_REGION);
+            
+            try
+            {
+                var getRegistryRequest = new GetRegistryRequest
+                {
+                    RegistryId = new RegistryId { RegistryName = CUSTOM_REGISTRY_NAME }
+                };
+
+                await glueClient.GetRegistryAsync(getRegistryRequest);
+            }
+            catch (EntityNotFoundException)
+            {
+                // Registry doesn't exist, create it
+                var createRegistryRequest = new CreateRegistryRequest
+                {
+                    RegistryName = CUSTOM_REGISTRY_NAME,
+                    Description = "Test registry created by integration test"
+                };
+
+                var createRegistryResponse = await glueClient.CreateRegistryAsync(createRegistryRequest);
+                Assert.NotNull(createRegistryResponse, "Create registry response should not be null");
+                Assert.NotNull(createRegistryResponse.RegistryArn, "Registry ARN should not be null");
+
+                // Mark for cleanup since the test-suite created it
+                _registriesToCleanup.Add(CUSTOM_REGISTRY_NAME);
+            }
+        }
+
+        [TearDown]
+        public async Task TearDown()
+        {
+            // Use default region client for cleanup operations
+            var glueClient = GetGlueClientForRegion(DEFAULT_REGION);
+            
+            // Clean up any schemas created during tests
+            foreach (var (registryName, schemaName) in _schemasToCleanup)
+            {
+                try
+                {
+                    var deleteSchemaRequest = new DeleteSchemaRequest
+                    {
+                        SchemaId = new SchemaId
+                        {
+                            RegistryName = registryName,
+                            SchemaName = schemaName
+                        }
+                    };
+                    await glueClient.DeleteSchemaAsync(deleteSchemaRequest);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Warning: Failed to clean up schema {schemaName}: {ex.Message}");
+                }
+            }
+            _schemasToCleanup.Clear();
+
+            // Clean up any registries created during tests
+            foreach (var registryName in _registriesToCleanup)
+            {
+                try
+                {
+                    var deleteRegistryRequest = new DeleteRegistryRequest
+                    {
+                        RegistryId = new RegistryId { RegistryName = registryName }
+                    };
+                    await glueClient.DeleteRegistryAsync(deleteRegistryRequest);
+                    Console.WriteLine($"✓ Cleaned up registry: {registryName}");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Warning: Failed to clean up registry {registryName}: {ex.Message}");
+                }
+            }
+            _registriesToCleanup.Clear();
+
+            // Dispose all region clients
+            foreach (var client in _regionClients.Values)
+            {
+                client?.Dispose();
+            }
+            _regionClients.Clear();
+        }
+
+        private async Task<bool> WaitForSchemaRegistration(string registryName, string schemaName, int maxRetries = 10, int delayMs = 500)
+        {
+            // Use default region client for schema registration checks
+            var glueClient = GetGlueClientForRegion(DEFAULT_REGION);
+            
+            for (int i = 0; i < maxRetries; i++)
+            {
+                try
+                {
+                    var getSchemaRequest = new GetSchemaRequest
+                    {
+                        SchemaId = new SchemaId
+                        {
+                            RegistryName = registryName,
+                            SchemaName = schemaName
+                        }
+                    };
+                    
+                    var response = await glueClient.GetSchemaAsync(getSchemaRequest);
+                    if (response != null && response.SchemaName == schemaName)
+                    {
+                        return true;
+                    }
+                }
+                catch (EntityNotFoundException)
+                {
+                    // Schema not found yet, wait and retry
+                    await Task.Delay(delayMs);
+                }
+            }
+            return false;
+        }
+
+
         [Test]
         public async Task Constructor_WithValidMinimalConfig_AutoRegistersSchemaInDefaultRegistry()
         {
@@ -29,7 +232,6 @@ namespace AWSGsrSerDe.Tests.Configuration
             // Generate unique names to avoid conflicts
             var topicName = $"test-topic-{Guid.NewGuid():N}";
             var expectedSchemaName = topicName; // GSR uses topic name as schema name by default
-            var registryName = "default-registry";
             string configPath = null;
 
             try
@@ -39,18 +241,15 @@ namespace AWSGsrSerDe.Tests.Configuration
                 configPath = Path.Combine(assemblyDir, "../../../../../../shared/test/configs/minimal-auto-registration-default-registry.properties");
                 configPath = Path.GetFullPath(configPath);
 
-                // 2. Create AWS Glue client for verification and cleanup
-                var glueClient = new AmazonGlueClient(RegionEndpoint.USEast1);
-
-                // 3. Create GSR serializer with auto-registration enabled
+                // 2. Create GSR serializer with auto-registration enabled
                 Console.WriteLine($"Creating GSR serializer with config...");
                 var serializer = new GlueSchemaRegistryKafkaSerializer(configPath);
 
-                // 4. Create Avro record to serialize
+                // 3. Create Avro record to serialize
                 var avroRecord = RecordGenerator.GetTestAvroRecord();
                 Console.WriteLine($"✓ Created test Avro record: {avroRecord}");
 
-                // 5. Serialize the record - this should auto-register the schema
+                // 4. Serialize the record - this should auto-register the schema
                 Console.WriteLine($"Serializing record to topic '{topicName}' (should auto-register schema)...");
                 var serializedBytes = serializer.Serialize(avroRecord, topicName);
 
@@ -58,16 +257,21 @@ namespace AWSGsrSerDe.Tests.Configuration
                 Assert.That(serializedBytes.Length, Is.GreaterThan(0), "Serialized bytes should not be empty");
                 Console.WriteLine($"✓ Successfully serialized record, {serializedBytes.Length} bytes");
 
-                // 6. Wait for eventual API calls to complete
-                Console.WriteLine("Waiting for API calls to complete");
-                await Task.Delay(3000);
+                // 5. Mark schema for cleanup
+                _schemasToCleanup.Add((DEFAULT_REGISTRY_NAME, expectedSchemaName));
 
-                // 7. Verify schema was auto-registered
+                // 6. Wait for schema to be registered
+                Console.WriteLine("Waiting for schema registration to complete...");
+                var schemaRegistered = await WaitForSchemaRegistration(DEFAULT_REGISTRY_NAME, expectedSchemaName);
+                Assert.IsTrue(schemaRegistered, "Schema should have been auto-registered");
+
+                // 7. Verify schema was auto-registered with correct properties
+                var glueClient = GetGlueClientForConfig(configPath);
                 var getSchemaRequest = new GetSchemaRequest
                 {
                     SchemaId = new SchemaId
                     {
-                        RegistryName = registryName,
+                        RegistryName = DEFAULT_REGISTRY_NAME,
                         SchemaName = expectedSchemaName
                     }
                 };
@@ -77,19 +281,7 @@ namespace AWSGsrSerDe.Tests.Configuration
                 Assert.NotNull(getResponse, "Get schema response should not be null");
                 Assert.That(getResponse.SchemaName, Is.EqualTo(expectedSchemaName), "Auto-registered schema name should match topic name");
                 Assert.That(getResponse.DataFormat, Is.EqualTo(DataFormat.AVRO), "Auto-registered schema should be AVRO format");
-
-                // 9. Cleanup - Delete the auto-registered schema
-                var deleteSchemaRequest = new DeleteSchemaRequest
-                {
-                    SchemaId = new SchemaId
-                    {
-                        RegistryName = registryName,
-                        SchemaName = expectedSchemaName
-                    }
-                };
-
-                var deleteResponse = await glueClient.DeleteSchemaAsync(deleteSchemaRequest);
-                Assert.NotNull(deleteResponse, "Delete schema response should not be null");
+                Console.WriteLine($"✓ Verified schema was auto-registered in default registry");
             }
             catch (AmazonGlueException ex)
             {
@@ -110,77 +302,48 @@ namespace AWSGsrSerDe.Tests.Configuration
         {
             /* Use GSR serializer with auto-registration enabled to serialize data
              * This should automatically register a schema in the custom registry
-             * Create custom registry "native-test-registry" if it doesn't exist
+             * Custom registry is pre-created in SetUp method
              * Verify schema was auto-registered in custom registry
-             * Cleanup - delete auto-registered schema, temp config file, and optionally custom registry
+             * Cleanup handled by TearDown method
              */
 
             // Generate unique names to avoid conflicts
             var topicName = $"test-topic-custom-{Guid.NewGuid():N}";
             var expectedSchemaName = topicName; // GSR uses topic name as schema name by default
-            var registryName = "native-test-registry";
-            string configPath = null;
-            bool registryCreatedByTest = false;
 
             try
             {
-                // 1. Create AWS Glue client for registry and schema operations
-                var glueClient = new AmazonGlueClient(RegionEndpoint.USEast1);
-
-                // 2. Check if custom registry exists, create if it doesn't
-                try
-                {
-                    var getRegistryRequest = new GetRegistryRequest
-                    {
-                        RegistryId = new RegistryId { RegistryName = registryName }
-                    };
-
-                    await glueClient.GetRegistryAsync(getRegistryRequest);
-                }
-                catch (EntityNotFoundException)
-                {
-                    // Registry doesn't exist, create it
-                    var createRegistryRequest = new CreateRegistryRequest
-                    {
-                        RegistryName = registryName,
-                        Description = "Test registry created by integration test"
-                    };
-
-                    var createRegistryResponse = await glueClient.CreateRegistryAsync(createRegistryRequest);
-                    Assert.NotNull(createRegistryResponse, "Create registry response should not be null");
-                    Assert.NotNull(createRegistryResponse.RegistryArn, "Registry ARN should not be null");
-
-                    // To cleanup only if created by this test
-                    registryCreatedByTest = true;
-                }
-
-                // 3. Use shared config file with auto-registration enabled for custom registry (native-test-registry)
+                // 1. Use shared config file with auto-registration enabled for custom registry (native-test-registry)
                 var assemblyDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)!;
-                configPath = Path.Combine(assemblyDir, "../../../../../../shared/test/configs/minimal-auto-registration-custom-registry.properties");
+                var configPath = Path.Combine(assemblyDir, "../../../../../../shared/test/configs/minimal-auto-registration-custom-registry.properties");
                 configPath = Path.GetFullPath(configPath);
 
-                // 4. Create GSR serializer with auto-registration enabled for custom registry
+                // 2. Create GSR serializer with auto-registration enabled for custom registry
                 var serializer = new GlueSchemaRegistryKafkaSerializer(configPath);
 
-                // 5. Create Avro record to serialize
+                // 3. Create Avro record to serialize
                 var avroRecord = RecordGenerator.GetTestAvroRecord();
 
-                // 6. Serialize the record - this should auto-register the schema in custom registry
+                // 4. Serialize the record - this should auto-register the schema in custom registry
                 var serializedBytes = serializer.Serialize(avroRecord, topicName);
 
                 Assert.NotNull(serializedBytes, "Serialized bytes should not be null");
                 Assert.That(serializedBytes.Length, Is.GreaterThan(0), "Serialized bytes should not be empty");
 
-                // 7. Wait for API calls to complete
-                Console.WriteLine("Waiting for API calls to complete");
-                await Task.Delay(3000);
+                // 5. Mark schema for cleanup
+                _schemasToCleanup.Add((CUSTOM_REGISTRY_NAME, expectedSchemaName));
 
-                // 8. Verify schema was auto-registered in custom registry
+                // 6. Wait for schema to be registered
+                var schemaRegistered = await WaitForSchemaRegistration(CUSTOM_REGISTRY_NAME, expectedSchemaName);
+                Assert.IsTrue(schemaRegistered, "Schema should have been auto-registered in custom registry");
+
+                // 7. Verify schema was auto-registered in custom registry
+                var glueClient = GetGlueClientForConfig(configPath);
                 var getSchemaRequest = new GetSchemaRequest
                 {
                     SchemaId = new SchemaId
                     {
-                        RegistryName = registryName,
+                        RegistryName = CUSTOM_REGISTRY_NAME,
                         SchemaName = expectedSchemaName
                     }
                 };
@@ -190,36 +353,7 @@ namespace AWSGsrSerDe.Tests.Configuration
                 Assert.NotNull(getResponse, "Get schema response should not be null");
                 Assert.That(getResponse.SchemaName, Is.EqualTo(expectedSchemaName), "Auto-registered schema name should match topic name");
                 Assert.That(getResponse.DataFormat, Is.EqualTo(DataFormat.AVRO), "Auto-registered schema should be AVRO format");
-                Assert.That(getResponse.RegistryName, Is.EqualTo(registryName), "Schema should be in the custom registry");
-
-                // 10. Cleanup - Delete the auto-registered schema from custom registry
-                Console.WriteLine($"Cleaning up auto-registered schema '{expectedSchemaName}' from custom registry...");
-
-                var deleteSchemaRequest = new DeleteSchemaRequest
-                {
-                    SchemaId = new SchemaId
-                    {
-                        RegistryName = registryName,
-                        SchemaName = expectedSchemaName
-                    }
-                };
-
-                var deleteResponse = await glueClient.DeleteSchemaAsync(deleteSchemaRequest);
-                Assert.NotNull(deleteResponse, "Delete schema response should not be null");
-
-                // 11. If we created the registry, delete it too
-                if (registryCreatedByTest)
-                {
-                    Console.WriteLine($"Cleaning up custom registry '{registryName}' (created by test)...");
-                    var deleteRegistryRequest = new DeleteRegistryRequest
-                    {
-                        RegistryId = new RegistryId { RegistryName = registryName }
-                    };
-
-                    var deleteRegistryResponse = await glueClient.DeleteRegistryAsync(deleteRegistryRequest);
-                    Assert.NotNull(deleteRegistryResponse, "Delete registry response should not be null");
-                    Console.WriteLine($"✓ Successfully deleted custom registry: {registryName}");
-                }
+                Assert.That(getResponse.RegistryName, Is.EqualTo(CUSTOM_REGISTRY_NAME), "Schema should be in the custom registry");
             }
             catch (AmazonGlueException ex)
             {
