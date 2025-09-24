@@ -7,6 +7,8 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="AWSSDK.Glue" Version="3.7.300" />
+        <PackageReference Include="AWSSDK.Core" Version="3.7.300" />
         <PackageReference Include="Google.Api.CommonProtos" Version="2.6.0" />
         <PackageReference Include="Google.Protobuf" Version="3.32.1" />
         <PackageReference Include="Grpc.Tools" Version="2.48.1">

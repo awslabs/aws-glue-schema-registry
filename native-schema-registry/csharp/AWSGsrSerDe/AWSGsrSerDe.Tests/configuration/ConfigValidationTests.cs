@@ -2,11 +2,13 @@ using System;
 using System.IO;
 using System.Linq;
 using NUnit.Framework;
+using AWSGsrSerDe.serializer;
+using AWSGsrSerDe.deserializer;
 
 namespace AWSGsrSerDe.Tests.Configuration
 {
     [TestFixture]
-    public class ConfigFileValidationTests
+    public class ConfigValidationTests
     {
         /// <summary>
         /// Finds the project root by looking for .csproj file and returns absolute path to config file
@@ -74,28 +76,31 @@ namespace AWSGsrSerDe.Tests.Configuration
             Assert.IsNotNull(deserializer);
         }
 
-        // TODO: Debug further why no exceptions are thrown right now in Java layer with empty or inexistent config files
-        // [Test]
-        // public void Constructor_WithEmptyConfigPath_ThrowsException()
-        // {
-        //     // Act & Assert
-        //     var serializer = new GlueSchemaRegistrySerializer("");
-        //     Assert.Throws<ArgumentException>(() => new GlueSchemaRegistrySerializer(""));
-        //     Assert.Throws<ArgumentException>(() => new GlueSchemaRegistryDeserializer(""));
-        // }
+        [Test]
+        public void Constructor_WithEmptyConfigPath_ThrowsExceptionForSerializer()
+        {
+            Assert.Throws<ArgumentNullException>(() => new GlueSchemaRegistryKafkaSerializer(""));
+        }
 
-        // [Test]
-        // public void Constructor_WithNonExistentConfigFile_ThrowsException()
-        // {
-        //     // Arrange
-        //     var nonExistentPath = GetConfigPath("configuration/test-configs/nonexistent.properties");
+        [Test]
+        public void Constructor_WithNonExistentConfigFile_ThrowsExceptionForSerializer()
+        {
+            var nonExistentPath = GetConfigPath("configuration/test-configs/nonexistent.properties");
+            Assert.Throws<FileNotFoundException>(() => new GlueSchemaRegistryKafkaSerializer(nonExistentPath));
+        }
 
-        //     // Act & Assert
-        //     var serializer = new GlueSchemaRegistrySerializer("");
-        //     Assert.Throws<FileNotFoundException>(() => new GlueSchemaRegistrySerializer(nonExistentPath));
-        //     Assert.Throws<FileNotFoundException>(() => new GlueSchemaRegistryDeserializer(nonExistentPath));
-        // }
+        [Test]
+        public void Constructor_WithEmptyConfigPath_ThrowsExceptionForDeserializer()
+        {
+            Assert.Throws<ArgumentNullException>(() => new GlueSchemaRegistryKafkaSerializer(""));
+        }
 
+        [Test]
+        public void Constructor_WithNonExistentConfigFile_ThrowsExceptionForDeserializer()
+        {
+            var nonExistentPath = GetConfigPath("configuration/test-configs/nonexistent.properties");
+            Assert.Throws<FileNotFoundException>(() => new GlueSchemaRegistryKafkaDeserializer(nonExistentPath));
+        }
 
         [Test]
         public void Constructor_WithCustomConfig_AcceptsAllProperties()
