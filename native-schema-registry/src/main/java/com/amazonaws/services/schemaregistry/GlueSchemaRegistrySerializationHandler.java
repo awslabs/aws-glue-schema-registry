@@ -71,6 +71,8 @@ public class GlueSchemaRegistrySerializationHandler {
             configs.put(USER_AGENT_APP_KEY, userAgent);
             NativeGlueSchemaRegistryConfiguration configuration =
                 new NativeGlueSchemaRegistryConfiguration(configs);
+          
+            ProtobufPreprocessor.initializeCache(configuration.getCacheSize());
             SerializerInstance.create(configuration);
             return 0;
         } catch (Exception e) {
