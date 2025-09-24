@@ -1,0 +1,11 @@
+syntax = "proto3";
+package evolution.test;
+
+message User {
+  string name = 1;
+  int32 age = 2;
+  // BACKWARD: Delete field (email removed)
+  string phone = 4;
+  string address = 5;
+  string department = 6;
+}
