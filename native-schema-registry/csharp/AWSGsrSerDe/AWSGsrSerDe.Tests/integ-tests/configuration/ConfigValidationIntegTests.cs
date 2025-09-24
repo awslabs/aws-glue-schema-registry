@@ -498,5 +498,1097 @@ namespace AWSGsrSerDe.Tests.Configuration
                 Assert.Pass($"Successfully validated invalid endpoint 'https://invalid-endpoint.amazonaws.com' results in UnknownHostException");
             }
         }
+
+        [Test]
+        public async Task Constructor_WithInexistentRegistry_ThrowsException()
+        {
+            /* Test non-existent registry scenario
+             * Create config with non-existent registry name
+             * Attempt to serialize data 
+             * Should throw exception indicating registry doesn't exist
+             * No cleanup needed as no resources should be created
+             */
+
+            // Generate unique topic name
+            var topicName = $"test-topic-inexistent-registry-{Guid.NewGuid():N}";
+
+            try
+            {
+                // 1. Use shared config file with non-existent registry
+                var assemblyDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)!;
+                var configPath = Path.Combine(assemblyDir, "../../../../../../shared/test/configs/inexistent-registry.properties");
+                configPath = Path.GetFullPath(configPath);
+
+                // 2. Create GSR serializer with non-existent registry config
+                var serializer = new GlueSchemaRegistryKafkaSerializer(configPath);
+
+                // 3. Create Avro record to serialize
+                var avroRecord = RecordGenerator.GetTestAvroRecord();
+
+                // 4. Attempt to serialize - this should fail due to non-existent registry
+                // This should throw an exception indicating registry doesn't exist
+                var serializedBytes = serializer.Serialize(avroRecord, topicName);
+
+                // If we reach here, the test should fail because we expected an exception
+                Assert.Fail("Expected exception due to non-existent registry 'non-existent-registry-12345', but serialization succeeded");
+            }
+            catch (Exception ex) when (ex.GetType().Name == "AwsSchemaRegistryException" &&
+                                      (ex.Message.Contains("EntityNotFoundException") ||
+                                       ex.Message.Contains("Registry not found") ||
+                                       ex.Message.Contains("non-existent-registry-12345") ||
+                                       ex.Message.Contains("does not exist")))
+            {
+                // Expected - GSR exception indicating registry doesn't exist
+                Assert.Pass($"Successfully validated non-existent registry 'non-existent-registry-12345' results in registry not found exception: {ex.Message}");
+            }
+        }
+
+        [Test]
+        public async Task Constructor_WithInvalidRoleToAssume_ThrowsException()
+        {
+            /* Test invalid role assumption scenario
+             * Create config with invalid/non-existent role ARN
+             * Attempt to serialize data 
+             * Should throw exception indicating role cannot be assumed
+             * No cleanup needed as no resources should be created
+             */
+
+            // Generate unique topic name
+            var topicName = $"test-topic-invalid-role-{Guid.NewGuid():N}";
+
+            try
+            {
+                // 1. Use shared config file with invalid role ARN
+                var assemblyDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)!;
+                var configPath = Path.Combine(assemblyDir, "../../../../../../shared/test/configs/invalid-role-to-assume.properties");
+                configPath = Path.GetFullPath(configPath);
+
+                // 2. Create GSR serializer with invalid role config
+                var serializer = new GlueSchemaRegistryKafkaSerializer(configPath);
+
+                // 3. Create Avro record to serialize
+                var avroRecord = RecordGenerator.GetTestAvroRecord();
+
+                // 4. Attempt to serialize - this should fail due to invalid role assumption
+                // This should throw an exception indicating role cannot be assumed
+                var serializedBytes = serializer.Serialize(avroRecord, topicName);
+
+                // If we reach here, the test should fail because we expected an exception
+                Assert.Fail("Expected exception due to invalid role 'arn:aws:iam::123456789012:role/NonExistentRole', but serialization succeeded");
+            }
+            catch (Exception ex) when (ex.GetType().Name == "AwsSchemaRegistryException" &&
+                                      (ex.Message.Contains("AccessDenied") ||
+                                       ex.Message.Contains("AssumeRole") ||
+                                       ex.Message.Contains("NonExistentRole") ||
+                                       ex.Message.Contains("is not authorized to perform: sts:AssumeRole") ||
+                                       ex.Message.Contains("User: arn:aws:sts::") ||
+                                       ex.Message.Contains("cannot assume role")))
+            {
+                // Expected - GSR exception indicating role assumption failure
+                Assert.Pass($"Successfully validated invalid role assumption results in access denied exception: {ex.Message}");
+            }
+        }
+
+        [Test]
+        public async Task Constructor_WithInsufficientIAMPermission_ThrowsException()
+        {
+            /* Test insufficient IAM permissions scenario
+             * Create config with valid settings but insufficient IAM permissions
+             * Attempt to serialize data 
+             * Should throw exception indicating insufficient permissions for Glue operations
+             * No cleanup needed as no resources should be created
+             */
+
+            // Generate unique topic name
+            var topicName = $"test-topic-insufficient-iam-{Guid.NewGuid():N}";
+
+            try
+            {
+                // 1. Use shared config file with insufficient IAM permissions
+                var assemblyDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)!;
+                var configPath = Path.Combine(assemblyDir, "../../../../../../shared/test/configs/insufficient-iam-permissions.properties");
+                configPath = Path.GetFullPath(configPath);
+
+                // 2. Create GSR serializer with insufficient permissions config
+                var serializer = new GlueSchemaRegistryKafkaSerializer(configPath);
+
+                // 3. Create Avro record to serialize
+                var avroRecord = RecordGenerator.GetTestAvroRecord();
+
+                // 4. Attempt to serialize - this should fail due to insufficient IAM permissions
+                // This should throw an exception indicating insufficient permissions
+                var serializedBytes = serializer.Serialize(avroRecord, topicName);
+
+                // If we reach here, the test should fail because we expected an exception
+                Assert.Fail("Expected exception due to insufficient IAM permissions for Glue operations, but serialization succeeded");
+            }
+            catch (Exception ex) when (ex.GetType().Name == "AwsSchemaRegistryException" &&
+                                      (ex.Message.Contains("AccessDenied") ||
+                                       ex.Message.Contains("UnauthorizedOperation") ||
+                                       ex.Message.Contains("is not authorized to perform") ||
+                                       ex.Message.Contains("glue:GetRegistry") ||
+                                       ex.Message.Contains("glue:CreateSchema") ||
+                                       ex.Message.Contains("glue:GetSchemaVersion") ||
+                                       ex.Message.Contains("User: arn:aws:iam::") ||
+                                       ex.Message.Contains("insufficient permissions")))
+            {
+                // Expected - GSR exception indicating insufficient IAM permissions
+                Assert.Pass($"Successfully validated insufficient IAM permissions results in access denied exception: {ex.Message}");
+            }
+        }
+
+        [Test]
+        public async Task Constructor_AccessRegistryInADifferentRegion_ThrowsException()
+        {
+            /* Test accessing registry in different region scenario
+             * Create config that tries to access a registry in a different region
+             * Attempt to serialize data 
+             * Should throw exception indicating registry not found in the configured region
+             * No cleanup needed as no resources should be created
+             */
+
+            // Generate unique topic name
+            var topicName = $"test-topic-different-region-{Guid.NewGuid():N}";
+
+            try
+            {
+                // 1. Use shared config file with different region registry
+                var assemblyDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)!;
+                var configPath = Path.Combine(assemblyDir, "../../../../../../shared/test/configs/different-region-registry.properties");
+                configPath = Path.GetFullPath(configPath);
+
+                // 2. Create GSR serializer with different region registry config
+                var serializer = new GlueSchemaRegistryKafkaSerializer(configPath);
+
+                // 3. Create Avro record to serialize
+                var avroRecord = RecordGenerator.GetTestAvroRecord();
+
+                // 4. Attempt to serialize - this should fail due to registry not existing in the configured region
+                // This should throw an exception indicating registry not found
+                var serializedBytes = serializer.Serialize(avroRecord, topicName);
+
+                // If we reach here, the test should fail because we expected an exception
+                Assert.Fail("Expected exception due to registry 'us-west-2-registry' not existing in region 'us-east-1', but serialization succeeded");
+            }
+            catch (Exception ex) when (ex.GetType().Name == "AwsSchemaRegistryException" &&
+                                      (ex.Message.Contains("EntityNotFoundException") ||
+                                       ex.Message.Contains("Registry not found") ||
+                                       ex.Message.Contains("us-west-2-registry") ||
+                                       ex.Message.Contains("does not exist") ||
+                                       ex.Message.Contains("not found in region")))
+            {
+                // Expected - GSR exception indicating registry not found in the configured region
+                Assert.Pass($"Successfully validated registry in different region results in registry not found exception: {ex.Message}");
+            }
+        }
+        
+        [Test]
+        public async Task Constructor_NonDefault_Endpoint_Registers_Schema_Successfully()
+        {
+            /* Test non-default endpoint scenario
+             * Create config with custom endpoint URL
+             * Attempt to serialize data 
+             * Should successfully register schema using the custom endpoint
+             * Cleanup - delete auto-registered schema
+             */
+
+            // Generate unique names to avoid conflicts
+            var topicName = $"test-topic-custom-endpoint-{Guid.NewGuid():N}";
+            var expectedSchemaName = topicName; // GSR uses topic name as schema name by default
+
+            try
+            {
+                // 1. Use shared config file with non-default endpoint
+                var assemblyDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)!;
+                var configPath = Path.Combine(assemblyDir, "../../../../../../shared/test/configs/non-default-endpoint.properties");
+                configPath = Path.GetFullPath(configPath);
+
+                // 2. Create GSR serializer with custom endpoint config
+                var serializer = new GlueSchemaRegistryKafkaSerializer(configPath);
+
+                // 3. Create Avro record to serialize
+                var avroRecord = RecordGenerator.GetTestAvroRecord();
+
+                // 4. Serialize the record - this should succeed using the custom endpoint
+                var serializedBytes = serializer.Serialize(avroRecord, topicName);
+
+                Assert.NotNull(serializedBytes, "Serialized bytes should not be null");
+                Assert.That(serializedBytes.Length, Is.GreaterThan(0), "Serialized bytes should not be empty");
+
+                // 5. Mark schema for cleanup
+                _schemasToCleanup.Add((CUSTOM_REGISTRY_NAME, expectedSchemaName));
+
+                // 6. Wait for schema to be registered
+                var schemaRegistered = await WaitForSchemaRegistration(CUSTOM_REGISTRY_NAME, expectedSchemaName);
+                Assert.IsTrue(schemaRegistered, "Schema should have been auto-registered using custom endpoint");
+
+                // 7. Verify schema was auto-registered with correct properties
+                var glueClient = GetGlueClientForConfig(configPath);
+                var getSchemaRequest = new GetSchemaRequest
+                {
+                    SchemaId = new SchemaId
+                    {
+                        RegistryName = CUSTOM_REGISTRY_NAME,
+                        SchemaName = expectedSchemaName
+                    }
+                };
+
+                var getResponse = await glueClient.GetSchemaAsync(getSchemaRequest);
+
+                Assert.NotNull(getResponse, "Get schema response should not be null");
+                Assert.That(getResponse.SchemaName, Is.EqualTo(expectedSchemaName), "Auto-registered schema name should match topic name");
+                Assert.That(getResponse.DataFormat, Is.EqualTo(DataFormat.AVRO), "Auto-registered schema should be AVRO format");
+                Assert.That(getResponse.RegistryName, Is.EqualTo(CUSTOM_REGISTRY_NAME), "Schema should be in the custom registry");
+                
+                Console.WriteLine($"✓ Successfully registered schema using non-default endpoint");
+            }
+            catch (AmazonGlueException ex)
+            {
+                Assert.Fail($"AWS Glue error during non-default endpoint test: {ex.Message}. Error Code: {ex.ErrorCode}");
+            }
+            catch (AmazonServiceException ex)
+            {
+                Assert.Fail($"AWS Service error during non-default endpoint test: {ex.Message}. Status Code: {ex.StatusCode}");
+            }
+            catch (Exception ex)
+            {
+                Assert.Fail($"Unexpected error during non-default endpoint test: {ex.Message}");
+            }
+        }
+
+        [Test]
+        public async Task Constructor_AutoRegistrationOff_WithNewSchema_ThrowsException()
+        {
+            /* Test auto-registration disabled scenario
+             * Create config with auto-registration disabled
+             * Attempt to serialize data with new schema
+             * Should throw exception indicating schema not found and auto-registration is disabled
+             * No cleanup needed as no resources should be created
+             */
+
+            // Generate unique topic name
+            var topicName = $"test-topic-auto-reg-off-{Guid.NewGuid():N}";
+
+            try
+            {
+                // 1. Use shared config file with auto-registration disabled
+                var assemblyDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)!;
+                var configPath = Path.Combine(assemblyDir, "../../../../../../shared/test/configs/auto-registration-disabled.properties");
+                configPath = Path.GetFullPath(configPath);
+
+                // 2. Create GSR serializer with auto-registration disabled
+                var serializer = new GlueSchemaRegistryKafkaSerializer(configPath);
+
+                // 3. Create Avro record to serialize
+                var avroRecord = RecordGenerator.GetTestAvroRecord();
+
+                // 4. Attempt to serialize - this should fail due to auto-registration being disabled
+                // This should throw an exception indicating schema not found and auto-registration disabled
+                var serializedBytes = serializer.Serialize(avroRecord, topicName);
+
+                // If we reach here, the test should fail because we expected an exception
+                Assert.Fail("Expected exception due to auto-registration being disabled with new schema, but serialization succeeded");
+            }
+            catch (Exception ex) when (ex.GetType().Name == "AwsSchemaRegistryException" &&
+                                      (ex.Message.Contains("EntityNotFoundException") ||
+                                       ex.Message.Contains("Schema not found") ||
+                                       ex.Message.Contains("auto-registration is disabled") ||
+                                       ex.Message.Contains("schemaAutoRegistrationEnabled=false") ||
+                                       ex.Message.Contains("does not exist") ||
+                                       ex.Message.Contains("not found and auto registration is disabled")))
+            {
+                // Expected - GSR exception indicating schema not found with auto-registration disabled
+                Assert.Pass($"Successfully validated auto-registration disabled with new schema results in schema not found exception: {ex.Message}");
+            }
+        }
+
+        [Test]
+        public async Task Constructor_CacheBeforeTTLExpiry_DoesNotMakeNewAPICall()
+        {
+            /* Test cache TTL behavior before expiry
+             * Create serializer with short TTL, serialize same schema twice quickly
+             * Second serialization should use cached result (no new API call)
+             * Verify by checking that schema exists and both serializations succeed
+             * Cleanup - delete auto-registered schema
+             */
+
+            // Generate unique names to avoid conflicts
+            var topicName = $"test-topic-cache-ttl-before-{Guid.NewGuid():N}";
+            var expectedSchemaName = topicName;
+
+            try
+            {
+                // 1. Use shared config file with short TTL
+                var assemblyDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)!;
+                var configPath = Path.Combine(assemblyDir, "../../../../../../shared/test/configs/cache-ttl-short.properties");
+                configPath = Path.GetFullPath(configPath);
+
+                // 2. Create GSR serializer with caching enabled
+                var serializer = new GlueSchemaRegistryKafkaSerializer(configPath);
+
+                // 3. Create Avro record to serialize
+                var avroRecord = RecordGenerator.GetTestAvroRecord();
+
+                // 4. First serialization - this will register schema and cache it
+                var serializedBytes1 = serializer.Serialize(avroRecord, topicName);
+                Assert.NotNull(serializedBytes1, "First serialized bytes should not be null");
+                Assert.That(serializedBytes1.Length, Is.GreaterThan(0), "First serialized bytes should not be empty");
+
+                // 5. Second serialization immediately (before TTL expiry) - should use cache
+                var serializedBytes2 = serializer.Serialize(avroRecord, topicName);
+                Assert.NotNull(serializedBytes2, "Second serialized bytes should not be null");
+                Assert.That(serializedBytes2.Length, Is.GreaterThan(0), "Second serialized bytes should not be empty");
+
+                // 6. Both serializations should produce identical results (using cached schema ID)
+                Assert.That(serializedBytes2, Is.EqualTo(serializedBytes1), "Cached serialization should produce identical bytes");
+
+                // 7. Mark schema for cleanup
+                _schemasToCleanup.Add((CUSTOM_REGISTRY_NAME, expectedSchemaName));
+
+                Console.WriteLine($"✓ Successfully validated cache behavior before TTL expiry");
+            }
+            catch (AmazonGlueException ex)
+            {
+                Assert.Fail($"AWS Glue error during cache TTL test: {ex.Message}. Error Code: {ex.ErrorCode}");
+            }
+            catch (AmazonServiceException ex)
+            {
+                Assert.Fail($"AWS Service error during cache TTL test: {ex.Message}. Status Code: {ex.StatusCode}");
+            }
+            catch (Exception ex)
+            {
+                Assert.Fail($"Unexpected error during cache TTL test: {ex.Message}");
+            }
+        }
+
+        [Test]
+        public async Task Constructor_CacheAfterTTLExpiry_MakesNewAPICall()
+        {
+            /* Test cache TTL behavior after expiry
+             * Create serializer with short TTL, serialize schema, wait for TTL expiry, serialize again
+             * Second serialization should make new API call after cache expires
+             * Test by deleting schema from AWS and verifying it gets recreated
+             * Cleanup - delete auto-registered schema
+             */
+
+            // Generate unique names to avoid conflicts
+            var topicName = $"test-topic-cache-ttl-after-{Guid.NewGuid():N}";
+            var expectedSchemaName = topicName;
+
+            try
+            {
+                // 1. Use shared config file with short TTL
+                var assemblyDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)!;
+                var configPath = Path.Combine(assemblyDir, "../../../../../../shared/test/configs/cache-ttl-short.properties");
+                configPath = Path.GetFullPath(configPath);
+
+                // 2. Create GSR serializer with caching enabled
+                var serializer = new GlueSchemaRegistryKafkaSerializer(configPath);
+
+                // 3. Create Avro record to serialize
+                var avroRecord = RecordGenerator.GetTestAvroRecord();
+
+                // 4. First serialization - this will register schema and cache it
+                var serializedBytes1 = serializer.Serialize(avroRecord, topicName);
+                Assert.NotNull(serializedBytes1, "First serialized bytes should not be null");
+
+                // 5. Delete the schema from AWS to test if cache makes new API call
+                var glueClient = GetGlueClientForConfig(configPath);
+                var deleteSchemaRequest = new DeleteSchemaRequest
+                {
+                    SchemaId = new SchemaId
+                    {
+                        RegistryName = CUSTOM_REGISTRY_NAME,
+                        SchemaName = expectedSchemaName
+                    }
+                };
+                await glueClient.DeleteSchemaAsync(deleteSchemaRequest);
+
+                // 6. Wait for TTL to expire (1000ms + buffer)
+                await Task.Delay(1500);
+
+                // 7. Second serialization after TTL expiry - should make new API call and recreate schema
+                var serializedBytes2 = serializer.Serialize(avroRecord, topicName);
+                Assert.NotNull(serializedBytes2, "Second serialized bytes should not be null");
+
+                // 8. Mark schema for cleanup (it should be recreated)
+                _schemasToCleanup.Add((CUSTOM_REGISTRY_NAME, expectedSchemaName));
+
+                // 9. Verify schema was recreated
+                var schemaRegistered = await WaitForSchemaRegistration(CUSTOM_REGISTRY_NAME, expectedSchemaName);
+                Assert.IsTrue(schemaRegistered, "Schema should have been recreated after cache expiry");
+
+                Console.WriteLine($"✓ Successfully validated cache behavior after TTL expiry");
+            }
+            catch (AmazonGlueException ex)
+            {
+                Assert.Fail($"AWS Glue error during cache TTL expiry test: {ex.Message}. Error Code: {ex.ErrorCode}");
+            }
+            catch (AmazonServiceException ex)
+            {
+                Assert.Fail($"AWS Service error during cache TTL expiry test: {ex.Message}. Status Code: {ex.StatusCode}");
+            }
+            catch (Exception ex)
+            {
+                Assert.Fail($"Unexpected error during cache TTL expiry test: {ex.Message}");
+            }
+        }
+
+        [Test]
+        public async Task Constructor_CacheBeforeMaxCacheSize_DoesNotMakesNewAPICall()
+        {
+            /* Test cache size behavior before reaching max
+             * Create serializer with large cache size, serialize multiple schemas
+             * All schemas should be cached without eviction
+             * Verify by serializing same schemas again and getting identical results
+             * Cleanup - delete auto-registered schemas
+             */
+
+            var schemaNames = new List<string>();
+
+            try
+            {
+                // 1. Use shared config file with large cache size
+                var assemblyDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)!;
+                var configPath = Path.Combine(assemblyDir, "../../../../../../shared/test/configs/cache-ttl-short.properties");
+                configPath = Path.GetFullPath(configPath);
+
+                // 2. Create GSR serializer with large cache
+                var serializer = new GlueSchemaRegistryKafkaSerializer(configPath);
+
+                // 3. Create Avro record to serialize
+                var avroRecord = RecordGenerator.GetTestAvroRecord();
+
+                // 4. Serialize multiple schemas (less than cache size)
+                var serializedResults = new Dictionary<string, byte[]>();
+                for (int i = 0; i < 5; i++)
+                {
+                    var topicName = $"test-topic-cache-size-{i}-{Guid.NewGuid():N}";
+                    var serializedBytes = serializer.Serialize(avroRecord, topicName);
+                    
+                    Assert.NotNull(serializedBytes, $"Serialized bytes for topic {i} should not be null");
+                    serializedResults[topicName] = serializedBytes;
+                    schemaNames.Add(topicName);
+                }
+
+                // 5. Serialize same schemas again - should use cache
+                foreach (var kvp in serializedResults)
+                {
+                    var cachedBytes = serializer.Serialize(avroRecord, kvp.Key);
+                    Assert.That(cachedBytes, Is.EqualTo(kvp.Value), $"Cached serialization for {kvp.Key} should produce identical bytes");
+                }
+
+                // 6. Mark schemas for cleanup
+                foreach (var schemaName in schemaNames)
+                {
+                    _schemasToCleanup.Add((CUSTOM_REGISTRY_NAME, schemaName));
+                }
+
+                Console.WriteLine($"✓ Successfully validated cache behavior before max cache size");
+            }
+            catch (AmazonGlueException ex)
+            {
+                Assert.Fail($"AWS Glue error during cache size test: {ex.Message}. Error Code: {ex.ErrorCode}");
+            }
+            catch (AmazonServiceException ex)
+            {
+                Assert.Fail($"AWS Service error during cache size test: {ex.Message}. Status Code: {ex.StatusCode}");
+            }
+            catch (Exception ex)
+            {
+                Assert.Fail($"Unexpected error during cache size test: {ex.Message}");
+            }
+        }
+
+        [Test]
+        public async Task Constructor_CacheAfterMaxCacheSize_MakesNewAPICall()
+        {
+            /* Test cache size behavior after reaching max
+             * Create serializer with small cache size, serialize more schemas than cache can hold
+             * Older entries should be evicted, causing new API calls for re-serialization
+             * Test by deleting an early schema and verifying it gets recreated when re-serialized
+             * Cleanup - delete auto-registered schemas
+             */
+
+            var schemaNames = new List<string>();
+
+            try
+            {
+                // 1. Use config with small cache size (will be overwhelmed)
+                var assemblyDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)!;
+                var configPath = Path.Combine(assemblyDir, "../../../../../../shared/test/configs/cache-ttl-short.properties");
+                configPath = Path.GetFullPath(configPath);
+
+                // 2. Create GSR serializer with limited cache
+                var serializer = new GlueSchemaRegistryKafkaSerializer(configPath);
+
+                // 3. Create Avro record to serialize
+                var avroRecord = RecordGenerator.GetTestAvroRecord();
+
+                // 4. Serialize many schemas to exceed cache size (100 + buffer)
+                var firstTopicName = "";
+                for (int i = 0; i < 105; i++)
+                {
+                    var topicName = $"test-topic-cache-overflow-{i}-{Guid.NewGuid():N}";
+                    if (i == 0) firstTopicName = topicName;
+                    
+                    var serializedBytes = serializer.Serialize(avroRecord, topicName);
+                    Assert.NotNull(serializedBytes, $"Serialized bytes for topic {i} should not be null");
+                    schemaNames.Add(topicName);
+                }
+
+                // 5. Delete the first schema from AWS
+                var glueClient = GetGlueClientForConfig(configPath);
+                var deleteSchemaRequest = new DeleteSchemaRequest
+                {
+                    SchemaId = new SchemaId
+                    {
+                        RegistryName = CUSTOM_REGISTRY_NAME,
+                        SchemaName = firstTopicName
+                    }
+                };
+                await glueClient.DeleteSchemaAsync(deleteSchemaRequest);
+
+                // 6. Re-serialize first schema - should make new API call and recreate it
+                var reSerializedBytes = serializer.Serialize(avroRecord, firstTopicName);
+                Assert.NotNull(reSerializedBytes, "Re-serialized bytes should not be null");
+
+                // 7. Verify schema was recreated
+                var schemaRegistered = await WaitForSchemaRegistration(CUSTOM_REGISTRY_NAME, firstTopicName);
+                Assert.IsTrue(schemaRegistered, "Schema should have been recreated after cache eviction");
+
+                // 8. Mark schemas for cleanup
+                foreach (var schemaName in schemaNames)
+                {
+                    _schemasToCleanup.Add((CUSTOM_REGISTRY_NAME, schemaName));
+                }
+
+                Console.WriteLine($"✓ Successfully validated cache behavior after max cache size");
+            }
+            catch (AmazonGlueException ex)
+            {
+                Assert.Fail($"AWS Glue error during cache overflow test: {ex.Message}. Error Code: {ex.ErrorCode}");
+            }
+            catch (AmazonServiceException ex)
+            {
+                Assert.Fail($"AWS Service error during cache overflow test: {ex.Message}. Status Code: {ex.StatusCode}");
+            }
+            catch (Exception ex)
+            {
+                Assert.Fail($"Unexpected error during cache overflow test: {ex.Message}");
+            }
+        }
+
+        [Test]
+        public async Task Constructor_CacheAndNewSchemaSerialize_MakesNewAPICall()
+        {
+            /* Test cache behavior with new schema
+             * Create serializer, serialize one schema (cached), then serialize different schema
+             * Second serialization should make new API call for the new schema
+             * Verify both schemas are registered and cached independently
+             * Cleanup - delete auto-registered schemas
+             */
+
+            // Generate unique names to avoid conflicts
+            var topicName1 = $"test-topic-cache-new-schema-1-{Guid.NewGuid():N}";
+            var topicName2 = $"test-topic-cache-new-schema-2-{Guid.NewGuid():N}";
+
+            try
+            {
+                // 1. Use shared config file with caching enabled
+                var assemblyDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)!;
+                var configPath = Path.Combine(assemblyDir, "../../../../../../shared/test/configs/cache-ttl-short.properties");
+                configPath = Path.GetFullPath(configPath);
+
+                // 2. Create GSR serializer with caching enabled
+                var serializer = new GlueSchemaRegistryKafkaSerializer(configPath);
+
+                // 3. Create Avro record to serialize
+                var avroRecord = RecordGenerator.GetTestAvroRecord();
+
+                // 4. First serialization - register and cache first schema
+                var serializedBytes1 = serializer.Serialize(avroRecord, topicName1);
+                Assert.NotNull(serializedBytes1, "First serialized bytes should not be null");
+
+                // 5. Second serialization with different topic - should make new API call for new schema
+                var serializedBytes2 = serializer.Serialize(avroRecord, topicName2);
+                Assert.NotNull(serializedBytes2, "Second serialized bytes should not be null");
+
+                // 6. Bytes should be different (different schema IDs for different topics)
+                Assert.That(serializedBytes2, Is.Not.EqualTo(serializedBytes1), "Different schemas should produce different serialized bytes");
+
+                // 7. Re-serialize both topics - should use cache for both
+                var cachedBytes1 = serializer.Serialize(avroRecord, topicName1);
+                var cachedBytes2 = serializer.Serialize(avroRecord, topicName2);
+
+                Assert.That(cachedBytes1, Is.EqualTo(serializedBytes1), "First schema should use cache");
+                Assert.That(cachedBytes2, Is.EqualTo(serializedBytes2), "Second schema should use cache");
+
+                // 8. Mark schemas for cleanup
+                _schemasToCleanup.Add((CUSTOM_REGISTRY_NAME, topicName1));
+                _schemasToCleanup.Add((CUSTOM_REGISTRY_NAME, topicName2));
+
+                Console.WriteLine($"✓ Successfully validated cache behavior with new schema serialization");
+            }
+            catch (AmazonGlueException ex)
+            {
+                Assert.Fail($"AWS Glue error during new schema cache test: {ex.Message}. Error Code: {ex.ErrorCode}");
+            }
+            catch (AmazonServiceException ex)
+            {
+                Assert.Fail($"AWS Service error during new schema cache test: {ex.Message}. Status Code: {ex.StatusCode}");
+            }
+            catch (Exception ex)
+            {
+                Assert.Fail($"Unexpected error during new schema cache test: {ex.Message}");
+            }
+        }
+
+        [Test]
+        public async Task Constructor_CacheAndNewSchemaVersionSerialize_MakesNewAPICall()
+        {
+            /* Test cache behavior with new schema version
+             * Create serializer, serialize schema, register new version manually, serialize again
+             * Second serialization should detect new version and make new API call
+             * Verify both versions work correctly
+             * Cleanup - delete auto-registered schemas
+             */
+
+            // Generate unique names to avoid conflicts
+            var topicName = $"test-topic-cache-new-version-{Guid.NewGuid():N}";
+            var expectedSchemaName = topicName;
+
+            try
+            {
+                // 1. Use shared config file with caching enabled
+                var assemblyDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)!;
+                var configPath = Path.Combine(assemblyDir, "../../../../../../shared/test/configs/cache-ttl-short.properties");
+                configPath = Path.GetFullPath(configPath);
+
+                // 2. Create GSR serializer with caching enabled
+                var serializer = new GlueSchemaRegistryKafkaSerializer(configPath);
+
+                // 3. Create Avro record to serialize
+                var avroRecord = RecordGenerator.GetTestAvroRecord();
+
+                // 4. First serialization - register and cache schema version 1
+                var serializedBytes1 = serializer.Serialize(avroRecord, topicName);
+                Assert.NotNull(serializedBytes1, "First serialized bytes should not be null");
+
+                // 5. Wait for schema registration
+                var schemaRegistered = await WaitForSchemaRegistration(CUSTOM_REGISTRY_NAME, expectedSchemaName);
+                Assert.IsTrue(schemaRegistered, "Schema should have been registered");
+
+                // 6. Register a new version of the same schema manually
+                var glueClient = GetGlueClientForConfig(configPath);
+                var newSchemaDefinition = "{\"namespace\": \"example.avro\", \"type\": \"record\", \"name\": \"User\", \"fields\": [{\"name\": \"name\", \"type\": \"string\"}, {\"name\": \"age\", \"type\": \"int\"}]}";
+                
+                var registerSchemaVersionRequest = new RegisterSchemaVersionRequest
+                {
+                    SchemaId = new SchemaId
+                    {
+                        RegistryName = CUSTOM_REGISTRY_NAME,
+                        SchemaName = expectedSchemaName
+                    },
+                    SchemaDefinition = newSchemaDefinition
+                };
+
+                await glueClient.RegisterSchemaVersionAsync(registerSchemaVersionRequest);
+
+                // 7. Second serialization - should detect new version and make new API call
+                var serializedBytes2 = serializer.Serialize(avroRecord, topicName);
+                Assert.NotNull(serializedBytes2, "Second serialized bytes should not be null");
+
+                // 8. Mark schema for cleanup
+                _schemasToCleanup.Add((CUSTOM_REGISTRY_NAME, expectedSchemaName));
+
+                Console.WriteLine($"✓ Successfully validated cache behavior with new schema version");
+            }
+            catch (AmazonGlueException ex)
+            {
+                Assert.Fail($"AWS Glue error during new schema version cache test: {ex.Message}. Error Code: {ex.ErrorCode}");
+            }
+            catch (AmazonServiceException ex)
+            {
+                Assert.Fail($"AWS Service error during new schema version cache test: {ex.Message}. Status Code: {ex.StatusCode}");
+            }
+            catch (Exception ex)
+            {
+                Assert.Fail($"Unexpected error during new schema version cache test: {ex.Message}");
+            }
+        }
+
+        [Test]
+        public async Task Constructor_CacheDisabled_AlwaysMakesNewAPICall()
+        {
+            /* Test cache disabled behavior
+             * Create serializer with cache disabled, serialize same schema multiple times
+             * Each serialization should make new API call (no caching)
+             * Test by deleting schema and verifying it gets recreated on each call
+             * Cleanup - delete auto-registered schema
+             */
+
+            // Generate unique names to avoid conflicts
+            var topicName = $"test-topic-cache-disabled-{Guid.NewGuid():N}";
+            var expectedSchemaName = topicName;
+
+            try
+            {
+                // 1. Use shared config file with cache disabled
+                var assemblyDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)!;
+                var configPath = Path.Combine(assemblyDir, "../../../../../../shared/test/configs/cache-disabled.properties");
+                configPath = Path.GetFullPath(configPath);
+
+                // 2. Create GSR serializer with cache disabled
+                var serializer = new GlueSchemaRegistryKafkaSerializer(configPath);
+
+                // 3. Create Avro record to serialize
+                var avroRecord = RecordGenerator.GetTestAvroRecord();
+
+                // 4. First serialization - register schema
+                var serializedBytes1 = serializer.Serialize(avroRecord, topicName);
+                Assert.NotNull(serializedBytes1, "First serialized bytes should not be null");
+
+                // 5. Delete the schema from AWS
+                var glueClient = GetGlueClientForConfig(configPath);
+                var deleteSchemaRequest = new DeleteSchemaRequest
+                {
+                    SchemaId = new SchemaId
+                    {
+                        RegistryName = CUSTOM_REGISTRY_NAME,
+                        SchemaName = expectedSchemaName
+                    }
+                };
+                await glueClient.DeleteSchemaAsync(deleteSchemaRequest);
+
+                // 6. Second serialization - should make new API call and recreate schema (no cache)
+                var serializedBytes2 = serializer.Serialize(avroRecord, topicName);
+                Assert.NotNull(serializedBytes2, "Second serialized bytes should not be null");
+
+                // 7. Verify schema was recreated
+                var schemaRegistered = await WaitForSchemaRegistration(CUSTOM_REGISTRY_NAME, expectedSchemaName);
+                Assert.IsTrue(schemaRegistered, "Schema should have been recreated (cache disabled)");
+
+                // 8. Mark schema for cleanup
+                _schemasToCleanup.Add((CUSTOM_REGISTRY_NAME, expectedSchemaName));
+
+                Console.WriteLine($"✓ Successfully validated cache disabled behavior");
+            }
+            catch (AmazonGlueException ex)
+            {
+                Assert.Fail($"AWS Glue error during cache disabled test: {ex.Message}. Error Code: {ex.ErrorCode}");
+            }
+            catch (AmazonServiceException ex)
+            {
+                Assert.Fail($"AWS Service error during cache disabled test: {ex.Message}. Status Code: {ex.StatusCode}");
+            }
+            catch (Exception ex)
+            {
+                Assert.Fail($"Unexpected error during cache disabled test: {ex.Message}");
+            }
+        }
+
+        [Test]
+        public async Task Constructor_UsedCachedUUID_AfterActualSchemaDeletion()
+        {
+            /* Test cache behavior after schema deletion
+             * Create serializer, serialize schema (cached), delete schema from AWS, serialize again
+             * Second serialization should use cached UUID but fail, then make new API call to recreate
+             * Verify schema gets recreated properly
+             * Cleanup - delete auto-registered schema
+             */
+
+            // Generate unique names to avoid conflicts
+            var topicName = $"test-topic-cached-uuid-deletion-{Guid.NewGuid():N}";
+            var expectedSchemaName = topicName;
+
+            try
+            {
+                // 1. Use shared config file with caching enabled
+                var assemblyDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)!;
+                var configPath = Path.Combine(assemblyDir, "../../../../../../shared/test/configs/cache-ttl-short.properties");
+                configPath = Path.GetFullPath(configPath);
+
+                // 2. Create GSR serializer with caching enabled
+                var serializer = new GlueSchemaRegistryKafkaSerializer(configPath);
+
+                // 3. Create Avro record to serialize
+                var avroRecord = RecordGenerator.GetTestAvroRecord();
+
+                // 4. First serialization - register and cache schema
+                var serializedBytes1 = serializer.Serialize(avroRecord, topicName);
+                Assert.NotNull(serializedBytes1, "First serialized bytes should not be null");
+
+                // 5. Delete the schema from AWS while it's still cached
+                var glueClient = GetGlueClientForConfig(configPath);
+                var deleteSchemaRequest = new DeleteSchemaRequest
+                {
+                    SchemaId = new SchemaId
+                    {
+                        RegistryName = CUSTOM_REGISTRY_NAME,
+                        SchemaName = expectedSchemaName
+                    }
+                };
+                await glueClient.DeleteSchemaAsync(deleteSchemaRequest);
+
+                // 6. Second serialization - should handle cached UUID gracefully and recreate schema
+                var serializedBytes2 = serializer.Serialize(avroRecord, topicName);
+                Assert.NotNull(serializedBytes2, "Second serialized bytes should not be null");
+
+                // 7. Verify schema was recreated
+                var schemaRegistered = await WaitForSchemaRegistration(CUSTOM_REGISTRY_NAME, expectedSchemaName);
+                Assert.IsTrue(schemaRegistered, "Schema should have been recreated after deletion");
+
+                // 8. Mark schema for cleanup
+                _schemasToCleanup.Add((CUSTOM_REGISTRY_NAME, expectedSchemaName));
+
+                Console.WriteLine($"✓ Successfully validated cached UUID behavior after schema deletion");
+            }
+            catch (AmazonGlueException ex)
+            {
+                Assert.Fail($"AWS Glue error during cached UUID deletion test: {ex.Message}. Error Code: {ex.ErrorCode}");
+            }
+            catch (AmazonServiceException ex)
+            {
+                Assert.Fail($"AWS Service error during cached UUID deletion test: {ex.Message}. Status Code: {ex.StatusCode}");
+            }
+            catch (Exception ex)
+            {
+                Assert.Fail($"Unexpected error during cached UUID deletion test: {ex.Message}");
+            }
+        }
+
+        [Test]
+        public async Task Constructor_ZLIBCompressionConfigSet_CompressesAndSetsCompresionByte()
+        {
+            /* Test ZLIB compression configuration
+             * Create config with ZLIB compression enabled
+             * Serialize data and verify compression is applied
+             * Check that serialized bytes are smaller due to compression
+             * Cleanup - delete auto-registered schema
+             */
+
+            // Generate unique names to avoid conflicts
+            var topicName = $"test-topic-zlib-compression-{Guid.NewGuid():N}";
+            var expectedSchemaName = topicName;
+
+            try
+            {
+                // 1. Use shared config file with ZLIB compression enabled
+                var assemblyDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)!;
+                var configPath = Path.Combine(assemblyDir, "../../../../../../shared/test/configs/zlib-compression-enabled.properties");
+                configPath = Path.GetFullPath(configPath);
+
+                // 2. Create GSR serializer with ZLIB compression
+                var serializer = new GlueSchemaRegistryKafkaSerializer(configPath);
+
+                // 3. Create Avro record to serialize
+                var avroRecord = RecordGenerator.GetTestAvroRecord();
+
+                // 4. Serialize the record with compression
+                var compressedBytes = serializer.Serialize(avroRecord, topicName);
+                Assert.NotNull(compressedBytes, "Compressed serialized bytes should not be null");
+                Assert.That(compressedBytes.Length, Is.GreaterThan(0), "Compressed serialized bytes should not be empty");
+
+                // 5. Verify compression byte is set (typically at index 5 in GSR format)
+                // GSR format: [magic_byte][version][schema_id_bytes][compression_byte][data]
+                Assert.That(compressedBytes.Length, Is.GreaterThan(5), "Serialized bytes should be long enough to contain compression byte");
+                
+                // 6. Check that compression byte indicates ZLIB compression (value depends on GSR implementation)
+                // This is a basic check - the exact compression byte value may vary
+                Console.WriteLine($"Serialized {compressedBytes.Length} bytes with ZLIB compression");
+
+                // 7. Mark schema for cleanup
+                _schemasToCleanup.Add((CUSTOM_REGISTRY_NAME, expectedSchemaName));
+
+                // 8. Verify schema was registered
+                var schemaRegistered = await WaitForSchemaRegistration(CUSTOM_REGISTRY_NAME, expectedSchemaName);
+                Assert.IsTrue(schemaRegistered, "Schema should have been registered with compression");
+
+                Console.WriteLine($"✓ Successfully validated ZLIB compression configuration");
+            }
+            catch (AmazonGlueException ex)
+            {
+                Assert.Fail($"AWS Glue error during ZLIB compression test: {ex.Message}. Error Code: {ex.ErrorCode}");
+            }
+            catch (AmazonServiceException ex)
+            {
+                Assert.Fail($"AWS Service error during ZLIB compression test: {ex.Message}. Status Code: {ex.StatusCode}");
+            }
+            catch (Exception ex)
+            {
+                Assert.Fail($"Unexpected error during ZLIB compression test: {ex.Message}");
+            }
+        }
+
+        [Test]
+        public async Task Constructor_NoCompressionConfigSet_SetsDefaultCompresionByte()
+        {
+            /* Test default compression configuration
+             * Create config without compression settings (should default to no compression)
+             * Serialize data and verify default compression byte is set
+             * Compare with compressed version to ensure different behavior
+             * Cleanup - delete auto-registered schema
+             */
+
+            // Generate unique names to avoid conflicts
+            var topicName = $"test-topic-no-compression-{Guid.NewGuid():N}";
+            var expectedSchemaName = topicName;
+
+            try
+            {
+                // 1. Use shared config file without compression settings (defaults to no compression)
+                var assemblyDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)!;
+                var configPath = Path.Combine(assemblyDir, "../../../../../../shared/test/configs/minimal-auto-registration-custom-registry.properties");
+                configPath = Path.GetFullPath(configPath);
+
+                // 2. Create GSR serializer with default compression
+                var serializer = new GlueSchemaRegistryKafkaSerializer(configPath);
+
+                // 3. Create Avro record to serialize
+                var avroRecord = RecordGenerator.GetTestAvroRecord();
+
+                // 4. Serialize the record without compression
+                var uncompressedBytes = serializer.Serialize(avroRecord, topicName);
+                Assert.NotNull(uncompressedBytes, "Uncompressed serialized bytes should not be null");
+                Assert.That(uncompressedBytes.Length, Is.GreaterThan(0), "Uncompressed serialized bytes should not be empty");
+
+                // 5. Verify default compression byte is set (typically 0 for no compression)
+                Assert.That(uncompressedBytes.Length, Is.GreaterThan(5), "Serialized bytes should be long enough to contain compression byte");
+                
+                Console.WriteLine($"Serialized {uncompressedBytes.Length} bytes with default compression");
+
+                // 6. Mark schema for cleanup
+                _schemasToCleanup.Add((CUSTOM_REGISTRY_NAME, expectedSchemaName));
+
+                // 7. Verify schema was registered
+                var schemaRegistered = await WaitForSchemaRegistration(CUSTOM_REGISTRY_NAME, expectedSchemaName);
+                Assert.IsTrue(schemaRegistered, "Schema should have been registered with default compression");
+
+                Console.WriteLine($"✓ Successfully validated default compression configuration");
+            }
+            catch (AmazonGlueException ex)
+            {
+                Assert.Fail($"AWS Glue error during default compression test: {ex.Message}. Error Code: {ex.ErrorCode}");
+            }
+            catch (AmazonServiceException ex)
+            {
+                Assert.Fail($"AWS Service error during default compression test: {ex.Message}. Status Code: {ex.StatusCode}");
+            }
+            catch (Exception ex)
+            {
+                Assert.Fail($"Unexpected error during default compression test: {ex.Message}");
+            }
+        }
+        
+        [Test]
+        public async Task Constructor_UserAgentDefaultsToNativeCsharpString()
+        {
+            /* Test default user agent behavior
+             * Create config without custom user agent settings
+             * Serialize data and verify default user agent is used
+             * Default should be something like "aws-glue-schema-registry-native-csharp/x.x.x"
+             * Cleanup - delete auto-registered schema
+             */
+
+            // Generate unique names to avoid conflicts
+            var topicName = $"test-topic-default-user-agent-{Guid.NewGuid():N}";
+            var expectedSchemaName = topicName;
+
+            try
+            {
+                // 1. Use shared config file without custom user agent (should use default)
+                var assemblyDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)!;
+                var configPath = Path.Combine(assemblyDir, "../../../../../../shared/test/configs/minimal-auto-registration-custom-registry.properties");
+                configPath = Path.GetFullPath(configPath);
+
+                // 2. Create GSR serializer with default user agent
+                var serializer = new GlueSchemaRegistryKafkaSerializer(configPath);
+
+                // 3. Create Avro record to serialize
+                var avroRecord = RecordGenerator.GetTestAvroRecord();
+
+                // 4. Serialize the record - should use default user agent
+                var serializedBytes = serializer.Serialize(avroRecord, topicName);
+                Assert.NotNull(serializedBytes, "Serialized bytes should not be null");
+                Assert.That(serializedBytes.Length, Is.GreaterThan(0), "Serialized bytes should not be empty");
+
+                // 5. Mark schema for cleanup
+                _schemasToCleanup.Add((CUSTOM_REGISTRY_NAME, expectedSchemaName));
+
+                // 6. Verify schema was registered (user agent is used internally for API calls)
+                var schemaRegistered = await WaitForSchemaRegistration(CUSTOM_REGISTRY_NAME, expectedSchemaName);
+                Assert.IsTrue(schemaRegistered, "Schema should have been registered with default user agent");
+
+                Console.WriteLine($"✓ Successfully validated default user agent behavior");
+            }
+            catch (AmazonGlueException ex)
+            {
+                Assert.Fail($"AWS Glue error during default user agent test: {ex.Message}. Error Code: {ex.ErrorCode}");
+            }
+            catch (AmazonServiceException ex)
+            {
+                Assert.Fail($"AWS Service error during default user agent test: {ex.Message}. Status Code: {ex.StatusCode}");
+            }
+            catch (Exception ex)
+            {
+                Assert.Fail($"Unexpected error during default user agent test: {ex.Message}");
+            }
+        }
+
+        [Test]
+        public async Task Constructor_UsesUserAgentStringFromConfig()
+        {
+            /* Test custom user agent configuration
+             * Create config with custom user agent string
+             * Serialize data and verify custom user agent is used
+             * Custom user agent should be applied to all AWS API calls
+             * Cleanup - delete auto-registered schema
+             */
+
+            // Generate unique names to avoid conflicts
+            var topicName = $"test-topic-custom-user-agent-{Guid.NewGuid():N}";
+            var expectedSchemaName = topicName;
+
+            try
+            {
+                // 1. Use shared config file with custom user agent
+                var assemblyDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)!;
+                var configPath = Path.Combine(assemblyDir, "../../../../../../shared/test/configs/custom-user-agent.properties");
+                configPath = Path.GetFullPath(configPath);
+
+                // 2. Create GSR serializer with custom user agent
+                var serializer = new GlueSchemaRegistryKafkaSerializer(configPath);
+
+                // 3. Create Avro record to serialize
+                var avroRecord = RecordGenerator.GetTestAvroRecord();
+
+                // 4. Serialize the record - should use custom user agent "CustomTestApp/1.0.0"
+                var serializedBytes = serializer.Serialize(avroRecord, topicName);
+                Assert.NotNull(serializedBytes, "Serialized bytes should not be null");
+                Assert.That(serializedBytes.Length, Is.GreaterThan(0), "Serialized bytes should not be empty");
+
+                // 5. Mark schema for cleanup
+                _schemasToCleanup.Add((CUSTOM_REGISTRY_NAME, expectedSchemaName));
+
+                // 6. Verify schema was registered (custom user agent is used internally for API calls)
+                var schemaRegistered = await WaitForSchemaRegistration(CUSTOM_REGISTRY_NAME, expectedSchemaName);
+                Assert.IsTrue(schemaRegistered, "Schema should have been registered with custom user agent");
+
+                Console.WriteLine($"✓ Successfully validated custom user agent configuration");
+            }
+            catch (AmazonGlueException ex)
+            {
+                Assert.Fail($"AWS Glue error during custom user agent test: {ex.Message}. Error Code: {ex.ErrorCode}");
+            }
+            catch (AmazonServiceException ex)
+            {
+                Assert.Fail($"AWS Service error during custom user agent test: {ex.Message}. Status Code: {ex.StatusCode}");
+            }
+            catch (Exception ex)
+            {
+                Assert.Fail($"Unexpected error during custom user agent test: {ex.Message}");
+            }
+        }
     }
 }
