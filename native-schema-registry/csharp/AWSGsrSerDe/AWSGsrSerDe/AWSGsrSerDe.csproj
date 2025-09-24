@@ -5,7 +5,7 @@
         <CodeAnalysisRuleSet>GlueSchemaRegistry.ruleset</CodeAnalysisRuleSet>
          <PackageId>AWSGsrSerDe</PackageId>
          <!-- Matching with java layer version -->
-          <Version>1.1.10</Version>
+          <Version>1.1.25</Version>
           <Company>Amazon</Company>
           <Product>AWS Glue Schema Registry CSharp SerDe</Product>
           <Description>AWS Glue Schema Registry serializers/deserializers for .NET (Avro/JSON/Protobuf).</Description>
@@ -19,10 +19,10 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Apache.Avro" Version="1.11.0" />
-      <PackageReference Include="Google.Protobuf" Version="3.21.4" />
+      <PackageReference Include="Apache.Avro" Version="1.12.0" />
+      <PackageReference Include="Google.Protobuf" Version="3.32.1" />
       <PackageReference Include="KafkaFlow" Version="3.0.10" />
-      <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="6.0.1" />
+      <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="9.0.9" />
       <PackageReference Include="NJsonSchema" Version="10.8.0" />
       <PackageReference Include="StyleCop.Analyzers" Version="1.2.0-beta.435">
         <PrivateAssets>all</PrivateAssets>
@@ -30,7 +30,7 @@
       </PackageReference>
       <AdditionalFiles Include="stylecop.json" />
       <PackageReference Include="System.Runtime.Caching" Version="6.0.0" />
-      <PackageReference Include="System.Text.Json" Version="6.0.6" />
+      <PackageReference Include="System.Text.Json" Version="9.0.9" />
     </ItemGroup>
 
     <ItemGroup>

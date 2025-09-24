@@ -59,7 +59,7 @@ class Program
     static IHost CreateHost()
 
     {
-        string brokerString = Environment.GetEnvironmentVariable("KAFKA_BROKER") ;
+        string brokerString = Environment.GetEnvironmentVariable("KAFKA_BROKER");
         return Host.CreateDefaultBuilder()
             .ConfigureServices(services =>
             {
@@ -128,21 +128,57 @@ class Program
                     Status = UserStatus.Active
                 };
 
-                producer.Produce(user.Id, user);
-                
+                var task1 = Task.Run(async () =>
+                {
+                    try
+                    {
+                        await producer.ProduceAsync(user.Id, user);
+                        lock (_lock)
+                        {
+                            Console.WriteLine($"[UserProducer] Task 1 sent: {user.Id}");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        lock (_lock)
+                        {
+                            Console.WriteLine($"[UserProducer] Task 1 failed for {user.Id}: {ex.Message}");
+                        }
+                    }
+                });
+
+                var task2 = Task.Run(async () =>
+                {
+                    try
+                    {
+                        await producer.ProduceAsync(user.Id, user);
+                        lock (_lock)
+                        {
+                            Console.WriteLine($"[UserProducer] Task 2 sent: {user.Id}");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        lock (_lock)
+                        {
+                            Console.WriteLine($"[UserProducer] Task 2 failed for {user.Id}: {ex.Message}");
+                        }
+                    }
+                });
+
+                // Wait for both tasks to complete
+                Task.WaitAll(task1, task2);
+
                 lock (_lock)
                 {
                     Console.WriteLine($"[UserProducer] Sent: {user.Name} ({user})");
                 }
-                
-                Thread.Sleep(1000);
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"[UserProducer] Error: {ex.Message}");
             }
         }
-        
         lock (_lock)
         {
             Console.WriteLine($"[UserProducer] Completed");
@@ -152,7 +188,7 @@ class Program
     static void ProduceProducts(IHost host)
     {
         var producer = host.Services.GetRequiredService<IProducerAccessor>().GetProducer("product-producer");
-        
+
         for (int counter = 1; counter <= 10 && !_shutdown; counter++)
         {
             try
@@ -166,21 +202,58 @@ class Program
                     InStock = counter % 2 == 0
                 };
 
-                producer.Produce(product.Sku, product);
-                
+
+                var task1 = Task.Run(async () =>
+                {
+                    try
+                    {
+                        await producer.ProduceAsync(product.Sku, product);
+                        lock (_lock)
+                        {
+                            Console.WriteLine($"[ProductProducer] Task 1 sent: {product.Sku}");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        lock (_lock)
+                        {
+                            Console.WriteLine($"[ProductProducer] Task 1 failed for {product.Sku}: {ex.Message}");
+                        }
+                    }
+                });
+
+                var task2 = Task.Run(async () =>
+                {
+                    try
+                    {
+                        await producer.ProduceAsync(product.Sku, product);
+                        lock (_lock)
+                        {
+                            Console.WriteLine($"[ProductProducer] Task 2 sent: {product.Sku}");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        lock (_lock)
+                        {
+                            Console.WriteLine($"[ProductProducer] Task 2 failed for {product.Sku}: {ex.Message}");
+                        }
+                    }
+                });
+
+                // Wait for both tasks to complete
+                Task.WaitAll(task1, task2);
+
                 lock (_lock)
                 {
                     Console.WriteLine($"[ProductProducer] Sent: {product.Name} (${product})");
                 }
-                
-                Thread.Sleep(1200);
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"[ProductProducer] Error: {ex.Message}");
             }
         }
-        
         lock (_lock)
         {
             Console.WriteLine($"[ProductProducer] Completed");
@@ -190,7 +263,7 @@ class Program
     static void ProduceOrders(IHost host)
     {
         var producer = host.Services.GetRequiredService<IProducerAccessor>().GetProducer("order-producer");
-        
+
         for (int counter = 1; counter <= 10 && !_shutdown; counter++)
         {
             try
@@ -229,21 +302,58 @@ class Program
                 order.Metadata.Add("source", "web");
                 order.Discounts.Add("promo", 5.0);
 
-                producer.Produce(order.OrderId, order);
-                
+
+                var task1 = Task.Run(async () =>
+                {
+                    try
+                    {
+                        await producer.ProduceAsync(order.OrderId, order);
+                        lock (_lock)
+                        {
+                            Console.WriteLine($"[OrderProducer] Task 1 sent: {order.OrderId}");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        lock (_lock)
+                        {
+                            Console.WriteLine($"[OrderProducer] Task 1 failed for {order.OrderId}: {ex.Message}");
+                        }
+                    }
+                });
+
+                var task2 = Task.Run(async () =>
+                {
+                    try
+                    {
+                        await producer.ProduceAsync(order.OrderId, order);
+                        lock (_lock)
+                        {
+                            Console.WriteLine($"[OrderProducer] Task 2 sent: {order.OrderId}");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        lock (_lock)
+                        {
+                            Console.WriteLine($"[OrderProducer] Task 2 failed for {order.OrderId}: {ex.Message}");
+                        }
+                    }
+                });
+
+                // Wait for both tasks to complete
+                Task.WaitAll(task1, task2);
+
                 lock (_lock)
                 {
                     Console.WriteLine($"[OrderProducer] Sent: Order {order.OrderId} (${order.Header})");
                 }
-                
-                Thread.Sleep(1500);
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"[OrderProducer] Error: {ex.Message}");
             }
         }
-        
         lock (_lock)
         {
             Console.WriteLine($"[OrderProducer] Completed");
@@ -253,7 +363,7 @@ class Program
     static void ProducePayments(IHost host)
     {
         var producer = host.Services.GetRequiredService<IProducerAccessor>().GetProducer("payment-producer");
-        
+
         for (int counter = 1; counter <= 10 && !_shutdown; counter++)
         {
             try
@@ -297,21 +407,58 @@ class Program
                     Description = "Payment processing fee"
                 });
 
-                producer.Produce(payment.PaymentId, payment);
-                
+
+                var task1 = Task.Run(async () =>
+                {
+                    try
+                    {
+                        await producer.ProduceAsync(payment.PaymentId, payment);
+                        lock (_lock)
+                        {
+                            Console.WriteLine($"[PaymentProducer] Task 1 sent: {payment.PaymentId}");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        lock (_lock)
+                        {
+                            Console.WriteLine($"[PaymentProducer] Task 1 failed for {payment.PaymentId}: {ex.Message}");
+                        }
+                    }
+                });
+
+                var task2 = Task.Run(async () =>
+                {
+                    try
+                    {
+                        await producer.ProduceAsync(payment.PaymentId, payment);
+                        lock (_lock)
+                        {
+                            Console.WriteLine($"[PaymentProducer] Task 2 sent: {payment.PaymentId}");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        lock (_lock)
+                        {
+                            Console.WriteLine($"[PaymentProducer] Task 2 failed for {payment.PaymentId}: {ex.Message}");
+                        }
+                    }
+                });
+
+                // Wait for both tasks to complete
+                Task.WaitAll(task1, task2);
+
                 lock (_lock)
                 {
                     Console.WriteLine($"[PaymentProducer] Sent: Payment {payment.PaymentId} (${payment})");
                 }
-                
-                Thread.Sleep(1800);
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"[PaymentProducer] Error: {ex.Message}");
             }
         }
-        
         lock (_lock)
         {
             Console.WriteLine($"[PaymentProducer] Completed");
@@ -321,7 +468,7 @@ class Program
     static void ProduceEvents(IHost host)
     {
         var producer = host.Services.GetRequiredService<IProducerAccessor>().GetProducer("event-producer");
-        
+
         for (int counter = 1; counter <= 10 && !_shutdown; counter++)
         {
             try
@@ -367,21 +514,57 @@ class Program
                 eventMsg.Properties.Add("action", "view");
                 eventMsg.Tags.Add("environment", "prod");
 
-                producer.Produce(eventMsg.EventId, eventMsg);
-                
+                var task1 = Task.Run(async () =>
+                {
+                    try
+                    {
+                        await producer.ProduceAsync(eventMsg.EventId, eventMsg);
+                        lock (_lock)
+                        {
+                            Console.WriteLine($"[EventProducer] Task 1 sent: {eventMsg.EventId}");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        lock (_lock)
+                        {
+                            Console.WriteLine($"[EventProducer] Task 1 failed for {eventMsg.EventId}: {ex.Message}");
+                        }
+                    }
+                });
+
+                var task2 = Task.Run(async () =>
+                {
+                    try
+                    {
+                        await producer.ProduceAsync(eventMsg.EventId, eventMsg);
+                        lock (_lock)
+                        {
+                            Console.WriteLine($"[EventProducer] Task 2 sent: {eventMsg.EventId}");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        lock (_lock)
+                        {
+                            Console.WriteLine($"[EventProducer] Task 2 failed for {eventMsg.EventId}: {ex.Message}");
+                        }
+                    }
+                });
+
+                // Wait for both tasks to complete
+                Task.WaitAll(task1, task2);
+
                 lock (_lock)
                 {
                     Console.WriteLine($"[EventProducer] Sent: Event {eventMsg.EventId} ({eventMsg})");
                 }
-                
-                Thread.Sleep(800);
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"[EventProducer] Error: {ex.Message}");
             }
         }
-        
         lock (_lock)
         {
             Console.WriteLine($"[EventProducer] Completed");

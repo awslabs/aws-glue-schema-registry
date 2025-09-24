@@ -38,7 +38,7 @@ static void test_new_glue_schema_registry_serializer_config_init_fails_throws_ex
     glue_schema_registry_serializer *gsr_serializer = new_glue_schema_registry_serializer(NULL, p_err);
 
     assert_null(gsr_serializer);
-    assert_error_and_clear(p_err, "Configuration initialization failed for serializer", ERR_CODE_RUNTIME_ERROR);
+    assert_error_and_clear(p_err, "Failed to initialize serializer with configuration file.", ERR_CODE_RUNTIME_ERROR);
 
     delete_glue_schema_registry_serializer(gsr_serializer);
 
@@ -197,6 +197,46 @@ static void test_new_glue_schema_registry_serializer_encode_arr_null_throws_exce
     clear_mock_state();
 }
 
+static void test_serializer_encode_attach_thread_failure(void **state) {
+    set_mock_state(GRAAL_VM_INIT_SUCCESS);
+    glue_schema_registry_serializer *gsr_serializer = new_glue_schema_registry_serializer(NULL, NULL);
+
+    set_mock_state(ATTACH_THREAD_FAIL);
+
+    glue_schema_registry_error **p_err = new_glue_schema_registry_error_holder();
+    mutable_byte_array *array = new_mutable_byte_array(10, NULL);
+    glue_schema_registry_schema *schema = new_glue_schema_registry_schema("test", "def", "AVRO", NULL, NULL);
+
+    mutable_byte_array *result = glue_schema_registry_serializer_encode(gsr_serializer, array, "test", schema, p_err);
+
+    assert_null(result);
+    assert_error_and_clear(p_err, "Failed to attach thread to GraalVM isolate", ERR_CODE_GRAAL_ATTACH_FAILED);
+
+    delete_mutable_byte_array(array);
+    delete_glue_schema_registry_schema(schema);
+    delete_glue_schema_registry_serializer(gsr_serializer);
+    clear_mock_state();
+}
+
+static void test_serializer_encode_detach_thread_failure(void **state) {
+    set_mock_state(GRAAL_VM_INIT_SUCCESS);
+    glue_schema_registry_serializer *gsr_serializer = new_glue_schema_registry_serializer(NULL, NULL);
+
+    set_mock_state(DETACH_THREAD_FAIL);
+
+    mutable_byte_array *array = new_mutable_byte_array(10, NULL);
+    glue_schema_registry_schema *schema = new_glue_schema_registry_schema("test", "def", "AVRO", NULL, NULL);
+
+    // Should succeed but log warning (detach failure doesn't prevent operation success)
+    mutable_byte_array *result = glue_schema_registry_serializer_encode(gsr_serializer, array, "test", schema, NULL);
+
+    delete_mutable_byte_array(array);
+    delete_glue_schema_registry_schema(schema);
+    if (result) delete_mutable_byte_array(result);
+    delete_glue_schema_registry_serializer(gsr_serializer);
+    clear_mock_state();
+}
+
 
 int main(void) {
     const struct CMUnitTest tests[] = {
@@ -210,7 +250,9 @@ int main(void) {
             cmocka_unit_test(test_new_glue_schema_registry_serializer_encode_throws_exception),
             cmocka_unit_test(test_new_glue_schema_registry_serializer_encode_serializer_null_throws_exception),
             cmocka_unit_test(test_new_glue_schema_registry_serializer_encode_schema_null_throws_exception),
-            cmocka_unit_test(test_new_glue_schema_registry_serializer_encode_arr_null_throws_exception)
+            cmocka_unit_test(test_new_glue_schema_registry_serializer_encode_arr_null_throws_exception),
+            cmocka_unit_test(test_serializer_encode_attach_thread_failure),
+            cmocka_unit_test(test_serializer_encode_detach_thread_failure)
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);

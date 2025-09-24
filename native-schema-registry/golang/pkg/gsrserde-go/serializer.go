@@ -6,10 +6,6 @@ import (
 )
 
 /*
-#cgo CFLAGS: -w
-#cgo CFLAGS: -I../../lib/include
-#cgo LDFLAGS: -Wl,-rpath,${SRCDIR}/../../lib
-#cgo LDFLAGS: -L../../lib -lnativeschemaregistry -lnative_schema_registry_c -lnative_schema_registry_c_data_types -laws_common_memalloc
 #include "../../lib/include/glue_schema_registry_serializer.h"
 #include "../../lib/include/glue_schema_registry_error.h"
 #include "../../lib/include/mutable_byte_array.h"
@@ -20,19 +16,13 @@ import (
 import "C"
 
 // Serializer is a wrapper around the native schema registry serializer
-// NOTE: This wrapper is NOT thread-safe. Each instance should be used by
-// only one context/operation to comply with native library constraints.
 type Serializer struct {
 	serializer *C.glue_schema_registry_serializer
 	closed     bool
 }
 
 // NewSerializer creates a new serializer instance
-// Locks the goroutine to the thread until .Close() is called. 
-// As cleanup of these resources must come from the same thread
-// .Close() will free memory and the underlying C structs. And must be called at some point to prevent memory leaks.
 func NewSerializer(configPath string) (*Serializer, error) {
-	runtime.LockOSThread()
 	
 	cString := C.CString(configPath)
 	defer C.free(unsafe.Pointer(cString))
@@ -57,6 +47,7 @@ func NewSerializer(configPath string) (*Serializer, error) {
 	}
 	
 	
+	runtime.SetFinalizer(s, cleanupSerializer)
 	return s, nil
 }
 
@@ -67,8 +58,6 @@ func cleanupSerializer(s *Serializer) {
 // Encode serializes data with the given schema
 func (s *Serializer) Encode(data []byte, transportName string, schema *Schema) ([]byte, error) {
 
-	runtime.LockOSThread()
-	defer runtime.UnlockOSThread()
 	if s.closed {
 		return nil, ErrClosed
 	}
@@ -142,7 +131,6 @@ func (s *Serializer) Close() error {
 		s.serializer = nil
 	}
 	
-	runtime.UnlockOSThread()
 	
 	return nil
 }

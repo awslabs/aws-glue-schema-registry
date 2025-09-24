@@ -22,4 +22,4 @@ mutable_byte_array *glue_schema_registry_serializer_encode(glue_schema_registry_
                                                                     glue_schema_registry_schema *gsr_schema,
                                                                     glue_schema_registry_error **p_err);
 
-#endif //GLUE_SCHEMA_REGISTRY_SERIALIZER_H
+#endif // GLUE_SCHEMA_REGISTRY_SERIALIZER_H

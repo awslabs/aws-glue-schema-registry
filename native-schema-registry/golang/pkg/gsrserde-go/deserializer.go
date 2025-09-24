@@ -7,29 +7,19 @@ import (
 )
 
 /*
-#cgo CFLAGS: -w
-#cgo CFLAGS: -I../../lib/include
-#cgo LDFLAGS: -Wl,-rpath,${SRCDIR}/../../lib
-#cgo LDFLAGS: -L../../lib -lnativeschemaregistry -lnative_schema_registry_c -lnative_schema_registry_c_data_types -laws_common_memalloc
 #include "../../lib/include/glue_schema_registry_deserializer.h"
 #include "../../lib/include/glue_schema_registry_error.h"
 */
 import "C"
 
 // Deserializer is a wrapper around the native schema registry deserializer
-// NOTE: This wrapper is NOT thread-safe. Each instance should be used by
-// only one context/operation to comply with native library constraints.
 type Deserializer struct {
 	deserializer *C.glue_schema_registry_deserializer
 	closed       bool
 }
 
 // NewDeserializer creates a new deserializer instance
-// Locks the goroutine to the thread until .Close() is called.
-// As cleanup of these resources must come from the same thread
-// .Close() will free memory and the underlying C structs. And must be called at some point to prevent memory leaks.
 func NewDeserializer(configPath string) (*Deserializer, error) {
-	runtime.LockOSThread()
 
 	cString := C.CString(configPath)
 	defer C.free(unsafe.Pointer(cString))
@@ -53,6 +43,7 @@ func NewDeserializer(configPath string) (*Deserializer, error) {
 		closed:       false,
 	}
 
+	runtime.SetFinalizer(d, cleanupDeserializer)
 	return d, nil
 }
 
@@ -62,8 +53,6 @@ func cleanupDeserializer(d *Deserializer) {
 
 // Decode deserializes the encoded data
 func (d *Deserializer) Decode(data []byte) ([]byte, error) {
-	runtime.LockOSThread()
-	defer runtime.UnlockOSThread()
 	if d.closed {
 		return nil, ErrClosed
 	}
@@ -106,8 +95,6 @@ func (d *Deserializer) Decode(data []byte) ([]byte, error) {
 // CanDecode checks if the data can be decoded
 func (d *Deserializer) CanDecode(data []byte) (bool, error) {
 
-	runtime.LockOSThread()
-	defer runtime.UnlockOSThread()
 	if d.closed {
 		return false, ErrClosed
 	}
@@ -142,8 +129,6 @@ func (d *Deserializer) CanDecode(data []byte) (bool, error) {
 // DecodeSchema extracts the schema from encoded data
 func (d *Deserializer) DecodeSchema(data []byte) (*Schema, error) {
 
-	runtime.LockOSThread()
-	defer runtime.UnlockOSThread()
 	if d.closed {
 		return nil, ErrClosed
 	}
@@ -199,7 +184,6 @@ func (d *Deserializer) Close() error {
 		d.deserializer = nil
 	}
 
-	runtime.UnlockOSThread()
 
 	return nil
 }
