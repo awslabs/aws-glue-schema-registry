@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"runtime"
 	"unsafe"
+
+	"github.com/awslabs/aws-glue-schema-registry/native-schema-registry/golang/pkg/gsrserde-go/common"
 )
 
 /*
@@ -23,12 +25,15 @@ func NewDeserializer(configPath string) (*Deserializer, error) {
 
 	cString := C.CString(configPath)
 	defer C.free(unsafe.Pointer(cString))
+	
+	cUserAgent := C.CString(common.UserAgentString)
+	defer C.free(unsafe.Pointer(cUserAgent))
 
 	errHolder := C.new_glue_schema_registry_error_holder()
 	defer C.delete_glue_schema_registry_error_holder(errHolder)
 
 	// Create native deserializer
-	deserializer := C.new_glue_schema_registry_deserializer(cString, errHolder)
+	deserializer := C.new_glue_schema_registry_deserializer(cString, cUserAgent, errHolder)
 
 	if *errHolder != nil {
 		return nil, extractError("create deserializer", *errHolder)
