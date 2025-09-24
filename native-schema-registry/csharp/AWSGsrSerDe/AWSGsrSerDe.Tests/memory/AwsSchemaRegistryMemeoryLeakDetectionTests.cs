@@ -26,25 +26,26 @@ namespace AWSGsrSerDe.Tests.memory
     [TestFixture]
     public class AwsSchemaRegistryMemeoryLeakDetectionTests
     {
-        private const string AVRO_CONFIG_PATH = "configuration/test-configs/valid-minimal.properties";
-        private const string PROTOBUF_CONFIG_PATH = "configuration/test-configs/valid-minimal-protobuf.properties";
-        private const string JSON_CONFIG_PATH = "configuration/test-configs/valid-minimal-json.properties";
+        private const string CONFIG_PATH = "configuration/test-configs/valid-minimal.properties";
+        private const string AVRO_DATA_FORMAT = "AVRO";
+        private const string JSON_DATA_FORMAT = "JSON";
+        private const string PROTOBUF_DATA_FORMAT = "PROTOBUF";
 
         private static readonly GlueSchemaRegistryKafkaSerializer KafkaSerializer =
-            new GlueSchemaRegistryKafkaSerializer(AVRO_CONFIG_PATH);
+            new GlueSchemaRegistryKafkaSerializer(CONFIG_PATH);
 
         private static readonly GlueSchemaRegistryKafkaDeserializer KafkaDeserializer =
-            new GlueSchemaRegistryKafkaDeserializer(AVRO_CONFIG_PATH);
+            new GlueSchemaRegistryKafkaDeserializer(CONFIG_PATH);
 
-        private static readonly GlueSchemaRegistryDeserializer Deserializer = new GlueSchemaRegistryDeserializer(AVRO_CONFIG_PATH);
+        private static readonly GlueSchemaRegistryDeserializer Deserializer = new GlueSchemaRegistryDeserializer(CONFIG_PATH);
 
         private void SerializeDeserializeProtobufMessage()
         {
             var message = (IMessage)BASIC_SYNTAX2_MESSAGE;
-            var protobufSerializer = new GlueSchemaRegistryKafkaSerializer(PROTOBUF_CONFIG_PATH);
-            var protobufDeserializer = new GlueSchemaRegistryKafkaDeserializer(PROTOBUF_CONFIG_PATH);
+            var protobufSerializer = new GlueSchemaRegistryKafkaSerializer(CONFIG_PATH);
+            var protobufDeserializer = new GlueSchemaRegistryKafkaDeserializer(CONFIG_PATH);
 
-            var serialized = protobufSerializer.Serialize(message, message.Descriptor.FullName);
+            var serialized = protobufSerializer.Serialize(message, message.Descriptor.FullName, PROTOBUF_DATA_FORMAT);
             var canDecode = Deserializer.CanDecode(serialized);
             var decodedSchema = Deserializer.DecodeSchema(serialized);
             var deserializedObject = protobufDeserializer.Deserialize(message.Descriptor.FullName, serialized);
@@ -53,10 +54,10 @@ namespace AWSGsrSerDe.Tests.memory
         private void SerializeDeserializeJsonMessage()
         {
             var message = RecordGenerator.GetSampleJsonTestData();
-            var jsonSerializer = new GlueSchemaRegistryKafkaSerializer(JSON_CONFIG_PATH);
-            var jsonDeserializer = new GlueSchemaRegistryKafkaDeserializer(JSON_CONFIG_PATH);
+            var jsonSerializer = new GlueSchemaRegistryKafkaSerializer(CONFIG_PATH);
+            var jsonDeserializer = new GlueSchemaRegistryKafkaDeserializer(CONFIG_PATH);
 
-            var serialized = jsonSerializer.Serialize(message, "test-topic-json");
+            var serialized = jsonSerializer.Serialize(message, "test-topic-json", JSON_DATA_FORMAT);
             var canDecode = Deserializer.CanDecode(serialized);
             var decodedSchema = Deserializer.DecodeSchema(serialized);
             var deserializedObject = jsonDeserializer.Deserialize("test-topic-json", serialized);
@@ -67,7 +68,7 @@ namespace AWSGsrSerDe.Tests.memory
             var message = RecordGenerator.GetTestAvroRecord();
 
             // Using static KafkaSerializer and KafkaDeserializer which are already configured for AVRO
-            var serialized = KafkaSerializer.Serialize(message, "test-topic-avro");
+            var serialized = KafkaSerializer.Serialize(message, "test-topic-avro", AVRO_DATA_FORMAT);
             var canDecode = Deserializer.CanDecode(serialized);
             var decodedSchema = Deserializer.DecodeSchema(serialized);
             var deserializedObject = KafkaDeserializer.Deserialize("test-topic-avro", serialized);

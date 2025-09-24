@@ -41,6 +41,17 @@ export LD_LIBRARY_PATH=/workspaces/aws-glue-schema-registry/native-schema-regist
 dotnet test .
 ```
 
+#### Computing test coverage
+Run the following commands 
+
+```
+dotnet tool install -g dotnet-reportgenerator-globaltool
+dotnet test AWSGsrSerDe.Tests.csproj --collect:"XPlat Code Coverage"
+reportgenerator -reports:**/coverage.cobertura.xml -targetdir:coverage-report -reporttypes:Html
+```
+
+This produces the coverage report in AWSGsrSerDe/AWSGsrSerDe.Tests/coverage-report/index.html
+
 ### Using Csharp Glue Schema client library with KafkaFlow for SerDes
 __Sample serializer usage:__
 
@@ -82,16 +93,16 @@ __Sample deserializer usage:__
 __Sample serializer usage:__
 
 ```csharp
-private static readonly string PROTOBUF_CONFIG_PATH = "<PATH_TO_CONFIG_FILE>";
-var protobufSerializer = new GlueSchemaRegistryKafkaSerializer(PROTOBUF_CONFIG_PATH);
-var serialized = protobufSerializer.Serialize(message, message.Descriptor.FullName);
+private static readonly string CONFIG_PATH = "<PATH_TO_CONFIG_FILE>";
+var protobufSerializer = new GlueSchemaRegistryKafkaSerializer(CONFIG_PATH);
+var serialized = protobufSerializer.Serialize(message, message.Descriptor.FullName, "PROTOBUF");
 // send serialized bytes to Kafka using producer.Produce(serialized)
 ```
 
 __Sample deserializer usage:__
 
 ```csharp
-private static readonly string PROTOBUF_CONFIG_PATH = "<PATH_TO_CONFIG_FILE>";
+private static readonly string CONFIG_PATH = "<PATH_TO_CONFIG_FILE>";
 var dataConfig = new GlueSchemaRegistryDataFormatConfiguration(
     new Dictionary<string, dynamic>
     {
@@ -100,7 +111,7 @@ var dataConfig = new GlueSchemaRegistryDataFormatConfiguration(
         }
     }
 );
-var protobufDeserializer = new GlueSchemaRegistryKafkaDeserializer(PROTOBUF_CONFIG_PATH, dataConfig);
+var protobufDeserializer = new GlueSchemaRegistryKafkaDeserializer(CONFIG_PATH, dataConfig);
 
 // read message from Kafka using serialized = consumer.Consume()
 var deserializedObject = protobufDeserializer.Deserialize(message.Descriptor.FullName, serialized);

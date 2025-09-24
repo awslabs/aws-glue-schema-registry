@@ -49,9 +49,6 @@ namespace AWSGsrSerDe.deserializer
                 if (dataConfig.JsonObjectType != null)
                     baseConfigDict[GlueSchemaRegistryConstants.JsonObjectType] = dataConfig.JsonObjectType;
                 
-                if (dataConfig.DataFormat != default)
-                    baseConfigDict[GlueSchemaRegistryConstants.DataFormatType] = dataConfig.DataFormat;
-                
                 if (dataConfig.AvroRecordType != default)
                     baseConfigDict[GlueSchemaRegistryConstants.AvroRecordType] = dataConfig.AvroRecordType;
             }

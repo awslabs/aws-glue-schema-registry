@@ -12,6 +12,7 @@ public class GlueSchemaRegistryKafkaFlowProtobufSerializer<T> : ISerializer
     where T : class, IMessage<T>, new()
 {
     private readonly GlueSchemaRegistryKafkaSerializer _gsrSerializer;
+    private const string PROTOBUF_DATA_FORMAT = "PROTOBUF";
 
     public GlueSchemaRegistryKafkaFlowProtobufSerializer(string configPath)
     {
@@ -34,7 +35,7 @@ public class GlueSchemaRegistryKafkaFlowProtobufSerializer<T> : ISerializer
 
         try
         {
-            return _gsrSerializer.Serialize(message, context.Topic);
+            return _gsrSerializer.Serialize(message, context.Topic, PROTOBUF_DATA_FORMAT);
         }
         catch (Exception ex)
         {

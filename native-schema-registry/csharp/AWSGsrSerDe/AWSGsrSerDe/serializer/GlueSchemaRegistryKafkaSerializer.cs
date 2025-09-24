@@ -25,7 +25,6 @@ namespace AWSGsrSerDe.serializer
     {
         private readonly GlueSchemaRegistrySerializer _glueSchemaRegistrySerializer;
         
-        private string _dataFormat;
         private ISchemaNameStrategy _schemaNamingStrategy;
 
         /// <summary>
@@ -34,9 +33,7 @@ namespace AWSGsrSerDe.serializer
         /// <param name="configFilePath">Path to the configuration properties file</param>
         public GlueSchemaRegistryKafkaSerializer(string configFilePath)
         {
-            _dataFormat = ConfigFileReader.GetConfigValue(configFilePath, "dataFormat") ?? "AVRO";
             _schemaNamingStrategy = new DefaultSchemaNameStrategy();
-            
             _glueSchemaRegistrySerializer = new GlueSchemaRegistrySerializer(configFilePath);
         }
         
@@ -47,14 +44,14 @@ namespace AWSGsrSerDe.serializer
         /// <param name="data">message to serialize into byte array</param>
         /// <param name="topic">name of the Kafka topic</param>
         /// <returns>serialized byte array</returns>
-        public byte[] Serialize(object data, string topic)
+        public byte[] Serialize(object data, string topic, string dataFormat)
         {
             if (data == null)
             {
                 return null;
             }
 
-            var serializer = DataFormatSerializerFactory.GetInstance().GetSerializer(_dataFormat);
+            var serializer = DataFormatSerializerFactory.GetInstance().GetSerializer(dataFormat);
 
             var bytes = serializer.Serialize(data);
             var schemaDefinition = serializer.GetSchemaDefinition(data);
@@ -62,7 +59,7 @@ namespace AWSGsrSerDe.serializer
             var glueSchemaRegistrySchema = new GlueSchemaRegistrySchema(
                 _schemaNamingStrategy.GetSchemaName(data, topic),
                 schemaDefinition,
-                _dataFormat);
+                dataFormat);
             
             serializer.SetAdditionalSchemaInfo(data, ref glueSchemaRegistrySchema);
 

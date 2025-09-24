@@ -20,6 +20,7 @@ namespace AWSGsrSerDe.Tests.Configuration
         private const string DEFAULT_REGISTRY_NAME = "default-registry";
         private const string CUSTOM_REGISTRY_NAME = "native-test-registry";
         private const string DEFAULT_REGION = "us-east-1";
+        private const string AVRO_DATA_FORMAT = "AVRO";
         
         // Multi-region client manager - creates and caches clients per region
         private readonly Dictionary<string, IAmazonGlue> _regionClients = new();
@@ -251,7 +252,7 @@ namespace AWSGsrSerDe.Tests.Configuration
 
                 // 4. Serialize the record - this should auto-register the schema
                 Console.WriteLine($"Serializing record to topic '{topicName}' (should auto-register schema)...");
-                var serializedBytes = serializer.Serialize(avroRecord, topicName);
+                var serializedBytes = serializer.Serialize(avroRecord, topicName, AVRO_DATA_FORMAT);
 
                 Assert.NotNull(serializedBytes, "Serialized bytes should not be null");
                 Assert.That(serializedBytes.Length, Is.GreaterThan(0), "Serialized bytes should not be empty");
@@ -325,7 +326,7 @@ namespace AWSGsrSerDe.Tests.Configuration
                 var avroRecord = RecordGenerator.GetTestAvroRecord();
 
                 // 4. Serialize the record - this should auto-register the schema in custom registry
-                var serializedBytes = serializer.Serialize(avroRecord, topicName);
+                var serializedBytes = serializer.Serialize(avroRecord, topicName, AVRO_DATA_FORMAT);
 
                 Assert.NotNull(serializedBytes, "Serialized bytes should not be null");
                 Assert.That(serializedBytes.Length, Is.GreaterThan(0), "Serialized bytes should not be empty");
@@ -399,7 +400,7 @@ namespace AWSGsrSerDe.Tests.Configuration
 
                 // 4. Attempt to serialize - this should fail due to region/endpoint mismatch
                 // This should throw an access denied error - Credential should be scoped to a valid region. (Service: Glue, Status Code: 400, Request ID)
-                var serializedBytes = serializer.Serialize(avroRecord, topicName);
+                var serializedBytes = serializer.Serialize(avroRecord, topicName, AVRO_DATA_FORMAT);
 
                 // If we reach here, the test should fail because we expected an exception
                 Assert.Fail("Expected AccessDenied or authorization exception due to IAM permissions in different region, but serialization succeeded");
@@ -442,7 +443,7 @@ namespace AWSGsrSerDe.Tests.Configuration
 
                 // 4. Attempt to serialize - this should fail due to invalid region
                 // This should throw an exception indicating invalid region
-                var serializedBytes = serializer.Serialize(avroRecord, topicName);
+                var serializedBytes = serializer.Serialize(avroRecord, topicName, AVRO_DATA_FORMAT);
 
                 // If we reach here, the test should fail because we expected an exception
                 Assert.Fail("Expected exception due to invalid region 'us-east-99', but serialization succeeded");
@@ -485,7 +486,7 @@ namespace AWSGsrSerDe.Tests.Configuration
 
                 // 4. Attempt to serialize - this should fail due to invalid endpoint
                 // This should throw an exception indicating connection failure to invalid endpoint
-                var serializedBytes = serializer.Serialize(avroRecord, topicName);
+                var serializedBytes = serializer.Serialize(avroRecord, topicName, AVRO_DATA_FORMAT);
 
                 // If we reach here, the test should fail because we expected an exception
                 Assert.Fail("Expected exception due to invalid endpoint 'https://invalid-endpoint.amazonaws.com', but serialization succeeded");

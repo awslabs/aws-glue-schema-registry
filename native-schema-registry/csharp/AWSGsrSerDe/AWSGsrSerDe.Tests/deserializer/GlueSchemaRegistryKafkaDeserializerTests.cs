@@ -31,8 +31,10 @@ namespace AWSGsrSerDe.Tests.deserializer
     [TestFixture]
     public class GlueSchemaRegistryKafkaDeserializerTests
     {
-        private static readonly string AVRO_CONFIG_PATH = GetConfigPath("configuration/test-configs/valid-minimal.properties");
-        private static readonly string PROTOBUF_CONFIG_PATH = GetConfigPath("configuration/test-configs/valid-minimal-protobuf.properties");
+        private static readonly string CONFIG_PATH = GetConfigPath("configuration/test-configs/valid-minimal.properties");
+        private const string AVRO_DATA_FORMAT = "AVRO";
+        private const string JSON_DATA_FORMAT = "JSON";
+        private const string PROTOBUF_DATA_FORMAT = "PROTOBUF";
 
         /// <summary>
         /// Finds the project root by looking for .csproj file and returns absolute path to config file
@@ -56,12 +58,12 @@ namespace AWSGsrSerDe.Tests.deserializer
         }
 
         private static readonly GlueSchemaRegistryKafkaSerializer KafkaSerializer =
-            new GlueSchemaRegistryKafkaSerializer(AVRO_CONFIG_PATH);
+            new GlueSchemaRegistryKafkaSerializer(CONFIG_PATH);
 
         private static readonly GlueSchemaRegistryKafkaDeserializer KafkaDeserializer =
-            new GlueSchemaRegistryKafkaDeserializer(AVRO_CONFIG_PATH);
+            new GlueSchemaRegistryKafkaDeserializer(CONFIG_PATH);
 
-        private static readonly GlueSchemaRegistryDeserializer Deserializer = new GlueSchemaRegistryDeserializer(AVRO_CONFIG_PATH);
+        private static readonly GlueSchemaRegistryDeserializer Deserializer = new GlueSchemaRegistryDeserializer(CONFIG_PATH);
 
         [Test]
         public void TestDeserializerWithMessageEncodedBySerializer_Json()
@@ -69,8 +71,8 @@ namespace AWSGsrSerDe.Tests.deserializer
             var jsonMessage = RecordGenerator.GetSampleJsonTestData();
 
             // Json Data Encoded
-            var jsonSerializer = new GlueSchemaRegistryKafkaSerializer(GetConfigPath("configuration/test-configs/valid-minimal-json.properties"));
-            var bytes = jsonSerializer.Serialize(jsonMessage, "test-topic-json");
+            var jsonSerializer = new GlueSchemaRegistryKafkaSerializer(GetConfigPath("configuration/test-configs/valid-minimal.properties"));
+            var bytes = jsonSerializer.Serialize(jsonMessage, "test-topic-json", JSON_DATA_FORMAT);
 
             Assert.DoesNotThrow(() => Deserializer.CanDecode(bytes));
             Assert.True(Deserializer.CanDecode(bytes));
@@ -106,7 +108,7 @@ namespace AWSGsrSerDe.Tests.deserializer
             var avroRecord = RecordGenerator.GetTestAvroRecord();
 
             // Avro Data encoded - using the static KafkaSerializer which is already configured for AVRO
-            var bytes = KafkaSerializer.Serialize(avroRecord, "test-topic-avro");
+            var bytes = KafkaSerializer.Serialize(avroRecord, "test-topic-avro", AVRO_DATA_FORMAT);
 
             Assert.DoesNotThrow(() => Deserializer.CanDecode(bytes));
             Assert.True(Deserializer.CanDecode(bytes));
@@ -141,8 +143,8 @@ namespace AWSGsrSerDe.Tests.deserializer
             var protobufMessage = (IMessage)ProtobufGenerator.BASIC_REFERENCING_MESSAGE;
 
             // Protobuf Data encoded
-            var protobufSerializer = new GlueSchemaRegistryKafkaSerializer(PROTOBUF_CONFIG_PATH);
-            var bytes = protobufSerializer.Serialize(protobufMessage, protobufMessage.Descriptor.FullName);
+            var protobufSerializer = new GlueSchemaRegistryKafkaSerializer(CONFIG_PATH);
+            var bytes = protobufSerializer.Serialize(protobufMessage, protobufMessage.Descriptor.FullName, PROTOBUF_DATA_FORMAT);
 
             Assert.DoesNotThrow(() => Deserializer.CanDecode(bytes));
             Assert.True(Deserializer.CanDecode(bytes));
@@ -176,7 +178,7 @@ namespace AWSGsrSerDe.Tests.deserializer
         public void TestDeserializerConstructor_WithNullDataConfig()
         {
             // Constructor should work exactly as before with null dataConfig
-            var deserializer = new GlueSchemaRegistryKafkaDeserializer(PROTOBUF_CONFIG_PATH, null);
+            var deserializer = new GlueSchemaRegistryKafkaDeserializer(CONFIG_PATH, null);
             Assert.IsNotNull(deserializer);
         }
     }

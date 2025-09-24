@@ -209,7 +209,7 @@ namespace AWSGsrSerDe.Tests.deserializer.protobuf
         private GlueSchemaRegistryDataFormatConfiguration CreateProtobufTestConfig(MessageDescriptor descriptor)
         {
             // Load base configuration from the protobuf properties file
-            var configPath = GetConfigPath("configuration/test-configs/valid-minimal-protobuf.properties");
+            var configPath = GetConfigPath("configuration/test-configs/valid-minimal.properties");
             var baseConfigDict = ParsePropertiesFile(configPath);
             
             // Add the dynamic protobuf descriptor that each test case requires

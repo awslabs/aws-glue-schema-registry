@@ -92,7 +92,7 @@ namespace AWSGsrSerDe.Tests.Configuration
         [Test]
         public void Constructor_WithEmptyConfigPath_ThrowsExceptionForDeserializer()
         {
-            Assert.Throws<ArgumentNullException>(() => new GlueSchemaRegistryKafkaSerializer(""));
+            Assert.Throws<ArgumentNullException>(() => new GlueSchemaRegistryKafkaDeserializer(""));
         }
 
         [Test]
