@@ -67,6 +67,7 @@ public class GlueSchemaRegistrySerializationHandler {
             String filePath = CTypeConversion.toJavaString(configFilePath);
             Map<String, String> configs = ConfigurationFileReader.loadConfigFromFile(filePath);
             NativeGlueSchemaRegistryConfiguration configuration = new NativeGlueSchemaRegistryConfiguration(configs);
+            ProtobufPreprocessor.initializeCache(configuration.getCacheSize());
             SerializerInstance.create(configuration);
             return 0;
         } catch (Exception e) {
