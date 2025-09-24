@@ -120,7 +120,8 @@ void initialize_deserializer(graal_isolatethread_t* thread) {
     //do nothing
 }
 
-int initialize_serializer_with_config(graal_isolatethread_t* thread, char* config_file_path, glue_schema_registry_error** p_err) {
+int initialize_serializer_with_config(graal_isolatethread_t *thread, char *config_file_path, char *user_agent, glue_schema_registry_error **p_err)
+{
     validate_mock_state();
 
     assert_non_null(thread);
@@ -134,7 +135,8 @@ int initialize_serializer_with_config(graal_isolatethread_t* thread, char* confi
     return 0;
 }
 
-int initialize_deserializer_with_config(graal_isolatethread_t* thread, char* config_file_path, glue_schema_registry_error** p_err) {
+int initialize_deserializer_with_config(graal_isolatethread_t *thread, char *config_file_path, char *user_agent, glue_schema_registry_error **p_err)
+{
     validate_mock_state();
 
     assert_non_null(thread);

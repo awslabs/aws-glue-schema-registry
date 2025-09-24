@@ -18,7 +18,7 @@ namespace AWSGsrSerDe
         {   
             try
             {
-                _deserializer = new glue_schema_registry_deserializer(configFilePath, null);
+                _deserializer = new glue_schema_registry_deserializer(configFilePath, GlueSchemaRegistryConstants.CSharpUserAgentString, null);
             }
             catch (Exception e)
             {

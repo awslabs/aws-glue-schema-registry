@@ -7,7 +7,7 @@ typedef struct {
     graal_isolate_t *isolate;
 } serializer_context;
 
-glue_schema_registry_serializer *new_glue_schema_registry_serializer(const char *config_file_path, glue_schema_registry_error **p_err) {
+glue_schema_registry_serializer *new_glue_schema_registry_serializer(const char *config_file_path, const char *user_agent, glue_schema_registry_error **p_err) {
     glue_schema_registry_serializer *serializer = NULL;
     serializer = (glue_schema_registry_serializer *) aws_common_malloc(sizeof(glue_schema_registry_serializer));
     serializer->instance_context = NULL;
@@ -29,7 +29,7 @@ glue_schema_registry_serializer *new_glue_schema_registry_serializer(const char 
     serializer->instance_context = ctx;
 
     //Initialize with configuration file using main thread
-    int config_result = initialize_serializer_with_config(thread, (char*)config_file_path, p_err);
+    int config_result = initialize_serializer_with_config(thread, (char*)config_file_path, (char*)user_agent, p_err);
     
     if (config_result != 0) {
         delete_glue_schema_registry_serializer(serializer);

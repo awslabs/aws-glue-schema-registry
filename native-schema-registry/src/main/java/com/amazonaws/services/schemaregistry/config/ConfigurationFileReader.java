@@ -31,6 +31,9 @@ public class ConfigurationFileReader {
             }
         }
 
+        // removing userAgentApp as this should be set according to serde object creation and not user configuration
+        configMap.remove(NativeGlueSchemaRegistryConfiguration.USER_AGENT_APP_KEY);
+
         return configMap;
     }
 }
