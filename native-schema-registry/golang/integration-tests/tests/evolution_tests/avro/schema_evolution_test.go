@@ -23,10 +23,9 @@ import (
 // SchemaEvolutionTestSuite contains the test suite for schema evolution tests
 type SchemaEvolutionTestSuite struct {
 	suite.Suite
-	glueClient     *glue.Client
-	registryName   string
-	createdSchemas []string
-	ctx            context.Context
+	glueClient   *glue.Client
+	registryName string
+	ctx          context.Context
 }
 
 // SetupSuite runs once before all tests in the suite
@@ -44,7 +43,6 @@ func (suite *SchemaEvolutionTestSuite) SetupSuite() {
 
 	// Create unique registry name for this test run
 	suite.registryName = fmt.Sprintf("gsr-evolution-test-%d", time.Now().Unix())
-	suite.createdSchemas = make([]string, 0)
 
 	// Create the registry
 	_, err = suite.glueClient.CreateRegistry(suite.ctx, &glue.CreateRegistryInput{
@@ -57,23 +55,8 @@ func (suite *SchemaEvolutionTestSuite) SetupSuite() {
 // TearDownSuite runs once after all tests in the suite
 func (suite *SchemaEvolutionTestSuite) TearDownSuite() {
 	suite.T().Logf("Tearing down suite")
-	suite.T().Logf("Deleting %d schemas", len(suite.createdSchemas))
-	// Delete all created schemas
-	for _, schemaName := range suite.createdSchemas {
-		_, err := suite.glueClient.DeleteSchema(suite.ctx, &glue.DeleteSchemaInput{
-			SchemaId: &types.SchemaId{
-				RegistryName: aws.String(suite.registryName),
-				SchemaName:   aws.String(schemaName),
-			},
-		})
-		if err != nil {
-			suite.T().Logf("Warning: Failed to delete schema %s: %v", schemaName, err)
-		}
-	}
-
-	suite.T().Logf("Deleted %d schemas", len(suite.createdSchemas))
 	suite.T().Logf("Deleting registry %s", suite.registryName)
-	// Delete the registry
+	// Delete the registry (this will automatically delete all schemas within it)
 	_, err := suite.glueClient.DeleteRegistry(suite.ctx, &glue.DeleteRegistryInput{
 		RegistryId: &types.RegistryId{
 			RegistryName: aws.String(suite.registryName),
@@ -82,6 +65,8 @@ func (suite *SchemaEvolutionTestSuite) TearDownSuite() {
 
 	if err != nil {
 		suite.T().Logf("Warning: Failed to delete registry %s: %v", suite.registryName, err)
+	} else {
+		suite.T().Logf("Successfully deleted registry %s", suite.registryName)
 	}
 }
 
@@ -89,10 +74,10 @@ func (suite *SchemaEvolutionTestSuite) TearDownSuite() {
 func (suite *SchemaEvolutionTestSuite) loadSchemaFromFile(filename string) string {
 	// Try multiple possible paths to find the schema files
 	possiblePaths := []string{
-		filepath.Join("../../shared/test/avro", filename),       // From integration-tests directory
-		filepath.Join("../../../shared/test/avro", filename),    // From evolution_tests/avro directory
-		filepath.Join("../../../../shared/test/avro", filename), // From deeper nesting
-		filepath.Join("shared/test/avro", filename),             // From project root
+		filepath.Join("../../../shared/test/avro", filename),       // From integration-tests directory
+		filepath.Join("../../../../shared/test/avro", filename),    // From tests/evolution_tests/avro directory
+		filepath.Join("../../../../../shared/test/avro", filename), // From deeper nesting
+		filepath.Join("shared/test/avro", filename),                // From project root
 	}
 
 	for _, schemaPath := range possiblePaths {
