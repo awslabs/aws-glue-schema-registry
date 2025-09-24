@@ -1,0 +1,9 @@
+syntax = "proto3";
+package evolution.test;
+
+message User {
+  string name = 1;
+  int32 age = 2;
+  // BACKWARD INCOMPATIBLE: Change field type from string to int32
+  int32 email = 3;
+}
