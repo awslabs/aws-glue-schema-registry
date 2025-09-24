@@ -1,0 +1,15 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "http://localhost:1234/example",
+  "type": "object",
+  "properties": {
+    "f1": {
+      "type": "string"
+    },
+    "f2": {
+      "type": "integer",
+      "maximum": 100
+    }
+  },
+  "additionalProperties": true
+}
