@@ -26,7 +26,7 @@ public class NativeGlueSchemaRegistryConfiguration extends GlueSchemaRegistryCon
 
     public NativeGlueSchemaRegistryConfiguration(String region) {
         super(region);
-        this.setUserAgentApp("native-glue-schema-registry");
+        this.setUserAgentApp("native");
     }
 
     public NativeGlueSchemaRegistryConfiguration(Map<String, ?> configs) {
@@ -59,7 +59,7 @@ public class NativeGlueSchemaRegistryConfiguration extends GlueSchemaRegistryCon
             final String userAgentApp = (String) configs.get("userAgentApp");
             this.setUserAgentApp(userAgentApp);
         } else {
-            this.setUserAgentApp("native-glue-schema-registry");
+            this.setUserAgentApp("native");
         }
     }
 
