@@ -191,6 +191,46 @@ namespace AWSGsrSerDe.Tests
 //              }
 //          }
 
+        /// <summary>
+        /// Test Serializer disposal when the object is uninitialized but finalizer still runs
+        /// This is not the exact usage scenario but simulates the case when unknown garbage collection race condition
+        /// causes the finalizer to run when the serializer object is null
+        /// </summary>
+        [Test]
+        public void SerializerConstructorDoubleFinalizerTest()
+        {
+            // Create uninitialized object to simulate failed constructor leaving _serializer null
+            var serializer = (GlueSchemaRegistrySerializer)System.Runtime.Serialization.FormatterServices
+                .GetUninitializedObject(typeof(GlueSchemaRegistrySerializer));
+            
+            // Manually trigger finalizer on this uninitialized object
+            var finalize = typeof(GlueSchemaRegistrySerializer).GetMethod("Finalize", 
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            finalize?.Invoke(serializer, null);
+            
+            Assert.Pass("Disposal failure handled gracefully");
+        }
+
+        /// <summary>
+        /// Test Deserializer disposal when the object is uninitialized but finalizer still runs
+        /// This is not the exact usage scenario but simulates the case when unknown garbage collection race condition
+        /// causes the finalizer to run when the deserializer object is null
+        /// </summary>
+        [Test]
+        public void DeserializerConstructorDoubleFinalizerTest()
+        {
+            // Create uninitialized object to simulate failed constructor leaving _deserializer null
+            var deserializer = (GlueSchemaRegistryDeserializer)System.Runtime.Serialization.FormatterServices
+                .GetUninitializedObject(typeof(GlueSchemaRegistryDeserializer));
+            
+            // Manually trigger finalizer on this uninitialized object
+            var finalize = typeof(GlueSchemaRegistryDeserializer).GetMethod("Finalize", 
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            finalize?.Invoke(deserializer, null);
+            
+            Assert.Pass("Disposal failure handled gracefully");
+        }
+
         private static GenericRecord GetTestAvroRecord()
         {
             var recordSchema = Schema.Parse(TestAvroSchema);
