@@ -1,7 +1,7 @@
 syntax = "proto3";
 package evolution.test;
 
-message User {
+message UserV1Incompatible {
   string name = 1;
   int32 age = 2;
   // BACKWARD INCOMPATIBLE: Change field type from string to int32

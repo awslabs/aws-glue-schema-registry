@@ -48,5 +48,50 @@ namespace AWSGsrSerDe.Tests.utils
             user.Add("favorite_color", "blue");
             return user;
         }
+        
+        // Evolution test protobuf messages using compiled proto classes
+        public static Google.Protobuf.IMessage CreateUserV1Proto()
+        {
+            // Generated from: /shared/test/protos/evolution/positive/backward/UserV1.proto
+            var user = new Evolution.Test.UserV1();
+            user.Name = "John Doe";
+            user.Age = 30;
+            user.Email = "john@example.com";
+            return user;
+        }
+
+        public static Google.Protobuf.IMessage CreateUserV2Proto()
+        {
+            // Generated from: /shared/test/protos/evolution/positive/backward/UserV2.proto
+            var user = new Evolution.Test.UserV2();
+            user.Name = "Jane Doe";
+            user.Age = 25;
+            user.Email = "jane@example.com";
+            user.Phone = "555-1234";
+            user.Address = "123 Main St";
+            return user;
+        }
+
+        public static Google.Protobuf.IMessage CreateUserV3Proto()
+        {
+            // Generated from: /shared/test/protos/evolution/positive/backward/UserV3.proto
+            var user = new Evolution.Test.UserV3();
+            user.Name = "Bob Smith";
+            user.Age = 35;
+            user.Phone = "555-5678";
+            user.Address = "456 Oak Ave";
+            user.Department = "Engineering";
+            return user;
+        }
+
+        public static Google.Protobuf.IMessage CreateUserV1IncompatibleProto()
+        {
+            // Generated from: /shared/test/protos/evolution/negative/backward/UserV1Incompatible.proto
+            var user = new Evolution.Test.UserV1Incompatible();
+            user.Name = "Jane Smith";
+            user.Age = 28;
+            user.Email = 12345; // This will cause compilation error - incompatible type
+            return user;
+        }
     }
 }

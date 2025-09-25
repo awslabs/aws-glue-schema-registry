@@ -26,20 +26,25 @@ namespace AWSGsrSerDe.Tests.EvolutionTests
         [TearDown]
         public async Task TearDown()
         {
-            try
+            var schemaNames = new[] { _schemaName, _schemaName + "-v2", _schemaName + "-v3" };
+            
+            foreach (var schemaName in schemaNames)
             {
-                await _glueClient.DeleteSchemaAsync(new DeleteSchemaRequest
+                try
                 {
-                    SchemaId = new SchemaId
+                    await _glueClient.DeleteSchemaAsync(new DeleteSchemaRequest
                     {
-                        RegistryName = CUSTOM_REGISTRY_NAME,
-                        SchemaName = _schemaName
-                    }
-                });
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Warning: Failed to clean up schema {_schemaName}: {ex.Message}");
+                        SchemaId = new SchemaId
+                        {
+                            RegistryName = CUSTOM_REGISTRY_NAME,
+                            SchemaName = schemaName
+                        }
+                    });
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Warning: Failed to clean up schema {schemaName}: {ex.Message}");
+                }
             }
             
             _glueClient?.Dispose();
@@ -54,16 +59,16 @@ namespace AWSGsrSerDe.Tests.EvolutionTests
 
             var serializer = new GlueSchemaRegistryKafkaSerializer(configPath);
 
-            // V1: Register base schema using existing protobuf message
-            var v1Data = ProtobufGenerator.BASIC_SYNTAX3_MESSAGE;
+            // V1: Register base schema using RecordGenerator
+            var v1Data = RecordGenerator.CreateUserV1Proto();
             serializer.Serialize(v1Data, _schemaName);
 
-            // V2: Register second version using different message type
-            var v2Data = ProtobufGenerator.ALL_TYPES_MESSAGE_SYNTAX3;
+            // V2: Register second version using RecordGenerator
+            var v2Data = RecordGenerator.CreateUserV2Proto();
             serializer.Serialize(v2Data, _schemaName + "-v2");
 
-            // V3: Register third version using another message type
-            var v3Data = ProtobufGenerator.WELL_KNOWN_TYPES_SYNTAX_3;
+            // V3: Register third version using RecordGenerator
+            var v3Data = RecordGenerator.CreateUserV3Proto();
             serializer.Serialize(v3Data, _schemaName + "-v3");
 
             // Verify schemas exist (each with different names for this test)
@@ -108,8 +113,8 @@ namespace AWSGsrSerDe.Tests.EvolutionTests
 
             var serializer = new GlueSchemaRegistryKafkaSerializer(configPath);
 
-            // V1: Register base schema
-            var v1Data = ProtobufGenerator.BASIC_SYNTAX3_MESSAGE;
+            // V1: Register base schema using RecordGenerator
+            var v1Data = RecordGenerator.CreateUserV1Proto();
             serializer.Serialize(v1Data, _schemaName);
 
             // This test validates that serialization works - incompatible schema evolution

@@ -1,7 +1,7 @@
 syntax = "proto3";
 package evolution.test;
 
-message User {
+message UserV1 {
   string name = 1;
   int32 age = 2;
   string email = 3;
