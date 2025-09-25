@@ -22,7 +22,7 @@ class NativeGlueSchemaRegistryConfigurationTest {
     private static final String ROLE_ARN_VALUE = "arn:aws:iam::123456789012:role/TestRole";
     private static final String DEFAULT_SESSION_NAME = "native-glue-schema-registry";
     private static final String CUSTOM_SESSION_NAME = "custom-session-name";
-    private static final String DEFAULT_USER_AGENT_APP = "native-glue-schema-registry";
+    private static final String DEFAULT_USER_AGENT_APP = "native";
     private static final String CUSTOM_USER_AGENT_APP = "custom-user-agent-app";
 
     @Test
