@@ -74,10 +74,11 @@ func (suite *SchemaEvolutionTestSuite) TearDownSuite() {
 func (suite *SchemaEvolutionTestSuite) loadSchemaFromFile(filename string) string {
 	// Try multiple possible paths to find the schema files
 	possiblePaths := []string{
-		filepath.Join("../../../shared/test/avro", filename),       // From integration-tests directory
-		filepath.Join("../../../../shared/test/avro", filename),    // From tests/evolution_tests/avro directory
-		filepath.Join("../../../../../shared/test/avro", filename), // From deeper nesting
-		filepath.Join("shared/test/avro", filename),                // From project root
+		filepath.Join("../../../../../../shared/test/avro", filename), // From tests/evolution_tests/avro directory
+		filepath.Join("../../../../../shared/test/avro", filename),    // From evolution_tests/avro directory
+		filepath.Join("../../../../shared/test/avro", filename),       // From integration-tests directory
+		filepath.Join("../../../shared/test/avro", filename),          // From golang directory
+		filepath.Join("shared/test/avro", filename),                   // From project root
 	}
 
 	for _, schemaPath := range possiblePaths {
@@ -390,7 +391,28 @@ schemaAutoRegistrationEnabled=true`, suite.registryName)
 	gsrSerializer, err := serializer.NewSerializer(config)
 	suite.Require().NoError(err, "Failed to create GSR serializer")
 
-	// Create test data compatible with employee_v2 schema including the required field
+	// Step 1: First register employee_v1 schema (the base schema)
+	employeeV1Data := map[string]interface{}{
+		"id":         123,
+		"firstName":  "Jane",
+		"lastName":   "Smith",
+		"department": "Engineering",
+		// Note: no requiredEmail field in v1
+	}
+
+	avroRecordV1 := &avro.AvroRecord{
+		Schema: employeeV1Schema,
+		Data:   employeeV1Data,
+	}
+
+	// Serialize with v1 schema first to establish the baseline
+	serializedV1Data, err := gsrSerializer.Serialize("employee_incompatible_topic", avroRecordV1)
+	suite.Require().NoError(err, "Failed to serialize employee_v1 data - this should succeed")
+	suite.Require().NotEmpty(serializedV1Data, "Serialized V1 data should not be empty")
+	suite.T().Log("Successfully registered employee_v1 schema as baseline")
+
+	// Step 2: Now try to register employee_v2 schema which adds a required field
+	// This should fail due to backward compatibility violation
 	employeeV2Data := map[string]interface{}{
 		"id":            456,
 		"firstName":     "Bob",
@@ -399,24 +421,20 @@ schemaAutoRegistrationEnabled=true`, suite.registryName)
 		"requiredEmail": "bob.johnson@example.com",
 	}
 
-	// Create AvroRecord with employee_v2 schema and data
 	avroRecordV2 := &avro.AvroRecord{
 		Schema: employeeV2Schema,
 		Data:   employeeV2Data,
 	}
 
-	// Attempt to serialize data with employee_v2 schema
-	// This should fail due to backward compatibility violation detected by GSR service
-	// because employee_v2 adds a required field that breaks backward compatibility
-	serializedV2Data, err := gsrSerializer.Serialize("employee_v2_topic", avroRecordV2)
+	// This should fail because employee_v2 adds a required field that breaks backward compatibility
+	serializedV2Data, err := gsrSerializer.Serialize("employee_incompatible_topic", avroRecordV2)
 
-	// Assert that serialization fails due to backward compatibility violation detected by GSR service
+	// Assert that serialization fails due to backward compatibility violation
 	if err != nil {
 		// Expected case: serialization should fail due to backward incompatibility
 		suite.T().Logf("Backward incompatible evolution correctly failed during serialization with error: %v", err)
 
 		// Verify that the error message indicates backward compatibility issues
-		// Add proper error handling to distinguish between expected compatibility errors and unexpected AWS errors
 		errorMsg := err.Error()
 		if strings.Contains(errorMsg, "compatibility") || strings.Contains(errorMsg, "Compatibility") ||
 			strings.Contains(errorMsg, "backward") || strings.Contains(errorMsg, "incompatible") {
@@ -424,58 +442,42 @@ schemaAutoRegistrationEnabled=true`, suite.registryName)
 		} else {
 			suite.T().Logf("Warning - Error message may not clearly indicate compatibility issue: %s", errorMsg)
 		}
+
+		// Test passed - backward incompatibility was correctly detected
+		suite.T().Log("Backward incompatible evolution test passed - GSR correctly rejected incompatible schema")
 	} else {
-		// If serialization succeeds, try to create a scenario that demonstrates the incompatibility
+		// If serialization unexpectedly succeeds, this indicates a problem with the test or GSR configuration
 		suite.Require().NotEmpty(serializedV2Data, "Serialized V2 data should not be empty")
+		suite.T().Log("Warning - Expected backward incompatibility not detected by GSR")
 
-		// Now try to serialize employee_v1 data (without required field) to the same topic
-		// This should demonstrate the backward incompatibility
-		employeeV1Data := map[string]interface{}{
-			"id":         123,
-			"firstName":  "Jane",
-			"lastName":   "Smith",
-			"department": "Engineering",
-			// Note: missing requiredEmail field
-		}
-
-		avroRecordV1 := &avro.AvroRecord{
-			Schema: employeeV1Schema,
-			Data:   employeeV1Data,
-		}
-
-		// This should fail because GSR should detect that employee_v1 is not backward compatible with employee_v2
-		_, err = gsrSerializer.Serialize("employee_v2_topic", avroRecordV1)
-		if err != nil {
-			suite.T().Logf("Backward incompatible evolution correctly detected when trying to use older schema: %v", err)
-		} else {
-			suite.T().Log("Warning - Expected backward incompatibility not detected by GSR")
-		}
+		// The test should fail here because we expected an error
+		suite.Fail("Expected backward incompatibility error when registering employee_v2 schema, but serialization succeeded")
 	}
 
-	// Verify that the employee_v2 schema was created in AWS Glue Schema Registry
+	// Verify that the employee schema was created in AWS Glue Schema Registry
 	schemaResponse, err := suite.glueClient.GetSchema(suite.ctx, &glue.GetSchemaInput{
 		SchemaId: &types.SchemaId{
 			RegistryName: aws.String(suite.registryName),
-			SchemaName:   aws.String("employee_v2_topic-value"),
+			SchemaName:   aws.String("employee_incompatible_topic-value"),
 		},
 	})
-	suite.Require().NoError(err, "Failed to retrieve employee_v2 schema from GSR")
-	suite.Require().NotNil(schemaResponse, "Employee_v2 schema response should not be nil")
-	suite.Require().NotNil(schemaResponse.SchemaName, "Employee_v2 schema name should not be nil")
-	suite.Equal("employee_v2_topic-value", *schemaResponse.SchemaName, "Employee_v2 schema name should match")
-	suite.T().Logf("Verified schema 'employee_v2_topic-value' was created in GSR")
+	suite.Require().NoError(err, "Failed to retrieve employee schema from GSR")
+	suite.Require().NotNil(schemaResponse, "Employee schema response should not be nil")
+	suite.Require().NotNil(schemaResponse.SchemaName, "Employee schema name should not be nil")
+	suite.Equal("employee_incompatible_topic-value", *schemaResponse.SchemaName, "Employee schema name should match")
+	suite.T().Logf("Verified schema 'employee_incompatible_topic-value' was created in GSR")
 
-	// Verify that schema versions were created
+	// Verify that only one schema version was created (v1 only, v2 should have been rejected)
 	versionsResponse, err := suite.glueClient.ListSchemaVersions(suite.ctx, &glue.ListSchemaVersionsInput{
 		SchemaId: &types.SchemaId{
 			RegistryName: aws.String(suite.registryName),
-			SchemaName:   aws.String("employee_v2_topic-value"),
+			SchemaName:   aws.String("employee_incompatible_topic-value"),
 		},
 	})
-	suite.Require().NoError(err, "Failed to list employee_v2 schema versions from GSR")
-	suite.Require().NotNil(versionsResponse, "Employee_v2 schema versions response should not be nil")
-	suite.Require().NotEmpty(versionsResponse.Schemas, "Employee_v2 schema versions should not be empty")
-	suite.T().Logf("Verified %d schema version(s) created for 'employee_v2_topic-value'", len(versionsResponse.Schemas))
+	suite.Require().NoError(err, "Failed to list employee schema versions from GSR")
+	suite.Require().NotNil(versionsResponse, "Employee schema versions response should not be nil")
+	suite.Require().NotEmpty(versionsResponse.Schemas, "Employee schema versions should not be empty")
+	suite.T().Logf("Verified %d schema version(s) created for 'employee_incompatible_topic-value'", len(versionsResponse.Schemas))
 
 	suite.T().Log("Backward incompatible evolution test completed successfully")
 }
