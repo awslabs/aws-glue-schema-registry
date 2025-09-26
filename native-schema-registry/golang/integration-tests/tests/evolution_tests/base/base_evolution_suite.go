@@ -4,6 +4,7 @@ import (
 	"context"
 	"embed"
 	"fmt"
+	"math"
 	"os"
 	"path/filepath"
 	"time"
@@ -225,4 +226,110 @@ func (suite *BaseEvolutionTestSuite) GetGlueClient() *glue.Client {
 // GetContext returns the context
 func (suite *BaseEvolutionTestSuite) GetContext() context.Context {
 	return suite.ctx
+}
+
+// VerifySchemaEvolution verifies that different schema versions were used for serialization and deserialization
+// and confirms that backward compatibility was properly handled between schema versions
+// Returns true if both schemas are available and have different version IDs
+// Returns false if either schema failed, or if the two IDs are the same
+// Throws an error if any schema status is deleted
+// Retries with exponential backoff if either schema is pending (max 4 retries, starting at 1 second)
+func (suite *BaseEvolutionTestSuite) VerifySchemaEvolution(schemaName, firstSchemaDefinition, secondSchemaDefinition string) bool {
+	suite.T().Logf("Verifying schema evolution between first and second schema definitions")
+
+	// Verify that schema definitions are not empty
+	suite.Require().NotEmpty(firstSchemaDefinition, "First schema definition should not be empty")
+	suite.Require().NotEmpty(secondSchemaDefinition, "Second schema definition should not be empty")
+
+	// Log schema definitions for debugging (truncated for readability)
+	suite.T().Logf("First schema definition (first 100 chars): %.100s...", firstSchemaDefinition)
+	suite.T().Logf("Second schema definition (first 100 chars): %.100s...", secondSchemaDefinition)
+
+	const maxRetries = 4
+	const initialBackoffSeconds = 1
+
+	for attempt := 0; attempt <= maxRetries; attempt++ {
+		suite.T().Logf("Schema evolution verification attempt %d/%d", attempt+1, maxRetries+1)
+
+		// Fetch schema information from AWS Glue
+		firstSchemaResponse, err := suite.glueClient.GetSchemaByDefinition(suite.ctx, &glue.GetSchemaByDefinitionInput{
+			SchemaId: &types.SchemaId{
+				RegistryName: aws.String(suite.registryName),
+				SchemaName:   aws.String(schemaName),
+			},
+			SchemaDefinition: aws.String(firstSchemaDefinition),
+		})
+		suite.Require().NoError(err, "Failed to retrieve first schema by definition from GSR")
+		suite.Require().NotNil(firstSchemaResponse, "First schema response should not be nil")
+
+		secondSchemaResponse, err := suite.glueClient.GetSchemaByDefinition(suite.ctx, &glue.GetSchemaByDefinitionInput{
+			SchemaId: &types.SchemaId{
+				RegistryName: aws.String(suite.registryName),
+				SchemaName:   aws.String(schemaName),
+			},
+			SchemaDefinition: aws.String(secondSchemaDefinition),
+		})
+		suite.Require().NoError(err, "Failed to retrieve second schema by definition from GSR")
+		suite.Require().NotNil(secondSchemaResponse, "Second schema response should not be nil")
+
+		// Log schema version information
+		if firstSchemaResponse.SchemaVersionId != nil {
+			suite.T().Logf("First schema version ID: %s", *firstSchemaResponse.SchemaVersionId)
+		}
+		if secondSchemaResponse.SchemaVersionId != nil {
+			suite.T().Logf("Second schema version ID: %s", *secondSchemaResponse.SchemaVersionId)
+		}
+
+		// Check if we have valid schema version IDs
+		if firstSchemaResponse.SchemaVersionId == nil || secondSchemaResponse.SchemaVersionId == nil {
+			suite.T().Log("Warning: Could not compare schema version IDs (one or both are nil)")
+			return false
+		}
+
+		// Check schema statuses first
+		firstStatus := firstSchemaResponse.Status
+		secondStatus := secondSchemaResponse.Status
+
+		suite.T().Logf("First schema status: %s, Second schema status: %s", firstStatus, secondStatus)
+
+		// Throw error if any schema status is deleted
+		if firstStatus == types.SchemaVersionStatusDeleting || secondStatus == types.SchemaVersionStatusDeleting {
+			suite.Require().Fail("One or both schemas have been deleted - cannot verify schema evolution")
+			return false
+		}
+		// Return false if either schema failed
+		if firstStatus == types.SchemaVersionStatusFailure || secondStatus == types.SchemaVersionStatusFailure {
+			suite.T().Log("One or both schemas failed - schema evolution verification failed")
+			return false
+		}
+		// Check if schemas are the same (no evolution) - return false
+		if *firstSchemaResponse.SchemaVersionId == *secondSchemaResponse.SchemaVersionId {
+			suite.T().Logf("Same schema version used for both schemas: %s", *firstSchemaResponse.SchemaVersionId)
+			suite.T().Log("No schema evolution detected - same schema version used")
+			return false
+		}
+		// Log different schema versions detected
+		suite.T().Logf("Different schema versions detected - First: %s, Second: %s",
+			*firstSchemaResponse.SchemaVersionId, *secondSchemaResponse.SchemaVersionId)
+		// Return true if both schemas are available and IDs are different
+		if firstStatus == types.SchemaVersionStatusAvailable && secondStatus == types.SchemaVersionStatusAvailable {
+			suite.T().Log("Both schemas are available and have different version IDs - schema evolution confirmed")
+			return true
+		}
+
+		// If either schema is pending and we haven't reached max retries, wait and retry
+		if (firstStatus == types.SchemaVersionStatusPending || secondStatus == types.SchemaVersionStatusPending) && attempt < maxRetries {
+			backoffDuration := time.Duration(math.Pow(2, float64(attempt))) * time.Duration(initialBackoffSeconds) * time.Second
+			suite.T().Logf("One or both schemas are pending, retrying in %v (attempt %d/%d)", backoffDuration, attempt+1, maxRetries+1)
+			time.Sleep(backoffDuration)
+			continue
+		}
+
+		// If we reach here, schemas are not available and not pending (or max retries reached)
+		suite.T().Log("Schemas are not available and not pending, or max retries reached")
+		return false
+	}
+
+	suite.T().Log("Max retries reached - schema evolution verification failed")
+	return false
 }
