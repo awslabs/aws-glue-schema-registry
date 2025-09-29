@@ -23,6 +23,8 @@ list(
         read_only_byte_array_test
         mutable_byte_array_test
         glue_schema_registry_error_test
+        # There are memory leaks in graal_create_isolate. Uncomment after fixing.
+        # schema_registry_memory_leak_test
 )
 
 #TODO: These tests don't work on Windows and OSX due to CMake not linking the mock library.
@@ -52,6 +54,7 @@ foreach (test ${tests})
 
     add_test(NAME "${test}" COMMAND "${test}" ${CMAKE_CURRENT_BINARY_DIR})
 endforeach ()
+
 
 add_custom_target(copy-libs-for-tests ALL
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${DATA_TYPES_MODULE_NAME}> ${CMAKE_CURRENT_BINARY_DIR}/

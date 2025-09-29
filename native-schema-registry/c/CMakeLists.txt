@@ -70,6 +70,8 @@ set(TEST_TARGETS
     glue_schema_registry_error_test
     glue_schema_registry_serializer_test
     glue_schema_registry_deserializer_test
+    # There are memory leaks in graal_create_isolate. Uncomment after fixing.
+    # schema_registry_memory_leak_test
 )
 
 # Manual quality gates target (always available)
