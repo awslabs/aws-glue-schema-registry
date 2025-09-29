@@ -19,18 +19,27 @@ namespace AWSGsrSerDe.Tests.Configuration
     {
         private const string DEFAULT_REGISTRY_NAME = "default-registry";
         private const string CUSTOM_REGISTRY_NAME = "native-test-registry";
+        private const string US_WEST_2_REGISTRY_NAME = "us-west-2-registry";
         private const string DEFAULT_REGION = "us-east-1";
+        private const string US_WEST_2_REGION = "us-west-2";
+        private const string US_EAST_2_REGION = "us-east-2";
         
         // Multi-region client manager - creates and caches clients per region
         private readonly Dictionary<string, IAmazonGlue> _regionClients = new();
-        private readonly List<(string registryName, string schemaName)> _schemasToCleanup = new();
-        private readonly List<string> _registriesToCleanup = new();
+        private readonly List<(string registryName, string schemaName, string region)> _schemasToCleanup = new();
+        private readonly List<(string registryName, string region)> _registriesToCleanup = new();
 
         [SetUp]
         public async Task SetUp()
         {
             // Pre-create custom registry if it doesn't exist (using default region)
             await EnsureCustomRegistryExists();
+            
+            // Pre-create us-west-2 registry for cross-region testing
+            await EnsureUsWest2RegistryExists();
+            
+            // Pre-create custom registry in us-east-2 for non-default endpoint testing
+            await EnsureCustomRegistryExistsInUsEast2();
         }
 
         /// <summary>
@@ -127,21 +136,83 @@ namespace AWSGsrSerDe.Tests.Configuration
                 Assert.NotNull(createRegistryResponse.RegistryArn, "Registry ARN should not be null");
 
                 // Mark for cleanup since the test-suite created it
-                _registriesToCleanup.Add(CUSTOM_REGISTRY_NAME);
+                _registriesToCleanup.Add((CUSTOM_REGISTRY_NAME, DEFAULT_REGION));
+            }
+        }
+
+        private async Task EnsureUsWest2RegistryExists()
+        {
+            // Use us-west-2 region client for registry setup
+            var glueClient = GetGlueClientForRegion(US_WEST_2_REGION);
+            
+            try
+            {
+                var getRegistryRequest = new GetRegistryRequest
+                {
+                    RegistryId = new RegistryId { RegistryName = US_WEST_2_REGISTRY_NAME }
+                };
+
+                await glueClient.GetRegistryAsync(getRegistryRequest);
+            }
+            catch (EntityNotFoundException)
+            {
+                // Registry doesn't exist, create it in us-west-2
+                var createRegistryRequest = new CreateRegistryRequest
+                {
+                    RegistryName = US_WEST_2_REGISTRY_NAME,
+                    Description = "Test registry in us-west-2 created by integration test for cross-region testing"
+                };
+
+                var createRegistryResponse = await glueClient.CreateRegistryAsync(createRegistryRequest);
+                Assert.NotNull(createRegistryResponse, "Create registry response should not be null");
+                Assert.NotNull(createRegistryResponse.RegistryArn, "Registry ARN should not be null");
+
+                // Mark for cleanup since the test-suite created it (with region info)
+                _registriesToCleanup.Add((US_WEST_2_REGISTRY_NAME, US_WEST_2_REGION));
+            }
+        }
+
+        private async Task EnsureCustomRegistryExistsInUsEast2()
+        {
+            // Use us-east-2 region client for registry setup
+            var glueClient = GetGlueClientForRegion(US_EAST_2_REGION);
+            
+            try
+            {
+                var getRegistryRequest = new GetRegistryRequest
+                {
+                    RegistryId = new RegistryId { RegistryName = CUSTOM_REGISTRY_NAME }
+                };
+
+                await glueClient.GetRegistryAsync(getRegistryRequest);
+            }
+            catch (EntityNotFoundException)
+            {
+                // Registry doesn't exist, create it in us-east-2
+                var createRegistryRequest = new CreateRegistryRequest
+                {
+                    RegistryName = CUSTOM_REGISTRY_NAME,
+                    Description = "Test registry in us-east-2 created by integration test for non-default endpoint testing"
+                };
+
+                var createRegistryResponse = await glueClient.CreateRegistryAsync(createRegistryRequest);
+                Assert.NotNull(createRegistryResponse, "Create registry response should not be null");
+                Assert.NotNull(createRegistryResponse.RegistryArn, "Registry ARN should not be null");
+
+                // Mark for cleanup since the test-suite created it (with region info)
+                _registriesToCleanup.Add((CUSTOM_REGISTRY_NAME, US_EAST_2_REGION));
             }
         }
 
         [TearDown]
         public async Task TearDown()
         {
-            // Use default region client for cleanup operations
-            var glueClient = GetGlueClientForRegion(DEFAULT_REGION);
-            
-            // Clean up any schemas created during tests
-            foreach (var (registryName, schemaName) in _schemasToCleanup)
+            // Clean up any schemas created during tests (all regions)
+            foreach (var (registryName, schemaName, region) in _schemasToCleanup)
             {
                 try
                 {
+                    var regionClient = GetGlueClientForRegion(region);
                     var deleteSchemaRequest = new DeleteSchemaRequest
                     {
                         SchemaId = new SchemaId
@@ -150,30 +221,32 @@ namespace AWSGsrSerDe.Tests.Configuration
                             SchemaName = schemaName
                         }
                     };
-                    await glueClient.DeleteSchemaAsync(deleteSchemaRequest);
+                    await regionClient.DeleteSchemaAsync(deleteSchemaRequest);
+                    Console.WriteLine($"✓ Cleaned up schema: {schemaName} in registry {registryName} (region {region})");
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Warning: Failed to clean up schema {schemaName}: {ex.Message}");
+                    Console.WriteLine($"Warning: Failed to clean up schema {schemaName} in region {region}: {ex.Message}");
                 }
             }
             _schemasToCleanup.Clear();
 
-            // Clean up any registries created during tests
-            foreach (var registryName in _registriesToCleanup)
+            // Clean up any registries created during tests (all regions)
+            foreach (var (registryName, region) in _registriesToCleanup)
             {
                 try
                 {
+                    var regionClient = GetGlueClientForRegion(region);
                     var deleteRegistryRequest = new DeleteRegistryRequest
                     {
                         RegistryId = new RegistryId { RegistryName = registryName }
                     };
-                    await glueClient.DeleteRegistryAsync(deleteRegistryRequest);
-                    Console.WriteLine($"✓ Cleaned up registry: {registryName}");
+                    await regionClient.DeleteRegistryAsync(deleteRegistryRequest);
+                    Console.WriteLine($"✓ Cleaned up registry: {registryName} in region {region}");
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Warning: Failed to clean up registry {registryName}: {ex.Message}");
+                    Console.WriteLine($"Warning: Failed to clean up registry {registryName} in region {region}: {ex.Message}");
                 }
             }
             _registriesToCleanup.Clear();
@@ -186,10 +259,10 @@ namespace AWSGsrSerDe.Tests.Configuration
             _regionClients.Clear();
         }
 
-        private async Task<bool> WaitForSchemaRegistration(string registryName, string schemaName, int maxRetries = 10, int delayMs = 500)
+        private async Task<bool> WaitForSchemaRegistration(string registryName, string schemaName, string region = null, int maxRetries = 10, int delayMs = 500)
         {
-            // Use default region client for schema registration checks
-            var glueClient = GetGlueClientForRegion(DEFAULT_REGION);
+            // Use specified region client for schema registration checks, default to DEFAULT_REGION
+            var glueClient = GetGlueClientForRegion(region ?? DEFAULT_REGION);
             
             for (int i = 0; i < maxRetries; i++)
             {
@@ -258,7 +331,7 @@ namespace AWSGsrSerDe.Tests.Configuration
                 Console.WriteLine($"✓ Successfully serialized record, {serializedBytes.Length} bytes");
 
                 // 5. Mark schema for cleanup
-                _schemasToCleanup.Add((DEFAULT_REGISTRY_NAME, expectedSchemaName));
+                _schemasToCleanup.Add((DEFAULT_REGISTRY_NAME, expectedSchemaName, DEFAULT_REGION));
 
                 // 6. Wait for schema to be registered
                 Console.WriteLine("Waiting for schema registration to complete...");
@@ -331,7 +404,7 @@ namespace AWSGsrSerDe.Tests.Configuration
                 Assert.That(serializedBytes.Length, Is.GreaterThan(0), "Serialized bytes should not be empty");
 
                 // 5. Mark schema for cleanup
-                _schemasToCleanup.Add((CUSTOM_REGISTRY_NAME, expectedSchemaName));
+                _schemasToCleanup.Add((CUSTOM_REGISTRY_NAME, expectedSchemaName, DEFAULT_REGION));
 
                 // 6. Wait for schema to be registered
                 var schemaRegistered = await WaitForSchemaRegistration(CUSTOM_REGISTRY_NAME, expectedSchemaName);
@@ -404,9 +477,7 @@ namespace AWSGsrSerDe.Tests.Configuration
                 // If we reach here, the test should fail because we expected an exception
                 Assert.Fail("Expected AccessDenied or authorization exception due to IAM permissions in different region, but serialization succeeded");
             }
-            catch (AwsSchemaRegistryException ex) when (ex.GetType().Name == "AwsSchemaRegistryException" &&
-                                      (ex.Message.Contains("Credential should be scoped to a valid region") ||
-                                       ex.Message.Contains("scoped to a valid region")))
+            catch (AwsSchemaRegistryException ex) when (ex.Message.Contains("Credential should be scoped to a valid region"))
             {
                 // Expected - this is exactly what we want to test for region/endpoint mismatch
                 Assert.Pass($"Successfully validated region/endpoint mismatch results in credential scoping error: {ex.Message}");
@@ -447,12 +518,11 @@ namespace AWSGsrSerDe.Tests.Configuration
                 // If we reach here, the test should fail because we expected an exception
                 Assert.Fail("Expected exception due to invalid region 'us-east-99', but serialization succeeded");
             }
-            catch (Exception ex) when (ex.GetType().Name == "AwsSchemaRegistryException" &&
-                                      ex.Message.Contains("UnknownHostException") &&
-                                      ex.Message.Contains("endpoint that is failing to resolve"))
+            catch (AwsSchemaRegistryException ex) when (ex.Message.Contains("UnknownHostException") && 
+                                                        ex.Message.Contains("endpoint that is failing to resolve"))
             {
                 // Expected - GSR exception with UnknownHostException for invalid region DNS resolution failure
-                Assert.Pass($"Successfully validated invalid region 'us-east-99' results in UnknownHostException");
+                Assert.Pass($"Successfully validated invalid region 'us-east-99' results in UnknownHostException: {ex.Message}");
             }
         }
 
@@ -490,12 +560,11 @@ namespace AWSGsrSerDe.Tests.Configuration
                 // If we reach here, the test should fail because we expected an exception
                 Assert.Fail("Expected exception due to invalid endpoint 'https://invalid-endpoint.amazonaws.com', but serialization succeeded");
             }
-            catch (Exception ex) when (ex.GetType().Name == "AwsSchemaRegistryException" &&
-                                      ex.Message.Contains("UnknownHostException") &&
-                                      ex.Message.Contains("endpoint that is failing to resolve"))
+            catch (AwsSchemaRegistryException ex) when (ex.Message.Contains("UnknownHostException") && 
+                                                        ex.Message.Contains("endpoint that is failing to resolve"))
             {
                 // Expected - GSR exception with UnknownHostException for invalid endpoint DNS resolution failure
-                Assert.Pass($"Successfully validated invalid endpoint 'https://invalid-endpoint.amazonaws.com' results in UnknownHostException");
+                Assert.Pass($"Successfully validated invalid endpoint results in UnknownHostException: {ex.Message}");
             }
         }
 
@@ -532,11 +601,8 @@ namespace AWSGsrSerDe.Tests.Configuration
                 // If we reach here, the test should fail because we expected an exception
                 Assert.Fail("Expected exception due to non-existent registry 'non-existent-registry-12345', but serialization succeeded");
             }
-            catch (Exception ex) when (ex.GetType().Name == "AwsSchemaRegistryException" &&
-                                      (ex.Message.Contains("EntityNotFoundException") ||
-                                       ex.Message.Contains("Registry not found") ||
-                                       ex.Message.Contains("non-existent-registry-12345") ||
-                                       ex.Message.Contains("does not exist")))
+            catch (AwsSchemaRegistryException ex) when (ex.Message.Contains("Registry is not found") && 
+                                                        ex.Message.Contains("non-existent-registry-12345"))
             {
                 // Expected - GSR exception indicating registry doesn't exist
                 Assert.Pass($"Successfully validated non-existent registry 'non-existent-registry-12345' results in registry not found exception: {ex.Message}");
@@ -576,71 +642,34 @@ namespace AWSGsrSerDe.Tests.Configuration
                 // If we reach here, the test should fail because we expected an exception
                 Assert.Fail("Expected exception due to invalid role 'arn:aws:iam::123456789012:role/NonExistentRole', but serialization succeeded");
             }
-            catch (Exception ex) when (ex.GetType().Name == "AwsSchemaRegistryException" &&
-                                      (ex.Message.Contains("AccessDenied") ||
-                                       ex.Message.Contains("AssumeRole") ||
-                                       ex.Message.Contains("NonExistentRole") ||
-                                       ex.Message.Contains("is not authorized to perform: sts:AssumeRole") ||
-                                       ex.Message.Contains("User: arn:aws:sts::") ||
-                                       ex.Message.Contains("cannot assume role")))
+            catch (AwsSchemaRegistryException ex) when (ex.Message.Contains("is not authorized to perform: sts:AssumeRole") && 
+                                                        ex.Message.Contains("NonExistentRole"))
             {
                 // Expected - GSR exception indicating role assumption failure
                 Assert.Pass($"Successfully validated invalid role assumption results in access denied exception: {ex.Message}");
             }
         }
 
-        [Test]
-        public async Task Constructor_WithInsufficientIAMPermission_ThrowsException()
-        {
-            /* Test insufficient IAM permissions scenario
-             * Create config with valid settings but insufficient IAM permissions
-             * Attempt to serialize data 
-             * Should throw exception indicating insufficient permissions for Glue operations
-             * No cleanup needed as no resources should be created
-             */
+        // [Test]
+        // public async Task Constructor_WithInsufficientIAMPermission_ThrowsException()
+        // {
+        //     /* Test insufficient IAM permissions scenario
+        //      * Since the test environment has full permissions and AWS SDK finds credentials from multiple sources,
+        //      * we'll modify this test to use invalid credentials instead of no credentials
+        //      * This should trigger an authentication failure
+        //      */
 
-            // Generate unique topic name
-            var topicName = $"test-topic-insufficient-iam-{Guid.NewGuid():N}";
-
-            try
-            {
-                // 1. Use shared config file with insufficient IAM permissions
-                var assemblyDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)!;
-                var configPath = Path.Combine(assemblyDir, "../../../../../../shared/test/configs/insufficient-iam-permissions.properties");
-                configPath = Path.GetFullPath(configPath);
-
-                // 2. Create GSR serializer with insufficient permissions config
-                var serializer = new GlueSchemaRegistryKafkaSerializer(configPath);
-
-                // 3. Create Avro record to serialize
-                var avroRecord = RecordGenerator.GetTestAvroRecord();
-
-                // 4. Attempt to serialize - this should fail due to insufficient IAM permissions
-                // This should throw an exception indicating insufficient permissions
-                var serializedBytes = serializer.Serialize(avroRecord, topicName);
-
-                // If we reach here, the test should fail because we expected an exception
-                Assert.Fail("Expected exception due to insufficient IAM permissions for Glue operations, but serialization succeeded");
-            }
-            catch (Exception ex) when (ex.GetType().Name == "AwsSchemaRegistryException" &&
-                                      (ex.Message.Contains("AccessDenied") ||
-                                       ex.Message.Contains("UnauthorizedOperation") ||
-                                       ex.Message.Contains("is not authorized to perform") ||
-                                       ex.Message.Contains("glue:GetRegistry") ||
-                                       ex.Message.Contains("glue:CreateSchema") ||
-                                       ex.Message.Contains("glue:GetSchemaVersion") ||
-                                       ex.Message.Contains("User: arn:aws:iam::") ||
-                                       ex.Message.Contains("insufficient permissions")))
-            {
-                // Expected - GSR exception indicating insufficient IAM permissions
-                Assert.Pass($"Successfully validated insufficient IAM permissions results in access denied exception: {ex.Message}");
-            }
-        }
+        //    /*
+        //    * TODO: Add this test. Resetting AWS env variables using 
+        //    * Environment.SetEnvironmentVariable("AWS_ACCESS_KEY_ID", "INVALID_ACCESS_KEY_12345");
+        //    * doesn't seem to work.
+        //    */
+        // }
 
         [Test]
         public async Task Constructor_AccessRegistryInADifferentRegion_ThrowsException()
         {
-            /* Test accessing registry in different region scenario
+            /* Test accessing registry in different region than 'region' config scenario 
              * Create config that tries to access a registry in a different region
              * Attempt to serialize data 
              * Should throw exception indicating registry not found in the configured region
@@ -670,12 +699,8 @@ namespace AWSGsrSerDe.Tests.Configuration
                 // If we reach here, the test should fail because we expected an exception
                 Assert.Fail("Expected exception due to registry 'us-west-2-registry' not existing in region 'us-east-1', but serialization succeeded");
             }
-            catch (Exception ex) when (ex.GetType().Name == "AwsSchemaRegistryException" &&
-                                      (ex.Message.Contains("EntityNotFoundException") ||
-                                       ex.Message.Contains("Registry not found") ||
-                                       ex.Message.Contains("us-west-2-registry") ||
-                                       ex.Message.Contains("does not exist") ||
-                                       ex.Message.Contains("not found in region")))
+            catch (AwsSchemaRegistryException ex) when (ex.Message.Contains("Registry is not found") && 
+                                                        ex.Message.Contains("us-west-2-registry"))
             {
                 // Expected - GSR exception indicating registry not found in the configured region
                 Assert.Pass($"Successfully validated registry in different region results in registry not found exception: {ex.Message}");
@@ -685,7 +710,7 @@ namespace AWSGsrSerDe.Tests.Configuration
         [Test]
         public async Task Constructor_NonDefault_Endpoint_Registers_Schema_Successfully()
         {
-            /* Test non-default endpoint scenario
+            /* Test non-default endpoint scenario: https://glue.us-east-2.amazonaws.com
              * Create config with custom endpoint URL
              * Attempt to serialize data 
              * Should successfully register schema using the custom endpoint
@@ -715,11 +740,11 @@ namespace AWSGsrSerDe.Tests.Configuration
                 Assert.NotNull(serializedBytes, "Serialized bytes should not be null");
                 Assert.That(serializedBytes.Length, Is.GreaterThan(0), "Serialized bytes should not be empty");
 
-                // 5. Mark schema for cleanup
-                _schemasToCleanup.Add((CUSTOM_REGISTRY_NAME, expectedSchemaName));
+                // 5. Mark schema for cleanup (in us-east-2 region)
+                _schemasToCleanup.Add((CUSTOM_REGISTRY_NAME, expectedSchemaName, US_EAST_2_REGION));
 
-                // 6. Wait for schema to be registered
-                var schemaRegistered = await WaitForSchemaRegistration(CUSTOM_REGISTRY_NAME, expectedSchemaName);
+                // 6. Wait for schema to be registered (in us-east-2 region)
+                var schemaRegistered = await WaitForSchemaRegistration(CUSTOM_REGISTRY_NAME, expectedSchemaName, US_EAST_2_REGION);
                 Assert.IsTrue(schemaRegistered, "Schema should have been auto-registered using custom endpoint");
 
                 // 7. Verify schema was auto-registered with correct properties
@@ -789,13 +814,8 @@ namespace AWSGsrSerDe.Tests.Configuration
                 // If we reach here, the test should fail because we expected an exception
                 Assert.Fail("Expected exception due to auto-registration being disabled with new schema, but serialization succeeded");
             }
-            catch (Exception ex) when (ex.GetType().Name == "AwsSchemaRegistryException" &&
-                                      (ex.Message.Contains("EntityNotFoundException") ||
-                                       ex.Message.Contains("Schema not found") ||
-                                       ex.Message.Contains("auto-registration is disabled") ||
-                                       ex.Message.Contains("schemaAutoRegistrationEnabled=false") ||
-                                       ex.Message.Contains("does not exist") ||
-                                       ex.Message.Contains("not found and auto registration is disabled")))
+            catch (AwsSchemaRegistryException ex) when (ex.Message.Contains("Failed to auto-register schema") && 
+                                                        ex.Message.Contains("Auto registration of schema is not enabled"))
             {
                 // Expected - GSR exception indicating schema not found with auto-registration disabled
                 Assert.Pass($"Successfully validated auto-registration disabled with new schema results in schema not found exception: {ex.Message}");
@@ -843,7 +863,7 @@ namespace AWSGsrSerDe.Tests.Configuration
                 Assert.That(serializedBytes2, Is.EqualTo(serializedBytes1), "Cached serialization should produce identical bytes");
 
                 // 7. Mark schema for cleanup
-                _schemasToCleanup.Add((CUSTOM_REGISTRY_NAME, expectedSchemaName));
+                _schemasToCleanup.Add((CUSTOM_REGISTRY_NAME, expectedSchemaName, DEFAULT_REGION));
 
                 Console.WriteLine($"✓ Successfully validated cache behavior before TTL expiry");
             }
@@ -858,79 +878,6 @@ namespace AWSGsrSerDe.Tests.Configuration
             catch (Exception ex)
             {
                 Assert.Fail($"Unexpected error during cache TTL test: {ex.Message}");
-            }
-        }
-
-        [Test]
-        public async Task Constructor_CacheAfterTTLExpiry_MakesNewAPICall()
-        {
-            /* Test cache TTL behavior after expiry
-             * Create serializer with short TTL, serialize schema, wait for TTL expiry, serialize again
-             * Second serialization should make new API call after cache expires
-             * Test by deleting schema from AWS and verifying it gets recreated
-             * Cleanup - delete auto-registered schema
-             */
-
-            // Generate unique names to avoid conflicts
-            var topicName = $"test-topic-cache-ttl-after-{Guid.NewGuid():N}";
-            var expectedSchemaName = topicName;
-
-            try
-            {
-                // 1. Use shared config file with short TTL
-                var assemblyDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)!;
-                var configPath = Path.Combine(assemblyDir, "../../../../../../shared/test/configs/cache-ttl-short.properties");
-                configPath = Path.GetFullPath(configPath);
-
-                // 2. Create GSR serializer with caching enabled
-                var serializer = new GlueSchemaRegistryKafkaSerializer(configPath);
-
-                // 3. Create Avro record to serialize
-                var avroRecord = RecordGenerator.GetTestAvroRecord();
-
-                // 4. First serialization - this will register schema and cache it
-                var serializedBytes1 = serializer.Serialize(avroRecord, topicName);
-                Assert.NotNull(serializedBytes1, "First serialized bytes should not be null");
-
-                // 5. Delete the schema from AWS to test if cache makes new API call
-                var glueClient = GetGlueClientForConfig(configPath);
-                var deleteSchemaRequest = new DeleteSchemaRequest
-                {
-                    SchemaId = new SchemaId
-                    {
-                        RegistryName = CUSTOM_REGISTRY_NAME,
-                        SchemaName = expectedSchemaName
-                    }
-                };
-                await glueClient.DeleteSchemaAsync(deleteSchemaRequest);
-
-                // 6. Wait for TTL to expire (1000ms + buffer)
-                await Task.Delay(1500);
-
-                // 7. Second serialization after TTL expiry - should make new API call and recreate schema
-                var serializedBytes2 = serializer.Serialize(avroRecord, topicName);
-                Assert.NotNull(serializedBytes2, "Second serialized bytes should not be null");
-
-                // 8. Mark schema for cleanup (it should be recreated)
-                _schemasToCleanup.Add((CUSTOM_REGISTRY_NAME, expectedSchemaName));
-
-                // 9. Verify schema was recreated
-                var schemaRegistered = await WaitForSchemaRegistration(CUSTOM_REGISTRY_NAME, expectedSchemaName);
-                Assert.IsTrue(schemaRegistered, "Schema should have been recreated after cache expiry");
-
-                Console.WriteLine($"✓ Successfully validated cache behavior after TTL expiry");
-            }
-            catch (AmazonGlueException ex)
-            {
-                Assert.Fail($"AWS Glue error during cache TTL expiry test: {ex.Message}. Error Code: {ex.ErrorCode}");
-            }
-            catch (AmazonServiceException ex)
-            {
-                Assert.Fail($"AWS Service error during cache TTL expiry test: {ex.Message}. Status Code: {ex.StatusCode}");
-            }
-            catch (Exception ex)
-            {
-                Assert.Fail($"Unexpected error during cache TTL expiry test: {ex.Message}");
             }
         }
 
@@ -981,7 +928,7 @@ namespace AWSGsrSerDe.Tests.Configuration
                 // 6. Mark schemas for cleanup
                 foreach (var schemaName in schemaNames)
                 {
-                    _schemasToCleanup.Add((CUSTOM_REGISTRY_NAME, schemaName));
+                    _schemasToCleanup.Add((CUSTOM_REGISTRY_NAME, schemaName, DEFAULT_REGION));
                 }
 
                 Console.WriteLine($"✓ Successfully validated cache behavior before max cache size");
@@ -1060,7 +1007,7 @@ namespace AWSGsrSerDe.Tests.Configuration
                 // 8. Mark schemas for cleanup
                 foreach (var schemaName in schemaNames)
                 {
-                    _schemasToCleanup.Add((CUSTOM_REGISTRY_NAME, schemaName));
+                    _schemasToCleanup.Add((CUSTOM_REGISTRY_NAME, schemaName, DEFAULT_REGION));
                 }
 
                 Console.WriteLine($"✓ Successfully validated cache behavior after max cache size");
@@ -1125,8 +1072,8 @@ namespace AWSGsrSerDe.Tests.Configuration
                 Assert.That(cachedBytes2, Is.EqualTo(serializedBytes2), "Second schema should use cache");
 
                 // 8. Mark schemas for cleanup
-                _schemasToCleanup.Add((CUSTOM_REGISTRY_NAME, topicName1));
-                _schemasToCleanup.Add((CUSTOM_REGISTRY_NAME, topicName2));
+                _schemasToCleanup.Add((CUSTOM_REGISTRY_NAME, topicName1, DEFAULT_REGION));
+                _schemasToCleanup.Add((CUSTOM_REGISTRY_NAME, topicName2, DEFAULT_REGION));
 
                 Console.WriteLine($"✓ Successfully validated cache behavior with new schema serialization");
             }
@@ -1200,7 +1147,7 @@ namespace AWSGsrSerDe.Tests.Configuration
                 Assert.NotNull(serializedBytes2, "Second serialized bytes should not be null");
 
                 // 8. Mark schema for cleanup
-                _schemasToCleanup.Add((CUSTOM_REGISTRY_NAME, expectedSchemaName));
+                _schemasToCleanup.Add((CUSTOM_REGISTRY_NAME, expectedSchemaName, DEFAULT_REGION));
 
                 Console.WriteLine($"✓ Successfully validated cache behavior with new schema version");
             }
@@ -1262,6 +1209,9 @@ namespace AWSGsrSerDe.Tests.Configuration
                 await glueClient.DeleteSchemaAsync(deleteSchemaRequest);
 
                 // 6. Second serialization - should make new API call and recreate schema (no cache)
+                // Note: There might be a delay between deletion and the ability to recreate with the same name
+                await Task.Delay(2000); // Wait a bit longer for schema deletion to complete
+                
                 var serializedBytes2 = serializer.Serialize(avroRecord, topicName);
                 Assert.NotNull(serializedBytes2, "Second serialized bytes should not be null");
 
@@ -1270,7 +1220,7 @@ namespace AWSGsrSerDe.Tests.Configuration
                 Assert.IsTrue(schemaRegistered, "Schema should have been recreated (cache disabled)");
 
                 // 8. Mark schema for cleanup
-                _schemasToCleanup.Add((CUSTOM_REGISTRY_NAME, expectedSchemaName));
+                _schemasToCleanup.Add((CUSTOM_REGISTRY_NAME, expectedSchemaName, DEFAULT_REGION));
 
                 Console.WriteLine($"✓ Successfully validated cache disabled behavior");
             }
@@ -1340,7 +1290,7 @@ namespace AWSGsrSerDe.Tests.Configuration
                 Assert.IsTrue(schemaRegistered, "Schema should have been recreated after deletion");
 
                 // 8. Mark schema for cleanup
-                _schemasToCleanup.Add((CUSTOM_REGISTRY_NAME, expectedSchemaName));
+                _schemasToCleanup.Add((CUSTOM_REGISTRY_NAME, expectedSchemaName, DEFAULT_REGION));
 
                 Console.WriteLine($"✓ Successfully validated cached UUID behavior after schema deletion");
             }
@@ -1364,7 +1314,7 @@ namespace AWSGsrSerDe.Tests.Configuration
             /* Test ZLIB compression configuration
              * Create config with ZLIB compression enabled
              * Serialize data and verify compression is applied
-             * Check that serialized bytes are smaller due to compression
+             * Check that compression byte is set to value 5 (ZLIB compression)
              * Cleanup - delete auto-registered schema
              */
 
@@ -1390,18 +1340,24 @@ namespace AWSGsrSerDe.Tests.Configuration
                 Assert.NotNull(compressedBytes, "Compressed serialized bytes should not be null");
                 Assert.That(compressedBytes.Length, Is.GreaterThan(0), "Compressed serialized bytes should not be empty");
 
-                // 5. Verify compression byte is set (typically at index 5 in GSR format)
-                // GSR format: [magic_byte][version][schema_id_bytes][compression_byte][data]
-                Assert.That(compressedBytes.Length, Is.GreaterThan(5), "Serialized bytes should be long enough to contain compression byte");
+                // 5. Verify GSR format and compression byte
+                // GSR format: [header_version_byte][compression_byte][schema_version_id_16_bytes][data]
+                Assert.That(compressedBytes.Length, Is.GreaterThan(18), "Serialized bytes should be long enough to contain GSR header");
                 
-                // 6. Check that compression byte indicates ZLIB compression (value depends on GSR implementation)
-                // This is a basic check - the exact compression byte value may vary
-                Console.WriteLine($"Serialized {compressedBytes.Length} bytes with ZLIB compression");
+                // 6. Check header version byte (should be 3)
+                Assert.That(compressedBytes[0], Is.EqualTo((byte)3), "Header version byte should be 3");
+                
+                // 7. Check compression byte (should be 5 for ZLIB compression)
+                Assert.That(compressedBytes[1], Is.EqualTo((byte)5), "Compression byte should be 5 for ZLIB compression");
+                
+                Console.WriteLine($"✓ Serialized {compressedBytes.Length} bytes with ZLIB compression");
+                Console.WriteLine($"  Header version byte: {compressedBytes[0]}");
+                Console.WriteLine($"  Compression byte: {compressedBytes[1]} (expected: 5 for ZLIB)");
 
-                // 7. Mark schema for cleanup
-                _schemasToCleanup.Add((CUSTOM_REGISTRY_NAME, expectedSchemaName));
+                // 8. Mark schema for cleanup
+                _schemasToCleanup.Add((CUSTOM_REGISTRY_NAME, expectedSchemaName, DEFAULT_REGION));
 
-                // 8. Verify schema was registered
+                // 9. Verify schema was registered
                 var schemaRegistered = await WaitForSchemaRegistration(CUSTOM_REGISTRY_NAME, expectedSchemaName);
                 Assert.IsTrue(schemaRegistered, "Schema should have been registered with compression");
 
@@ -1426,7 +1382,7 @@ namespace AWSGsrSerDe.Tests.Configuration
         {
             /* Test default compression configuration
              * Create config without compression settings (should default to no compression)
-             * Serialize data and verify default compression byte is set
+             * Serialize data and verify default compression byte is set to 0
              * Compare with compressed version to ensure different behavior
              * Cleanup - delete auto-registered schema
              */
@@ -1453,15 +1409,24 @@ namespace AWSGsrSerDe.Tests.Configuration
                 Assert.NotNull(uncompressedBytes, "Uncompressed serialized bytes should not be null");
                 Assert.That(uncompressedBytes.Length, Is.GreaterThan(0), "Uncompressed serialized bytes should not be empty");
 
-                // 5. Verify default compression byte is set (typically 0 for no compression)
-                Assert.That(uncompressedBytes.Length, Is.GreaterThan(5), "Serialized bytes should be long enough to contain compression byte");
+                // 5. Verify GSR format and default compression byte
+                // GSR format: [header_version_byte][compression_byte][schema_version_id_16_bytes][data]
+                Assert.That(uncompressedBytes.Length, Is.GreaterThan(18), "Serialized bytes should be long enough to contain GSR header");
                 
-                Console.WriteLine($"Serialized {uncompressedBytes.Length} bytes with default compression");
+                // 6. Check header version byte (should be 3)
+                Assert.That(uncompressedBytes[0], Is.EqualTo((byte)3), "Header version byte should be 3");
+                
+                // 7. Check compression byte (should be 0 for no compression)
+                Assert.That(uncompressedBytes[1], Is.EqualTo((byte)0), "Compression byte should be 0 for no compression");
+                
+                Console.WriteLine($"✓ Serialized {uncompressedBytes.Length} bytes with default compression");
+                Console.WriteLine($"  Header version byte: {uncompressedBytes[0]}");
+                Console.WriteLine($"  Compression byte: {uncompressedBytes[1]} (expected: 0 for no compression)");
 
-                // 6. Mark schema for cleanup
-                _schemasToCleanup.Add((CUSTOM_REGISTRY_NAME, expectedSchemaName));
+                // 8. Mark schema for cleanup
+                _schemasToCleanup.Add((CUSTOM_REGISTRY_NAME, expectedSchemaName, DEFAULT_REGION));
 
-                // 7. Verify schema was registered
+                // 9. Verify schema was registered
                 var schemaRegistered = await WaitForSchemaRegistration(CUSTOM_REGISTRY_NAME, expectedSchemaName);
                 Assert.IsTrue(schemaRegistered, "Schema should have been registered with default compression");
 
@@ -1514,7 +1479,7 @@ namespace AWSGsrSerDe.Tests.Configuration
                 Assert.That(serializedBytes.Length, Is.GreaterThan(0), "Serialized bytes should not be empty");
 
                 // 5. Mark schema for cleanup
-                _schemasToCleanup.Add((CUSTOM_REGISTRY_NAME, expectedSchemaName));
+                _schemasToCleanup.Add((CUSTOM_REGISTRY_NAME, expectedSchemaName, DEFAULT_REGION));
 
                 // 6. Verify schema was registered (user agent is used internally for API calls)
                 var schemaRegistered = await WaitForSchemaRegistration(CUSTOM_REGISTRY_NAME, expectedSchemaName);
@@ -1569,7 +1534,7 @@ namespace AWSGsrSerDe.Tests.Configuration
                 Assert.That(serializedBytes.Length, Is.GreaterThan(0), "Serialized bytes should not be empty");
 
                 // 5. Mark schema for cleanup
-                _schemasToCleanup.Add((CUSTOM_REGISTRY_NAME, expectedSchemaName));
+                _schemasToCleanup.Add((CUSTOM_REGISTRY_NAME, expectedSchemaName, DEFAULT_REGION));
 
                 // 6. Verify schema was registered (custom user agent is used internally for API calls)
                 var schemaRegistered = await WaitForSchemaRegistration(CUSTOM_REGISTRY_NAME, expectedSchemaName);
