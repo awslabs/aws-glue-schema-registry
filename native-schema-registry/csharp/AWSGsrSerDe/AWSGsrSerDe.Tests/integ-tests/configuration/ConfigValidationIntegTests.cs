@@ -1092,7 +1092,7 @@ namespace AWSGsrSerDe.Tests.Configuration
         }
 
         [Test]
-        public async Task Constructor_CacheAndNewSchemaVersionSerialize_MakesNewAPICall()
+        public async Task Constructor_CacheAndNewSchemaVersionSerialize_DoesNotMakesNewAPICall()
         {
             /* Test cache behavior with new schema version
              * Create serializer, serialize schema, register new version manually, serialize again
@@ -1146,7 +1146,11 @@ namespace AWSGsrSerDe.Tests.Configuration
                 var serializedBytes2 = serializer.Serialize(avroRecord, topicName);
                 Assert.NotNull(serializedBytes2, "Second serialized bytes should not be null");
 
-                // 8. Mark schema for cleanup
+                // 8. Verify bytes are same (although new schema version has different UUID, cache still has old UUID)
+                Assert.That(serializedBytes2, Is.EqualTo(serializedBytes1), "New schema version should have same serialized bytes due to cache being defined on schema definition which has not changed.");
+                Console.WriteLine($"✓ Verified new schema version produces same serialized bytes due to caching");
+
+                // 9. Mark schema for cleanup
                 _schemasToCleanup.Add((CUSTOM_REGISTRY_NAME, expectedSchemaName, DEFAULT_REGION));
 
                 Console.WriteLine($"✓ Successfully validated cache behavior with new schema version");
