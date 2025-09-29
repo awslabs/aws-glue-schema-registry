@@ -1451,8 +1451,7 @@ namespace AWSGsrSerDe.Tests.Configuration
         {
             /* Test default user agent behavior
              * Create config without custom user agent settings
-             * Serialize data and verify default user agent is used
-             * Default should be something like "aws-glue-schema-registry-native-csharp/x.x.x"
+             * Serialize data and verify schema is registered
              * Cleanup - delete auto-registered schema
              */
 
@@ -1483,7 +1482,7 @@ namespace AWSGsrSerDe.Tests.Configuration
 
                 // 6. Verify schema was registered (user agent is used internally for API calls)
                 var schemaRegistered = await WaitForSchemaRegistration(CUSTOM_REGISTRY_NAME, expectedSchemaName);
-                Assert.IsTrue(schemaRegistered, "Schema should have been registered with default user agent");
+                Assert.IsTrue(schemaRegistered, "Schema has been registered with default user agent (ntive) (behind the scene)");
 
                 Console.WriteLine($"✓ Successfully validated default user agent behavior");
             }
@@ -1506,7 +1505,7 @@ namespace AWSGsrSerDe.Tests.Configuration
         {
             /* Test custom user agent configuration
              * Create config with custom user agent string
-             * Serialize data and verify custom user agent is used
+             * Serialize data successfully when custom user agent is used
              * Custom user agent should be applied to all AWS API calls
              * Cleanup - delete auto-registered schema
              */
@@ -1528,7 +1527,7 @@ namespace AWSGsrSerDe.Tests.Configuration
                 // 3. Create Avro record to serialize
                 var avroRecord = RecordGenerator.GetTestAvroRecord();
 
-                // 4. Serialize the record - should use custom user agent "CustomTestApp/1.0.0"
+                // 4. Serialize the record - should use custom user agent "CustomTestApp/1.0.0" behind the scene
                 var serializedBytes = serializer.Serialize(avroRecord, topicName);
                 Assert.NotNull(serializedBytes, "Serialized bytes should not be null");
                 Assert.That(serializedBytes.Length, Is.GreaterThan(0), "Serialized bytes should not be empty");
@@ -1538,7 +1537,7 @@ namespace AWSGsrSerDe.Tests.Configuration
 
                 // 6. Verify schema was registered (custom user agent is used internally for API calls)
                 var schemaRegistered = await WaitForSchemaRegistration(CUSTOM_REGISTRY_NAME, expectedSchemaName);
-                Assert.IsTrue(schemaRegistered, "Schema should have been registered with custom user agent");
+                Assert.IsTrue(schemaRegistered, "Schema has been registered with custom user agent (behind the scene)");
 
                 Console.WriteLine($"✓ Successfully validated custom user agent configuration");
             }
