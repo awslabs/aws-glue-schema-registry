@@ -292,6 +292,18 @@ namespace AWSGsrSerDe.Tests.Configuration
             return false;
         }
 
+        /// <summary>
+        /// Gets the full path to a shared test configuration file.
+        /// </summary>
+        /// <param name="configFileName">The name of the config file (e.g., "minimal-auto-registration-default-registry.properties")</param>
+        /// <returns>The full path to the configuration file</returns>
+        private string GetSharedConfigPath(string configFileName)
+        {
+            var assemblyDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)!;
+            var configPath = Path.Combine(assemblyDir, "../../../../../../shared/test/configs", configFileName);
+            return Path.GetFullPath(configPath);
+        }
+
 
         [Test]
         public async Task Constructor_WithValidMinimalConfig_AutoRegistersSchemaInDefaultRegistry()
@@ -310,9 +322,7 @@ namespace AWSGsrSerDe.Tests.Configuration
             try
             {
                 // 1. Use shared config file with auto-registration enabled and no registry specification
-                var assemblyDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)!;
-                configPath = Path.Combine(assemblyDir, "../../../../../../shared/test/configs/minimal-auto-registration-default-registry.properties");
-                configPath = Path.GetFullPath(configPath);
+                configPath = GetSharedConfigPath("minimal-auto-registration-default-registry.properties");
 
                 // 2. Create GSR serializer with auto-registration enabled
                 Console.WriteLine($"Creating GSR serializer with config...");
@@ -387,9 +397,7 @@ namespace AWSGsrSerDe.Tests.Configuration
             try
             {
                 // 1. Use shared config file with auto-registration enabled for custom registry (native-test-registry)
-                var assemblyDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)!;
-                var configPath = Path.Combine(assemblyDir, "../../../../../../shared/test/configs/minimal-auto-registration-custom-registry.properties");
-                configPath = Path.GetFullPath(configPath);
+                var configPath = GetSharedConfigPath("minimal-auto-registration-custom-registry.properties");
 
                 // 2. Create GSR serializer with auto-registration enabled for custom registry
                 var serializer = new GlueSchemaRegistryKafkaSerializer(configPath);
@@ -459,9 +467,7 @@ namespace AWSGsrSerDe.Tests.Configuration
             try
             {
                 // 1. Use shared config file with mismatched region and endpoint
-                var assemblyDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)!;
-                configPath = Path.Combine(assemblyDir, "../../../../../../shared/test/configs/region-endpoint-mismatch.properties");
-                configPath = Path.GetFullPath(configPath);
+                configPath = GetSharedConfigPath("region-endpoint-mismatch.properties");
 
                 // 2. Create GSR serializer with mismatched config
                 TestContext.WriteLine("Creating GSR serializer with mismatched region/endpoint config...");
@@ -501,9 +507,7 @@ namespace AWSGsrSerDe.Tests.Configuration
             try
             {
                 // 1. Use shared config file with invalid region
-                var assemblyDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)!;
-                configPath = Path.Combine(assemblyDir, "../../../../../../shared/test/configs/invalid-region.properties");
-                configPath = Path.GetFullPath(configPath);
+                configPath = GetSharedConfigPath("invalid-region.properties");
 
                 // 2. Create GSR serializer with invalid region config
                 var serializer = new GlueSchemaRegistryKafkaSerializer(configPath);
@@ -543,9 +547,7 @@ namespace AWSGsrSerDe.Tests.Configuration
             try
             {
                 // 1. Use shared config file with invalid endpoint
-                var assemblyDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)!;
-                configPath = Path.Combine(assemblyDir, "../../../../../../shared/test/configs/invalid-endpoint.properties");
-                configPath = Path.GetFullPath(configPath);
+                configPath = GetSharedConfigPath("invalid-endpoint.properties");
 
                 // 2. Create GSR serializer with invalid endpoint config
                 var serializer = new GlueSchemaRegistryKafkaSerializer(configPath);
@@ -584,9 +586,7 @@ namespace AWSGsrSerDe.Tests.Configuration
             try
             {
                 // 1. Use shared config file with non-existent registry
-                var assemblyDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)!;
-                var configPath = Path.Combine(assemblyDir, "../../../../../../shared/test/configs/inexistent-registry.properties");
-                configPath = Path.GetFullPath(configPath);
+                var configPath = GetSharedConfigPath("inexistent-registry.properties");
 
                 // 2. Create GSR serializer with non-existent registry config
                 var serializer = new GlueSchemaRegistryKafkaSerializer(configPath);
@@ -625,9 +625,7 @@ namespace AWSGsrSerDe.Tests.Configuration
             try
             {
                 // 1. Use shared config file with invalid role ARN
-                var assemblyDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)!;
-                var configPath = Path.Combine(assemblyDir, "../../../../../../shared/test/configs/invalid-role-to-assume.properties");
-                configPath = Path.GetFullPath(configPath);
+                var configPath = GetSharedConfigPath("invalid-role-to-assume.properties");
 
                 // 2. Create GSR serializer with invalid role config
                 var serializer = new GlueSchemaRegistryKafkaSerializer(configPath);
@@ -682,9 +680,7 @@ namespace AWSGsrSerDe.Tests.Configuration
             try
             {
                 // 1. Use shared config file with different region registry
-                var assemblyDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)!;
-                var configPath = Path.Combine(assemblyDir, "../../../../../../shared/test/configs/different-region-registry.properties");
-                configPath = Path.GetFullPath(configPath);
+                var configPath = GetSharedConfigPath("different-region-registry.properties");
 
                 // 2. Create GSR serializer with different region registry config
                 var serializer = new GlueSchemaRegistryKafkaSerializer(configPath);
@@ -724,9 +720,7 @@ namespace AWSGsrSerDe.Tests.Configuration
             try
             {
                 // 1. Use shared config file with non-default endpoint
-                var assemblyDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)!;
-                var configPath = Path.Combine(assemblyDir, "../../../../../../shared/test/configs/non-default-endpoint.properties");
-                configPath = Path.GetFullPath(configPath);
+                var configPath = GetSharedConfigPath("non-default-endpoint.properties");
 
                 // 2. Create GSR serializer with custom endpoint config
                 var serializer = new GlueSchemaRegistryKafkaSerializer(configPath);
@@ -797,9 +791,7 @@ namespace AWSGsrSerDe.Tests.Configuration
             try
             {
                 // 1. Use shared config file with auto-registration disabled
-                var assemblyDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)!;
-                var configPath = Path.Combine(assemblyDir, "../../../../../../shared/test/configs/auto-registration-disabled.properties");
-                configPath = Path.GetFullPath(configPath);
+                var configPath = GetSharedConfigPath("auto-registration-disabled.properties");
 
                 // 2. Create GSR serializer with auto-registration disabled
                 var serializer = new GlueSchemaRegistryKafkaSerializer(configPath);
@@ -839,9 +831,7 @@ namespace AWSGsrSerDe.Tests.Configuration
             try
             {
                 // 1. Use shared config file with short TTL
-                var assemblyDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)!;
-                var configPath = Path.Combine(assemblyDir, "../../../../../../shared/test/configs/cache-ttl-short.properties");
-                configPath = Path.GetFullPath(configPath);
+                var configPath = GetSharedConfigPath("cache-ttl-short.properties");
 
                 // 2. Create GSR serializer with caching enabled
                 var serializer = new GlueSchemaRegistryKafkaSerializer(configPath);
@@ -896,9 +886,7 @@ namespace AWSGsrSerDe.Tests.Configuration
             try
             {
                 // 1. Use shared config file with large cache size
-                var assemblyDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)!;
-                var configPath = Path.Combine(assemblyDir, "../../../../../../shared/test/configs/cache-ttl-short.properties");
-                configPath = Path.GetFullPath(configPath);
+                var configPath = GetSharedConfigPath("cache-ttl-short.properties");
 
                 // 2. Create GSR serializer with large cache
                 var serializer = new GlueSchemaRegistryKafkaSerializer(configPath);
@@ -962,9 +950,7 @@ namespace AWSGsrSerDe.Tests.Configuration
             try
             {
                 // 1. Use config with small cache size (will be overwhelmed)
-                var assemblyDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)!;
-                var configPath = Path.Combine(assemblyDir, "../../../../../../shared/test/configs/cache-ttl-short.properties");
-                configPath = Path.GetFullPath(configPath);
+                var configPath = GetSharedConfigPath("cache-ttl-short.properties");
 
                 // 2. Create GSR serializer with limited cache
                 var serializer = new GlueSchemaRegistryKafkaSerializer(configPath);
@@ -1043,9 +1029,7 @@ namespace AWSGsrSerDe.Tests.Configuration
             try
             {
                 // 1. Use shared config file with caching enabled
-                var assemblyDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)!;
-                var configPath = Path.Combine(assemblyDir, "../../../../../../shared/test/configs/cache-ttl-short.properties");
-                configPath = Path.GetFullPath(configPath);
+                var configPath = GetSharedConfigPath("cache-ttl-short.properties");
 
                 // 2. Create GSR serializer with caching enabled
                 var serializer = new GlueSchemaRegistryKafkaSerializer(configPath);
@@ -1108,9 +1092,7 @@ namespace AWSGsrSerDe.Tests.Configuration
             try
             {
                 // 1. Use shared config file with caching enabled
-                var assemblyDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)!;
-                var configPath = Path.Combine(assemblyDir, "../../../../../../shared/test/configs/cache-ttl-short.properties");
-                configPath = Path.GetFullPath(configPath);
+                var configPath = GetSharedConfigPath("cache-ttl-short.properties");
 
                 // 2. Create GSR serializer with caching enabled
                 var serializer = new GlueSchemaRegistryKafkaSerializer(configPath);
@@ -1186,9 +1168,7 @@ namespace AWSGsrSerDe.Tests.Configuration
             try
             {
                 // 1. Use shared config file with cache disabled
-                var assemblyDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)!;
-                var configPath = Path.Combine(assemblyDir, "../../../../../../shared/test/configs/cache-disabled.properties");
-                configPath = Path.GetFullPath(configPath);
+                var configPath = GetSharedConfigPath("cache-disabled.properties");
 
                 // 2. Create GSR serializer with cache disabled
                 var serializer = new GlueSchemaRegistryKafkaSerializer(configPath);
@@ -1259,9 +1239,7 @@ namespace AWSGsrSerDe.Tests.Configuration
             try
             {
                 // 1. Use shared config file with caching enabled
-                var assemblyDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)!;
-                var configPath = Path.Combine(assemblyDir, "../../../../../../shared/test/configs/cache-ttl-short.properties");
-                configPath = Path.GetFullPath(configPath);
+                var configPath = GetSharedConfigPath("cache-ttl-short.properties");
 
                 // 2. Create GSR serializer with caching enabled
                 var serializer = new GlueSchemaRegistryKafkaSerializer(configPath);
@@ -1329,9 +1307,7 @@ namespace AWSGsrSerDe.Tests.Configuration
             try
             {
                 // 1. Use shared config file with ZLIB compression enabled
-                var assemblyDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)!;
-                var configPath = Path.Combine(assemblyDir, "../../../../../../shared/test/configs/zlib-compression-enabled.properties");
-                configPath = Path.GetFullPath(configPath);
+                var configPath = GetSharedConfigPath("zlib-compression-enabled.properties");
 
                 // 2. Create GSR serializer with ZLIB compression
                 var serializer = new GlueSchemaRegistryKafkaSerializer(configPath);
@@ -1398,9 +1374,7 @@ namespace AWSGsrSerDe.Tests.Configuration
             try
             {
                 // 1. Use shared config file without compression settings (defaults to no compression)
-                var assemblyDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)!;
-                var configPath = Path.Combine(assemblyDir, "../../../../../../shared/test/configs/minimal-auto-registration-custom-registry.properties");
-                configPath = Path.GetFullPath(configPath);
+                var configPath = GetSharedConfigPath("minimal-auto-registration-custom-registry.properties");
 
                 // 2. Create GSR serializer with default compression
                 var serializer = new GlueSchemaRegistryKafkaSerializer(configPath);
@@ -1466,9 +1440,7 @@ namespace AWSGsrSerDe.Tests.Configuration
             try
             {
                 // 1. Use shared config file without custom user agent (should use default)
-                var assemblyDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)!;
-                var configPath = Path.Combine(assemblyDir, "../../../../../../shared/test/configs/minimal-auto-registration-custom-registry.properties");
-                configPath = Path.GetFullPath(configPath);
+                var configPath = GetSharedConfigPath("minimal-auto-registration-custom-registry.properties");
 
                 // 2. Create GSR serializer with default user agent
                 var serializer = new GlueSchemaRegistryKafkaSerializer(configPath);
@@ -1521,9 +1493,7 @@ namespace AWSGsrSerDe.Tests.Configuration
             try
             {
                 // 1. Use shared config file with custom user agent
-                var assemblyDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)!;
-                var configPath = Path.Combine(assemblyDir, "../../../../../../shared/test/configs/custom-user-agent.properties");
-                configPath = Path.GetFullPath(configPath);
+                var configPath = GetSharedConfigPath("custom-user-agent.properties");
 
                 // 2. Create GSR serializer with custom user agent
                 var serializer = new GlueSchemaRegistryKafkaSerializer(configPath);
