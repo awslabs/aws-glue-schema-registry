@@ -14,25 +14,32 @@ import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 
 import java.util.Map;
 import java.util.Properties;
-
 @Slf4j
 @Data
 public class NativeGlueSchemaRegistryConfiguration extends GlueSchemaRegistryConfiguration {
     private String roleToAssume;
     private String roleSessionName; // should only be set if roleToAssumeIsSet
 
+    public static final String ROLE_TO_ASSUME_KEY = "roleToAssume";
+    public static final String ROLE_SESSION_NAME_KEY = "roleSessionName";
+    public static final String USER_AGENT_APP_KEY = "userAgentApp";
+
     public NativeGlueSchemaRegistryConfiguration(String region) {
         super(region);
+        this.setUserAgentApp("native");
     }
 
     public NativeGlueSchemaRegistryConfiguration(Map<String, ?> configs) {
         super(configs);
         validateAndSetRoleConfiguration(configs);
+        validateAndSetUserAgentApp(configs);
     }
 
     public NativeGlueSchemaRegistryConfiguration(Properties properties) {
         super(properties);
-        validateAndSetRoleConfiguration(getMapFromPropertiesFile(properties));
+        final Map<String, ?> configs = getMapFromPropertiesFile(properties);
+        validateAndSetRoleConfiguration(configs);
+        validateAndSetUserAgentApp(configs);
     }
 
     private void validateAndSetRoleConfiguration(Map<String, ?> configs) {
@@ -44,6 +51,15 @@ public class NativeGlueSchemaRegistryConfiguration extends GlueSchemaRegistryCon
             this.roleSessionName = (String) configs.get("roleSessionName"); // this will override the default session
                                                                             // name if there is a roleSessionName
                                                                             // defined by user
+        }
+    }
+
+    private void validateAndSetUserAgentApp(Map<String, ?> configs) {
+        if (configs.containsKey("userAgentApp")) {
+            final String userAgentApp = (String) configs.get("userAgentApp");
+            this.setUserAgentApp(userAgentApp);
+        } else {
+            this.setUserAgentApp("native");
         }
     }
 

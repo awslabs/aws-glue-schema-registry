@@ -32,7 +32,7 @@ namespace AWSGsrSerDe
         {
             try
             {
-                _serializer = new glue_schema_registry_serializer(configFilePath, null);
+                _serializer = new glue_schema_registry_serializer(configFilePath, GlueSchemaRegistryConstants.CSharpUserAgentString, null);
             }
             catch (Exception e)
             {
