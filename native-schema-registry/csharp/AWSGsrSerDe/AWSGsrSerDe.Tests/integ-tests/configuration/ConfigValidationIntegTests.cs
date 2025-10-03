@@ -648,21 +648,208 @@ namespace AWSGsrSerDe.Tests.Configuration
             }
         }
 
-        // [Test]
-        // public async Task Constructor_WithInsufficientIAMPermission_ThrowsException()
-        // {
-        //     /* Test insufficient IAM permissions scenario
-        //      * Since the test environment has full permissions and AWS SDK finds credentials from multiple sources,
-        //      * we'll modify this test to use invalid credentials instead of no credentials
-        //      * This should trigger an authentication failure
-        //      */
+        [Test]
+        public async Task Constructor_WithInsufficientIAMPermission_ThrowsException()
+        {
+            /* Test insufficient IAM permissions scenario
+             * Try setting AWS credentials environment variables to null/empty
+             * This should trigger an authentication failure
+             */
 
-        //    /*
-        //    * TODO: Add this test. Resetting AWS env variables using 
-        //    * Environment.SetEnvironmentVariable("AWS_ACCESS_KEY_ID", "INVALID_ACCESS_KEY_12345");
-        //    * doesn't seem to work.
-        //    */
-        // }
+            // Generate unique topic name
+            var topicName = $"test-topic-no-iam-{Guid.NewGuid():N}";
+            
+            // Store original environment variables
+            var originalAccessKey = Environment.GetEnvironmentVariable("AWS_ACCESS_KEY_ID");
+            var originalSecretKey = Environment.GetEnvironmentVariable("AWS_SECRET_ACCESS_KEY");
+            var originalSessionToken = Environment.GetEnvironmentVariable("AWS_SESSION_TOKEN");
+            var originalProfile = Environment.GetEnvironmentVariable("AWS_PROFILE");
+
+            try
+            {
+                // 1. Clear AWS credentials environment variables
+                Environment.SetEnvironmentVariable("AWS_ACCESS_KEY_ID", null);
+                Environment.SetEnvironmentVariable("AWS_SECRET_ACCESS_KEY", null);
+                Environment.SetEnvironmentVariable("AWS_SESSION_TOKEN", null);
+                Environment.SetEnvironmentVariable("AWS_PROFILE", null);
+
+                // 2. Use shared config file with auto-registration enabled
+                var configPath = GetSharedConfigPath("minimal-auto-registration-custom-registry.properties");
+
+                // 3. Create GSR serializer - this should fail due to no credentials
+                var serializer = new GlueSchemaRegistryKafkaSerializer(configPath);
+
+                // 4. Create Avro record to serialize
+                var avroRecord = RecordGenerator.GetTestAvroRecord();
+
+                // 5. Attempt to serialize - this should fail due to insufficient IAM permissions
+                var serializedBytes = serializer.Serialize(avroRecord, topicName);
+
+                // If we reach here, the test should fail because we expected an exception
+                Assert.Fail("Expected exception due to insufficient IAM permissions (no credentials), but serialization succeeded");
+            }
+            catch (AwsSchemaRegistryException ex) when (ex.Message.Contains("Unable to load AWS credentials") || 
+                                                        ex.Message.Contains("No credentials") ||
+                                                        ex.Message.Contains("Unable to find credentials"))
+            {
+                // Expected - GSR exception indicating no credentials found
+                Assert.Pass($"Successfully validated insufficient IAM permissions results in credentials exception: {ex.Message}");
+            }
+            catch (AmazonServiceException ex) when (ex.Message.Contains("Unable to load AWS credentials") || 
+                                                    ex.Message.Contains("No credentials") ||
+                                                    ex.StatusCode == System.Net.HttpStatusCode.Forbidden ||
+                                                    ex.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            {
+                // Expected - AWS service exception indicating authentication failure
+                Assert.Pass($"Successfully validated insufficient IAM permissions results in service exception: {ex.Message}");
+            }
+            finally
+            {
+                // Restore original environment variables
+                Environment.SetEnvironmentVariable("AWS_ACCESS_KEY_ID", originalAccessKey);
+                Environment.SetEnvironmentVariable("AWS_SECRET_ACCESS_KEY", originalSecretKey);
+                Environment.SetEnvironmentVariable("AWS_SESSION_TOKEN", originalSessionToken);
+                Environment.SetEnvironmentVariable("AWS_PROFILE", originalProfile);
+            }
+        }
+
+        [Test]
+        public async Task Constructor_WithInvalidCredentials_ThrowsException()
+        {
+            /* Test invalid AWS credentials scenario
+             * Set AWS credentials to clearly invalid values
+             * This should trigger an authentication failure
+             */
+
+            // Generate unique topic name
+            var topicName = $"test-topic-invalid-creds-{Guid.NewGuid():N}";
+            
+            // Store original environment variables
+            var originalAccessKey = Environment.GetEnvironmentVariable("AWS_ACCESS_KEY_ID");
+            var originalSecretKey = Environment.GetEnvironmentVariable("AWS_SECRET_ACCESS_KEY");
+            var originalSessionToken = Environment.GetEnvironmentVariable("AWS_SESSION_TOKEN");
+            var originalProfile = Environment.GetEnvironmentVariable("AWS_PROFILE");
+
+            try
+            {
+                // 1. Set invalid AWS credentials
+                Environment.SetEnvironmentVariable("AWS_ACCESS_KEY_ID", "AKIAIOSFODNN7EXAMPLE");
+                Environment.SetEnvironmentVariable("AWS_SECRET_ACCESS_KEY", "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY");
+                Environment.SetEnvironmentVariable("AWS_SESSION_TOKEN", null);
+                Environment.SetEnvironmentVariable("AWS_PROFILE", null);
+
+                // 2. Use shared config file with auto-registration enabled
+                var configPath = GetSharedConfigPath("minimal-auto-registration-custom-registry.properties");
+
+                // 3. Create GSR serializer with invalid credentials
+                var serializer = new GlueSchemaRegistryKafkaSerializer(configPath);
+
+                // 4. Create Avro record to serialize
+                var avroRecord = RecordGenerator.GetTestAvroRecord();
+
+                // 5. Attempt to serialize - this should fail due to invalid credentials
+                var serializedBytes = serializer.Serialize(avroRecord, topicName);
+
+                // If we reach here, the test should fail because we expected an exception
+                Assert.Fail("Expected exception due to invalid AWS credentials, but serialization succeeded");
+            }
+            catch (AwsSchemaRegistryException ex) when (ex.Message.Contains("The security token included in the request is invalid") || 
+                                                        ex.Message.Contains("InvalidUserID.NotFound") ||
+                                                        ex.Message.Contains("SignatureDoesNotMatch") ||
+                                                        ex.Message.Contains("InvalidAccessKeyId"))
+            {
+                // Expected - GSR exception indicating invalid credentials
+                Assert.Pass($"Successfully validated invalid credentials result in authentication exception: {ex.Message}");
+            }
+            catch (AmazonServiceException ex) when (ex.Message.Contains("The security token included in the request is invalid") || 
+                                                    ex.Message.Contains("InvalidUserID.NotFound") ||
+                                                    ex.Message.Contains("SignatureDoesNotMatch") ||
+                                                    ex.Message.Contains("InvalidAccessKeyId") ||
+                                                    ex.StatusCode == System.Net.HttpStatusCode.Forbidden ||
+                                                    ex.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            {
+                // Expected - AWS service exception indicating authentication failure
+                Assert.Pass($"Successfully validated invalid credentials result in service exception: {ex.Message}");
+            }
+            finally
+            {
+                // Restore original environment variables
+                Environment.SetEnvironmentVariable("AWS_ACCESS_KEY_ID", originalAccessKey);
+                Environment.SetEnvironmentVariable("AWS_SECRET_ACCESS_KEY", originalSecretKey);
+                Environment.SetEnvironmentVariable("AWS_SESSION_TOKEN", originalSessionToken);
+                Environment.SetEnvironmentVariable("AWS_PROFILE", originalProfile);
+            }
+        }
+
+        [Test]
+        public async Task Constructor_WithMalformedCredentials_ThrowsException()
+        {
+            /* Test malformed AWS credentials scenario
+             * Set AWS credentials to malformed values (wrong format)
+             * This should trigger an authentication failure
+             */
+
+            // Generate unique topic name
+            var topicName = $"test-topic-malformed-creds-{Guid.NewGuid():N}";
+            
+            // Store original environment variables
+            var originalAccessKey = Environment.GetEnvironmentVariable("AWS_ACCESS_KEY_ID");
+            var originalSecretKey = Environment.GetEnvironmentVariable("AWS_SECRET_ACCESS_KEY");
+            var originalSessionToken = Environment.GetEnvironmentVariable("AWS_SESSION_TOKEN");
+            var originalProfile = Environment.GetEnvironmentVariable("AWS_PROFILE");
+
+            try
+            {
+                // 1. Set malformed AWS credentials (wrong format)
+                Environment.SetEnvironmentVariable("AWS_ACCESS_KEY_ID", "INVALID_FORMAT_123");
+                Environment.SetEnvironmentVariable("AWS_SECRET_ACCESS_KEY", "TOO_SHORT");
+                Environment.SetEnvironmentVariable("AWS_SESSION_TOKEN", null);
+                Environment.SetEnvironmentVariable("AWS_PROFILE", null);
+
+                // 2. Use shared config file with auto-registration enabled
+                var configPath = GetSharedConfigPath("minimal-auto-registration-custom-registry.properties");
+
+                // 3. Create GSR serializer with malformed credentials
+                var serializer = new GlueSchemaRegistryKafkaSerializer(configPath);
+
+                // 4. Create Avro record to serialize
+                var avroRecord = RecordGenerator.GetTestAvroRecord();
+
+                // 5. Attempt to serialize - this should fail due to malformed credentials
+                var serializedBytes = serializer.Serialize(avroRecord, topicName);
+
+                // If we reach here, the test should fail because we expected an exception
+                Assert.Fail("Expected exception due to malformed AWS credentials, but serialization succeeded");
+            }
+            catch (AwsSchemaRegistryException ex) when (ex.Message.Contains("The security token included in the request is invalid") || 
+                                                        ex.Message.Contains("InvalidUserID.NotFound") ||
+                                                        ex.Message.Contains("SignatureDoesNotMatch") ||
+                                                        ex.Message.Contains("InvalidAccessKeyId") ||
+                                                        ex.Message.Contains("AWS Access Key Id you provided does not exist"))
+            {
+                // Expected - GSR exception indicating malformed credentials
+                Assert.Pass($"Successfully validated malformed credentials result in authentication exception: {ex.Message}");
+            }
+            catch (AmazonServiceException ex) when (ex.Message.Contains("The security token included in the request is invalid") || 
+                                                    ex.Message.Contains("InvalidUserID.NotFound") ||
+                                                    ex.Message.Contains("SignatureDoesNotMatch") ||
+                                                    ex.Message.Contains("InvalidAccessKeyId") ||
+                                                    ex.Message.Contains("AWS Access Key Id you provided does not exist") ||
+                                                    ex.StatusCode == System.Net.HttpStatusCode.Forbidden ||
+                                                    ex.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            {
+                // Expected - AWS service exception indicating authentication failure
+                Assert.Pass($"Successfully validated malformed credentials result in service exception: {ex.Message}");
+            }
+            finally
+            {
+                // Restore original environment variables
+                Environment.SetEnvironmentVariable("AWS_ACCESS_KEY_ID", originalAccessKey);
+                Environment.SetEnvironmentVariable("AWS_SECRET_ACCESS_KEY", originalSecretKey);
+                Environment.SetEnvironmentVariable("AWS_SESSION_TOKEN", originalSessionToken);
+                Environment.SetEnvironmentVariable("AWS_PROFILE", originalProfile);
+            }
+        }
 
         [Test]
         public async Task Constructor_AccessRegistryInADifferentRegion_ThrowsException()
