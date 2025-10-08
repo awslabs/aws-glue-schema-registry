@@ -36,8 +36,6 @@ namespace AWSGsrSerDe.serializer.json
             var dataNode = GetDataNode(data);
             var jsonSchema = GetSchema(data);
 
-            // JsonValidator.ValidateDataWithSchema(jsonSchema, dataNode);
-
             return WriteBytes(dataNode);
         }
 
