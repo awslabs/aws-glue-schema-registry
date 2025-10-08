@@ -36,7 +36,7 @@ namespace AWSGsrSerDe.serializer.json
             var dataNode = GetDataNode(data);
             var jsonSchema = GetSchema(data);
 
-            JsonValidator.ValidateDataWithSchema(jsonSchema, dataNode);
+            // JsonValidator.ValidateDataWithSchema(jsonSchema, dataNode);
 
             return WriteBytes(dataNode);
         }
@@ -53,21 +53,21 @@ namespace AWSGsrSerDe.serializer.json
             return schemaNode.ToJsonString();
         }
 
+
         /// <inheritdoc />
         public void Validate(string schemaDefinition, byte[] data)
         {
-            // We assume the data bytes are encoded as UTF-8 Strings
-            var payload = System.Text.Encoding.UTF8.GetString(data);
-            var jsonDataWithSchema = JsonDataWithSchema.Build(schemaDefinition, payload);
-            Validate(jsonDataWithSchema);
+            // No-op
+            // JSON validation has been disabled for performance reasons.
+            // The Java validation layer still provides schema compliance checking.
         }
 
         /// <inheritdoc />
         public void Validate(object data)
         {
-            var schema = GetSchema(data);
-            var dataNode = GetDataNode(data);
-            JsonValidator.ValidateDataWithSchema(schema, dataNode);
+            // No-op
+            // JSON validation has been disabled for performance reasons.
+            // The Java validation layer still provides schema compliance checking.
         }
 
         /// <inheritdoc />
