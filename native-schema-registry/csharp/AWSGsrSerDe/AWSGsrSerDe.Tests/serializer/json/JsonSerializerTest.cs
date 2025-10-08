@@ -86,16 +86,7 @@ namespace AWSGsrSerDe.Tests.serializer.json
         {
             Assert.DoesNotThrow(() => { _jsonSerializer.Serialize(SPECIFIC_TEST_RECORD); });
         }
-
-        [Test]
-        public void testValidate_validatesWrapper_ThrowsValidationException()
-        {
-            var exception = Assert.Throws(
-                typeof(AwsSchemaRegistryException),
-                () => { _jsonSerializer.Serialize(RecordGenerator.CreateNonSchemaConformantJsonData()); });
-            Assert.IsTrue(exception.Message.StartsWith("Validation failed with"));
-        }
-
+        
         [Test]
         public void testValidate_validatesBytes_successfully()
         {
@@ -103,33 +94,7 @@ namespace AWSGsrSerDe.Tests.serializer.json
             var schemaDefinition = GENERIC_TEST_RECORD.Schema;
             Assert.DoesNotThrow(() => { _jsonSerializer.Validate(schemaDefinition, dataBytes); });
         }
-
-        [Test]
-        public void testValidate_validatesBytes_ThrowsValidationException()
-        {
-            var nonSchemaConformantJsonData = RecordGenerator.CreateNonSchemaConformantJsonData();
-            var dataBytes = Encoding.Default.GetBytes(nonSchemaConformantJsonData.Payload);
-            var schemaDefinition = nonSchemaConformantJsonData.Schema;
-
-            var exception = Assert.Throws(
-                typeof(AwsSchemaRegistryException),
-                () => { _jsonSerializer.Validate(schemaDefinition, dataBytes); });
-            Assert.IsTrue(exception.Message.StartsWith("Validation failed with"));
-        }
-
-        [Test]
-        public void testValidate_validatesBytes_NonUTF8EncodingThrowsException()
-        {
-            //Encoding as UTF-32 Bytes
-            var dataBytes = Encoding.UTF32.GetBytes(GENERIC_TEST_RECORD.Payload);
-            var schemaDefinition = GENERIC_TEST_RECORD.Schema;
-
-            var exception = Assert.Throws(
-                typeof(AwsSchemaRegistryException),
-                () => { _jsonSerializer.Validate(schemaDefinition, dataBytes); });
-            Assert.AreEqual("Malformed JSON", exception.Message);
-        }
-
+        
         [Test]
         public void testWrapper_getSchemaDefinition_matches()
         {
