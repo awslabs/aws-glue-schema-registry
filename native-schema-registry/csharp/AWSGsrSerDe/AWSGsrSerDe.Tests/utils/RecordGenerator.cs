@@ -48,4 +48,5 @@ namespace AWSGsrSerDe.Tests.utils
             user.Add("favorite_color", "blue");
             return user;
         }
+    }
 }
