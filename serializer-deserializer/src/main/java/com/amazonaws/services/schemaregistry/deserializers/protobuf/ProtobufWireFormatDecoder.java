@@ -21,6 +21,7 @@ import com.google.protobuf.Descriptors;
 import com.google.protobuf.DynamicMessage;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.tuple.Pair;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
@@ -29,18 +30,23 @@ import java.lang.reflect.Method;
 public class ProtobufWireFormatDecoder {
     private final MessageIndexFinder messageIndexFinder;
 
-    public Object decode(@NonNull byte[] data, @NonNull Descriptors.FileDescriptor descriptor,
-                         ProtobufMessageType messageType) throws IOException {
+    public static Pair<Integer, CodedInputStream> getAndRemoveMessageIndex(byte[] data) throws IOException {
         final CodedInputStream codedInputStream = CodedInputStream.newInstance(data);
         final int messageIndex = codedInputStream.readUInt32();
+        return Pair.of(messageIndex, codedInputStream);
+    }
 
-        final Descriptors.Descriptor messageDescriptor = messageIndexFinder.getByIndex(descriptor, messageIndex);
+    public Object decode(@NonNull byte[] data, @NonNull Descriptors.FileDescriptor descriptor,
+                         ProtobufMessageType messageType) throws IOException {
+        Pair<Integer, CodedInputStream> indexAndStreamPair = getAndRemoveMessageIndex(data);
+
+        final Descriptors.Descriptor messageDescriptor = messageIndexFinder.getByIndex(descriptor, indexAndStreamPair.getLeft());
 
         if (ProtobufMessageType.POJO.equals(messageType)) {
-            return deserializeToPojo(messageDescriptor, codedInputStream);
+            return deserializeToPojo(messageDescriptor, indexAndStreamPair.getRight());
         } else {
             //Defaults to DynamicMessage if not set or set explicitly to DYNAMIC_MESSAGE.
-            return deserializeToDynamicMessage(messageDescriptor, codedInputStream);
+            return deserializeToDynamicMessage(messageDescriptor, indexAndStreamPair.getRight());
         }
     }
 

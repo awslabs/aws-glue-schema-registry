@@ -28,6 +28,12 @@
     </description>
     <url>https://aws.amazon.com/glue</url>
     <packaging>jar</packaging>
+    <parent>
+        <groupId>software.amazon.glue</groupId>
+        <artifactId>schema-registry-parent</artifactId>
+        <version>1.1.25</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
 
     <developers>
         <developer>
@@ -71,7 +77,7 @@
         <dependency>
           <groupId>org.projectlombok</groupId>
           <artifactId>lombok</artifactId>
-          <version>1.18.26</version>
+          <version>1.18.30</version>
           <scope>provided</scope>
         </dependency>
 
@@ -182,7 +188,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.10.1</version>
+                <version>3.11.0</version>
                 <configuration>
                     <source>1.8</source>
                     <target>1.8</target>
@@ -205,7 +211,7 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
                 <configuration>
-                <source>8</source>
+                    <source>8</source>
                 </configuration>
                 <executions>
                     <execution>
@@ -219,7 +225,7 @@
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
-                <version>0.8.8</version>
+                <version>0.8.11</version>
                 <executions>
                     <execution>
                         <goals>

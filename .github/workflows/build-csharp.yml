@@ -1,0 +1,127 @@
+name: Build CSharp
+
+on:
+  push:
+    branches: [ master, native-schema-registry-release ]
+  pull_request:
+    branches: [ master, native-schema-registry-release ]
+  release:
+    branches: [ master, native-schema-registry-release ]
+    types: [ created ]
+
+jobs:
+  git-secrets-scan:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install git-secrets
+        run: |
+          git clone https://github.com/awslabs/git-secrets.git
+          cd git-secrets
+          sudo make install
+
+      - name: Configure git-secrets
+        run: |
+          git secrets --register-aws
+          git secrets --install
+
+          # Add custom patterns
+          git secrets --add 'api[_-]?key\s*=\s*.+'
+          git secrets --add 'secret[_-]?key\s*=\s*.+'
+          git secrets --add 'token\s*=\s*.+'
+
+          # Enhanced AWS credential patterns
+          git secrets --add 'AWS_ACCESS_KEY_ID\s*=\s*[A-Z0-9]{20}'
+          git secrets --add 'AWS_SECRET_ACCESS_KEY\s*=\s*[A-Za-z0-9/+=]{40}'
+          git secrets --add 'AWS_SESSION_TOKEN\s*=\s*[A-Za-z0-9/+=]+'
+          git secrets --add 'AWS_SECURITY_TOKEN\s*=\s*[A-Za-z0-9/+=]+'
+          
+          # AWS Account and ARN patterns
+          git secrets --add 'AWS_ACCOUNT_ID\s*=\s*[0-9]{12}'
+
+      - name: Scan repository
+        run: |
+          git secrets --scan-history
+          git secrets --scan
+
+  build-csharp:
+    continue-on-error: false
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    container:
+      image: amazonlinux:2023
+    steps:
+      - name: Install required utilities
+        run: |
+          yum install -y zip unzip tar findutils gzip clang-tools-extra nodejs wget
+
+      - name: Checkout code
+        uses: actions/checkout@v2
+        
+      - name: Install CMake and dependencies
+        run: |
+          yum install -y cmake gcc gcc-c++ git lcov pcre2-devel 
+          yum groupinstall -y "Development Tools"
+          wget https://sourceforge.net/projects/swig/files/swig/swig-4.3.0/swig-4.3.0.tar.gz
+          tar -xzf swig-4.3.0.tar.gz
+          cd swig-4.3.0
+          ./configure --prefix=/usr/local
+          make -j$(nproc) 
+          make install 
+          swig -version
+
+      - name: Set up .NET SDK
+        run: |
+          rpm -Uvh https://packages.microsoft.com/config/centos/7/packages-microsoft-prod.rpm
+          wget -O /etc/yum.repos.d/microsoft-prod.repo https://packages.microsoft.com/config/centos/7/prod.repo
+          yum list available dotnet*
+          yes | yum install dotnet-sdk-8.0
+
+      - name: Set up Java
+        uses: graalvm/setup-graalvm@v1
+        with:
+          distribution: 'graalvm'
+          java-version: '17.0.12'       
+          components: 'native-image'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install Maven 3.9.11
+        run: |
+          curl -sSL https://downloads.apache.org/maven/maven-3/3.9.11/binaries/apache-maven-3.9.11-bin.tar.gz | tar xz
+          mv apache-maven-3.9.11 /opt/maven
+          echo "MAVEN_HOME=/opt/maven" >> $GITHUB_ENV
+          echo "/opt/maven/bin" >> $GITHUB_PATH
+    
+      - name: Cache Maven packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+
+      - name: Build Java 
+        shell: bash
+        run: |
+          mvn -U clean install -Dcheckstyle.skip=true -DskipTests
+      
+      - name: C Make
+        shell: bash
+        run: |
+          cd native-schema-registry/c
+          cmake -S . -Bbuild
+          cd build
+          cmake --build .
+
+      - name: Build C#
+        shell: bash
+        run: |
+          cd native-schema-registry/csharp/AWSGsrSerDe/
+          # First build - expected to fail but continue workflow
+          dotnet build . || echo "First build failed as expected"
+          # Second build - should succeed
+          dotnet build .

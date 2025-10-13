@@ -38,23 +38,25 @@ public class ProtobufWireFormatEncoder {
      * @return Encoded protobuf message with message index.
      */
     public byte[] encode(@NonNull Message message, @NonNull Descriptors.FileDescriptor schemaFileDescriptor) {
-        final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        final CodedOutputStream codedOutputStream = CodedOutputStream.newInstance(outputStream);
-
         final Descriptors.Descriptor descriptor = message.getDescriptorForType();
-        final Integer messageIndex = messageIndexFinder.getByDescriptor(schemaFileDescriptor, descriptor);
-
         try {
-            //Write the messageIndex as variable sized int.
-            codedOutputStream.writeUInt32NoTag(messageIndex);
-
-            //Write the actual Protobuf message.
-            message.writeTo(codedOutputStream);
-            codedOutputStream.flush();
-
+            return prefixMessageIndexToBytes(message.toByteArray(), schemaFileDescriptor, descriptor);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    public byte[] prefixMessageIndexToBytes(@NonNull byte[] bytesToEncode,
+        @NonNull Descriptors.FileDescriptor schemaFileDescriptor, @NonNull Descriptors.Descriptor fileDescriptor)
+        throws IOException {
+
+        final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        final CodedOutputStream codedOutputStream = CodedOutputStream.newInstance(outputStream);
+
+        final Integer messageIndex = messageIndexFinder.getByDescriptor(schemaFileDescriptor, fileDescriptor);
+        codedOutputStream.writeUInt32NoTag(messageIndex);
+        codedOutputStream.writeRawBytes(bytesToEncode);
+        codedOutputStream.flush();
 
         return outputStream.toByteArray();
     }

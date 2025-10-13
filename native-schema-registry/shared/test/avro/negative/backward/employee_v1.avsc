@@ -1,0 +1,29 @@
+{
+  "type": "record",
+  "name": "Employee",
+  "namespace": "com.amazonaws.services.schemaregistry.test.backward.negative",
+  "doc": "Base schema for backward compatibility violation testing (COMPAT-028, COMPAT-031)",
+  "fields": [
+    {
+      "name": "id",
+      "type": "int",
+      "doc": "Employee ID"
+    },
+    {
+      "name": "firstName",
+      "type": "string",
+      "doc": "Employee first name"
+    },
+    {
+      "name": "lastName",
+      "type": "string",
+      "doc": "Employee last name"
+    },
+    {
+      "name": "department",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "Optional department"
+    }
+  ]
+}
