@@ -39,6 +39,15 @@ export LD_LIBRARY_PATH=/workspaces/aws-glue-schema-registry/native-schema-regist
 
 # Run the test suite
 dotnet test .
+
+# Run the test suite with coverage
+
+dotnet tool install --global dotnet-coverage
+apt-get update && apt-get install libxml2
+dotnet-coverage collect dotnet test -f xml -o coverage.xml
+# for html report
+dotnet tool install -g dotnet-reportgenerator-globaltool
+reportgenerator -reports:**/coverage.xml -targetdir:coverage-report -reporttypes:Html
 ```
 
 ### Using Csharp Glue Schema client library with KafkaFlow for SerDes
