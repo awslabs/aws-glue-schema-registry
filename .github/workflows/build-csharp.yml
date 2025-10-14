@@ -65,7 +65,7 @@ jobs:
         
       - name: Install CMake and dependencies
         run: |
-          yum install -y cmake gcc gcc-c++ git lcov pcre2-devel 
+          yum install -y cmake gcc gcc-c++ git lcov pcre2-devel libasan
           yum groupinstall -y "Development Tools"
           wget https://sourceforge.net/projects/swig/files/swig/swig-4.3.0/swig-4.3.0.tar.gz
           tar -xzf swig-4.3.0.tar.gz
