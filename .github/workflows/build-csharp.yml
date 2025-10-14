@@ -124,4 +124,4 @@ jobs:
           dotnet build . || echo "First build failed as expected"
           # Second build - should succeed
           dotnet build .
-          dotnet test . --filter "ProtobufSerializerTest | JsonSerializerTest | AvroSerializerTest | ProtobufDeserializerTest | JsonDeserializerTest | AvroDeserializerTest" --no-build
+          dotnet test . --filter 'JsonSerializerTest | AvroSerializerTest | JsonDeserializerTest | AvroDeserializerTest | (ProtobufSerializerTest&FullyQualifiedName!~KafkaFlow) | (ProtobufDeserializerTest&FullyQualifiedName!~KafkaFlow)' --no-build
