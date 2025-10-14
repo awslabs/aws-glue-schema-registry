@@ -107,21 +107,21 @@ jobs:
       - name: Build Java 
         shell: bash
         run: |
-          mvn -U clean install -Dcheckstyle.skip=true -DskipTests
+          mvn -U clean install -Dcheckstyle.skip=true -Dmaven.test.skip=true
       
       - name: C Make
         shell: bash
         run: |
           cd native-schema-registry/c
           cmake -S . -Bbuild
-          cd build
-          cmake --build .
+          cmake --build build
 
       - name: Build C#
         shell: bash
         run: |
-          cd native-schema-registry/csharp/AWSGsrSerDe/
+          cd ../csharp/AWSGsrSerDe/
           # First build - expected to fail but continue workflow
           dotnet build . || echo "First build failed as expected"
           # Second build - should succeed
           dotnet build .
+          dotnet test . --filter "ProtobufSerializerTest | JsonSerializerTest | AvroSerializerTest | ProtobufDeserializerTest | JsonDeserializerTest | AvroDeserializerTest" --no-build
