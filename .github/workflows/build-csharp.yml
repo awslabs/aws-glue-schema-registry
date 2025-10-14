@@ -119,7 +119,7 @@ jobs:
       - name: Build C#
         shell: bash
         run: |
-          cd ../csharp/AWSGsrSerDe/
+          cd native-schema-registry/csharp/AWSGsrSerDe/
           # First build - expected to fail but continue workflow
           dotnet build . || echo "First build failed as expected"
           # Second build - should succeed
