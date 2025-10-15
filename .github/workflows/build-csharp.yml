@@ -58,7 +58,6 @@ jobs:
         distro: 
           - amazonlinux:2023
           - ubuntu:22.04
-          - centos:stream9
           - fedora:40
           - opensuse/leap:15.6
         include:
@@ -88,17 +87,6 @@ jobs:
               rm packages-microsoft-prod.deb
               apt update
               apt install -y dotnet-sdk-8.0
-              
-          - distro: centos:stream9
-            package_manager: dnf
-            update_cmd: "dnf update -y"
-            install_cmd: "dnf install -y"
-            group_install_cmd: "dnf groupinstall -y"
-            clang_tools: "clang-tools-extra"
-            pcre_dev: "pcre2-devel"
-            dotnet_setup: |
-              rpm -Uvh https://packages.microsoft.com/config/centos/8/packages-microsoft-prod.rpm
-              dnf install -y dotnet-sdk-8.0
               
           - distro: fedora:40
             package_manager: dnf
