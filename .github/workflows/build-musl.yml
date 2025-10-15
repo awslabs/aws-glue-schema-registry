@@ -22,31 +22,6 @@ jobs:
         
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-
-      # - name: Set up Java for outer build
-      #   uses: actions/setup-java@v4
-      #   with:
-      #     distribution: 'temurin'
-      #     java-version: '21'
-          
-      # - name: Install Maven for outer build
-      #   run: |
-      #     curl -sSL https://downloads.apache.org/maven/maven-3/3.9.11/binaries/apache-maven-3.9.11-bin.tar.gz | tar xz
-      #     sudo mv apache-maven-3.9.11 /opt/maven
-      #     echo "MAVEN_HOME=/opt/maven" >> $GITHUB_ENV
-      #     echo "/opt/maven/bin" >> $GITHUB_PATH
-    
-      # - name: Cache Maven packages
-      #   uses: actions/cache@v4
-      #   with:
-      #     path: ~/.m2
-      #     key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-      #     restore-keys: ${{ runner.os }}-m2
-          
-      # - name: Build outer Java layer
-      #   shell: bash
-      #   run: |
-      #     mvn -U clean install -Dcheckstyle.skip=true -DskipTests
         
       - name: Build GraalVM musl container
         run: |
@@ -121,41 +96,3 @@ jobs:
               # Only run unit tests as a part of the workflow
               dotnet test . --filter 'JsonSerializerTest | AvroSerializerTest | JsonDeserializerTest | AvroDeserializerTest | (ProtobufSerializerTest&FullyQualifiedName!~KafkaFlow) | (ProtobufDeserializerTest&FullyQualifiedName!~KafkaFlow)' --no-build
             "
-
-      # - name: Verify musl artifacts
-      #   run: |
-      #     echo "Checking for musl build artifacts..."
-      #     find . -name "*.so" -o -name "*.a" -o -name "libglue_schema_registry*" | head -10 || echo "No shared libraries found yet"
-          
-      # - name: Fix permissions
-      #   run: |
-      #     # Fix ownership issues from Docker containers as mentioned in musl README
-      #     sudo chown -R $(whoami):$(whoami) .
-          
-      # - name: Upload musl artifacts
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: musl-native-libraries
-      #     path: |
-      #       native-schema-registry/c/build/
-      #       **/target/
-      #       **/*.so
-      #       **/*.a
-      #     if-no-files-found: warn
-      #     retention-days: 30
-
-      # - name: Test musl artifacts
-      #   run: |
-      #     echo "Testing musl build artifacts..."
-      #     # Basic verification that key files exist
-      #     if [ -d "native-schema-registry/c/build" ]; then
-      #       echo "✓ C build directory created"
-      #       ls -la native-schema-registry/c/build/ || true
-      #     else
-      #       echo "✗ C build directory not found"
-      #       exit 1
-      #     fi
-          
-      #     # Check for native libraries
-      #     echo "Looking for native libraries..."
-      #     find . -name "*.so" -o -name "*.a" | head -5 || echo "No native libraries found"
