@@ -92,6 +92,7 @@ jobs:
               cd \$WORKDIR
               
               # Need to build it twice due to protobuf compilation misorder (normal for csharp builds today)
+              dotnet build . || true
               dotnet build .
               
               # Only run unit tests as a part of the workflow
