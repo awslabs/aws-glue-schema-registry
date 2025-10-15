@@ -67,6 +67,8 @@ jobs:
             update_cmd: "yum update -y"
             install_cmd: "yum install -y"
             group_install_cmd: "yum groupinstall -y"
+            clang_tools: "clang-tools-extra"
+            pcre_dev: "pcre2-devel"
             dotnet_setup: |
               rpm -Uvh https://packages.microsoft.com/config/centos/7/packages-microsoft-prod.rpm
               wget -O /etc/yum.repos.d/microsoft-prod.repo https://packages.microsoft.com/config/centos/7/prod.repo
@@ -78,6 +80,8 @@ jobs:
             update_cmd: "apt update"
             install_cmd: "apt install -y"
             group_install_cmd: "apt install -y build-essential"
+            clang_tools: "clang-tools"
+            pcre_dev: "libpcre2-dev"
             dotnet_setup: |
               wget https://packages.microsoft.com/config/ubuntu/22.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
               dpkg -i packages-microsoft-prod.deb
@@ -90,6 +94,8 @@ jobs:
             update_cmd: "dnf update -y"
             install_cmd: "dnf install -y"
             group_install_cmd: "dnf groupinstall -y"
+            clang_tools: "clang-tools-extra"
+            pcre_dev: "pcre2-devel"
             dotnet_setup: |
               rpm -Uvh https://packages.microsoft.com/config/centos/8/packages-microsoft-prod.rpm
               dnf install -y dotnet-sdk-8.0
@@ -99,6 +105,8 @@ jobs:
             update_cmd: "dnf update -y"
             install_cmd: "dnf install -y"
             group_install_cmd: "dnf groupinstall -y"
+            clang_tools: "clang-tools-extra"
+            pcre_dev: "pcre2-devel"
             dotnet_setup: |
               rpm -Uvh https://packages.microsoft.com/config/fedora/37/packages-microsoft-prod.rpm
               dnf install -y dotnet-sdk-8.0
@@ -108,6 +116,8 @@ jobs:
             update_cmd: "zypper refresh"
             install_cmd: "zypper install -y"
             group_install_cmd: "zypper install -y -t pattern devel_basis"
+            clang_tools: "clang-tools"
+            pcre_dev: "pcre2-devel"
             dotnet_setup: |
               rpm -Uvh https://packages.microsoft.com/config/opensuse/15/packages-microsoft-prod.rpm
               zypper install -y dotnet-sdk-8.0
@@ -118,10 +128,9 @@ jobs:
       - name: Install required utilities
         run: |
           ${{ matrix.update_cmd }}
+          ${{ matrix.install_cmd }} zip unzip tar findutils gzip ${{ matrix.clang_tools }} nodejs wget curl
           if [[ "${{ matrix.package_manager }}" == "apt" ]]; then
-            ${{ matrix.install_cmd }} zip unzip tar findutils gzip clang-tools nodejs wget curl gnupg2 software-properties-common
-          else
-            ${{ matrix.install_cmd }} zip unzip tar findutils gzip clang-tools-extra nodejs wget curl
+            ${{ matrix.install_cmd }} gnupg2 software-properties-common
           fi
 
       - name: Checkout code
@@ -129,14 +138,15 @@ jobs:
         
       - name: Install CMake and dependencies
         run: |
+          ${{ matrix.install_cmd }} cmake gcc git lcov ${{ matrix.pcre_dev }}
           if [[ "${{ matrix.package_manager }}" == "apt" ]]; then
-            ${{ matrix.install_cmd }} cmake gcc g++ git lcov libpcre2-dev
+            ${{ matrix.install_cmd }} g++
             ${{ matrix.group_install_cmd }}
           elif [[ "${{ matrix.package_manager }}" == "zypper" ]]; then
-            ${{ matrix.install_cmd }} cmake gcc gcc-c++ git lcov pcre2-devel
+            ${{ matrix.install_cmd }} gcc-c++
             ${{ matrix.group_install_cmd }}
           else
-            ${{ matrix.install_cmd }} cmake gcc gcc-c++ git lcov pcre2-devel
+            ${{ matrix.install_cmd }} gcc-c++
             if [[ "${{ matrix.package_manager }}" == "yum" ]]; then
               ${{ matrix.install_cmd }} libasan libubsan
               ${{ matrix.group_install_cmd }} "Development Tools"
