@@ -1,5 +1,9 @@
 FROM ghcr.io/graalvm/native-image-community:21-muslib
 
+# Set UTF-8 locale to handle Unicode filenames (including emojis)
+ENV LANG=C.UTF-8
+ENV LC_ALL=C.UTF-8
+
 # Build PIC-compatible zlib to fix shared library linking
 
 

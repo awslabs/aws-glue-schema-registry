@@ -55,9 +55,15 @@ include_directories(${LIB_NATIVE_SCHEMA_REGISTRY_PATH})
 # --- Python Integration ---
 
 add_subdirectory("src")
-include (CTest)
-enable_testing()
-add_subdirectory("test")
+
+# Option to disable tests (useful for musl builds have cmocka issues)
+option(DISABLE_TESTS "Disable CTest and test subdirectory" OFF)
+
+if(NOT DISABLE_TESTS)
+    include (CTest)
+    enable_testing()
+    add_subdirectory("test")
+endif()
 
 # Option to disable quality gates (they run by default)
 option(DISABLE_QUALITY_GATES "Disable automatic quality gates on build" OFF)
