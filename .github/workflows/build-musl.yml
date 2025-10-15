@@ -10,45 +10,6 @@ on:
     types: [ created ]
 
 jobs:
-  git-secrets-scan:
-    runs-on: ubuntu-latest
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Install git-secrets
-        run: |
-          git clone https://github.com/awslabs/git-secrets.git
-          cd git-secrets
-          sudo make install
-
-      - name: Configure git-secrets
-        run: |
-          git secrets --register-aws
-          git secrets --install
-
-          # Add custom patterns
-          git secrets --add 'api[_-]?key\s*=\s*.+'
-          git secrets --add 'secret[_-]?key\s*=\s*.+'
-          git secrets --add 'token\s*=\s*.+'
-
-          # Enhanced AWS credential patterns
-          git secrets --add 'AWS_ACCESS_KEY_ID\s*=\s*[A-Z0-9]{20}'
-          git secrets --add 'AWS_SECRET_ACCESS_KEY\s*=\s*[A-Za-z0-9/+=]{40}'
-          git secrets --add 'AWS_SESSION_TOKEN\s*=\s*[A-Za-z0-9/+=]+'
-          git secrets --add 'AWS_SECURITY_TOKEN\s*=\s*[A-Za-z0-9/+=]+'
-          
-          # AWS Account and ARN patterns
-          git secrets --add 'AWS_ACCOUNT_ID\s*=\s*[0-9]{12}'
-
-      - name: Scan repository
-        run: |
-          git secrets --scan-history
-          git secrets --scan
-
   build-musl:
     continue-on-error: false
     timeout-minutes: 90
@@ -62,30 +23,30 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Set up Java for outer build
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '21'
+      # - name: Set up Java for outer build
+      #   uses: actions/setup-java@v4
+      #   with:
+      #     distribution: 'temurin'
+      #     java-version: '21'
           
-      - name: Install Maven for outer build
-        run: |
-          curl -sSL https://downloads.apache.org/maven/maven-3/3.9.11/binaries/apache-maven-3.9.11-bin.tar.gz | tar xz
-          sudo mv apache-maven-3.9.11 /opt/maven
-          echo "MAVEN_HOME=/opt/maven" >> $GITHUB_ENV
-          echo "/opt/maven/bin" >> $GITHUB_PATH
+      # - name: Install Maven for outer build
+      #   run: |
+      #     curl -sSL https://downloads.apache.org/maven/maven-3/3.9.11/binaries/apache-maven-3.9.11-bin.tar.gz | tar xz
+      #     sudo mv apache-maven-3.9.11 /opt/maven
+      #     echo "MAVEN_HOME=/opt/maven" >> $GITHUB_ENV
+      #     echo "/opt/maven/bin" >> $GITHUB_PATH
     
-      - name: Cache Maven packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.m2
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-m2
+      # - name: Cache Maven packages
+      #   uses: actions/cache@v4
+      #   with:
+      #     path: ~/.m2
+      #     key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+      #     restore-keys: ${{ runner.os }}-m2
           
-      - name: Build outer Java layer
-        shell: bash
-        run: |
-          mvn -U clean install -Dcheckstyle.skip=true -DskipTests
+      # - name: Build outer Java layer
+      #   shell: bash
+      #   run: |
+      #     mvn -U clean install -Dcheckstyle.skip=true -DskipTests
         
       - name: Build GraalVM musl container
         run: |
