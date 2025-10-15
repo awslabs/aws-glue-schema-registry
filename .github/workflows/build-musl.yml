@@ -84,11 +84,12 @@ jobs:
               -X https://dl-cdn.alpinelinux.org/alpine/v3.17/main \
               -X https://dl-cdn.alpinelinux.org/alpine/v3.17/community \
               protobuf=3.21.9-r0 && \
+              WORKDIR=\$(pwd) && \
               cd /root/.nuget/packages/grpc.tools/2.48.1/tools/linux_x64 && \
               rm protoc && \
               ln -s /usr/bin/protoc protoc && \
               chmod +x grpc_csharp_plugin && \
-              cd /workspace/native-schema-registry/csharp/AWSGsrSerDe
+              cd \$WORKDIR
               
               # Need to build it twice due to protobuf compilation misorder (normal for csharp builds today)
               dotnet build .
