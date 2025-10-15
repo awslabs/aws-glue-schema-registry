@@ -1,0 +1,184 @@
+name: Build Musl
+
+on:
+  push:
+    branches: [ master, native-schema-registry-release ]
+  pull_request:
+    branches: [ master, native-schema-registry-release ]
+  release:
+    branches: [ master, native-schema-registry-release ]
+    types: [ created ]
+
+jobs:
+  git-secrets-scan:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install git-secrets
+        run: |
+          git clone https://github.com/awslabs/git-secrets.git
+          cd git-secrets
+          sudo make install
+
+      - name: Configure git-secrets
+        run: |
+          git secrets --register-aws
+          git secrets --install
+
+          # Add custom patterns
+          git secrets --add 'api[_-]?key\s*=\s*.+'
+          git secrets --add 'secret[_-]?key\s*=\s*.+'
+          git secrets --add 'token\s*=\s*.+'
+
+          # Enhanced AWS credential patterns
+          git secrets --add 'AWS_ACCESS_KEY_ID\s*=\s*[A-Z0-9]{20}'
+          git secrets --add 'AWS_SECRET_ACCESS_KEY\s*=\s*[A-Za-z0-9/+=]{40}'
+          git secrets --add 'AWS_SESSION_TOKEN\s*=\s*[A-Za-z0-9/+=]+'
+          git secrets --add 'AWS_SECURITY_TOKEN\s*=\s*[A-Za-z0-9/+=]+'
+          
+          # AWS Account and ARN patterns
+          git secrets --add 'AWS_ACCOUNT_ID\s*=\s*[0-9]{12}'
+
+      - name: Scan repository
+        run: |
+          git secrets --scan-history
+          git secrets --scan
+
+  build-musl:
+    continue-on-error: false
+    timeout-minutes: 90
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+        
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Set up Java for outer build
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          
+      - name: Install Maven for outer build
+        run: |
+          curl -sSL https://downloads.apache.org/maven/maven-3/3.9.11/binaries/apache-maven-3.9.11-bin.tar.gz | tar xz
+          sudo mv apache-maven-3.9.11 /opt/maven
+          echo "MAVEN_HOME=/opt/maven" >> $GITHUB_ENV
+          echo "/opt/maven/bin" >> $GITHUB_PATH
+    
+      - name: Cache Maven packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+          
+      - name: Build outer Java layer
+        shell: bash
+        run: |
+          mvn -U clean install -Dcheckstyle.skip=true -DskipTests
+        
+      - name: Build GraalVM musl container
+        run: |
+          cd native-schema-registry/musl-build-helper-scripts/musl
+          docker build -f Dockerfile.graalvm -t native-graalvm .
+          
+      - name: Build CMake musl container  
+        run: |
+          cd native-schema-registry/musl-build-helper-scripts/musl
+          docker build -f Dockerfile.cmake -t native-cmake .
+
+      - name: Clean previous builds
+        run: |
+          rm -rf native-schema-registry/c/build
+          
+      - name: Build Java components with musl
+        run: |
+          cd native-schema-registry/musl-build-helper-scripts/musl
+          HOST_SOURCE_DIR="$(realpath ../../..)"
+          SCRIPT_PATH="$(realpath ./build-musl-inner.sh)"
+          CONTAINER_WORKDIR="/workspace"
+          
+          docker run --rm \
+            --entrypoint /bin/sh \
+            -v "$HOST_SOURCE_DIR":"$CONTAINER_WORKDIR" \
+            -v "$SCRIPT_PATH":/tmp/musl-build-inner.sh \
+            -w "$CONTAINER_WORKDIR" \
+            "native-graalvm" \
+            /tmp/musl-build-inner.sh
+
+      - name: Build C components with musl
+        run: |
+          cd native-schema-registry/musl-build-helper-scripts/musl  
+          HOST_SOURCE_DIR="$(realpath ../../..)"
+          CMAKE_SCRIPT_PATH="$(realpath ./build-musl-cmake.sh)"
+          CONTAINER_WORKDIR="/workspace"
+          
+          docker run --rm \
+            -v "$HOST_SOURCE_DIR":"$CONTAINER_WORKDIR" \
+            -v "$CMAKE_SCRIPT_PATH":/tmp/musl-build-cmake.sh \
+            -w "$CONTAINER_WORKDIR" \
+            "native-cmake" \
+            /tmp/musl-build-cmake.sh
+
+      - name: Build and Test C# with musl
+        run: |
+          docker run --rm \
+            -v "$(pwd)":"$(pwd)" \
+            -w "$(pwd)/native-schema-registry/csharp/AWSGsrSerDe" \
+            mcr.microsoft.com/dotnet/sdk:8.0-alpine \
+            sh -c "
+              # First build - expected to fail but continue workflow
+              dotnet build . || echo 'First build failed as expected'
+              # Second build - should succeed  
+              dotnet build .
+              # Only run unit tests as a part of the workflow
+              dotnet test . --filter 'JsonSerializerTest | AvroSerializerTest | JsonDeserializerTest | AvroDeserializerTest | (ProtobufSerializerTest&FullyQualifiedName!~KafkaFlow) | (ProtobufDeserializerTest&FullyQualifiedName!~KafkaFlow)' --no-build
+            "
+
+      # - name: Verify musl artifacts
+      #   run: |
+      #     echo "Checking for musl build artifacts..."
+      #     find . -name "*.so" -o -name "*.a" -o -name "libglue_schema_registry*" | head -10 || echo "No shared libraries found yet"
+          
+      # - name: Fix permissions
+      #   run: |
+      #     # Fix ownership issues from Docker containers as mentioned in musl README
+      #     sudo chown -R $(whoami):$(whoami) .
+          
+      # - name: Upload musl artifacts
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: musl-native-libraries
+      #     path: |
+      #       native-schema-registry/c/build/
+      #       **/target/
+      #       **/*.so
+      #       **/*.a
+      #     if-no-files-found: warn
+      #     retention-days: 30
+
+      # - name: Test musl artifacts
+      #   run: |
+      #     echo "Testing musl build artifacts..."
+      #     # Basic verification that key files exist
+      #     if [ -d "native-schema-registry/c/build" ]; then
+      #       echo "✓ C build directory created"
+      #       ls -la native-schema-registry/c/build/ || true
+      #     else
+      #       echo "✗ C build directory not found"
+      #       exit 1
+      #     fi
+          
+      #     # Check for native libraries
+      #     echo "Looking for native libraries..."
+      #     find . -name "*.so" -o -name "*.a" | head -5 || echo "No native libraries found"
