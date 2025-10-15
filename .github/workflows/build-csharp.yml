@@ -49,24 +49,103 @@ jobs:
           git secrets --scan-history
           git secrets --scan
 
-  build-csharp:
+  build-csharp-multi-distro:
     continue-on-error: false
     timeout-minutes: 60
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        distro: 
+          - amazonlinux:2023
+          - ubuntu:22.04
+          - centos:stream9
+          - fedora:40
+          - opensuse/leap:15.6
+        include:
+          - distro: amazonlinux:2023
+            package_manager: yum
+            update_cmd: "yum update -y"
+            install_cmd: "yum install -y"
+            group_install_cmd: "yum groupinstall -y"
+            dotnet_setup: |
+              rpm -Uvh https://packages.microsoft.com/config/centos/7/packages-microsoft-prod.rpm
+              wget -O /etc/yum.repos.d/microsoft-prod.repo https://packages.microsoft.com/config/centos/7/prod.repo
+              yum list available dotnet*
+              yes | yum install dotnet-sdk-8.0
+            
+          - distro: ubuntu:22.04
+            package_manager: apt
+            update_cmd: "apt update"
+            install_cmd: "apt install -y"
+            group_install_cmd: "apt install -y build-essential"
+            dotnet_setup: |
+              wget https://packages.microsoft.com/config/ubuntu/22.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
+              dpkg -i packages-microsoft-prod.deb
+              rm packages-microsoft-prod.deb
+              apt update
+              apt install -y dotnet-sdk-8.0
+              
+          - distro: centos:stream9
+            package_manager: dnf
+            update_cmd: "dnf update -y"
+            install_cmd: "dnf install -y"
+            group_install_cmd: "dnf groupinstall -y"
+            dotnet_setup: |
+              rpm -Uvh https://packages.microsoft.com/config/centos/8/packages-microsoft-prod.rpm
+              dnf install -y dotnet-sdk-8.0
+              
+          - distro: fedora:40
+            package_manager: dnf
+            update_cmd: "dnf update -y"
+            install_cmd: "dnf install -y"
+            group_install_cmd: "dnf groupinstall -y"
+            dotnet_setup: |
+              rpm -Uvh https://packages.microsoft.com/config/fedora/37/packages-microsoft-prod.rpm
+              dnf install -y dotnet-sdk-8.0
+              
+          - distro: opensuse/leap:15.6
+            package_manager: zypper
+            update_cmd: "zypper refresh"
+            install_cmd: "zypper install -y"
+            group_install_cmd: "zypper install -y -t pattern devel_basis"
+            dotnet_setup: |
+              rpm -Uvh https://packages.microsoft.com/config/opensuse/15/packages-microsoft-prod.rpm
+              zypper install -y dotnet-sdk-8.0
+
     container:
-      image: amazonlinux:2023
+      image: ${{ matrix.distro }}
     steps:
       - name: Install required utilities
         run: |
-          yum install -y zip unzip tar findutils gzip clang-tools-extra nodejs wget
+          ${{ matrix.update_cmd }}
+          if [[ "${{ matrix.package_manager }}" == "apt" ]]; then
+            ${{ matrix.install_cmd }} zip unzip tar findutils gzip clang-tools nodejs wget curl gnupg2 software-properties-common
+          else
+            ${{ matrix.install_cmd }} zip unzip tar findutils gzip clang-tools-extra nodejs wget curl
+          fi
 
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         
       - name: Install CMake and dependencies
         run: |
-          yum install -y cmake gcc gcc-c++ git lcov pcre2-devel libasan libubsan
-          yum groupinstall -y "Development Tools"
+          if [[ "${{ matrix.package_manager }}" == "apt" ]]; then
+            ${{ matrix.install_cmd }} cmake gcc g++ git lcov libpcre2-dev
+            ${{ matrix.group_install_cmd }}
+          elif [[ "${{ matrix.package_manager }}" == "zypper" ]]; then
+            ${{ matrix.install_cmd }} cmake gcc gcc-c++ git lcov pcre2-devel
+            ${{ matrix.group_install_cmd }}
+          else
+            ${{ matrix.install_cmd }} cmake gcc gcc-c++ git lcov pcre2-devel
+            if [[ "${{ matrix.package_manager }}" == "yum" ]]; then
+              ${{ matrix.install_cmd }} libasan libubsan
+              ${{ matrix.group_install_cmd }} "Development Tools"
+            else
+              ${{ matrix.group_install_cmd }} "Development Tools"
+            fi
+          fi
+          
+          # Install SWIG from source for all distributions
           wget https://sourceforge.net/projects/swig/files/swig/swig-4.3.0/swig-4.3.0.tar.gz
           tar -xzf swig-4.3.0.tar.gz
           cd swig-4.3.0
@@ -77,10 +156,7 @@ jobs:
 
       - name: Set up .NET SDK
         run: |
-          rpm -Uvh https://packages.microsoft.com/config/centos/7/packages-microsoft-prod.rpm
-          wget -O /etc/yum.repos.d/microsoft-prod.repo https://packages.microsoft.com/config/centos/7/prod.repo
-          yum list available dotnet*
-          yes | yum install dotnet-sdk-8.0
+          ${{ matrix.dotnet_setup }}
 
       - name: Set up Java
         uses: graalvm/setup-graalvm@v1
@@ -101,8 +177,10 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.m2
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-m2
+          key: ${{ runner.os }}-${{ matrix.distro }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.distro }}-m2-
+            ${{ runner.os }}-m2-
 
       - name: Build Java 
         shell: bash
@@ -126,3 +204,92 @@ jobs:
           dotnet build .
           # Only run unit tests as a part of the workflow
           dotnet test . --filter 'JsonSerializerTest | AvroSerializerTest | JsonDeserializerTest | AvroDeserializerTest | (ProtobufSerializerTest&FullyQualifiedName!~KafkaFlow) | (ProtobufDeserializerTest&FullyQualifiedName!~KafkaFlow)' --no-build
+
+  build-musl:
+    continue-on-error: false
+    timeout-minutes: 90
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+        
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        
+      - name: Build GraalVM musl container
+        run: |
+          cd native-schema-registry/musl-build-helper-scripts/musl
+          docker build -f Dockerfile.graalvm -t native-graalvm .
+          
+      - name: Build CMake musl container  
+        run: |
+          cd native-schema-registry/musl-build-helper-scripts/musl
+          docker build -f Dockerfile.cmake -t native-cmake .
+
+      - name: Clean previous builds
+        run: |
+          rm -rf native-schema-registry/c/build
+          
+      - name: Build Java components with musl
+        run: |
+          cd native-schema-registry/musl-build-helper-scripts/musl
+          HOST_SOURCE_DIR="$(realpath ../../..)"
+          SCRIPT_PATH="$(realpath ./build-musl-inner.sh)"
+          CONTAINER_WORKDIR="/workspace"
+          
+          docker run --rm \
+            --entrypoint /bin/sh \
+            -v "$HOST_SOURCE_DIR":"$CONTAINER_WORKDIR" \
+            -v "$SCRIPT_PATH":/tmp/musl-build-inner.sh \
+            -w "$CONTAINER_WORKDIR" \
+            "native-graalvm" \
+            /tmp/musl-build-inner.sh
+
+      - name: Build C components with musl
+        run: |
+          cd native-schema-registry/musl-build-helper-scripts/musl  
+          HOST_SOURCE_DIR="$(realpath ../../..)"
+          CMAKE_SCRIPT_PATH="$(realpath ./build-musl-cmake.sh)"
+          CONTAINER_WORKDIR="/workspace"
+          
+          docker run --rm \
+            -v "$HOST_SOURCE_DIR":"$CONTAINER_WORKDIR" \
+            -v "$CMAKE_SCRIPT_PATH":/tmp/musl-build-cmake.sh \
+            -w "$CONTAINER_WORKDIR" \
+            "native-cmake" \
+            /tmp/musl-build-cmake.sh
+
+      - name: Build and Test C# with musl
+        run: |
+          docker run --rm \
+            -v "$(pwd)":"$(pwd)" \
+            -w "$(pwd)/native-schema-registry/csharp/AWSGsrSerDe" \
+            mcr.microsoft.com/dotnet/sdk:8.0-alpine \
+            sh -c "
+              # First build - fails because protoc doesn't work with Alpine (musl libc based image)
+              dotnet clean . && dotnet build . || true
+              
+              # Workaround because protoc from grpc.tools is not compatible with Alpine
+              # This is only for the protoc compilation, and does not affect functionality of the library
+              apk update && \
+              apk --no-cache add libc6-compat && \
+              apk --no-cache add \
+              -X https://dl-cdn.alpinelinux.org/alpine/v3.17/main \
+              -X https://dl-cdn.alpinelinux.org/alpine/v3.17/community \
+              protobuf=3.21.9-r0 && \
+              WORKDIR=\$(pwd) && \
+              cd /root/.nuget/packages/grpc.tools/2.48.1/tools/linux_x64 && \
+              rm protoc && \
+              ln -s /usr/bin/protoc protoc && \
+              chmod +x grpc_csharp_plugin && \
+              cd \$WORKDIR
+              
+              # Need to build it twice due to protobuf compilation misorder (normal for csharp builds today)
+              dotnet build . || true
+              dotnet build .
+              
+              # Only run unit tests as a part of the workflow
+              dotnet test . --filter 'JsonSerializerTest | AvroSerializerTest | JsonDeserializerTest | AvroDeserializerTest | (ProtobufSerializerTest&FullyQualifiedName!~KafkaFlow) | (ProtobufDeserializerTest&FullyQualifiedName!~KafkaFlow)' --no-build
+            "
