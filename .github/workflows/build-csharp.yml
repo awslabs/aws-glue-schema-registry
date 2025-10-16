@@ -116,9 +116,9 @@ jobs:
       - name: Install required utilities
         run: |
           ${{ matrix.update_cmd }}
-          ${{ matrix.install_cmd }} zip unzip tar findutils gzip ${{ matrix.clang_tools }} nodejs wget curl
+          ${{ matrix.install_cmd }} zip unzip tar findutils gzip ${{ matrix.clang_tools }} nodejs wget
           if [[ "${{ matrix.package_manager }}" == "apt" ]]; then
-            ${{ matrix.install_cmd }} gnupg2 software-properties-common
+            ${{ matrix.install_cmd }} curl gnupg2 software-properties-common
           fi
 
       - name: Checkout code
