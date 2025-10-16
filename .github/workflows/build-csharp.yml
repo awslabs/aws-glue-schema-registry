@@ -73,8 +73,7 @@ jobs:
             dotnet_setup: |
               rpm -Uvh https://packages.microsoft.com/config/centos/7/packages-microsoft-prod.rpm
               wget -O /etc/yum.repos.d/microsoft-prod.repo https://packages.microsoft.com/config/centos/7/prod.repo
-              yum list available dotnet*
-              yes | yum install dotnet-sdk-8.0
+              yum install -y dotnet-sdk-8.0
             
           - distro: ubuntu:22.04
             package_manager: apt
