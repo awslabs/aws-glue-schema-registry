@@ -65,9 +65,11 @@ jobs:
             package_manager: yum
             update_cmd: "yum update -y"
             install_cmd: "yum install -y"
-            group_install_cmd: "yum groupinstall -y"
+            group_install_cmd: "yum groupinstall -y \"Development Tools\""
             clang_tools: "clang-tools-extra"
             pcre_dev: "pcre2-devel"
+            cpp_compiler: "gcc-c++"
+            extra_packages: "libasan libubsan"
             dotnet_setup: |
               rpm -Uvh https://packages.microsoft.com/config/centos/7/packages-microsoft-prod.rpm
               wget -O /etc/yum.repos.d/microsoft-prod.repo https://packages.microsoft.com/config/centos/7/prod.repo
@@ -81,6 +83,8 @@ jobs:
             group_install_cmd: "apt install -y build-essential"
             clang_tools: "clang-tools"
             pcre_dev: "libpcre2-dev"
+            cpp_compiler: "g++"
+            extra_packages: ""
             dotnet_setup: |
               wget https://packages.microsoft.com/config/ubuntu/22.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
               dpkg -i packages-microsoft-prod.deb
@@ -92,9 +96,11 @@ jobs:
             package_manager: dnf
             update_cmd: "dnf update -y"
             install_cmd: "dnf install -y"
-            group_install_cmd: "dnf groupinstall -y"
+            group_install_cmd: "dnf groupinstall -y \"Development Tools\""
             clang_tools: "clang-tools-extra"
             pcre_dev: "pcre2-devel"
+            cpp_compiler: "gcc-c++"
+            extra_packages: ""
             dotnet_setup: |
               rpm -Uvh https://packages.microsoft.com/config/fedora/37/packages-microsoft-prod.rpm
               dnf install -y dotnet-sdk-8.0
@@ -106,6 +112,8 @@ jobs:
             group_install_cmd: "zypper install -y -t pattern devel_basis"
             clang_tools: "clang-tools"
             pcre_dev: "pcre2-devel"
+            cpp_compiler: "gcc-c++"
+            extra_packages: ""
             dotnet_setup: |
               rpm -Uvh https://packages.microsoft.com/config/opensuse/15/packages-microsoft-prod.rpm
               zypper install -y dotnet-sdk-8.0
@@ -114,6 +122,7 @@ jobs:
       image: ${{ matrix.distro }}
     steps:
       - name: Install required utilities
+        shell: bash
         run: |
           ${{ matrix.update_cmd }}
           ${{ matrix.install_cmd }} zip unzip tar findutils gzip ${{ matrix.clang_tools }} nodejs wget
@@ -125,23 +134,13 @@ jobs:
         uses: actions/checkout@v4
         
       - name: Install CMake and dependencies
+        shell: bash
         run: |
-          ${{ matrix.install_cmd }} cmake gcc git lcov ${{ matrix.pcre_dev }}
-          if [[ "${{ matrix.package_manager }}" == "apt" ]]; then
-            ${{ matrix.install_cmd }} g++
-            ${{ matrix.group_install_cmd }}
-          elif [[ "${{ matrix.package_manager }}" == "zypper" ]]; then
-            ${{ matrix.install_cmd }} gcc-c++
-            ${{ matrix.group_install_cmd }}
-          else
-            ${{ matrix.install_cmd }} gcc-c++
-            if [[ "${{ matrix.package_manager }}" == "yum" ]]; then
-              ${{ matrix.install_cmd }} libasan libubsan
-              ${{ matrix.group_install_cmd }} "Development Tools"
-            else
-              ${{ matrix.group_install_cmd }} "Development Tools"
-            fi
+          ${{ matrix.install_cmd }} cmake gcc git lcov ${{ matrix.pcre_dev }} ${{ matrix.cpp_compiler }}
+          if [[ -n "${{ matrix.extra_packages }}" ]]; then
+            ${{ matrix.install_cmd }} ${{ matrix.extra_packages }}
           fi
+          ${{ matrix.group_install_cmd }}
           
           # Install SWIG from source for all distributions
           wget https://sourceforge.net/projects/swig/files/swig/swig-4.3.0/swig-4.3.0.tar.gz
@@ -153,6 +152,7 @@ jobs:
           swig -version
 
       - name: Set up .NET SDK
+        shell: bash
         run: |
           ${{ matrix.dotnet_setup }}
 
