@@ -174,9 +174,9 @@ jobs:
       - name: C Make
         shell: bash
         run: |
-          cd native-schema-registry
-          rm -rf target && mkdir -p target
-          cmake -S . -Bbuild  -DDISABLE_TESTS=ON -DDISABLE_QUALITY_GATES=ON
+          rm -rf native-schema-registry/target && mkdir -p native-schema-registry/target
+          cd native-schema-registry/c
+          cmake -S . -Bbuild -DDISABLE_TESTS=ON -DDISABLE_QUALITY_GATES=ON
           cmake --build build
 
       - name: Build C#
