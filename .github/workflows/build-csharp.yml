@@ -79,7 +79,7 @@ jobs:
             update_cmd: "apt update"
             install_cmd: "apt install -y"
             group_install_cmd: "apt install -y build-essential"
-            clang_tools: "clang-tools"
+            clang_tools: "clang-tools clang-tidy"
             pcre_dev: "libpcre2-dev"
             cpp_compiler: "g++"
             extra_packages: ""
