@@ -117,7 +117,7 @@ jobs:
               rpm -Uvh https://packages.microsoft.com/config/opensuse/15/packages-microsoft-prod.rpm
               rpm --import https://packages.microsoft.com/keys/microsoft.asc
               zypper refresh
-              zypper install -y --no-gpg-checks dotnet-sdk-8.0
+              zypper install -y dotnet-sdk-8.0
 
     container:
       image: ${{ matrix.distro }}
