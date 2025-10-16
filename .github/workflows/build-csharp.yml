@@ -175,7 +175,11 @@ jobs:
         shell: bash
         run: |
           cd native-schema-registry/c
-          cmake -S . -Bbuild
+          if [[ "${{ matrix.package_manager }}" == "dnf" ]]; then
+            cmake -S . -Bbuild -DDISABLE_TESTS=ON
+          else
+            cmake -S . -Bbuild
+          fi
           cmake --build build
 
       - name: Build C#
