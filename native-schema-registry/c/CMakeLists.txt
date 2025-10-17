@@ -88,8 +88,12 @@ add_custom_target(quality_gates
     VERBATIM
 )
 
-# Add dependencies to all main targets and tests
-add_dependencies(quality_gates ${SERDE_MODULE_NAME} ${DATA_TYPES_MODULE_NAME} ${TEST_TARGETS} copy-libs-for-tests)
+# Add dependencies - conditional based on whether tests are enabled
+if(NOT DISABLE_TESTS)
+    add_dependencies(quality_gates ${SERDE_MODULE_NAME} ${DATA_TYPES_MODULE_NAME} ${TEST_TARGETS} copy-libs-for-tests)
+else()
+    add_dependencies(quality_gates ${SERDE_MODULE_NAME} ${DATA_TYPES_MODULE_NAME})
+endif()
 
 if(NOT DISABLE_QUALITY_GATES)
     # Add quality gates to run automatically on every build
@@ -101,5 +105,10 @@ if(NOT DISABLE_QUALITY_GATES)
         COMMENT "Running quality gates: tests, static analysis, and coverage"
         VERBATIM
     )
-    add_dependencies(quality_gates_auto ${SERDE_MODULE_NAME} ${DATA_TYPES_MODULE_NAME} ${TEST_TARGETS} copy-libs-for-tests)
+    # Add conditional dependencies for quality_gates_auto as well
+    if(NOT DISABLE_TESTS)
+        add_dependencies(quality_gates_auto ${SERDE_MODULE_NAME} ${DATA_TYPES_MODULE_NAME} ${TEST_TARGETS} copy-libs-for-tests)
+    else()
+        add_dependencies(quality_gates_auto ${SERDE_MODULE_NAME} ${DATA_TYPES_MODULE_NAME})
+    endif()
 endif()
