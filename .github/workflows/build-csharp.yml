@@ -72,7 +72,7 @@ jobs:
             dotnet_setup: |
               rpm -Uvh https://packages.microsoft.com/config/centos/7/packages-microsoft-prod.rpm
               wget -O /etc/yum.repos.d/microsoft-prod.repo https://packages.microsoft.com/config/centos/7/prod.repo
-              yum install -y dotnet-sdk-8.0
+              yum install -y dotnet-sdk-8.0.117
             
           - distro: ubuntu:22.04
             package_manager: apt
@@ -88,7 +88,7 @@ jobs:
               dpkg -i packages-microsoft-prod.deb
               rm packages-microsoft-prod.deb
               apt update
-              apt install -y dotnet-sdk-8.0
+              apt install -y dotnet-sdk-8.0.117
               
           - distro: fedora:40
             package_manager: dnf
@@ -101,7 +101,7 @@ jobs:
             extra_packages: ""
             dotnet_setup: |
               rpm -Uvh https://packages.microsoft.com/config/fedora/37/packages-microsoft-prod.rpm
-              dnf install -y dotnet-sdk-8.0
+              dnf install -y dotnet-sdk-8.0.117
 
     container:
       image: ${{ matrix.distro }}
