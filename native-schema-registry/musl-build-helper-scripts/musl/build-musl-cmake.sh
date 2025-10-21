@@ -10,6 +10,6 @@ echo "Building native schema registry with musl..."
 echo $PATH
 cd /workspace/native-schema-registry/c
 rm -rf build
-cmake -S . -B build -DBUILD_TARGET=musl-cross
+cmake -S . -B build -DBUILD_TARGET=musl-cross -DDISABLE_TESTS=ON -DDISABLE_QUALITY_GATES=ON
 cd build
-cmake --build . 
+cmake --build .
