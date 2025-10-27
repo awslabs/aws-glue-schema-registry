@@ -11,6 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using Com.Amazonaws.Services.Schemaregistry.Tests.Protobuf.Syntax3.Alltypes;
 using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
@@ -215,7 +216,7 @@ namespace AWSGsrSerDe.Tests.utils
                 F33 = new Struct(),
                 F35 = 64L,
                 F37 = new Api { Name = "newapi" },
-                F42 = new Enum { Enumvalue = { new EnumValue { Name = "enumValue" } } },
+                F42 = new Google.Protobuf.WellKnownTypes.Enum { Enumvalue = { new EnumValue { Name = "enumValue" } } },
                 F47 = new Method { Name = "method", RequestTypeUrl = "sampleUrl" },
                 F48 = new Mixin { Name = "mixin" },
                 F9 = CalendarPeriod.Day,
@@ -242,7 +243,7 @@ namespace AWSGsrSerDe.Tests.utils
                 F33 = new Struct(),
                 F35 = 64L,
                 F37 = new Api { Name = "newapi" },
-                F42 = new Enum { Enumvalue = { new EnumValue { Name = "enumValue" } } },
+                F42 = new Google.Protobuf.WellKnownTypes.Enum { Enumvalue = { new EnumValue { Name = "enumValue" } } },
                 F47 = new Method { Name = "method", RequestTypeUrl = "sampleUrl" },
                 F48 = new Mixin { Name = "mixin" },
                 F9 = CalendarPeriod.Day,
@@ -254,5 +255,90 @@ namespace AWSGsrSerDe.Tests.utils
                 F16 = new PostalAddress { PostalCode = "98121" },
                 F15 = new PhoneNumber { E164Number = "206" },
             };
+
+        #region Unicode Test Message Generators
+
+        /// <summary>
+        /// Creates a BasicSyntax3.Phone message with Unicode string content
+        /// </summary>
+        public static Basicsyntax3.Phone CreateUnicodeBasicMessage(string unicodeText)
+        {
+            return new Basicsyntax3.Phone
+            {
+                Name = unicodeText,
+            };
+        }
+
+        /// <summary>
+        /// Creates an AllTypes message with Unicode content in all string fields
+        /// </summary>
+        public static AllTypes CreateUnicodeAllTypesMessage(string unicodeText)
+        {
+            return new AllTypes
+            {
+                StringType = unicodeText,
+                RepeatedString = { unicodeText, $"Repeated-{unicodeText}", $"Multiple-{unicodeText}" },
+                OneOfMoney = new Money
+                {
+                    CurrencyCode = "USD", // Keep standard for consistency
+                    Units = 4L,
+                    Nanos = 2390,
+                },
+                // Test Unicode in nested messages
+                NestedMessage1 = new AllTypes.Types.NestedMessage1 { DoubleType = 123.456 },
+                // Test Unicode in map keys would require string keys, but this uses int keys
+                AComplexMap = {
+                    { 1, new AnotherTopLevelMessage.Types.NestedMessage2() }
+                }
+            };
+        }
+
+        /// <summary>
+        /// Creates a message that tests Unicode in various protobuf contexts
+        /// </summary>
+        public static IMessage CreateUnicodeTestMessage(string unicodeText, MessageType messageType)
+        {
+            switch (messageType)
+            {
+                case MessageType.BasicSyntax2:
+                    return new Basicsyntax2.Phone { Name = unicodeText };
+                case MessageType.BasicSyntax3:
+                    return new Basicsyntax3.Phone { Name = unicodeText };
+                case MessageType.AllTypesSyntax2:
+                    return CreateUnicodeSyntax2AllTypes(unicodeText);
+                case MessageType.AllTypesSyntax3:
+                    return CreateUnicodeAllTypesMessage(unicodeText);
+                case MessageType.ComplexNesting:
+                    return new ComplexNestingSyntax2.Customer { Name = unicodeText };
+                default:
+                    throw new ArgumentException($"Unsupported message type: {messageType}");
+            }
+        }
+
+        private static AllTypesSyntax2.AllTypes CreateUnicodeSyntax2AllTypes(string unicodeText)
+        {
+            return new AllTypesSyntax2.AllTypes
+            {
+                StringType = unicodeText,
+                RepeatedString = { unicodeText, $"Repeated-{unicodeText}" },
+                OneOfMoney = new Money { CurrencyCode = "USD", Units = 4L, Nanos = 2390 },
+                NestedMessage1 = new AllTypesSyntax2.AllTypes.Types.NestedMessage1 { DoubleType = 123.456 }
+            };
+        }
+
+        #endregion
+
+        #region Unicode Test Enums
+
+        public enum MessageType
+        {
+            BasicSyntax2,
+            BasicSyntax3,
+            AllTypesSyntax2,
+            AllTypesSyntax3,
+            ComplexNesting
+        }
+
+        #endregion
     }
 }
