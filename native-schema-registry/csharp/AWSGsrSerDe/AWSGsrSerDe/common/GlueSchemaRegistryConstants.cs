@@ -25,7 +25,7 @@ namespace AWSGsrSerDe.common
         public const string ProtobufMessageDescriptor = "protobufMessageDescriptor";
         public const string JsonObjectType = "jsonObjectType";
         public const string CacheItemExpirationTime = "cacheItemExpirationTime";
-        public const string CSharpUserAgentString = "csharp";
+        public static readonly string CSharpUserAgentString = $"csharp-{typeof(GlueSchemaRegistryConstants).Assembly.GetName().Version?.ToString(3) ?? "unknown"}";
 
         // TODO: need to expose it from Java to avoid code duplication
         public enum DataFormat
