@@ -44,9 +44,23 @@
 
     <Import Project="..\Libs\Libs.projitems" Label="Shared" />
     
+    <!-- Generate native-shared-object-version.txt from POM at build time using bash -->
+    <Target Name="GenerateNativeSharedObjectVersion" BeforeTargets="BeforeBuild">
+      <PropertyGroup>
+        <NativeVersionFile>$(MSBuildProjectDirectory)/native-shared-object-version.txt</NativeVersionFile>
+        <ExtractScript>$(MSBuildProjectDirectory)/scripts/extract-native-so-version.sh</ExtractScript>
+      </PropertyGroup>
+      
+      <!-- Make script executable and run it to generate version file -->
+      <Exec Command="chmod +x &quot;$(ExtractScript)&quot;" />
+      <Exec Command="bash &quot;$(ExtractScript)&quot; > &quot;$(NativeVersionFile)&quot;" />
+      
+      <Message Text="Generated native-shared-object-version.txt from POM" Importance="high" />
+    </Target>
+
     <ItemGroup>
       <None Include=".\bin\Release\net8.0\*.so" Pack="true" PackagePath="runtimes/linux-x64/native/" CopyToOutputDirectory="PreserveNewest" />
-      <None Include="java-version.txt" Pack="true" PackagePath="content/" CopyToOutputDirectory="Always" />
+      <None Include="native-shared-object-version.txt" Pack="true" PackagePath="content/" CopyToOutputDirectory="Always" />
     </ItemGroup>
 
 
