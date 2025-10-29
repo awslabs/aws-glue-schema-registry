@@ -13,6 +13,7 @@
 
 using System;
 using System.IO;
+using AWSGsrSerDe.common;
 
 namespace AWSGsrSerDe
 {
