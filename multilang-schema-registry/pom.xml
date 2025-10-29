@@ -20,7 +20,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>${parent.groupId}</groupId>
-    <artifactId>native-schema-registry</artifactId>
+    <artifactId>multilang-schema-registry</artifactId>
     <name>Native AWS Schema Registry</name>
     <description>AWS Glue Schema Registry native shared library wrapper</description>
     <url>https://aws.amazon.com/glue</url>
@@ -171,7 +171,7 @@
                     </annotationProcessorPaths>
                 </configuration>
             </plugin>
-            <!-- Disable checkstyle for native-schema-registry module -->
+            <!-- Disable checkstyle for multilang-schema-registry module -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
@@ -179,7 +179,7 @@
                     <skip>true</skip>
                 </configuration>
             </plugin>
-            <!-- Disable JaCoCo coverage checks for native-schema-registry module -->
+            <!-- Disable JaCoCo coverage checks for multilang-schema-registry module -->
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>

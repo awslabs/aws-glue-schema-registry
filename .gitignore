@@ -3,6 +3,13 @@
 .DS_Store
 *.iml
 
+# Ignore VSCode files
+.vscode/launch.json
+.vscode/settings.json
+
+# Ignore devcontainer files
+.devcontainer/devcontainer.json
+
 #Ignore Maven files
 **/target
 
@@ -19,36 +26,14 @@ integration-tests/volume/lib/kinesis-local/0.4.12/package-lock.json
 integration-tests/volume/cache/server.test.pem.crt
 integration-tests/volume/cache/server.test.pem.key
 integration-tests/volume/lib/kinesis-local/0.4.12/package.json
-golang-gsr-bundle.zip
-.devcontainer/devcontainer.json
-.vscode/launch.json
-.vscode/settings.json
-native-schema-registry/csharp/AWSGsrSerDe/AWSGsrSerDe/glue_schema_registry_deserializer.cs
-native-schema-registry/csharp/AWSGsrSerDe/AWSGsrSerDe/glue_schema_registry_schema.cs
-native-schema-registry/csharp/AWSGsrSerDe/AWSGsrSerDe/glue_schema_registry_serdeCSHARP_wrap.c
-native-schema-registry/csharp/AWSGsrSerDe/AWSGsrSerDe/glue_schema_registry_serializer.cs
-native-schema-registry/csharp/AWSGsrSerDe/AWSGsrSerDe/GsrSerDe.cs
-native-schema-registry/csharp/AWSGsrSerDe/AWSGsrSerDe/GsrSerDePINVOKE.cs
-native-schema-registry/csharp/AWSGsrSerDe/AWSGsrSerDe/mutable_byte_array.cs
-native-schema-registry/csharp/AWSGsrSerDe/AWSGsrSerDe/read_only_byte_array.cs
-native-schema-registry/csharp/AWSGsrSerDe/AWSGsrSerDe/SWIGTYPE_p_p_glue_schema_registry_error.cs
-native-schema-registry/csharp/AWSGsrSerDe/AWSGsrSerDe/SWIGTYPE_p_unsigned_char.cs
-native-schema-registry/golang/integration-tests/docker-logs.txt
-native-schema-registry/golang/lib/libaws_common_memalloc.so
-native-schema-registry/golang/lib/libnative_schema_registry_c_data_types.so
-native-schema-registry/golang/lib/libnative_schema_registry_c.so
-native-schema-registry/golang/lib/libnativeschemaregistry.so
-native-schema-registry/golang/pkg/GsrSerDe/glue_schema_registry_serdeGO_wrap.c
-native-schema-registry/golang/pkg/GsrSerDe/GsrSerDe.go
-native-schema-registry/GolangDemoGSRKafka/logs/consumer.log
-native-schema-registry/GolangDemoGSRKafka/logs/producer.log
-native-schema-registry/target/ignore
-native-schema-registry/golang/lib/**
-native-schema-registry/golang/lib/*
-native-schema-registry/golang/lib/*.so
-native-schema-registry/golang/lib/libaws_common_memalloc.so
-native-schema-registry/golang/lib/libnative_schema_registry_c_data_types.so
-native-schema-registry/golang/lib/libnative_schema_registry_c.so
-native-schema-registry/golang/lib/libnativeschemaregistry.so
-native-schema-registry/golang/pkg/GsrSerDe/glue_schema_registry_serdeGO_wrap.c
-native-schema-registry/golang/pkg/GsrSerDe/GsrSerDe.go
+
+multilang-schema-registry/csharp/AWSGsrSerDe/AWSGsrSerDe/glue_schema_registry_deserializer.cs
+multilang-schema-registry/csharp/AWSGsrSerDe/AWSGsrSerDe/glue_schema_registry_schema.cs
+multilang-schema-registry/csharp/AWSGsrSerDe/AWSGsrSerDe/glue_schema_registry_serdeCSHARP_wrap.c
+multilang-schema-registry/csharp/AWSGsrSerDe/AWSGsrSerDe/glue_schema_registry_serializer.cs
+multilang-schema-registry/csharp/AWSGsrSerDe/AWSGsrSerDe/GsrSerDe.cs
+multilang-schema-registry/csharp/AWSGsrSerDe/AWSGsrSerDe/GsrSerDePINVOKE.cs
+multilang-schema-registry/csharp/AWSGsrSerDe/AWSGsrSerDe/mutable_byte_array.cs
+multilang-schema-registry/csharp/AWSGsrSerDe/AWSGsrSerDe/read_only_byte_array.cs
+multilang-schema-registry/csharp/AWSGsrSerDe/AWSGsrSerDe/SWIGTYPE_p_p_glue_schema_registry_error.cs
+multilang-schema-registry/csharp/AWSGsrSerDe/AWSGsrSerDe/SWIGTYPE_p_unsigned_char.cs

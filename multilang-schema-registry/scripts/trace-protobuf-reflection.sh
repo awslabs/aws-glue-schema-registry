@@ -12,7 +12,7 @@
 set -e
 
 JAVA_HOME=${GRAALVM_HOME:-$JAVA_HOME}
-CONFIG_DIR="src/main/resources/META-INF/native-image/software.amazon.glue/native-schema-registry"
+CONFIG_DIR="src/main/resources/META-INF/native-image/software.amazon.glue/multilang-schema-registry"
 TEMP_CONFIG_DIR="temp-protobuf-config"
 
 echo "Protocol Buffers Reflection Tracing Agent"

@@ -9,7 +9,7 @@ Commonly because the docker containers set ownership permissions of the resultin
 
 
 # usage
-Ensure that `native-schema-registry/c/build` is deleted
+Ensure that `multilang-schema-registry/c/build` is deleted
 
 Ensure that docker is installed
 

@@ -30,15 +30,15 @@ RUN pwd
 
 # TODO: remove this workaround when we have a straightforward way to build java first and then c
 # Build  C native libraries - just for java build to work as there is a dependency on c headers
-WORKDIR /tmp/native-schema-registry/c
+WORKDIR /tmp/multilang-schema-registry/c
 RUN cmake -S . -B build \
   -DCMAKE_C_COMPILER=x86_64-linux-musl-gcc \
   -DCMAKE_POSITION_INDEPENDENT_CODE=ON 
-WORKDIR /tmp/native-schema-registry/c/build
+WORKDIR /tmp/multilang-schema-registry/c/build
 RUN cmake --build . || true
 
 # Build Java native-image profile
-WORKDIR /tmp/native-schema-registry
+WORKDIR /tmp/multilang-schema-registry
 RUN mvn clean install -P native-image-musl -DskipTests -Dcheckstyle.skip=true
 
 # ==========================
@@ -56,7 +56,7 @@ RUN apk add --no-cache \
     swig lcov protobuf protobuf-dev protoc \
 
 # --- C build ---
-WORKDIR /tmp/native-schema-registry/c
+WORKDIR /tmp/multilang-schema-registry/c
 RUN rm -rf build
 RUN cmake -S . -B build && cmake --build build
 

@@ -2,11 +2,11 @@ name: Build CSharp
 
 on:
   push:
-    branches: [ master, native-schema-registry-release ]
+    branches: [ master ]
   pull_request:
-    branches: [ master, native-schema-registry-release ]
+    branches: [ master ]
   release:
-    branches: [ master, native-schema-registry-release ]
+    branches: [ master ]
     types: [ created ]
 
 jobs:
@@ -174,15 +174,15 @@ jobs:
       - name: C Make
         shell: bash
         run: |
-          rm -rf native-schema-registry/target && mkdir -p native-schema-registry/target
-          cd native-schema-registry/c
+          rm -rf multilang-schema-registry/target && mkdir -p multilang-schema-registry/target
+          cd multilang-schema-registry/c
           cmake -S . -Bbuild -DDISABLE_TESTS=ON -DDISABLE_QUALITY_GATES=ON
           cmake --build build
 
       - name: Build C#
         shell: bash
         run: |
-          cd native-schema-registry/csharp/AWSGsrSerDe/
+          cd multilang-schema-registry/csharp/AWSGsrSerDe/
           # First build - expected to fail but continue workflow
           dotnet build . || echo "First build failed as expected"
           # Second build - should succeed
@@ -205,21 +205,21 @@ jobs:
         
       - name: Build GraalVM musl container
         run: |
-          cd native-schema-registry/musl-build-helper-scripts/musl
+          cd multilang-schema-registry/musl-build-helper-scripts/musl
           docker build -f Dockerfile.graalvm -t native-graalvm .
           
       - name: Build CMake musl container  
         run: |
-          cd native-schema-registry/musl-build-helper-scripts/musl
+          cd multilang-schema-registry/musl-build-helper-scripts/musl
           docker build -f Dockerfile.cmake -t native-cmake .
 
       - name: Clean previous builds
         run: |
-          rm -rf native-schema-registry/c/build
+          rm -rf multilang-schema-registry/c/build
           
       - name: Build Java components with musl
         run: |
-          cd native-schema-registry/musl-build-helper-scripts/musl
+          cd multilang-schema-registry/musl-build-helper-scripts/musl
           HOST_SOURCE_DIR="$(realpath ../../..)"
           SCRIPT_PATH="$(realpath ./build-musl-inner.sh)"
           CONTAINER_WORKDIR="/workspace"
@@ -234,7 +234,7 @@ jobs:
 
       - name: Build C components with musl
         run: |
-          cd native-schema-registry/musl-build-helper-scripts/musl  
+          cd multilang-schema-registry/musl-build-helper-scripts/musl  
           HOST_SOURCE_DIR="$(realpath ../../..)"
           CMAKE_SCRIPT_PATH="$(realpath ./build-musl-cmake.sh)"
           CONTAINER_WORKDIR="/workspace"
@@ -250,7 +250,7 @@ jobs:
         run: |
           docker run --rm \
             -v "$(pwd)":"$(pwd)" \
-            -w "$(pwd)/native-schema-registry/csharp/AWSGsrSerDe" \
+            -w "$(pwd)/multilang-schema-registry/csharp/AWSGsrSerDe" \
             mcr.microsoft.com/dotnet/sdk:8.0-alpine \
             sh -c "
               # First build - fails because protoc doesn't work with Alpine (musl libc based image)
