@@ -35,7 +35,7 @@ This outputs: ./bin/Release/AWSGsrSerDe.1.1.25.nupkg
 # Set AWS environment credentials and verify that the 'test-registry' exists in AWS Glue.
 # This ensures that libnativeschemaregistry.so can locate its dependent .so files.
 
-export LD_LIBRARY_PATH=/workspaces/aws-glue-schema-registry/native-schema-registry/csharp/AWSGsrSerDe/AWSGsrSerDe/bin/Release/net8.0
+export LD_LIBRARY_PATH=/workspaces/aws-glue-schema-registry/multilang-schema-registry/csharp/AWSGsrSerDe/AWSGsrSerDe/bin/Release/net8.0
 
 # Run the test suite
 dotnet test .

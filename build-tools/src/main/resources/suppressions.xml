@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
-<!DOCTYPE suppressions PUBLIC
-    "-//Puppy Crawl//DTD Suppressions 1.1//EN"
-    "http://www.puppycrawl.com/dtds/suppressions_1_1.dtd">
 
+<!DOCTYPE suppressions PUBLIC
+        "-//Puppy Crawl//DTD Suppressions 1.1//EN"
+        "http://www.puppycrawl.com/dtds/suppressions_1_1.dtd">
 <!--
 /*
  * Copyright 2019 Amazon.com, Inc. or its affiliates.
@@ -19,19 +19,14 @@
  * limitations under the License.
  */
   -->
-
 <suppressions>
-    <!-- Suppress TODO comments as they are informational -->
-    <suppress checks="TodoComment" files=".*\.java"/>
-    
-    <!-- Allow more than 4 parameters for native interop methods -->
-    <suppress checks="ParameterNumber" files=".*Handler\.java"/>
-    
-    <!-- Allow underscore naming for C interop types and variables -->
-    <suppress checks="TypeName" files="DataTypes\.java"/>
-    <suppress checks="ParameterName" files=".*Handler\.java"/>
-    <suppress checks="LocalVariableName" files=".*Handler\.java"/>
-    
-    <!-- Suppress all checkstyle errors for avrodata package -->
-    <suppress checks=".*" files=".*avrodata.*\.java"/>
+    <!-- Lombok @Value doesnt require you to mark fields private which causes this error -->
+    <suppress checks="VisibilityModifier" files="[\\/]model[\\/]" />
+    <suppress files="/configuration/*.*" checks="ParameterNumber"/>
+    <suppress files="^((?!Test).)*$" id="MethodNameTest"/>
+    <suppress files=".*Test\.java$" id="MethodNameRegular"/>
+    <suppress files="com[\\/]amazonaws[\\/]services[\\/]schemaregistry[\\/]kafkaconnect[\\/]avrodata[\\/]"
+              checks="[a-zA-Z0-9]*"/>
+    <suppress files="AvroData\.java"
+              checks="[a-zA-Z0-9]*"/>
 </suppressions>

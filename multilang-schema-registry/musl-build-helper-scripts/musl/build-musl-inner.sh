@@ -25,11 +25,11 @@ mvn clean compile -Dcheckstyle.skip=true || true
 mvn -U clean install -Dcheckstyle.skip=true -DskipTests || true
 
 # Build C lib
-cd /workspace/native-schema-registry/c
+cd /workspace/multilang-schema-registry/c
 cmake -S . -B build -DCMAKE_C_COMPILER=x86_64-linux-musl-gcc -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DBUILD_TARGET=musl-cross -DDISABLE_QUALITY_GATES=ON
 cd build
 cmake --build . || true
 
 # Build native image
-cd /workspace/native-schema-registry
+cd /workspace/multilang-schema-registry
 mvn install -P native-image-musl -DskipTests -Dcheckstyle.skip=true 

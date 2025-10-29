@@ -44,9 +44,9 @@ public class ExceptionWriter {
             com.amazonaws.services.schemaregistry.serializers.GlueSchemaRegistrySerializationFacade.encode(GlueSchemaRegistrySerializationFacade.java:125)
             com.amazonaws.services.schemaregistry.serializers.GlueSchemaRegistrySerializerImpl.encode(GlueSchemaRegistrySerializerImpl.java:79)
             com.amazonaws.services.schemaregistry.GlueSchemaRegistrySerializationHandler.encodeWithSchema(GlueSchemaRegistrySerializationHandler.java:90)
-        at AWSGsrSerDe.GlueSchemaRegistrySerializer.Encode(String transportName, GlueSchemaRegistrySchema schema, Byte[] bytes) in /Users/haoqyang/Documents/gsr_multilang/aws-glue-schema-registry/native-schema-registry/csharp/AWSGsrSerDe/AWSGsrSerDe/GlueSchemaRegistrySerializer.cs:line 78
-        at AWSGsrSerDe.serializer.GlueSchemaRegistryKafkaSerializer.Serialize(Object data, String topic) in /Users/haoqyang/Documents/gsr_multilang/aws-glue-schema-registry/native-schema-registry/csharp/AWSGsrSerDe/AWSGsrSerDe/serializer/GlueSchemaRegistryKafkaSerializer.cs:line 68
-        at AWSGsrSerDe.Tests.serializer.GlueSchemaRegistryKafkaSerializerTests.KafkaSerDeTestForAvroGenericRecord() in /Users/haoqyang/Documents/gsr_multilang/aws-glue-schema-registry/native-schema-registry/csharp/AWSGsrSerDe/AWSGsrSerDe.Tests/serializer/GlueSchemaRegistryKafkaSerializerTests.cs:line 52
+        at AWSGsrSerDe.GlueSchemaRegistrySerializer.Encode(String transportName, GlueSchemaRegistrySchema schema, Byte[] bytes) in /Users/haoqyang/Documents/gsr_multilang/aws-glue-schema-registry/multilang-schema-registry/csharp/AWSGsrSerDe/AWSGsrSerDe/GlueSchemaRegistrySerializer.cs:line 78
+        at AWSGsrSerDe.serializer.GlueSchemaRegistryKafkaSerializer.Serialize(Object data, String topic) in /Users/haoqyang/Documents/gsr_multilang/aws-glue-schema-registry/multilang-schema-registry/csharp/AWSGsrSerDe/AWSGsrSerDe/serializer/GlueSchemaRegistryKafkaSerializer.cs:line 68
+        at AWSGsrSerDe.Tests.serializer.GlueSchemaRegistryKafkaSerializerTests.KafkaSerDeTestForAvroGenericRecord() in /Users/haoqyang/Documents/gsr_multilang/aws-glue-schema-registry/multilang-schema-registry/csharp/AWSGsrSerDe/AWSGsrSerDe.Tests/serializer/GlueSchemaRegistryKafkaSerializerTests.cs:line 52
      */
     private static String getFullStackTraceMessage(Throwable throwable) {
         String throwableMessage;
