@@ -1,13 +1,8 @@
-# Support multi-platform builds - ARG must be before FROM
-ARG TARGETPLATFORM
-FROM --platform=$TARGETPLATFORM ghcr.io/graalvm/native-image-community:24-muslib
+FROM ghcr.io/graalvm/native-image-community:24-muslib
 
 # Set UTF-8 locale to handle Unicode filenames (including emojis)
 ENV LANG=C.UTF-8
 ENV LC_ALL=C.UTF-8
-
-# Re-import TARGETPLATFORM after FROM
-ARG TARGETPLATFORM
 
 # Build PIC-compatible zlib to fix shared library linking
 
@@ -22,15 +17,9 @@ RUN microdnf install -y dnf dnf-plugins-core && \
     dnf -y --enablerepo=ol9_developer_EPEL install swig lcov gcc clang clang-tools-extra make cmake && \
     dnf clean all && rm -rf /var/cache/dnf
 
-# Determine the correct musl GCC based on target architecture
-RUN MUSL_GCC_PREFIX=$([ "$TARGETPLATFORM" = "linux/arm64" ] && echo "aarch64-linux-musl-gcc" || echo "x86_64-linux-musl-gcc") && \
-    echo "Using MUSL GCC: $MUSL_GCC_PREFIX" && \
-    echo "export MUSL_GCC_PREFIX=$MUSL_GCC_PREFIX" >> /etc/environment
-
 WORKDIR /tmp
-RUN MUSL_GCC_PREFIX=$([ "$TARGETPLATFORM" = "linux/arm64" ] && echo "aarch64-linux-musl-gcc" || echo "x86_64-linux-musl-gcc") && \
-    curl -L https://github.com/madler/zlib/releases/download/v1.3/zlib-1.3.tar.gz | tar -xz && \
+RUN curl -L https://github.com/madler/zlib/releases/download/v1.3/zlib-1.3.tar.gz | tar -xz && \
     cd zlib-1.3 && \
-    CC=$MUSL_GCC_PREFIX CFLAGS="-fPIC -O2" ./configure --static && \
+    CC=x86_64-linux-musl-gcc CFLAGS="-fPIC -O2" ./configure --static && \
     make && \
     cp libz.a /usr/local/musl/lib/libz.a
