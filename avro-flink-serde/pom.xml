@@ -21,7 +21,7 @@
 
     <groupId>software.amazon.glue</groupId>
     <artifactId>schema-registry-flink-serde</artifactId>
-    <version>1.1.25</version>
+    <version>1.1.26</version>
     <name>AWS Glue Schema Registry Flink Avro Serialization Deserialization Schema</name>
     <description>The AWS Glue Schema Registry Library for Apache Flink enables Java developers to easily integrate
         their Apache Flink applications with AWS Glue Schema Registry
@@ -31,7 +31,7 @@
     <parent>
         <groupId>software.amazon.glue</groupId>
         <artifactId>schema-registry-parent</artifactId>
-        <version>1.1.25</version>
+        <version>1.1.26</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -72,7 +72,7 @@
         <dependency>
             <groupId>software.amazon.glue</groupId>
             <artifactId>schema-registry-serde</artifactId>
-            <version>1.1.25</version>
+            <version>1.1.26</version>
         </dependency>
         <dependency>
           <groupId>org.projectlombok</groupId>

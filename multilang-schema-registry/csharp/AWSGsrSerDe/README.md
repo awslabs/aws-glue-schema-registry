@@ -27,7 +27,7 @@ After the build steps are successful, do the following:
 dotnet pack -c Release --no-build
 ```
 
-This outputs: ./bin/Release/AWSGsrSerDe.1.1.25.nupkg
+This outputs: ./bin/Release/AWSGsrSerDe.1.0.0.nupkg
 
 #### Running C# tests
 
