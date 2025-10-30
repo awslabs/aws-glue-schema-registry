@@ -12,6 +12,11 @@
           <PackageProjectUrl>https://github.com/awslabs/aws-glue-schema-registry</PackageProjectUrl>
           <RepositoryUrl>https://github.com/awslabs/aws-glue-schema-registry</RepositoryUrl>
           <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+          <!-- Additional package metadata -->
+          <PackageIcon>icon.png</PackageIcon>
+          <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+          <Authors>Amazon Web Services</Authors>
+          <PackageTags>aws;glue;schema-registry;avro;json;protobuf;kafka;serialization</PackageTags>
     </PropertyGroup>
 
     <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
@@ -61,6 +66,20 @@
     <ItemGroup>
       <None Include=".\bin\Release\net8.0\*.so" Pack="true" PackagePath="runtimes/linux-x64/native/" CopyToOutputDirectory="PreserveNewest" />
       <None Include="native-shared-object-version.txt" Pack="true" PackagePath="content/" CopyToOutputDirectory="Always" />
+    </ItemGroup>
+
+    <!-- Include additional files for NuGet package structure -->
+    <ItemGroup>
+      <!-- Include C#-specific README -->
+      <None Include="../README.md" Pack="true" PackagePath="README.md" />
+      
+      <!-- Include icon -->
+      <None Include="../icon.png" Pack="true" PackagePath="icon.png" />
+      
+      <!-- Include license and legal files from root -->
+      <None Include="../../../../LICENSE.txt" Pack="true" PackagePath="LICENSE" />
+      <None Include="../../../../NOTICE.txt" Pack="true" PackagePath="NOTICE" />
+      <None Include="../../../../THIRD-PARTY-LICENSES.txt" Pack="true" PackagePath="THIRD-PARTY-LICENSES" />
     </ItemGroup>
 
 
