@@ -28,6 +28,7 @@
         <AdditionalFiles Include="stylecop.json" />
         <PackageReference Include="System.Runtime.Caching" Version="6.0.0" />
         <PackageReference Include="System.Text.Json" Version="9.0.9" />
+        <PackageReference Include="SharpFuzz" Version="2.2.0" />
     </ItemGroup>
 
     <ItemGroup>
