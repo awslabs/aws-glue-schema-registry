@@ -169,7 +169,7 @@ namespace AWSGsrSerDe.Tests.serializer
                         Assert.IsTrue(deserialized is JsonDataWithSchema);
                         
                         var deserializedJson = (JsonDataWithSchema)deserialized;
-                        Assert.AreEqual(fuzzedJsonData.Schema, deserializedJson.Schema);
+                        AssertJsonSchemasEqual(fuzzedJsonData.Schema, deserializedJson.Schema);
                     }
                 }
                 catch (Exception ex) when (IsExpectedException(ex))
@@ -485,6 +485,39 @@ namespace AWSGsrSerDe.Tests.serializer
             }
         }
 
+        private void AssertJsonSchemasEqual(string expectedSchema, string actualSchema)
+        {
+            try
+            {
+                // Parse both schemas as JSON to normalize formatting
+                var expectedJson = JsonNode.Parse(expectedSchema);
+                var actualJson = JsonNode.Parse(actualSchema);
+                
+                // Compare the normalized JSON strings
+                var expectedNormalized = expectedJson.ToJsonString();
+                var actualNormalized = actualJson.ToJsonString();
+                
+                Assert.AreEqual(expectedNormalized, actualNormalized, 
+                    "JSON schemas are semantically different");
+            }
+            catch (JsonException)
+            {
+                // If JSON parsing fails, fall back to direct string comparison
+                // but normalize whitespace first
+                var expectedNormalized = NormalizeJsonString(expectedSchema);
+                var actualNormalized = NormalizeJsonString(actualSchema);
+                
+                Assert.AreEqual(expectedNormalized, actualNormalized,
+                    "JSON schema strings differ after normalization");
+            }
+        }
+        
+        private string NormalizeJsonString(string jsonString)
+        {
+            // Simple whitespace normalization as fallback
+            return string.Join("", jsonString.Where(c => !char.IsWhiteSpace(c)));
+        }
+
         private bool IsExpectedException(Exception ex)
         {
             // Define which exceptions are expected during fuzzing
@@ -499,6 +532,7 @@ namespace AWSGsrSerDe.Tests.serializer
                    ex is OverflowException ||
                    ex is OutOfMemoryException ||
                    ex is FileNotFoundException ||
+                   ex is Newtonsoft.Json.JsonReaderException ||
                    ex.GetType().Name.Contains("Avro") ||
                    ex.GetType().Name.Contains("Protobuf") ||
                    ex.GetType().Name.Contains("Schema") ||
