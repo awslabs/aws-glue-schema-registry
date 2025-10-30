@@ -72,8 +72,8 @@
 
     <!-- Include additional files for NuGet package structure -->
     <ItemGroup>
-      <None Include="../README.md" Pack="true" PackagePath="" />
-      <None Include="../icon.png" Pack="true" PackagePath="" />
+      <None Include="../README.md" Pack="true" PackagePath="README.md" />
+      <None Include="../icon.png" Pack="true" PackagePath="icon.png" />
       <None Include="../../../../LICENSE.txt" Pack="true" PackagePath="LICENSE.txt" />
       <None Include="../../../../NOTICE.txt" Pack="true" PackagePath="NOTICE.txt" />
       <None Include="../../../../THIRD-PARTY-LICENSES.txt" Pack="true" PackagePath="THIRD-PARTY-LICENSES.txt" />
