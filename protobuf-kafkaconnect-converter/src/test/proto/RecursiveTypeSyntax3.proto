@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax3;
+
+option java_package = "com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax3";
+option java_outer_classname = "RecursiveTypeSyntax3";
+
+message RecursiveType {
+  string name = 1;
+  RecursiveType parent = 2;
+  repeated RecursiveType children = 3;
+}
+
+message TreeNode {
+  int32 value = 1;
+  TreeNode left = 2;
+  TreeNode right = 3;
+}
