@@ -26,6 +26,10 @@ The versions we've used when building the native schema registry library are:
 
 -------------
 
+## Language specific README's
+Once the native shared object is generated, please look at the individual language READMEs to build the corresponding multilang client.
+1. C#: [[C#](csharp/AWSGsrSerDe/README.md)]
+
 #### Initialize class at build time when building GraalVM Native Image
 GraalVM needs to know AOT(ahead-of-time) the reflectively accessed program elements, therefore we
 need to supply these elements through build arguments. For example,

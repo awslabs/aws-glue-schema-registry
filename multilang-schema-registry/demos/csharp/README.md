@@ -37,18 +37,13 @@ Multi-threaded Protobuf GSR Kafka demonstration with 5 message types.
    ./start-kafka.sh
    ```
 
-2. Clean topics (for idempotent runs):
-   ```bash
-   ./cleanup-topics.sh
-   ```
-
-3. Start Producer (sends 10 messages per type = 50 total):
+2. Start Producer (sends 10 messages per type = 50 total):
    ```bash
    cd Producer
    ./run-producer.sh
    ```
 
-4. Start Consumer (in separate terminal):
+3. Start Consumer (in separate terminal):
    ```bash
    cd Consumer
    ./run-consumer.sh
@@ -69,6 +64,4 @@ Multi-threaded Protobuf GSR Kafka demonstration with 5 message types.
 ## Threading
 
 - **Producer**: 5 raw threads with separate serializer instances
-- **Consumer**: KafkaFlow manages consumption with separate deserializer instances
-- **Cleanup**: Proper disposal of all GSR resources on shutdown
-- **Idempotent**: Use `./cleanup-topics.sh` between runs
+- **Consumer**: KafkaFlow manages consumption with 15 separate deserializer instances per topic

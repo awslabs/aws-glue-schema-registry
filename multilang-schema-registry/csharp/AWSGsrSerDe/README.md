@@ -33,9 +33,6 @@ This outputs: ./bin/Release/AWSGsrSerDe.1.1.25.nupkg
 
 ```
 # Set AWS environment credentials and verify that the 'test-registry' exists in AWS Glue.
-# This ensures that libnativeschemaregistry.so can locate its dependent .so files.
-
-export LD_LIBRARY_PATH=/workspaces/aws-glue-schema-registry/multilang-schema-registry/csharp/AWSGsrSerDe/AWSGsrSerDe/bin/Release/net8.0
 
 # Run the test suite
 dotnet test .
@@ -45,6 +42,7 @@ dotnet test .
 dotnet tool install --global dotnet-coverage
 apt-get update && apt-get install libxml2
 dotnet-coverage collect dotnet test -f xml -o coverage.xml
+
 # for html report
 dotnet tool install -g dotnet-reportgenerator-globaltool
 reportgenerator -reports:**/coverage.xml -targetdir:coverage-report -reporttypes:Html
