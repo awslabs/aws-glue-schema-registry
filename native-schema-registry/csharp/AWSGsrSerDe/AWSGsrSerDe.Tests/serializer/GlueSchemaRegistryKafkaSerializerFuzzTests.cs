@@ -64,155 +64,135 @@ namespace AWSGsrSerDe.Tests.serializer
         [Test]
         public void FuzzAvroSerializationWithRandomData()
         {
-            Fuzzer.OutOfProcess.Run(stream =>
+            var random = new Random();
+            for (int i = 0; i < 100; i++)
             {
                 try
                 {
-                    // Read fuzzing input
-                    var buffer = new byte[Math.Min(stream.Length, 1024)]; // Limit size to prevent issues
-                    var bytesRead = stream.Read(buffer, 0, buffer.Length);
-                    if (bytesRead == 0) return;
+                    var fuzzData = new byte[random.Next(4, 1024)];
+                    random.NextBytes(fuzzData);
+                    var rand = new Random(BitConverter.ToInt32(fuzzData, 0));
+                    
+                    var fuzzedSchema = FuzzAvroSchema(fuzzData, rand);
+                    var recordSchema = Schema.Parse(fuzzedSchema);
+                    var fuzzedRecord = new GenericRecord((RecordSchema)recordSchema);
 
-                    var data = new byte[bytesRead];
-                    Array.Copy(buffer, data, bytesRead);
+                    FuzzAvroRecordData(fuzzedRecord, fuzzData, rand);
 
                     var kafkaSerializer = new GlueSchemaRegistryKafkaSerializer(AVRO_CONFIG_PATH);
-                    var kafkaDeserializer = new GlueSchemaRegistryKafkaDeserializer(AVRO_CONFIG_PATH);
-
-                    // Use the original test record (fuzzing the data would require deep Avro knowledge)
-                    var testRecord = RecordGenerator.GetTestAvroRecord();
-
-                    // Test serialization
-                    var serialized = kafkaSerializer.Serialize(testRecord, "fuzz-topic-avro");
+                    var serialized = kafkaSerializer.Serialize(fuzzedRecord, "fuzz-topic-avro");
                     
-                    if (serialized != null && serialized.Length > 0)
+                    if (serialized?.Length > 0)
                     {
-                        // Test deserialization
+                        var kafkaDeserializer = new GlueSchemaRegistryKafkaDeserializer(AVRO_CONFIG_PATH);
                         var deserialized = kafkaDeserializer.Deserialize("fuzz-topic-avro", serialized);
-                        
-                        // Verify basic properties
                         Assert.IsTrue(deserialized is GenericRecord);
+                        
+                        var deserializedRecord = (GenericRecord)deserialized;
+                        foreach (var field in fuzzedRecord.Schema.Fields)
+                        {
+                            Assert.AreEqual(fuzzedRecord[field.Name], deserializedRecord[field.Name]);
+                        }
                     }
                 }
                 catch (Exception ex) when (IsExpectedException(ex))
                 {
-                    // Expected exceptions during fuzzing - these are acceptable
-                    // as they indicate proper error handling
-                    TestContext.WriteLine($"Expected exception during Avro fuzzing: {ex.GetType().Name}");
+                    TestContext.WriteLine($"Expected exception during Avro fuzzing iteration {i}: {ex.GetType().Name} - {ex.Message}");
                 }
-            });
+            }
         }
 
         [Test]
         public void FuzzProtobufSerializationWithRandomData()
         {
-            var testMessages = new List<IMessage>
+            var random = new Random();
+            for (int i = 0; i < 100; i++)
             {
-                BASIC_SYNTAX2_MESSAGE,
-                BASIC_SYNTAX3_MESSAGE,
-                BASIC_REFERENCING_MESSAGE,
-                NESTING_MESSAGE_PROTO2,
-                NESTING_MESSAGE_PROTO3,
-                ALL_TYPES_MESSAGE_SYNTAX2,
-                ALL_TYPES_MESSAGE_SYNTAX3
-            };
-
-            foreach (var baseMessage in testMessages)
-            {
-                Fuzzer.OutOfProcess.Run(stream =>
+                try
                 {
-                    try
+                    var fuzzData = new byte[random.Next(4, 1024)];
+                    random.NextBytes(fuzzData);
+                    var rand = new Random(BitConverter.ToInt32(fuzzData, 0));
+                    
+                    var fuzzedMessage = FuzzProtobufMessage(fuzzData, rand);
+
+                    var dataConfig = new GlueSchemaRegistryDataFormatConfiguration(new Dictionary<string, dynamic>
                     {
-                        var buffer = new byte[Math.Min(stream.Length, 1024)];
-                        var bytesRead = stream.Read(buffer, 0, buffer.Length);
-                        if (bytesRead == 0) return;
+                        { GlueSchemaRegistryConstants.ProtobufMessageDescriptor, fuzzedMessage.Descriptor }
+                    });
 
-                        var dataConfig = new GlueSchemaRegistryDataFormatConfiguration(new Dictionary<string, dynamic>
-                        {
-                            { GlueSchemaRegistryConstants.ProtobufMessageDescriptor, baseMessage.Descriptor }
-                        });
-
-                        var protobufSerializer = new GlueSchemaRegistryKafkaSerializer(PROTOBUF_CONFIG_PATH);
+                    var protobufSerializer = new GlueSchemaRegistryKafkaSerializer(PROTOBUF_CONFIG_PATH);
+                    var serialized = protobufSerializer.Serialize(fuzzedMessage, $"fuzz-topic-{fuzzedMessage.Descriptor.Name}");
+                    
+                    if (serialized?.Length > 0)
+                    {
                         var protobufDeserializer = new GlueSchemaRegistryKafkaDeserializer(PROTOBUF_CONFIG_PATH, dataConfig);
-
-                        // Use original message (fuzzing protobuf messages requires complex field manipulation)
-                        var testMessage = baseMessage;
-
-                        // Test serialization
-                        var serialized = protobufSerializer.Serialize(testMessage, $"fuzz-topic-{baseMessage.Descriptor.Name}");
+                        var deserialized = protobufDeserializer.Deserialize($"fuzz-topic-{fuzzedMessage.Descriptor.Name}", serialized);
+                        Assert.IsNotNull(deserialized);
                         
-                        if (serialized != null && serialized.Length > 0)
+                        var deserializedMessage = (IMessage)deserialized;
+                        Assert.AreEqual(fuzzedMessage.GetType(), deserializedMessage.GetType());
+                        foreach (var field in fuzzedMessage.Descriptor.Fields.InFieldNumberOrder())
                         {
-                            // Test deserialization
-                            var deserialized = protobufDeserializer.Deserialize($"fuzz-topic-{baseMessage.Descriptor.Name}", serialized);
-                            Assert.IsNotNull(deserialized);
+                            Assert.AreEqual(field.Accessor.GetValue(fuzzedMessage), field.Accessor.GetValue(deserializedMessage));
                         }
                     }
-                    catch (Exception ex) when (IsExpectedException(ex))
-                    {
-                        TestContext.WriteLine($"Expected exception during Protobuf fuzzing: {ex.GetType().Name}");
-                    }
-                });
+                }
+                catch (Exception ex) when (IsExpectedException(ex))
+                {
+                    TestContext.WriteLine($"Expected exception during Protobuf fuzzing iteration {i}: {ex.GetType().Name} - {ex.Message}");
+                }
             }
         }
 
         [Test]
         public void FuzzJsonSerializationWithRandomData()
         {
-            Fuzzer.OutOfProcess.Run(stream =>
+            var random = new Random();
+            for (int i = 0; i < 100; i++)
             {
                 try
                 {
-                    var buffer = new byte[Math.Min(stream.Length, 1024)];
-                    var bytesRead = stream.Read(buffer, 0, buffer.Length);
-                    if (bytesRead == 0) return;
-
-                    var jsonSerializer = new GlueSchemaRegistryKafkaSerializer(JSON_CONFIG_PATH);
-                    var jsonDeserializer = new GlueSchemaRegistryKafkaDeserializer(JSON_CONFIG_PATH);
-
-                    // Use existing sample data (fuzzing JSON requires careful schema handling)
-                    var testData = RecordGenerator.GetSampleJsonTestData();
+                    var fuzzData = new byte[random.Next(4, 1024)];
+                    random.NextBytes(fuzzData);
+                    var rand = new Random(BitConverter.ToInt32(fuzzData, 0));
                     
-                    if (testData != null)
+                    var fuzzedJsonData = FuzzJsonData(fuzzData, rand);
+                    
+                    var jsonSerializer = new GlueSchemaRegistryKafkaSerializer(JSON_CONFIG_PATH);
+                    var serialized = jsonSerializer.Serialize(fuzzedJsonData, "fuzz-topic-json");
+                    
+                    if (serialized?.Length > 0)
                     {
-                        // Test serialization
-                        var serialized = jsonSerializer.Serialize(testData, "fuzz-topic-json");
+                        var jsonDeserializer = new GlueSchemaRegistryKafkaDeserializer(JSON_CONFIG_PATH);
+                        var deserialized = jsonDeserializer.Deserialize("fuzz-topic-json", serialized);
+                        Assert.IsTrue(deserialized is JsonDataWithSchema);
                         
-                        if (serialized != null && serialized.Length > 0)
-                        {
-                            // Test deserialization
-                            var deserialized = jsonDeserializer.Deserialize("fuzz-topic-json", serialized);
-                            Assert.IsTrue(deserialized is JsonDataWithSchema);
-                        }
+                        var deserializedJson = (JsonDataWithSchema)deserialized;
+                        Assert.AreEqual(fuzzedJsonData.Schema, deserializedJson.Schema);
                     }
                 }
                 catch (Exception ex) when (IsExpectedException(ex))
                 {
-                    TestContext.WriteLine($"Expected exception during JSON fuzzing: {ex.GetType().Name}");
+                    TestContext.WriteLine($"Expected exception during JSON fuzzing iteration {i}: {ex.GetType().Name} - {ex.Message}");
                 }
-            });
+            }
         }
 
         [Test]
         public void FuzzDeserializationWithCorruptedBytes()
         {
-            Fuzzer.OutOfProcess.Run(stream =>
+            var random = new Random();
+            for (int i = 0; i < 100; i++)
             {
                 try
                 {
-                    var buffer = new byte[Math.Min(stream.Length, 1024)];
-                    var bytesRead = stream.Read(buffer, 0, buffer.Length);
-                    if (bytesRead == 0) return;
-
-                    var corruptedData = new byte[bytesRead];
-                    Array.Copy(buffer, corruptedData, bytesRead);
+                    var corruptedData = new byte[random.Next(1, 1024)];
+                    random.NextBytes(corruptedData);
 
                     var kafkaDeserializer = new GlueSchemaRegistryKafkaDeserializer(AVRO_CONFIG_PATH);
-                    
-                    // Attempt to deserialize completely random/corrupted bytes
                     var result = kafkaDeserializer.Deserialize("fuzz-topic-corrupted", corruptedData);
                     
-                    // Should either return null or throw expected exception
                     if (result != null)
                     {
                         TestContext.WriteLine($"Unexpected successful deserialization of corrupted data: {result.GetType()}");
@@ -220,43 +200,34 @@ namespace AWSGsrSerDe.Tests.serializer
                 }
                 catch (Exception ex) when (IsExpectedException(ex))
                 {
-                    // Expected - corrupted data should be handled gracefully
-                    TestContext.WriteLine($"Expected exception during corrupted data fuzzing: {ex.GetType().Name}");
+                    TestContext.WriteLine($"Expected exception during corrupted data fuzzing iteration {i}: {ex.GetType().Name}");
                 }
-            });
+            }
         }
 
         [Test]
         public void FuzzConfigurationParsingWithRandomData()
         {
-            Fuzzer.OutOfProcess.Run(stream =>
+            var random = new Random();
+            for (int i = 0; i < 50; i++)
             {
                 try
                 {
-                    var buffer = new byte[Math.Min(stream.Length, 512)];
-                    var bytesRead = stream.Read(buffer, 0, buffer.Length);
-                    if (bytesRead < 10) return; // Need some minimum data
-
-                    var data = new byte[bytesRead];
-                    Array.Copy(buffer, data, bytesRead);
-
-                    // Create temporary config file with fuzzed content
+                    var fuzzData = new byte[random.Next(10, 512)];
+                    random.NextBytes(fuzzData);
+                    var rand = new Random(BitConverter.ToInt32(fuzzData, 0));
                     var tempConfigPath = Path.GetTempFileName();
                     
                     try
                     {
-                        // Write fuzzed data as config file content
-                        var configContent = GenerateFuzzedConfigContent(data);
+                        var configContent = FuzzConfigurationValues(fuzzData, rand);
                         File.WriteAllText(tempConfigPath, configContent);
 
-                        // Attempt to create serializer with fuzzed config
                         var kafkaSerializer = new GlueSchemaRegistryKafkaSerializer(tempConfigPath);
-                        
-                        // If creation succeeds, try a basic operation
                         var testRecord = RecordGenerator.GetTestAvroRecord();
                         var result = kafkaSerializer.Serialize(testRecord, "fuzz-config-test");
                         
-                        TestContext.WriteLine($"Fuzzing config succeeded with result length: {result?.Length ?? 0}");
+                        TestContext.WriteLine($"Fuzzing config iteration {i} succeeded with result length: {result?.Length ?? 0}");
                     }
                     finally
                     {
@@ -266,57 +237,192 @@ namespace AWSGsrSerDe.Tests.serializer
                 }
                 catch (Exception ex) when (IsExpectedException(ex))
                 {
-                    TestContext.WriteLine($"Expected exception during config fuzzing: {ex.GetType().Name}");
+                    TestContext.WriteLine($"Expected exception during config fuzzing iteration {i}: {ex.GetType().Name}");
                 }
-            });
+            }
         }
 
         [Test]
         public void FuzzRoundTripConsistencyTest()
         {
-            Fuzzer.OutOfProcess.Run(stream =>
+            var random = new Random();
+            for (int i = 0; i < 100; i++)
             {
                 try
                 {
-                    var buffer = new byte[Math.Min(stream.Length, 1024)];
-                    var bytesRead = stream.Read(buffer, 0, buffer.Length);
-                    if (bytesRead == 0) return;
+                    var fuzzData = new byte[random.Next(4, 1024)];
+                    random.NextBytes(fuzzData);
 
                     var kafkaSerializer = new GlueSchemaRegistryKafkaSerializer(AVRO_CONFIG_PATH);
                     var kafkaDeserializer = new GlueSchemaRegistryKafkaDeserializer(AVRO_CONFIG_PATH);
 
-                    // Use original Avro record (field-level fuzzing would require complex Avro API usage)
-                    var originalRecord = RecordGenerator.GetTestAvroRecord();
+                    var originalRecord = RecordGenerator.GetFuzzedAvroRecord(fuzzData, random);
 
-                    // Serialize
                     var serialized = kafkaSerializer.Serialize(originalRecord, "fuzz-roundtrip");
                     
-                    if (serialized != null && serialized.Length > 0)
+                    if (serialized?.Length > 0)
                     {
-                        // Test deserialization
                         var deserialized = kafkaDeserializer.Deserialize("fuzz-roundtrip", serialized);
                         
                         if (deserialized is GenericRecord deserializedRecord)
                         {
-                            // Verify round-trip consistency
                             ValidateRoundTripConsistency(originalRecord, deserializedRecord);
                         }
                     }
                 }
                 catch (Exception ex) when (IsExpectedException(ex))
                 {
-                    TestContext.WriteLine($"Expected exception during round-trip fuzzing: {ex.GetType().Name}");
+                    TestContext.WriteLine($"Expected exception during round-trip fuzzing iteration {i}: {ex.GetType().Name}");
                 }
-            });
+            }
+        }
+
+        private string FuzzAvroSchema(byte[] data, Random rand)
+        {
+            var fieldNames = new[] { "name", "favorite_number", "favorite_color" };
+            var fuzzedNames = fieldNames.Select(name => 
+                rand.Next(0, 3) == 0 ? FuzzString(name, data, rand) : name).ToArray();
+            
+            return $@"{{""namespace"": ""example.avro"",
+                    ""type"": ""record"",
+                    ""name"": ""User"",
+                    ""fields"": [
+                        {{""name"": ""{fuzzedNames[0]}"", ""type"": ""string""}},
+                        {{""name"": ""{fuzzedNames[1]}"",  ""type"": [""int"", ""null""]}},
+                        {{""name"": ""{fuzzedNames[2]}"", ""type"": [""string"", ""null""]}}
+                    ]
+                    }}";
+        }
+
+        private void FuzzAvroRecordData(GenericRecord record, byte[] data, Random rand)
+        {
+            var schema = record.Schema as RecordSchema;
+            foreach (var field in schema.Fields)
+            {
+                switch (field.Schema.Tag)
+                {
+                    case Schema.Type.String:
+                        record.Add(field.Name, FuzzString("test", data, rand));
+                        break;
+                    case Schema.Type.Int:
+                        record.Add(field.Name, rand.Next(-1000000, 1000000));
+                        break;
+                    case Schema.Type.Union:
+                        if (rand.Next(0, 3) == 0)
+                            record.Add(field.Name, null);
+                        else if (field.Schema.ToString().Contains("int"))
+                            record.Add(field.Name, rand.Next(-1000000, 1000000));
+                        else
+                            record.Add(field.Name, FuzzString("test", data, rand));
+                        break;
+                }
+            }
+        }
+
+        private JsonDataWithSchema FuzzJsonData(byte[] data, Random rand)
+        {
+            var baseData = RecordGenerator.GetSampleJsonTestData();
+            var jsonObj = JsonNode.Parse(baseData.Payload);
+            
+            FuzzJsonObject(jsonObj, data, rand, 0);
+            
+            return JsonDataWithSchema.Build(baseData.Schema, jsonObj.ToJsonString());
+        }
+
+        private void FuzzJsonObject(JsonNode node, byte[] data, Random rand, int depth)
+        {
+            if (depth > 3 || node == null) return;
+            
+            if (node is JsonObject obj)
+            {
+                var keys = obj.Select(kv => kv.Key).ToList();
+                foreach (var key in keys)
+                {
+                    var value = obj[key];
+                    if (value?.GetValueKind() == JsonValueKind.String)
+                        obj[key] = FuzzString(value.GetValue<string>(), data, rand);
+                    else if (value?.GetValueKind() == JsonValueKind.Number)
+                        obj[key] = rand.NextDouble() * 1000;
+                    else
+                        FuzzJsonObject(value, data, rand, depth + 1);
+                }
+            }
+        }
+
+        private string FuzzConfigurationValues(byte[] data, Random rand)
+        {
+            var configs = new Dictionary<string, string>
+            {
+                ["region"] = "us-west-2",
+                ["registry.name"] = "default-registry",
+                ["schemaAutoRegistrationEnabled"] = "true",
+                ["cache.ttl.seconds"] = "86400",
+                ["compression.type"] = "ZLIB"
+            };
+
+            // Fuzz userAgent and description
+            if (rand.Next(0, 2) == 0)
+                configs["user.agent"] = FuzzString("test-agent", data, rand);
+            if (rand.Next(0, 2) == 0)
+                configs["description"] = FuzzString("test-description", data, rand);
+            
+            // Fuzz other configs that might cause exceptions
+            if (rand.Next(0, 3) == 0)
+                configs["cache.ttl.seconds"] = rand.Next(-100, 1000000).ToString();
+            if (rand.Next(0, 3) == 0)
+                configs["registry.name"] = FuzzString("registry", data, rand);
+
+            return string.Join("\n", configs.Select(kv => $"{kv.Key}={kv.Value}"));
+        }
+
+        private IMessage FuzzProtobufMessage(byte[] data, Random rand)
+        {
+            var messages = new IMessage[] { BASIC_SYNTAX2_MESSAGE, BASIC_SYNTAX3_MESSAGE, BASIC_REFERENCING_MESSAGE };
+            var baseMessage = messages[rand.Next(messages.Length)];
+            
+            // Create a new instance and fuzz its fields
+            var messageType = baseMessage.GetType();
+            var fuzzed = (IMessage)Activator.CreateInstance(messageType);
+            var descriptor = fuzzed.Descriptor;
+            
+            foreach (var field in descriptor.Fields.InFieldNumberOrder())
+            {
+                if (field.FieldType == Google.Protobuf.Reflection.FieldType.String)
+                {
+                    field.Accessor.SetValue(fuzzed, FuzzString("test", data, rand));
+                }
+                else if (field.FieldType == Google.Protobuf.Reflection.FieldType.Int32)
+                {
+                    field.Accessor.SetValue(fuzzed, rand.Next(-1000000, 1000000));
+                }
+            }
+            
+            return fuzzed;
+        }
+
+        private string FuzzString(string baseStr, byte[] data, Random rand)
+        {
+            if (data.Length < 4) return baseStr;
+            
+            var fuzzType = rand.Next(0, 6);
+            switch (fuzzType)
+            {
+                case 0: return new string((char)rand.Next(32, 127), rand.Next(1, 50));
+                case 1: return baseStr + Encoding.UTF8.GetString(data.Take(rand.Next(1, Math.Min(20, data.Length))).ToArray());
+                case 2: return string.Empty;
+                case 3: return new string('A', rand.Next(1, 1000));
+                case 4: return Convert.ToBase64String(data.Take(rand.Next(1, Math.Min(50, data.Length))).ToArray());
+                default: return baseStr;
+            }
         }
 
         private string GenerateFuzzedConfigContent(byte[] data)
         {
             var baseConfig = @"region=us-west-2
-registry.name=default-registry
-schema.auto.registration.setting=true
-cache.ttl.seconds=86400
-compression.type=ZLIB";
+                    registry.name=default-registry
+                    schema.auto.registration.setting=true
+                    cache.ttl.seconds=86400
+                    compression.type=ZLIB";
 
             if (data.Length < 20) return baseConfig;
 
