@@ -1,10 +1,13 @@
-# Support multi-platform builds
+# Support multi-platform builds - ARG must be before FROM
 ARG TARGETPLATFORM
-FROM --platform=$TARGETPLATFORM ghcr.io/graalvm/native-image-community:21-muslib
+FROM ghcr.io/graalvm/native-image-community:21-muslib
 
 # Set UTF-8 locale to handle Unicode filenames (including emojis)
 ENV LANG=C.UTF-8
 ENV LC_ALL=C.UTF-8
+
+# Re-import TARGETPLATFORM after FROM
+ARG TARGETPLATFORM
 
 # Build PIC-compatible zlib to fix shared library linking
 
@@ -20,7 +23,6 @@ RUN microdnf install -y dnf dnf-plugins-core && \
     dnf clean all && rm -rf /var/cache/dnf
 
 # Determine the correct musl GCC based on target architecture
-ARG TARGETPLATFORM
 RUN MUSL_GCC_PREFIX=$([ "$TARGETPLATFORM" = "linux/arm64" ] && echo "aarch64-linux-musl-gcc" || echo "x86_64-linux-musl-gcc") && \
     echo "Using MUSL GCC: $MUSL_GCC_PREFIX" && \
     echo "export MUSL_GCC_PREFIX=$MUSL_GCC_PREFIX" >> /etc/environment
