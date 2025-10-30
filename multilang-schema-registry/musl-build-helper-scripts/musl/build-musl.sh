@@ -10,7 +10,7 @@ HOST_SOURCE_DIR="$(realpath ../../..)"
 SCRIPT_PATH="$(realpath ./build-musl-inner.sh)"
 CMAKE_SCRIPT_PATH="$(realpath ./build-musl-cmake.sh)"
 CONTAINER_WORKDIR="/workspace"
-IMAGE="ghcr.io/graalvm/native-image-community:24-muslib"
+IMAGE="ghcr.io/graalvm/native-image-community:21-muslib"
 
 docker run --rm -it \
   --entrypoint /bin/sh \

@@ -194,10 +194,10 @@ jobs:
   build-musl:
     continue-on-error: false
     timeout-minutes: 90
-    runs-on: ${{ matrix.arch == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-latest' }}
+    runs-on: ubuntu-latest
     strategy:
       matrix:
-        arch: [x64, arm64]
+        arch: [x64]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -210,14 +210,12 @@ jobs:
       - name: Build GraalVM musl container
         run: |
           cd multilang-schema-registry/musl-build-helper-scripts/musl
-          PLATFORM=${{ matrix.arch == 'arm64' && 'linux/arm64' || 'linux/amd64' }}
-          docker build --platform $PLATFORM -f Dockerfile.graalvm -t native-graalvm .
+          docker build -f Dockerfile.graalvm -t native-graalvm .
           
       - name: Build CMake musl container  
         run: |
           cd multilang-schema-registry/musl-build-helper-scripts/musl
-          PLATFORM=${{ matrix.arch == 'arm64' && 'linux/arm64' || 'linux/amd64' }}
-          docker build --platform $PLATFORM -f Dockerfile.cmake -t native-cmake .
+          docker build -f Dockerfile.cmake -t native-cmake .
 
       - name: Clean previous builds
         run: |
@@ -254,9 +252,7 @@ jobs:
 
       - name: Build and Test C# with musl
         run: |
-          PLATFORM=${{ matrix.arch == 'arm64' && 'linux/arm64' || 'linux/amd64' }}
           docker run --rm \
-            --platform $PLATFORM \
             -v "$(pwd)":"$(pwd)" \
             -w "$(pwd)/multilang-schema-registry/csharp/AWSGsrSerDe" \
             mcr.microsoft.com/dotnet/sdk:8.0-alpine \
