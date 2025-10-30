@@ -5,7 +5,7 @@
     <RootNamespace>ProtobufGSRKafkaDemo</RootNamespace>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <AWSGsrSerDeVersion>1.1.25</AWSGsrSerDeVersion>
+    <AWSGsrSerDeVersion>1.0.0</AWSGsrSerDeVersion>
   </PropertyGroup>
 
   <ItemGroup>
