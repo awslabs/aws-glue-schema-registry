@@ -167,6 +167,11 @@ jobs:
             ${{ runner.os }}-${{ matrix.arch }}-${{ matrix.distro }}-m2-
             ${{ runner.os }}-${{ matrix.arch }}-m2-
 
+      - name: Install serializer-deserializer with test JAR
+        shell: bash
+        run: |
+          mvn -U clean install -pl serializer-deserializer -am -Dcheckstyle.skip=true -Dmaven.test.skip=true
+
       - name: Build Java 
         shell: bash
         run: |
