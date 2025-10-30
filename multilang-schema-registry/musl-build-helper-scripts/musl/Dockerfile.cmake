@@ -1,6 +1,6 @@
 # Support multi-platform builds - ARG must be before FROM
 ARG TARGETPLATFORM
-FROM mcr.microsoft.com/dotnet/sdk:8.0-alpine
+FROM --platform=$TARGETPLATFORM mcr.microsoft.com/dotnet/sdk:8.0-alpine
 
 # Set UTF-8 locale to handle Unicode filenames (including emojis)
 ENV LANG=C.UTF-8
