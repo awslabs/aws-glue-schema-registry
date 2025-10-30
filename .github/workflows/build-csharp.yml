@@ -143,24 +143,24 @@ jobs:
           echo "MAVEN_HOME=/opt/maven" >> $GITHUB_ENV
           echo "/opt/maven/bin" >> $GITHUB_PATH
     
-      - name: Cache Maven packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.m2
-          key: ${{ runner.os }}-${{ matrix.arch }}-${{ matrix.distro }}-m2-${{ hashFiles('**/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-${{ matrix.arch }}-${{ matrix.distro }}-m2-
-            ${{ runner.os }}-${{ matrix.arch }}-m2-
+      # - name: Cache Maven packages
+      #   uses: actions/cache@v4
+      #   with:
+      #     path: ~/.m2
+      #     key: ${{ runner.os }}-${{ matrix.arch }}-${{ matrix.distro }}-m2-${{ hashFiles('**/pom.xml') }}
+      #     restore-keys: |
+      #       ${{ runner.os }}-${{ matrix.arch }}-${{ matrix.distro }}-m2-
+      #       ${{ runner.os }}-${{ matrix.arch }}-m2-
 
       # - name: Install serializer-deserializer with test JAR
       #   shell: bash
       #   run: |
-      #     mvn -U clean install -pl serializer-deserializer -am -Dcheckstyle.skip=true -DskipTests=true
+      #     mvn -U clean install -pl serializer-deserializer -am -Dcheckstyle.skip=true -Dmaven.test.skip=true
 
       - name: Build Java 
         shell: bash
         run: |
-          mvn clean install
+          mvn -U clean install
       
       - name: C Make
         shell: bash
