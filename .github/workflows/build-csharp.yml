@@ -160,7 +160,7 @@ jobs:
       - name: Build Java 
         shell: bash
         run: |
-          mvn -U clean install -Dcheckstyle.skip=true -DskipTests
+          mvn clean package
       
       - name: C Make
         shell: bash
