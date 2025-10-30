@@ -57,24 +57,9 @@ jobs:
       matrix:
         arch: [x64, arm64]
         distro: 
-          - amazonlinux:2023
           - ubuntu:22.04
           - fedora:40
         include:
-          - distro: amazonlinux:2023
-            package_manager: yum
-            update_cmd: "yum update -y"
-            install_cmd: "yum install -y"
-            group_install_cmd: "yum groupinstall -y \"Development Tools\""
-            clang_tools: "clang-tools-extra"
-            pcre_dev: "pcre2-devel"
-            cpp_compiler: "gcc-c++"
-            extra_packages: "libasan libubsan"
-            dotnet_setup: |
-              rpm -Uvh https://packages.microsoft.com/config/centos/7/packages-microsoft-prod.rpm
-              wget -O /etc/yum.repos.d/microsoft-prod.repo https://packages.microsoft.com/config/centos/7/prod.repo
-              yum install -y dotnet-sdk-8.0
-            
           - distro: ubuntu:22.04
             package_manager: apt
             update_cmd: "apt update"
