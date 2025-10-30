@@ -9,6 +9,8 @@
 schemas while ensuring data produced was validated by registered schemas.
 **AWS Glue Schema Registry Library** offers Serializers and Deserializers that plug-in with Glue Schema Registry.
 
+For multilang client library README, please refer to: [multilang-schema-registry](multilang-schema-registry/README.md)
+
 ## Getting Started
 1. **Sign up for AWS** &mdash; Before you begin, you need an AWS account. For more information about creating an AWS 
 account and retrieving your AWS credentials, see [AWS Account and Credentials](https://docs.aws.amazon.com/sdk-for-java/latest/developer-guide/home.html) in the AWS SDK for Java Developer Guide.

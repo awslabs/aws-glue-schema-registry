@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # Script to extract native shared object version from POM file for C# builds
 # Usage: extract-native-so-version.sh [path_to_pom]

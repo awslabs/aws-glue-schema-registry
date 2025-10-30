@@ -152,24 +152,6 @@ add_custom_command(
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${SERDE_MODULE_NAME}> ${CSHARP_GEN_LIB_PATH}/
 )
 
-####Go - Copy libraries and headers only (no SWIG generation)
-set(GO_ROOT_PATH ${PROJECT_SOURCE_DIR}/../golang)
-set(GO_LIB_PATH ${GO_ROOT_PATH}/lib)
-
-# Copy shared libraries and headers to golang lib directory
-add_custom_command(
-        TARGET ${SERDE_MODULE_NAME}
-        POST_BUILD
-        COMMENT "copying shared libraries and headers for golang integration"
-        COMMAND ${CMAKE_COMMAND} -E make_directory ${GO_LIB_PATH}
-        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${DATA_TYPES_MODULE_NAME}> ${GO_LIB_PATH}/
-        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${NATIVE_SCHEMA_REGISTRY_MODULE_NAME}> ${GO_LIB_PATH}/
-        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${AWS_COMMON_MEMALLOC}> ${GO_LIB_PATH}/
-        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${SERDE_MODULE_NAME}> ${GO_LIB_PATH}/
-        COMMAND ${CMAKE_COMMAND} -E make_directory ${GO_LIB_PATH}/include
-        COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/include/ ${GO_LIB_PATH}/include/
-)
-
 if(CMAKE_C_COMPILER_ID MATCHES "GNU")
     add_compile_options(--coverage)
     link_libraries(gcov)

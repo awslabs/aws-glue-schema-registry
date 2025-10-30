@@ -52,9 +52,10 @@ jobs:
   build-csharp-multi-distro:
     continue-on-error: false
     timeout-minutes: 60
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.arch == 'arm64' && 'ubuntu-24.04-arm64' || 'ubuntu-latest' }}
     strategy:
       matrix:
+        arch: [x64, arm64]
         distro: 
           - amazonlinux:2023
           - ubuntu:22.04
@@ -161,10 +162,10 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.m2
-          key: ${{ runner.os }}-${{ matrix.distro }}-m2-${{ hashFiles('**/pom.xml') }}
+          key: ${{ runner.os }}-${{ matrix.arch }}-${{ matrix.distro }}-m2-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
-            ${{ runner.os }}-${{ matrix.distro }}-m2-
-            ${{ runner.os }}-m2-
+            ${{ runner.os }}-${{ matrix.arch }}-${{ matrix.distro }}-m2-
+            ${{ runner.os }}-${{ matrix.arch }}-m2-
 
       - name: Build Java 
         shell: bash
@@ -193,7 +194,10 @@ jobs:
   build-musl:
     continue-on-error: false
     timeout-minutes: 90
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.arch == 'arm64' && 'ubuntu-24.04-arm64' || 'ubuntu-latest' }}
+    strategy:
+      matrix:
+        arch: [x64, arm64]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -206,12 +210,14 @@ jobs:
       - name: Build GraalVM musl container
         run: |
           cd multilang-schema-registry/musl-build-helper-scripts/musl
-          docker build -f Dockerfile.graalvm -t native-graalvm .
+          PLATFORM=${{ matrix.arch == 'arm64' && 'linux/arm64' || 'linux/amd64' }}
+          docker build --platform $PLATFORM -f Dockerfile.graalvm -t native-graalvm .
           
       - name: Build CMake musl container  
         run: |
           cd multilang-schema-registry/musl-build-helper-scripts/musl
-          docker build -f Dockerfile.cmake -t native-cmake .
+          PLATFORM=${{ matrix.arch == 'arm64' && 'linux/arm64' || 'linux/amd64' }}
+          docker build --platform $PLATFORM -f Dockerfile.cmake -t native-cmake .
 
       - name: Clean previous builds
         run: |
@@ -248,7 +254,9 @@ jobs:
 
       - name: Build and Test C# with musl
         run: |
+          PLATFORM=${{ matrix.arch == 'arm64' && 'linux/arm64' || 'linux/amd64' }}
           docker run --rm \
+            --platform $PLATFORM \
             -v "$(pwd)":"$(pwd)" \
             -w "$(pwd)/multilang-schema-registry/csharp/AWSGsrSerDe" \
             mcr.microsoft.com/dotnet/sdk:8.0-alpine \

@@ -44,7 +44,7 @@
 
     <Import Project="..\Libs\Libs.projitems" Label="Shared" />
     
-    <!-- Generate native-shared-object-version.txt from POM at build time using bash -->
+    <!-- Generate native-shared-object-version.txt from POM at build time using sh -->
     <Target Name="GenerateNativeSharedObjectVersion" BeforeTargets="BeforeBuild">
       <PropertyGroup>
         <NativeVersionFile>$(MSBuildProjectDirectory)/native-shared-object-version.txt</NativeVersionFile>
@@ -53,7 +53,7 @@
       
       <!-- Make script executable and run it to generate version file -->
       <Exec Command="chmod +x &quot;$(ExtractScript)&quot;" />
-      <Exec Command="bash &quot;$(ExtractScript)&quot; > &quot;$(NativeVersionFile)&quot;" />
+      <Exec Command="sh &quot;$(ExtractScript)&quot; > &quot;$(NativeVersionFile)&quot;" />
       
       <Message Text="Generated native-shared-object-version.txt from POM" Importance="high" />
     </Target>
