@@ -28,6 +28,7 @@ import org.apache.kafka.connect.data.Decimal;
 import org.apache.kafka.connect.errors.DataException;
 import metadata.ProtobufSchemaMetadata;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -65,6 +66,10 @@ public class ProtobufSchemaToConnectSchemaConverter {
     private static final Integer CONVERTER_VERSION = 1;
 
     public Schema toConnectSchema(@NonNull final Message message) {
+        return toConnectSchema(message, new HashSet<>());
+    }
+
+    private Schema toConnectSchema(@NonNull final Message message, Set<String> visitedTypes) {
         final SchemaBuilder builder = SchemaBuilder.struct();
         final Descriptors.Descriptor descriptor = message.getDescriptorForType();
         final List<Descriptors.FieldDescriptor> fieldDescriptorList = descriptor.getFields();
@@ -76,27 +81,31 @@ public class ProtobufSchemaToConnectSchemaConverter {
         for (final Descriptors.FieldDescriptor fieldDescriptor : fieldDescriptorList) {
             if (fieldDescriptor.getRealContainingOneof() != null) {
                 Descriptors.OneofDescriptor oneofDescriptor = fieldDescriptor.getRealContainingOneof();
-                if (!builder.fields().stream().anyMatch(field -> field.name().equals(oneofDescriptor.getName()))) {
-                    builder.field(oneofDescriptor.getName(), toConnectSchemaForOneOfField(oneofDescriptor));
+                if (builder.fields().stream().noneMatch(field -> field.name().equals(oneofDescriptor.getName()))) {
+                    builder.field(oneofDescriptor.getName(), toConnectSchemaForOneOfField(oneofDescriptor, visitedTypes));
                 }
                 continue;
             }
             final String fieldName = fieldDescriptor.getName();
-            builder.field(fieldName, toConnectSchemaForField(fieldDescriptor));
+            builder.field(fieldName, toConnectSchemaForField(fieldDescriptor, visitedTypes));
         }
 
         return builder.build();
     }
 
     private Schema toConnectSchemaForField(final Descriptors.FieldDescriptor fieldDescriptor) {
-        return toConnectSchemaBuilderForField(fieldDescriptor).build();
+        return toConnectSchemaForField(fieldDescriptor, new HashSet<>());
     }
 
-    private Schema toConnectSchemaForOneOfField(final Descriptors.OneofDescriptor oneofDescriptor) {
+    private Schema toConnectSchemaForField(final Descriptors.FieldDescriptor fieldDescriptor, Set<String> visitedTypes) {
+        return toConnectSchemaBuilderForField(fieldDescriptor, visitedTypes).build();
+    }
+
+    private Schema toConnectSchemaForOneOfField(final Descriptors.OneofDescriptor oneofDescriptor, Set<String> visitedTypes) {
         SchemaBuilder builder = SchemaBuilder.struct().name(oneofDescriptor.getName());
         for (Descriptors.FieldDescriptor fieldDescriptor : oneofDescriptor.getFields()) {
             builder.field(fieldDescriptor.getName(),
-                    toConnectSchemaBuilderForField(fieldDescriptor).optional().build());
+                    toConnectSchemaBuilderForField(fieldDescriptor, visitedTypes).optional().build());
         }
         builder.parameter(PROTOBUF_TYPE, PROTOBUF_ONEOF_TYPE);
         builder.optional();
@@ -104,6 +113,10 @@ public class ProtobufSchemaToConnectSchemaConverter {
     }
 
     private SchemaBuilder toConnectSchemaBuilderForField(final Descriptors.FieldDescriptor fieldDescriptor) {
+        return toConnectSchemaBuilderForField(fieldDescriptor, new HashSet<>());
+    }
+
+    private SchemaBuilder toConnectSchemaBuilderForField(final Descriptors.FieldDescriptor fieldDescriptor, Set<String> visitedTypes) {
         final Descriptors.FieldDescriptor.Type protobufType = fieldDescriptor.getType();
 
         SchemaBuilder schemaBuilder = null;
@@ -167,8 +180,8 @@ public class ProtobufSchemaToConnectSchemaConverter {
                     Descriptors.FieldDescriptor keyFieldDescriptor = mapDescriptor.findFieldByName("key");
                     Descriptors.FieldDescriptor valueFieldDescriptor = mapDescriptor.findFieldByName("value");
                     schemaBuilder = SchemaBuilder.map(
-                            toConnectSchemaBuilderForField(keyFieldDescriptor).optional().build(),
-                            toConnectSchemaBuilderForField(valueFieldDescriptor).optional().build());
+                            toConnectSchemaBuilderForField(keyFieldDescriptor, visitedTypes).optional().build(),
+                            toConnectSchemaBuilderForField(valueFieldDescriptor, visitedTypes).optional().build());
                     break;
                 }
                 if (fieldDescriptor.getMessageType().getFullName().equals("google.type.Date")) {
@@ -203,10 +216,17 @@ public class ProtobufSchemaToConnectSchemaConverter {
                 }
 
                 String fullName = fieldDescriptor.getMessageType().getFullName();
+                if (visitedTypes.contains(fullName)) {
+                    // Break recursion by creating a placeholder schema for recursive references
+                    schemaBuilder = SchemaBuilder.struct().name(fullName).optional();
+                    break;
+                }
+                visitedTypes.add(fullName);
                 schemaBuilder = SchemaBuilder.struct().name(fullName);
                 for (Descriptors.FieldDescriptor field : fieldDescriptor.getMessageType().getFields()) {
-                    schemaBuilder.field(field.getName(), toConnectSchemaForField(field));
+                    schemaBuilder.field(field.getName(), toConnectSchemaForField(field, visitedTypes));
                 }
+                visitedTypes.remove(fullName);
                 break;
             }
             default:

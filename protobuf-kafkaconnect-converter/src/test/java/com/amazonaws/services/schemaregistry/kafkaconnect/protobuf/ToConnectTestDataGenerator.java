@@ -34,6 +34,8 @@ import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax2.TimeType
 import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax3.TimeTypeSyntax3;
 import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax2.DecimalTypeSyntax2;
 import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax3.DecimalTypeSyntax3;
+import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax2.RecursiveTypeSyntax2;
+import com.amazonaws.services.schemaregistry.kafkaconnect.tests.syntax3.RecursiveTypeSyntax3;
 import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Message;
@@ -919,5 +921,22 @@ public class ToConnectTestDataGenerator {
                 .put("decimalWithScale", Decimal.builder(10).parameter(PROTOBUF_TAG,"24")
                         .parameter("connect.decimal.scale", "10").optional().build())
                 .build();
+    }
+
+    public static List<Message> getRecursiveProtobufMessages() {
+        RecursiveTypeSyntax2.RecursiveType childNode1 = RecursiveTypeSyntax2.RecursiveType.newBuilder().setName("child1").build();
+        RecursiveTypeSyntax2.TreeNode treeChild1 = RecursiveTypeSyntax2.TreeNode.newBuilder().setValue(1).build();
+        RecursiveTypeSyntax3.RecursiveType childNode2 = RecursiveTypeSyntax3.RecursiveType.newBuilder().setName("child2").build();
+        RecursiveTypeSyntax3.TreeNode treeChild2 = RecursiveTypeSyntax3.TreeNode.newBuilder().setValue(2).build();
+        return Arrays.asList(
+            RecursiveTypeSyntax3.RecursiveType.newBuilder().setName("test").build(),
+            RecursiveTypeSyntax2.RecursiveType.newBuilder().setName("test").build(),
+            RecursiveTypeSyntax2.RecursiveType.newBuilder().setName("2LevelTest").addChildren(childNode1).build(),
+                    RecursiveTypeSyntax3.RecursiveType.newBuilder().setName("2LevelTest").addChildren(childNode2).build(),
+            RecursiveTypeSyntax3.TreeNode.newBuilder().setValue(42).build(),
+            RecursiveTypeSyntax2.TreeNode.newBuilder().setValue(42).build(),
+                    RecursiveTypeSyntax2.TreeNode.newBuilder().setRight(treeChild1).setValue(4).build(),
+            RecursiveTypeSyntax3.TreeNode.newBuilder().setLeft(treeChild2).setValue(3).build()
+        );
     }
 }
