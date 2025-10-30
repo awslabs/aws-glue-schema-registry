@@ -64,14 +64,13 @@ Code coverage checks using gcov and lcov and fail if the coverage is below thres
 #### Installation
 You might have to install these modules using your OS package manager.
 
+1. cmake
+2. lcov
+3. gcov
+4. clang-tidy
+
 ### Sanitizers
-We use address,leak sanitizers to detect memory leaks and any potential issues during build. As of now, they only work on Linux.
-
-### Platform Support
-
-TBD
-
-## Develop
+We use address, leak sanitizers to detect memory leaks and any potential issues during build. As of now, they only work on Linux.
 
 ### Add Class
 In order to add a class that is accessible by target language, these steps are required:

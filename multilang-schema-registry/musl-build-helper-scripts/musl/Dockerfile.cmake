@@ -1,4 +1,6 @@
-FROM  mcr.microsoft.com/dotnet/sdk:8.0-alpine
+# Support multi-platform builds
+ARG TARGETPLATFORM
+FROM --platform=$TARGETPLATFORM mcr.microsoft.com/dotnet/sdk:8.0-alpine
 
 # Set UTF-8 locale to handle Unicode filenames (including emojis)
 ENV LANG=C.UTF-8

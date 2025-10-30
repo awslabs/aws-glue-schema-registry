@@ -1,10 +1,13 @@
 #!/bin/bash
 set -euo pipefail
 
-echo "Building native schema registry with musl..."
+# Default to linux/arm64 for musl builds, but allow override
+PLATFORM=${PLATFORM:-linux/arm64}
 
-docker build -f Dockerfile.graalvm -t native-graalvm .
-docker build -f Dockerfile.cmake -t native-cmake .
+echo "Building native schema registry with musl for platform: $PLATFORM"
+
+docker build --platform "$PLATFORM" -f Dockerfile.graalvm -t native-graalvm .
+docker build --platform "$PLATFORM" -f Dockerfile.cmake -t native-cmake .
 # Get absolute path three levels up
 HOST_SOURCE_DIR="$(realpath ../../..)"
 SCRIPT_PATH="$(realpath ./build-musl-inner.sh)"
