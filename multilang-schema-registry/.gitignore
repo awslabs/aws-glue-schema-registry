@@ -65,7 +65,6 @@ __pycache__/
 # GraalVM native image artifacts
 *.debug
 graal_isolate*.h
-libnativeschemaregistry*.h
 libnativeschemaregistry*.he
 
 # Test artifacts
