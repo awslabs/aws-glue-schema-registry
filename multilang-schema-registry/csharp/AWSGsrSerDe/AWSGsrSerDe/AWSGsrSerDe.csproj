@@ -74,9 +74,9 @@
     <ItemGroup>
       <None Include="../README.md" Pack="true" PackagePath="" />
       <None Include="../icon.png" Pack="true" PackagePath="" />
-      <None Include="../../../../LICENSE" Pack="true" PackagePath="" />
-      <None Include="../../../../NOTICE" Pack="true" PackagePath="" />
-      <None Include="../../../../THIRD-PARTY-LICENSES" Pack="true" PackagePath="" />
+      <None Include="../../../../LICENSE.txt" Pack="true" PackagePath="LICENSE.txt" />
+      <None Include="../../../../NOTICE.txt" Pack="true" PackagePath="NOTICE.txt" />
+      <None Include="../../../../THIRD-PARTY-LICENSES.txt" Pack="true" PackagePath="THIRD-PARTY-LICENSES.txt" />
     </ItemGroup>
 
 
