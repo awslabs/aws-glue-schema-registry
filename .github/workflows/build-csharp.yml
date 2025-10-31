@@ -91,6 +91,9 @@ jobs:
 
     container:
       image: ${{ matrix.distro }}
+      env:
+        LANG: C.UTF-8
+        LC_ALL: C.UTF-8
     steps:
       - name: Install required utilities
         shell: bash
