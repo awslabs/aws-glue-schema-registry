@@ -1,0 +1,71 @@
+syntax = "proto3";
+
+package protobuf.gsr.demo;
+
+option csharp_namespace = "ProtobufGSRKafkaDemo.Messages";
+
+message Payment {
+  string payment_id = 1;
+  string order_id = 2;
+  double amount = 3;
+  string currency = 4;
+  PaymentDetails details = 5;
+  BillingAddress billing_address = 6;
+  repeated TransactionFee fees = 7;
+  PaymentStatus status = 8;
+  
+  oneof payment_method {
+    CreditCard credit_card = 9;
+    BankAccount bank_account = 10;
+    DigitalWallet digital_wallet = 11;
+  }
+}
+
+message PaymentDetails {
+  int64 processed_timestamp = 1;
+  string processor = 2;
+  string transaction_id = 3;
+  string authorization_code = 4;
+}
+
+message BillingAddress {
+  string name = 1;
+  string street = 2;
+  string city = 3;
+  string state = 4;
+  string zip_code = 5;
+  string country = 6;
+}
+
+message CreditCard {
+  string last_four_digits = 1;
+  string card_type = 2;
+  int32 expiry_month = 3;
+  int32 expiry_year = 4;
+}
+
+message BankAccount {
+  string bank_name = 1;
+  string account_type = 2;
+  string routing_number = 3;
+}
+
+message DigitalWallet {
+  string provider = 1;
+  string wallet_id = 2;
+}
+
+message TransactionFee {
+  string type = 1;
+  double amount = 2;
+  string description = 3;
+}
+
+enum PaymentStatus {
+  UNKNOWN_PAYMENT_STATUS = 0;
+  PENDING = 1;
+  PROCESSING = 2;
+  COMPLETED = 3;
+  FAILED = 4;
+  REFUNDED = 5;
+}

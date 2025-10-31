@@ -31,7 +31,7 @@
     <parent>
         <groupId>software.amazon.glue</groupId>
         <artifactId>schema-registry-parent</artifactId>
-        <version>1.1.25</version>
+    <version>1.1.26</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -192,7 +192,7 @@
             <groupId>software.amazon.glue</groupId>
             <artifactId>schema-registry-serde</artifactId>
             <version>${parent.version}</version>
-            <type>test-jar</type>
+            <classifier>tests</classifier>
             <scope>test</scope>
         </dependency>
     </dependencies>

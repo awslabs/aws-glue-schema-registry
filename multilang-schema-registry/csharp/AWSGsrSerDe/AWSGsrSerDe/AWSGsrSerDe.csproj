@@ -1,0 +1,83 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <CodeAnalysisRuleSet>GlueSchemaRegistry.ruleset</CodeAnalysisRuleSet>
+         <PackageId>AWSGsrSerDe</PackageId>
+         <!-- Matching with java layer version -->
+          <Version>1.0.0</Version>
+          <Company>Amazon</Company>
+          <Product>AWS Glue Schema Registry CSharp SerDe</Product>
+          <Description>AWS Glue Schema Registry serializers/deserializers for .NET (Avro/JSON/Protobuf).</Description>
+          <PackageProjectUrl>https://github.com/awslabs/aws-glue-schema-registry</PackageProjectUrl>
+          <RepositoryUrl>https://github.com/awslabs/aws-glue-schema-registry</RepositoryUrl>
+          <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+          <!-- Additional package metadata -->
+          <PackageIcon>icon.png</PackageIcon>
+          <PackageReadmeFile>README.md</PackageReadmeFile>
+          <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
+          <Authors>Amazon Web Services</Authors>
+          <Copyright>Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.</Copyright>
+          <PackageTags>aws;glue;schema-registry;avro;json;protobuf;kafka;serialization</PackageTags>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+      <DocumentationFile>bin\Debug\AWSGsrSerDe.xml</DocumentationFile>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Apache.Avro" Version="1.12.0" />
+      <PackageReference Include="Google.Protobuf" Version="3.32.1" />
+      <PackageReference Include="KafkaFlow" Version="3.0.10" />
+      <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="9.0.9" />
+      <PackageReference Include="NJsonSchema" Version="10.8.0" />
+      <PackageReference Include="StyleCop.Analyzers" Version="1.2.0-beta.435">
+        <PrivateAssets>all</PrivateAssets>
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      </PackageReference>
+      <AdditionalFiles Include="stylecop.json" />
+      <PackageReference Include="System.Runtime.Caching" Version="6.0.0" />
+      <PackageReference Include="System.Text.Json" Version="9.0.9" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <LinkerArg Include="-Wl,-rpath,../Libs/" />
+      <LinkerArg Include="-L../Libs" />
+      <LinkerArg Include="-lnativeschemaregistry" />
+      <LinkerArg Include="-lnative_schema_registry_c" />
+      <LinkerArg Include="-lnative_schema_registry_c_data_types" />
+      <LinkerArg Include="-laws_common_memalloc" />
+    </ItemGroup>
+
+    <Import Project="..\Libs\Libs.projitems" Label="Shared" />
+    
+    <!-- Generate native-shared-object-version.txt from POM at build time using sh -->
+    <Target Name="GenerateNativeSharedObjectVersion" BeforeTargets="BeforeBuild">
+      <PropertyGroup>
+        <NativeVersionFile>$(MSBuildProjectDirectory)/native-shared-object-version.txt</NativeVersionFile>
+        <ExtractScript>$(MSBuildProjectDirectory)/scripts/extract-native-so-version.sh</ExtractScript>
+      </PropertyGroup>
+      
+      <!-- Make script executable and run it to generate version file -->
+      <Exec Command="chmod +x &quot;$(ExtractScript)&quot;" />
+      <Exec Command="sh &quot;$(ExtractScript)&quot; > &quot;$(NativeVersionFile)&quot;" />
+      
+      <Message Text="Generated native-shared-object-version.txt from POM" Importance="high" />
+    </Target>
+
+    <ItemGroup>
+      <None Include=".\bin\Release\net8.0\*.so" Pack="true" PackagePath="runtimes/linux-x64/native/" CopyToOutputDirectory="PreserveNewest" />
+      <None Include="native-shared-object-version.txt" Pack="true" PackagePath="content/" CopyToOutputDirectory="Always" />
+    </ItemGroup>
+
+    <!-- Include additional files for NuGet package structure -->
+    <ItemGroup>
+      <None Include="../README.md" Pack="true" PackagePath="README.md" />
+      <None Include="../icon.png" Pack="true" PackagePath="icon.png" />
+      <None Include="../../../../LICENSE.txt" Pack="true" PackagePath="LICENSE.txt" />
+      <None Include="../../../../NOTICE.txt" Pack="true" PackagePath="NOTICE.txt" />
+      <None Include="../../../../THIRD-PARTY-LICENSES.txt" Pack="true" PackagePath="THIRD-PARTY-LICENSES.txt" />
+    </ItemGroup>
+
+
+</Project>

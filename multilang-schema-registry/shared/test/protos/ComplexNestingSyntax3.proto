@@ -1,0 +1,67 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+
+//Package name is pre-fixed for every message type.
+package com.amazonaws.services.schemaregistry.tests.protobuf.syntax3;
+
+message A { //0
+  string A = 1 [json_name="A_A"];
+
+  message B { //1
+
+    message C { //2
+
+      message J { //3
+
+        message K { //4
+
+        }
+      }
+      message X { //5
+        message L { //10
+
+        }
+        message D { //6
+          message F { //7
+            message M { //8
+              K choice = 1;
+              enum K {
+                A = 0;
+                L = 1;
+              }
+
+            }
+          }
+          message G { //9
+          }
+        }
+      }
+    }
+  }
+  message X { //12
+    int32 D = 1;
+  }
+  message I { //11
+  }
+}
+
+message N { //13
+  int32 A = 1;
+}
+
+message O { //14
+  message A { //15
+    repeated google.protobuf.Timestamp B = 2;
+  }
+}
+
+//enum rpc service wouldn't be considered.
+enum P {
+  ALPHA = 0;
+  BETA = 1;
+}
+
+service D {
+  rpc A (A.B) returns (O.A) {}
+}

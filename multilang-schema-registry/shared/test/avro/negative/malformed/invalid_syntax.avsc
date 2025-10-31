@@ -1,0 +1,12 @@
+{
+  "type": "record",
+  "name": "InvalidSchema",
+  "namespace": "com.amazonaws.services.schemaregistry.test"
+  "fields": [
+    {
+      "name": "field1",
+      "type": "string"
+    }
+  ]
+  // Missing comma after namespace - invalid JSON syntax
+}
