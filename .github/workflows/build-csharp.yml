@@ -160,7 +160,7 @@ jobs:
       - name: Build Java 
         shell: bash
         run: |
-          mvn clean package
+          mvn --file pom.xml clean install
       
       - name: C Make
         shell: bash
