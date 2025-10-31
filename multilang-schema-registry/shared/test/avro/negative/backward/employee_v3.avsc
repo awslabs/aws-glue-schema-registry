@@ -1,0 +1,33 @@
+{
+  "type": "record",
+  "name": "Employee",
+  "namespace": "com.amazonaws.services.schemaregistry.test.backward.negative",
+  "doc": "Schema that breaks compatibility with ANY previous version for BACKWARD_ALL testing (COMPAT-031)",
+  "fields": [
+    {
+      "name": "id",
+      "type": "int",
+      "doc": "Employee ID"
+    },
+    {
+      "name": "firstName",
+      "type": "string",
+      "doc": "Employee first name"
+    },
+    {
+      "name": "lastName",
+      "type": "string",
+      "doc": "Employee last name"
+    },
+    {
+      "name": "requiredSalary",
+      "type": "double",
+      "doc": "Required salary field - breaks compatibility with v1 (BACKWARD_ALL violation)"
+    },
+    {
+      "name": "requiredStartDate",
+      "type": "long",
+      "doc": "Required start date - another incompatible required addition"
+    }
+  ]
+}

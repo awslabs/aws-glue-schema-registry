@@ -1,0 +1,277 @@
+name: Build CSharp
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  release:
+    branches: [ master ]
+    types: [ created ]
+
+jobs:
+  git-secrets-scan:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install git-secrets
+        run: |
+          git clone https://github.com/awslabs/git-secrets.git
+          cd git-secrets
+          sudo make install
+
+      - name: Configure git-secrets
+        run: |
+          git secrets --register-aws
+          git secrets --install
+
+          # Add custom patterns
+          git secrets --add 'api[_-]?key\s*=\s*.+'
+          git secrets --add 'secret[_-]?key\s*=\s*.+'
+          git secrets --add 'token\s*=\s*.+'
+
+          # Enhanced AWS credential patterns
+          git secrets --add 'AWS_ACCESS_KEY_ID\s*=\s*[A-Z0-9]{20}'
+          git secrets --add 'AWS_SECRET_ACCESS_KEY\s*=\s*[A-Za-z0-9/+=]{40}'
+          git secrets --add 'AWS_SESSION_TOKEN\s*=\s*[A-Za-z0-9/+=]+'
+          git secrets --add 'AWS_SECURITY_TOKEN\s*=\s*[A-Za-z0-9/+=]+'
+          
+          # AWS Account and ARN patterns
+          git secrets --add 'AWS_ACCOUNT_ID\s*=\s*[0-9]{12}'
+
+      - name: Scan repository
+        run: |
+          git secrets --scan-history
+          git secrets --scan
+
+  build-csharp-multi-distro:
+    continue-on-error: false
+    timeout-minutes: 60
+    runs-on: ${{ matrix.arch == 'arm64' && 'ubuntu-22.04-arm' || 'ubuntu-latest' }}
+    strategy:
+      matrix:
+        arch: [x64, arm64]
+        distro: 
+          - ubuntu:22.04
+          - fedora:40
+        include:
+          - distro: ubuntu:22.04
+            package_manager: apt
+            update_cmd: "apt update"
+            install_cmd: "apt install -y"
+            group_install_cmd: "apt install -y build-essential"
+            clang_tools: "clang-tools clang-tidy"
+            pcre_dev: "libpcre2-dev"
+            cpp_compiler: "g++"
+            extra_packages: "zlib1g-dev libssh-dev"
+            dotnet_setup: |
+              wget https://packages.microsoft.com/config/ubuntu/22.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
+              dpkg -i packages-microsoft-prod.deb
+              rm packages-microsoft-prod.deb
+              apt update
+              apt install -y dotnet-sdk-8.0
+              
+          - distro: fedora:40
+            package_manager: dnf
+            update_cmd: "dnf update -y"
+            install_cmd: "dnf install -y"
+            group_install_cmd: "dnf groupinstall -y \"Development Tools\""
+            clang_tools: "clang-tools-extra"
+            pcre_dev: "pcre2-devel"
+            cpp_compiler: "gcc-c++"
+            extra_packages: ""
+            dotnet_setup: |
+              rpm -Uvh https://packages.microsoft.com/config/fedora/37/packages-microsoft-prod.rpm
+              dnf install -y dotnet-sdk-8.0
+
+    container:
+      image: ${{ matrix.distro }}
+      env:
+        LANG: C.UTF-8
+        LC_ALL: C.UTF-8
+    steps:
+      - name: Install required utilities
+        shell: bash
+        run: |
+          ${{ matrix.update_cmd }}
+          ${{ matrix.install_cmd }} zip unzip tar findutils gzip ${{ matrix.clang_tools }} nodejs wget
+          if [[ "${{ matrix.package_manager }}" == "apt" ]]; then
+            ${{ matrix.install_cmd }} curl gnupg2 software-properties-common
+          fi
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Install CMake and dependencies
+        shell: bash
+        run: |
+          ${{ matrix.install_cmd }} cmake gcc git lcov ${{ matrix.pcre_dev }} ${{ matrix.cpp_compiler }}
+          if [[ -n "${{ matrix.extra_packages }}" ]]; then
+            ${{ matrix.install_cmd }} ${{ matrix.extra_packages }}
+          fi
+          ${{ matrix.group_install_cmd }}
+          
+          # Install SWIG from source for all distributions
+          wget https://sourceforge.net/projects/swig/files/swig/swig-4.3.0/swig-4.3.0.tar.gz
+          tar -xzf swig-4.3.0.tar.gz
+          cd swig-4.3.0
+          ./configure --prefix=/usr/local
+          make -j$(nproc) 
+          make install 
+          swig -version
+
+      - name: Set up .NET SDK
+        shell: bash
+        run: |
+          ${{ matrix.dotnet_setup }}
+
+      - name: Set up Java
+        uses: graalvm/setup-graalvm@v1
+        with:
+          distribution: 'graalvm'
+          java-version: '21.0.2'       
+          components: 'native-image'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install Maven 3.9.11
+        shell: bash
+        run: |
+          curl -sSL https://downloads.apache.org/maven/maven-3/3.9.11/binaries/apache-maven-3.9.11-bin.tar.gz | tar xz
+          mv apache-maven-3.9.11 /opt/maven
+          echo "MAVEN_HOME=/opt/maven" >> $GITHUB_ENV
+          echo "/opt/maven/bin" >> $GITHUB_PATH
+    
+      # - name: Cache Maven packages
+      #   uses: actions/cache@v4
+      #   with:
+      #     path: ~/.m2
+      #     key: ${{ runner.os }}-${{ matrix.arch }}-${{ matrix.distro }}-m2-${{ hashFiles('**/pom.xml') }}
+      #     restore-keys: |
+      #       ${{ runner.os }}-${{ matrix.arch }}-${{ matrix.distro }}-m2-
+      #       ${{ runner.os }}-${{ matrix.arch }}-m2-
+
+      # - name: Install serializer-deserializer with test JAR
+      #   shell: bash
+      #   run: |
+      #     mvn -U clean install -pl serializer-deserializer -am -Dcheckstyle.skip=true -Dmaven.test.skip=true
+
+      - name: Build Java 
+        shell: bash
+        run: |
+          mvn -U clean install -Dcheckstyle.skip=true -DskipTests
+      
+      - name: C Make
+        shell: bash
+        run: |
+          rm -rf multilang-schema-registry/target && mkdir -p multilang-schema-registry/target
+          cd multilang-schema-registry/c
+          cmake -S . -Bbuild -DDISABLE_TESTS=ON -DDISABLE_QUALITY_GATES=ON
+          cmake --build build
+
+      - name: Build C#
+        shell: bash
+        run: |
+          cd multilang-schema-registry/csharp/AWSGsrSerDe/
+          # First build - expected to fail but continue workflow
+          dotnet build . || echo "First build failed as expected"
+          # Second build - should succeed
+          dotnet build .
+          # Only run unit tests as a part of the workflow
+          dotnet test . --filter 'JsonSerializerTest | AvroSerializerTest | JsonDeserializerTest | AvroDeserializerTest | (ProtobufSerializerTest&FullyQualifiedName!~KafkaFlow) | (ProtobufDeserializerTest&FullyQualifiedName!~KafkaFlow)' --no-build
+
+  build-musl:
+    continue-on-error: false
+    timeout-minutes: 90
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        arch: [x64]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+        
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        
+      - name: Build GraalVM musl container
+        run: |
+          cd multilang-schema-registry/musl-build-helper-scripts/musl
+          docker build -f Dockerfile.graalvm -t native-graalvm .
+          
+      - name: Build CMake musl container  
+        run: |
+          cd multilang-schema-registry/musl-build-helper-scripts/musl
+          docker build -f Dockerfile.cmake -t native-cmake .
+
+      - name: Clean previous builds
+        run: |
+          rm -rf multilang-schema-registry/c/build
+          
+      - name: Build Java components with musl
+        run: |
+          cd multilang-schema-registry/musl-build-helper-scripts/musl
+          HOST_SOURCE_DIR="$(realpath ../../..)"
+          SCRIPT_PATH="$(realpath ./build-musl-inner.sh)"
+          CONTAINER_WORKDIR="/workspace"
+          
+          docker run --rm \
+            --entrypoint /bin/sh \
+            -v "$HOST_SOURCE_DIR":"$CONTAINER_WORKDIR" \
+            -v "$SCRIPT_PATH":/tmp/musl-build-inner.sh \
+            -w "$CONTAINER_WORKDIR" \
+            "native-graalvm" \
+            /tmp/musl-build-inner.sh
+
+      - name: Build C components with musl
+        run: |
+          cd multilang-schema-registry/musl-build-helper-scripts/musl  
+          HOST_SOURCE_DIR="$(realpath ../../..)"
+          CMAKE_SCRIPT_PATH="$(realpath ./build-musl-cmake.sh)"
+          CONTAINER_WORKDIR="/workspace"
+          
+          docker run --rm \
+            -v "$HOST_SOURCE_DIR":"$CONTAINER_WORKDIR" \
+            -v "$CMAKE_SCRIPT_PATH":/tmp/musl-build-cmake.sh \
+            -w "$CONTAINER_WORKDIR" \
+            "native-cmake" \
+            /tmp/musl-build-cmake.sh
+
+      - name: Build and Test C# with musl
+        run: |
+          docker run --rm \
+            -v "$(pwd)":"$(pwd)" \
+            -w "$(pwd)/multilang-schema-registry/csharp/AWSGsrSerDe" \
+            mcr.microsoft.com/dotnet/sdk:8.0-alpine \
+            sh -c "
+              # First build - fails because protoc doesn't work with Alpine (musl libc based image)
+              dotnet clean . && dotnet build . || true
+              
+              # Workaround because protoc from grpc.tools is not compatible with Alpine
+              # This is only for the protoc compilation, and does not affect functionality of the library
+              apk update && \
+              apk --no-cache add libc6-compat && \
+              apk --no-cache add \
+              -X https://dl-cdn.alpinelinux.org/alpine/v3.17/main \
+              -X https://dl-cdn.alpinelinux.org/alpine/v3.17/community \
+              protobuf=3.21.9-r0 && \
+              WORKDIR=\$(pwd) && \
+              cd /root/.nuget/packages/grpc.tools/2.48.1/tools/linux_x64 && \
+              rm protoc && \
+              ln -s /usr/bin/protoc protoc && \
+              chmod +x grpc_csharp_plugin && \
+              cd \$WORKDIR
+              
+              # Need to build it twice due to protobuf compilation misorder (normal for csharp builds today)
+              dotnet build . || true
+              dotnet build .
+              
+              # Only run unit tests as a part of the workflow
+              dotnet test . --filter 'JsonSerializerTest | AvroSerializerTest | JsonDeserializerTest | AvroDeserializerTest | (ProtobufSerializerTest&FullyQualifiedName!~KafkaFlow) | (ProtobufDeserializerTest&FullyQualifiedName!~KafkaFlow)' --no-build
+            "

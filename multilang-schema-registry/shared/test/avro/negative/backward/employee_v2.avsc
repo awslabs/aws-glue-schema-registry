@@ -1,0 +1,34 @@
+{
+  "type": "record",
+  "name": "Employee",
+  "namespace": "com.amazonaws.services.schemaregistry.test.backward.negative",
+  "doc": "Schema with required field addition - violates BACKWARD compatibility (COMPAT-028)",
+  "fields": [
+    {
+      "name": "id",
+      "type": "int",
+      "doc": "Employee ID"
+    },
+    {
+      "name": "firstName",
+      "type": "string",
+      "doc": "Employee first name"
+    },
+    {
+      "name": "lastName",
+      "type": "string",
+      "doc": "Employee last name"
+    },
+    {
+      "name": "department",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "Optional department"
+    },
+    {
+      "name": "requiredEmail",
+      "type": "string",
+      "doc": "Required email field - this addition breaks backward compatibility"
+    }
+  ]
+}

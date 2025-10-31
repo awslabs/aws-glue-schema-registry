@@ -1,0 +1,34 @@
+{
+  "type": "record",
+  "name": "Product",
+  "namespace": "com.amazonaws.services.schemaregistry.test.forward.negative",
+  "doc": "Base schema for forward compatibility violation testing (COMPAT-034, COMPAT-037)",
+  "fields": [
+    {
+      "name": "id",
+      "type": "int",
+      "doc": "Product ID"
+    },
+    {
+      "name": "name",
+      "type": "string",
+      "doc": "Product name"
+    },
+    {
+      "name": "price",
+      "type": "double",
+      "doc": "Product price"
+    },
+    {
+      "name": "category",
+      "type": "string",
+      "doc": "Product category - will be removed to break forward compatibility"
+    },
+    {
+      "name": "description",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "Optional product description"
+    }
+  ]
+}
