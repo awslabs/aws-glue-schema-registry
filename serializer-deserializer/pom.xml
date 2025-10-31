@@ -37,14 +37,14 @@
     </parent>
 
     <distributionManagement>
-        <snapshotRepository>
-            <id>ossrh</id>
-            <url>https://aws.oss.sonatype.org/content/repositories/snapshots</url>
-        </snapshotRepository>
-        <repository>
-            <id>ossrh</id>
-            <url>https://aws.oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-        </repository>
+    <snapshotRepository>
+        <id>central</id>
+        <url>https://ossrh-staging-api.central.sonatype.com/content/repositories/snapshots</url>
+    </snapshotRepository>
+    <repository>
+        <id>central</id>
+        <url>https://ossrh-staging-api.central.sonatype.com/service/local/staging/deploy/maven2/</url>
+    </repository>
     </distributionManagement>
     <licenses>
         <license>
@@ -335,15 +335,13 @@
                         </executions>
                     </plugin>
                     <plugin>
-                        <groupId>org.sonatype.plugins</groupId>
-                        <artifactId>nexus-staging-maven-plugin</artifactId>
-                        <version>1.6.8</version>
-                        <extensions>true</extensions>
-                        <configuration>
-                            <serverId>sonatype-nexus-staging</serverId>
-                            <nexusUrl>https://aws.oss.sonatype.org</nexusUrl>
-                            <autoReleaseAfterClose>false</autoReleaseAfterClose>
-                        </configuration>
+                    <groupId>org.sonatype.central</groupId>
+                    <artifactId>central-publishing-maven-plugin</artifactId>
+                    <version>0.7.0</version>
+                    <extensions>true</extensions>
+                    <configuration>
+                        <publishingServerId>central</publishingServerId>
+                    </configuration>
                     </plugin>
                 </plugins>
             </build>
