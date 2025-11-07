@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
+    <PackageReference Include="NUnit" Version="3.14.0" />
+    <PackageReference Include="NUnit3TestAdapter" Version="4.5.0" />
+    <PackageReference Include="AWSSDK.Kinesis" Version="3.7.300" />
+    <PackageReference Include="AWSSDK.Glue" Version="3.7.300" />
+    <PackageReference Include="Apache.Avro" Version="1.11.3" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../amazon-kinesis-client-net/ClientLibrary/ClientLibrary.csproj" />
+    <ProjectReference Include="../../../AWSGsrSerDe/AWSGsrSerDe.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="test-configs/**" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

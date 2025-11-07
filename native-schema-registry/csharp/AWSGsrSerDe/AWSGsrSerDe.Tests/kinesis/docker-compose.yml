@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  localstack:
+    image: localstack/localstack:latest
+    ports:
+      - "4566:4566"
+    environment:
+      - SERVICES=kinesis,dynamodb,cloudwatch
+      - DEBUG=1
+
+  # Real KCL integration tests with Java runtime for MultiLangDaemon
+  kinesis-real-kcl-test:
+    image: mcr.microsoft.com/dotnet/sdk:8.0
+    depends_on:
+      - localstack
+    environment:
+      - LOCALSTACK_ENDPOINT=http://localstack:4566
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - AWS_DEFAULT_REGION=us-east-1
+    volumes:
+      - ../..:/app
+    working_dir: /app
+    command: >
+      bash -c "
+        echo 'Waiting for LocalStack...' &&
+        sleep 30 &&
+        echo 'Installing git...' &&
+        apt-get update && apt-get install -y git &&
+        echo 'Cloning amazon-kinesis-client-net...' &&
+        if [ ! -d 'amazon-kinesis-client-net' ]; then
+          git clone https://github.com/awslabs/amazon-kinesis-client-net.git
+        fi &&
+        echo 'Building amazon-kinesis-client-net...' &&
+        cd amazon-kinesis-client-net &&
+        dotnet build ClientLibrary/ClientLibrary.csproj &&
+        cd .. &&
+        echo 'Building main projects...' &&
+        dotnet build AWSGsrSerDe/AWSGsrSerDe.csproj &&
+        dotnet build AWSGsrSerDe.Tests/AWSGsrSerDe.Tests.csproj &&
+        echo 'Running Kinesis integration tests...' &&
+        dotnet test AWSGsrSerDe.Tests/AWSGsrSerDe.Tests.csproj --filter 'FullyQualifiedName~GlueSchemaRegistryKinesisIntegrationTest' --logger 'console;verbosity=detailed' --no-build
+      "
