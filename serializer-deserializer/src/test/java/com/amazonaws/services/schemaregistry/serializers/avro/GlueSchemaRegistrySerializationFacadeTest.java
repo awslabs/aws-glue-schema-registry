@@ -34,6 +34,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericRecord;
+import org.apache.commons.collections4.map.SingletonMap;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -641,12 +642,12 @@ public class GlueSchemaRegistrySerializationFacadeTest extends GlueSchemaRegistr
     public void testRegisterSchemaVersion_withCustomJacksonConfiguration_succeeds(DataFormat dataFormat,
                                                                                   Object record,
                                                                                   AWSSchemaRegistryConstants.COMPRESSION compressionType) {
-        List<String> jacksonSerializationFeatures =
-                Arrays.asList(SerializationFeature.FLUSH_AFTER_WRITE_VALUE.name());
+        Map<String, Boolean> jacksonSerializationFeatures =
+                new SingletonMap<>(SerializationFeature.FLUSH_AFTER_WRITE_VALUE.name(), true);
         configs.put(AWSSchemaRegistryConstants.JACKSON_SERIALIZATION_FEATURES,
                     jacksonSerializationFeatures);
-        List<String> jacksonDeserializationFeatures =
-                Arrays.asList(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS.name());
+        Map<String, Boolean> jacksonDeserializationFeatures =
+                new SingletonMap<>(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS.name(), true);
         configs.put(AWSSchemaRegistryConstants.JACKSON_DESERIALIZATION_FEATURES,
                     jacksonDeserializationFeatures);
         configs.put(AWSSchemaRegistryConstants.COMPRESSION_TYPE, compressionType.name());
