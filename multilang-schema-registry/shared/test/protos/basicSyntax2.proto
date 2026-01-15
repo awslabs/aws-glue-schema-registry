@@ -1,9 +1,0 @@
-syntax = "proto2";
-
-package com.amazonaws.services.schemaregistry.tests.protobuf.syntax2.basic;
-
-message Phone {
-  required string model = 1;
-  optional string name = 2;
-  optional int32 serial = 3;
-}

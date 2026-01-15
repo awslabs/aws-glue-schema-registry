@@ -14,9 +14,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+<<<<<<< HEAD
  *
  * This will be removed once Apicurio releases the latest version with the json_name fix
  * https://github.com/Apicurio/apicurio-registry/blob/master/utils/protobuf-schema-utilities/src/main/java/io/apicurio/registry/utils/protobuf/schema/ProtobufFile.java
+=======
+>>>>>>> kafka-connect-converter-protobuf
  */
 
 package com.amazonaws.services.schemaregistry.utils.apicurio;

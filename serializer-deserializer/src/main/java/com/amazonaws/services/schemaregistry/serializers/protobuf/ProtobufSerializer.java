@@ -17,7 +17,7 @@ package com.amazonaws.services.schemaregistry.serializers.protobuf;
 import com.amazonaws.services.schemaregistry.common.GlueSchemaRegistryDataFormatSerializer;
 import com.amazonaws.services.schemaregistry.common.configs.GlueSchemaRegistryConfiguration;
 import com.amazonaws.services.schemaregistry.exception.AWSSchemaRegistryException;
-import com.amazonaws.services.schemaregistry.utils.ProtobufSchemaParser;
+import com.amazonaws.services.schemaregistry.utils.apicurio.FileDescriptorUtils;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -25,6 +25,7 @@ import com.google.common.cache.LoadingCache;
 import com.google.protobuf.DescriptorProtos;
 import com.google.protobuf.Descriptors;
 import com.google.protobuf.Message;
+import com.squareup.wire.schema.internal.parser.ProtoFileElement;
 import lombok.Builder;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -119,7 +120,9 @@ public class ProtobufSerializer implements GlueSchemaRegistryDataFormatSerialize
     private static class SchemaGeneratorCache extends CacheLoader<DescriptorProtos.FileDescriptorProto, String> {
         @Override
         public String load(@NotNull DescriptorProtos.FileDescriptorProto fileDescriptorProto) {
-            return ProtobufSchemaParser.getProtobufSchemaStringFromFileDescriptorProto(fileDescriptorProto);
+            final ProtoFileElement schemaElement = FileDescriptorUtils.fileDescriptorToProtoFile(fileDescriptorProto);
+            String rawSchema = schemaElement.toSchema();
+            return rawSchema.replace("// Proto schema formatted by Wire, do not edit.\n// Source: \n\n", "");
         }
     }
 }

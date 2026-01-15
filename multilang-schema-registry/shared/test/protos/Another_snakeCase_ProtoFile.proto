@@ -1,7 +1,0 @@
-syntax = "proto3";
-
-package com.amazonaws.services.schemaregistry.tests.protobuf.syntax3.snake_case;
-
-message another_SnakeCase_ {
-  string cobra = 1;
-}

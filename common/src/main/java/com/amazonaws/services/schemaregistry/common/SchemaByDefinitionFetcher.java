@@ -74,9 +74,7 @@ public class SchemaByDefinitionFetcher {
             return schemaDefinitionToVersionCache.get(schema);
         } catch (Exception ex) {
             Throwable schemaRegistryException = ex.getCause();
-            String exceptionCauseMessage = schemaRegistryException.getCause() != null
-                ? schemaRegistryException.getCause().getMessage()
-                : schemaRegistryException.getMessage();
+            String exceptionCauseMessage = schemaRegistryException.getCause().getMessage();
 
             if (exceptionCauseMessage.contains(AWSSchemaRegistryConstants.SCHEMA_VERSION_NOT_FOUND_MSG)) {
                 if (!glueSchemaRegistryConfiguration.isSchemaAutoRegistrationEnabled()) {
@@ -96,8 +94,8 @@ public class SchemaByDefinitionFetcher {
             } else {
                 String msg =
                     String.format(
-                        "Exception occurred while fetching or registering schema definition = %s, schema name = %s. Error: %s",
-                        schemaDefinition, schemaName, exceptionCauseMessage);
+                        "Exception occurred while fetching or registering schema definition = %s, schema name = %s ",
+                        schemaDefinition, schemaName);
                 throw new AWSSchemaRegistryException(msg, schemaRegistryException);
             }
             schemaDefinitionToVersionCache.put(schema, schemaVersionId);

@@ -333,7 +333,7 @@ public class GlueSchemaRegistryConfiguration {
         return true;
     }
 
-    protected Map<String, ?> getMapFromPropertiesFile(Properties properties) {
+    private Map<String, ?> getMapFromPropertiesFile(Properties properties) {
         return new HashMap<>(properties.entrySet()
                                      .stream()
                                      .collect(Collectors.toMap(e -> e.getKey()
