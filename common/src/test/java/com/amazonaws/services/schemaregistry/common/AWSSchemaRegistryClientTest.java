@@ -363,17 +363,14 @@ public class AWSSchemaRegistryClientTest {
                 .registryId(RegistryId.builder().registryName(glueSchemaRegistryConfiguration.getRegistryName()).build())
                 .build();
 
-        when(mockGlueClient.createSchema(createSchemaRequest))
-                .thenThrow(EntityNotFoundException.builder()
-                        .message("Schema registry entity not found")
-                        .build());
+        when(mockGlueClient.createSchema(createSchemaRequest)).thenThrow(EntityNotFoundException.class);
 
         try {
             awsSchemaRegistryClient.createSchema(schemaName, dataFormatName, userSchemaDefinition, getMetadata());
         } catch (Exception e) {
             assertEquals(EntityNotFoundException.class, e.getCause().getClass());
             assertEquals(AWSSchemaRegistryException.class, e.getClass());
-            String expectedErrorMessage = "Create schema :: Call failed when creating the schema with the schema registry for schema name = " + schemaName + ". Error = Schema registry entity not found";
+            String expectedErrorMessage = "Create schema :: Call failed when creating the schema with the schema registry for schema name = " + schemaName;
             assertEquals(expectedErrorMessage, e.getMessage());
         }
     }

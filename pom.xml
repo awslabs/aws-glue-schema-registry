@@ -21,7 +21,7 @@
 
     <groupId>software.amazon.glue</groupId>
     <artifactId>schema-registry-parent</artifactId>
-    <version>1.1.26</version>
+    <version>1.1.25</version>
     <packaging>pom</packaging>
     <name>AWS Glue Schema Registry Library</name>
     <description>The AWS Glue Schema Registry Library for Java enables Java developers to easily integrate their
@@ -52,14 +52,14 @@
         <url>https://github.com/awslabs/aws-glue-schema-registry.git</url>
     </scm>
     <distributionManagement>
-        <snapshotRepository>
-            <id>ossrh</id>
-            <url>https://aws.oss.sonatype.org/content/repositories/snapshots</url>
-        </snapshotRepository>
-        <repository>
-            <id>ossrh</id>
-            <url>https://aws.oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-        </repository>
+    <snapshotRepository>
+        <id>central</id>
+        <url>https://ossrh-staging-api.central.sonatype.com/content/repositories/snapshots</url>
+    </snapshotRepository>
+    <repository>
+        <id>central</id>
+        <url>https://ossrh-staging-api.central.sonatype.com/service/local/staging/deploy/maven2/</url>
+    </repository>
     </distributionManagement>
 
     <modules>
@@ -70,7 +70,6 @@
         <module>kafkastreams-serde</module>
         <module>avro-kafkaconnect-converter</module>
         <module>avro-flink-serde</module>
-        <module>multilang-schema-registry</module>
         <module>examples</module>
         <module>integration-tests</module>
         <module>jsonschema-kafkaconnect-converter</module>
@@ -82,7 +81,7 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <glue.schema.registry.groupId>software.amazon.glue</glue.schema.registry.groupId>
         <aws.sdk.v2.version>2.32.25</aws.sdk.v2.version>
-        <aws.sdk.v1.version>1.12.782</aws.sdk.v1.version>
+        <aws.sdk.v1.version>1.12.660</aws.sdk.v1.version>
         <kafka.scala.version>2.12</kafka.scala.version>
         <kafka.version>3.6.1</kafka.version>
         <avro.version>1.11.4</avro.version>
@@ -101,9 +100,7 @@
         <log4j.version>2.17.1</log4j.version>
         <jupiter.version>5.6.3</jupiter.version>
         <mockito.version>3.3.3</mockito.version>
-        <lombok.version>1.18.30</lombok.version>
-        <mockito.version>3.6.28</mockito.version>
-        <lombok.utils.version>1.18.12</lombok.utils.version>
+        <lombok.version>1.18.26</lombok.version>
         <hamcrest.version>1.1</hamcrest.version>
         <!--  LATEST KCL Does not work with LocalStack yet, remove once new version works -->
         <kinesis.client.version>2.2.9</kinesis.client.version>
@@ -176,13 +173,6 @@
                     <artifactId>commons-compress</artifactId>
                   </exclusion>
                </exclusions>
-            </dependency>
-            <!-- Exclude commons-compress globally due to vulns -->
-            <dependency>
-                <groupId>org.apache.commons</groupId>
-                <artifactId>commons-compress</artifactId>
-                <version>1.28.0</version>
-                <scope>provided</scope>
             </dependency>
             <dependency>
                 <groupId>org.apache.avro</groupId>
@@ -338,12 +328,6 @@
             </dependency>
             <dependency>
                 <groupId>org.mockito</groupId>
-                <artifactId>mockito-inline</artifactId>
-                <version>${mockito.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.mockito</groupId>
                 <artifactId>mockito-junit-jupiter</artifactId>
                 <version>${mockito.version}</version>
                 <scope>test</scope>
@@ -396,7 +380,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.11.0</version>
+                <version>3.10.1</version>
                 <configuration>
                     <source>1.8</source>
                     <target>1.8</target>
@@ -446,7 +430,7 @@
                 <artifactId>maven-javadoc-plugin</artifactId>
                 <version>3.2.0</version>
                 <configuration>
-                    <excludePackageNames>*.avrodata, *.apicurio, com.amazonaws.services.schemaregistry</excludePackageNames>
+                    <excludePackageNames>*.avrodata, *.apicurio</excludePackageNames>
                     <source>8</source>
                 </configuration>
                 <executions>
@@ -461,7 +445,7 @@
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
-                <version>0.8.11</version>
+                <version>0.8.8</version>
                 <configuration>
                     <excludes>
                         <!-- Ignore exception classes -->
@@ -539,14 +523,12 @@
                         </executions>
                     </plugin>
                     <plugin>
-                        <groupId>org.sonatype.plugins</groupId>
-                        <artifactId>nexus-staging-maven-plugin</artifactId>
-                        <version>1.6.8</version>
+                        <groupId>org.sonatype.central</groupId>
+                        <artifactId>central-publishing-maven-plugin</artifactId>
+                        <version>0.7.0</version>
                         <extensions>true</extensions>
                         <configuration>
-                            <serverId>sonatype-nexus-staging</serverId>
-                            <nexusUrl>https://aws.oss.sonatype.org</nexusUrl>
-                            <autoReleaseAfterClose>false</autoReleaseAfterClose>
+                            <publishingServerId>central</publishingServerId>
                         </configuration>
                     </plugin>
                 </plugins>

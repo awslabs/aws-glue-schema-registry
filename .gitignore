@@ -3,37 +3,11 @@
 .DS_Store
 *.iml
 
-# Ignore VSCode files
-.vscode/launch.json
-.vscode/settings.json
-
-# Ignore devcontainer files
-.devcontainer/devcontainer.json
-
 #Ignore Maven files
 **/target
 
 **/.settings
-**/build
-**/volume**/.settings
 **/*.project
 **/*.classpath
 **/*.factorypath
 **/dependency-reduced-pom.xml
-integration-tests/volume/cache/machine.json
-integration-tests/volume/cache/server.test.pem
-integration-tests/volume/lib/kinesis-local/0.4.12/package-lock.json
-integration-tests/volume/cache/server.test.pem.crt
-integration-tests/volume/cache/server.test.pem.key
-integration-tests/volume/lib/kinesis-local/0.4.12/package.json
-
-multilang-schema-registry/csharp/AWSGsrSerDe/AWSGsrSerDe/glue_schema_registry_deserializer.cs
-multilang-schema-registry/csharp/AWSGsrSerDe/AWSGsrSerDe/glue_schema_registry_schema.cs
-multilang-schema-registry/csharp/AWSGsrSerDe/AWSGsrSerDe/glue_schema_registry_serdeCSHARP_wrap.c
-multilang-schema-registry/csharp/AWSGsrSerDe/AWSGsrSerDe/glue_schema_registry_serializer.cs
-multilang-schema-registry/csharp/AWSGsrSerDe/AWSGsrSerDe/GsrSerDe.cs
-multilang-schema-registry/csharp/AWSGsrSerDe/AWSGsrSerDe/GsrSerDePINVOKE.cs
-multilang-schema-registry/csharp/AWSGsrSerDe/AWSGsrSerDe/mutable_byte_array.cs
-multilang-schema-registry/csharp/AWSGsrSerDe/AWSGsrSerDe/read_only_byte_array.cs
-multilang-schema-registry/csharp/AWSGsrSerDe/AWSGsrSerDe/SWIGTYPE_p_p_glue_schema_registry_error.cs
-multilang-schema-registry/csharp/AWSGsrSerDe/AWSGsrSerDe/SWIGTYPE_p_unsigned_char.cs
