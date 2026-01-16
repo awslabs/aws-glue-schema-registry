@@ -63,6 +63,7 @@
     </distributionManagement>
 
     <modules>
+        <module>lz4-shim</module>
         <module>build-tools</module>
         <module>common</module>
         <module>serializer-deserializer</module>
@@ -75,7 +76,6 @@
         <module>integration-tests</module>
         <module>jsonschema-kafkaconnect-converter</module>
         <module>protobuf-kafkaconnect-converter</module>
-        <module>lz4-shim</module>
     </modules>
 
     <properties>
@@ -180,12 +180,7 @@
                </exclusions>
             </dependency>
             <!-- Exclude commons-compress globally due to vulns -->
-            <dependency>
-                <groupId>org.apache.commons</groupId>
-                <artifactId>commons-compress</artifactId>
-                <version>1.28.0</version>
-                <scope>provided</scope>
-            </dependency>
+
             <dependency>
                 <groupId>org.apache.avro</groupId>
                 <artifactId>avro-maven-plugin</artifactId>
@@ -520,6 +515,7 @@
                                         <exclude>additionalTypes</exclude>
                                         <!-- Exclude lz4-shim module from coverage -->
                                         <exclude>org.lz4</exclude>
+                                        <exclude>default</exclude>
                                     </excludes>
                                 </rule>
                             </rules>
