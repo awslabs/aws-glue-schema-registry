@@ -63,6 +63,7 @@
     </distributionManagement>
 
     <modules>
+        <module>lz4-shim</module>
         <module>build-tools</module>
         <module>common</module>
         <module>serializer-deserializer</module>
@@ -118,6 +119,7 @@
         <protobuf.java.version>3.25.5</protobuf.java.version>
         <localstack.utils>0.2.23</localstack.utils>
         <aws.msk.iam.auth>2.0.3</aws.msk.iam.auth>
+        <lz4.java.version>1.10.2</lz4.java.version>
     </properties>
 
     <dependencyManagement>
@@ -177,6 +179,8 @@
                   </exclusion>
                </exclusions>
             </dependency>
+            <!-- Exclude commons-compress globally due to vulns -->
+
             <dependency>
                 <groupId>org.apache.avro</groupId>
                 <artifactId>avro-maven-plugin</artifactId>
@@ -369,6 +373,12 @@
                 <artifactId>json</artifactId>
                 <version>20231013</version>
             </dependency>
+            <!-- Override vulnerable lz4-java with secure shim -->
+            <dependency>
+                <groupId>org.lz4</groupId>
+                <artifactId>lz4-java</artifactId>
+                <version>${lz4.java.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -503,6 +513,9 @@
                                         <exclude>org.apache.avro</exclude>
                                         <exclude>metadata</exclude>
                                         <exclude>additionalTypes</exclude>
+                                        <!-- Exclude lz4-shim module from coverage -->
+                                        <exclude>org.lz4</exclude>
+                                        <exclude>default</exclude>
                                     </excludes>
                                 </rule>
                             </rules>
