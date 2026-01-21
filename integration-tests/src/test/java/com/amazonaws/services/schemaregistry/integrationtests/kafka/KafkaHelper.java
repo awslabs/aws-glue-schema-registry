@@ -319,6 +319,14 @@ public class KafkaHelper {
 
     private Properties getProducerProperties(final ProducerProperties producerProperties) {
         Properties properties = getKafkaProducerProperties();
+
+        // Add Kafka's native compression if specified
+        if (producerProperties.getKafkaCompressionType() != null &&
+            !producerProperties.getKafkaCompressionType().isEmpty()) {
+            properties.put("compression.type", producerProperties.getKafkaCompressionType());
+            log.info("Setting Kafka compression.type to: {}", producerProperties.getKafkaCompressionType());
+        }
+
         setSchemaRegistrySerializerProperties(properties, producerProperties);
         return properties;
     }

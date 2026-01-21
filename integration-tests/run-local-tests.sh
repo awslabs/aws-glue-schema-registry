@@ -115,9 +115,11 @@ cleanUpConnectFiles() {
 
 cleanUpDockerResources || true
 # Start Kafka using docker command asynchronously
-docker compose up --no-attach localstack &
+docker-compose up --no-attach localstack &
 sleep 10
 ## Run mvn tests for Kafka and Kinesis Platforms
+## This includes testProduceConsumeWithKafkaLZ4Compression which verifies
+## that at.yawk.lz4:lz4-java works correctly with Kafka's native LZ4 compression
 cd .. && mvn --file integration-tests/pom.xml verify -Psurefire -X && cd integration-tests
 cleanUpDockerResources
 
@@ -131,7 +133,7 @@ downloadMongoDBConnector
 copyGSRConverters
 
 runConnectTests() {
-    docker compose up --no-attach localstack &
+    docker-compose up --no-attach localstack &
     setUpMongoDBLocal
     startKafkaConnectTasks ${1}
     echo "Waiting for Sink task to pick up data.."

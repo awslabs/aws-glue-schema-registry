@@ -506,4 +506,53 @@ public class GlueSchemaRegistryKafkaIntegrationTest {
 
         return avroRecordType.getName();
     }
+
+    /**
+     * Test to verify that Kafka's native LZ4 compression works correctly with at.yawk.lz4:lz4-java dependency.
+     * This test ensures that the replacement of org.lz4:lz4-java with at.yawk.lz4:lz4-java is functioning properly.
+     */
+    @Test
+    public void testProduceConsumeWithKafkaLZ4Compression() throws Exception {
+        log.info("Starting test for Kafka native LZ4 compression...");
+
+        DataFormat dataFormat = DataFormat.AVRO;
+        AWSSchemaRegistryConstants.COMPRESSION compression = AWSSchemaRegistryConstants.COMPRESSION.NONE;
+        AvroRecordType recordType = AvroRecordType.GENERIC_RECORD;
+        Compatibility compatibility = Compatibility.NONE;
+
+        final Pair<String, KafkaHelper> kafkaHelperPair = createAndGetKafkaHelper(TOPIC_NAME_PREFIX);
+        final String topic = kafkaHelperPair.getLeft();
+        final KafkaHelper kafkaHelper = kafkaHelperPair.getRight();
+
+        final TestDataGenerator testDataGenerator = testDataGeneratorFactory.getInstance(
+                TestDataGeneratorType.valueOf(dataFormat, recordType, compatibility));
+        final List<?> records = testDataGenerator.createRecords();
+
+        String schemaName = String.format("%s-%s-%s-LZ4", topic, dataFormat.name(), compatibility);
+        schemasToCleanUp.add(schemaName);
+
+        ProducerProperties producerProperties = ProducerProperties.builder()
+                .topicName(topic)
+                .schemaName(schemaName)
+                .dataFormat(dataFormat.name())
+                .compatibilityType(compatibility.name())
+                .compressionType(compression.name())
+                .autoRegistrationEnabled("true")
+                // Enable Kafka's native LZ4 compression
+                .kafkaCompressionType("lz4")
+                .build();
+
+        List<ProducerRecord<String, Object>> producerRecords =
+                kafkaHelper.doProduceRecords(producerProperties, records);
+
+        ConsumerProperties.ConsumerPropertiesBuilder consumerPropertiesBuilder =
+                ConsumerProperties.builder().topicName(topic);
+        consumerPropertiesBuilder.avroRecordType(recordType.getName());
+
+        List<ConsumerRecord<String, Object>> consumerRecords =
+                kafkaHelper.doConsumeRecords(consumerPropertiesBuilder.build());
+
+        assertRecordsEquality(producerRecords, consumerRecords);
+        log.info("Successfully completed test for Kafka native LZ4 compression with {} records", consumerRecords.size());
+    }
 }
