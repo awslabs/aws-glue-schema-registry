@@ -63,7 +63,6 @@
     </distributionManagement>
 
     <modules>
-        <module>lz4-shim</module>
         <module>build-tools</module>
         <module>common</module>
         <module>serializer-deserializer</module>
@@ -147,16 +146,34 @@
                 <groupId>org.apache.kafka</groupId>
                 <artifactId>kafka_${kafka.scala.version}</artifactId>
                 <version>${kafka.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.lz4</groupId>
+                        <artifactId>lz4-java</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.apache.kafka</groupId>
                 <artifactId>kafka-clients</artifactId>
                 <version>${kafka.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.lz4</groupId>
+                        <artifactId>lz4-java</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.apache.kafka</groupId>
                 <artifactId>kafka-streams</artifactId>
                 <version>${kafka.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.lz4</groupId>
+                        <artifactId>lz4-java</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.apache.kafka</groupId>
@@ -373,9 +390,9 @@
                 <artifactId>json</artifactId>
                 <version>20231013</version>
             </dependency>
-            <!-- Override vulnerable lz4-java with secure shim -->
+            <!-- Use secure at.yawk.lz4:lz4-java instead of vulnerable org.lz4:lz4-java -->
             <dependency>
-                <groupId>org.lz4</groupId>
+                <groupId>at.yawk.lz4</groupId>
                 <artifactId>lz4-java</artifactId>
                 <version>${lz4.java.version}</version>
             </dependency>
@@ -513,8 +530,6 @@
                                         <exclude>org.apache.avro</exclude>
                                         <exclude>metadata</exclude>
                                         <exclude>additionalTypes</exclude>
-                                        <!-- Exclude lz4-shim module from coverage -->
-                                        <exclude>org.lz4</exclude>
                                         <exclude>default</exclude>
                                     </excludes>
                                 </rule>
