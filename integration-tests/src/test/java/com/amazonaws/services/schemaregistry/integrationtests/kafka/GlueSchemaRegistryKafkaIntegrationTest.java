@@ -43,7 +43,6 @@ import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
-import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.glue.GlueClient;
 import software.amazon.awssdk.services.glue.model.Compatibility;
@@ -116,8 +115,6 @@ public class GlueSchemaRegistryKafkaIntegrationTest {
                 .credentialsProvider(awsCredentialsProvider)
                 .region(Region.of(REGION))
                 .endpointOverride(new URI(SCHEMA_REGISTRY_ENDPOINT_OVERRIDE))
-                .httpClient(UrlConnectionHttpClient.builder()
-                                    .build())
                 .build();
 
         for (String schemaName : schemasToCleanUp) {
