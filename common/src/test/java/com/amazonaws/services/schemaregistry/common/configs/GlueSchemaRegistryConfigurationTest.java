@@ -93,17 +93,17 @@ public class GlueSchemaRegistryConfigurationTest {
     /**
      * Tests configuration for region value
      */
-    // @Test
-    // public void testBuildConfig_noRegionConfigsSupplied_throwsException() {
-    //     Map<String, Object> configWithoutRegion = new HashMap<>();
-    //     configWithoutRegion.put(AWSSchemaRegistryConstants.AWS_ENDPOINT, "https://test/");
-    //     System.setProperty("aws.profile", "");
+    @Test
+    public void testBuildConfig_noRegionConfigsSupplied_throwsException() {
+        Map<String, Object> configWithoutRegion = new HashMap<>();
+        configWithoutRegion.put(AWSSchemaRegistryConstants.AWS_ENDPOINT, "https://test/");
+        System.setProperty("aws.profile", "");
 
-    //     Exception exception = assertThrows(AWSSchemaRegistryException.class,
-    //             () -> new GlueSchemaRegistryConfiguration(configWithoutRegion));
+        Exception exception = assertThrows(AWSSchemaRegistryException.class,
+                () -> new GlueSchemaRegistryConfiguration(configWithoutRegion));
 
-    //     assertEquals("Region is not defined in the properties", exception.getMessage());
-    // }
+        assertEquals("Region is not defined in the properties", exception.getMessage());
+    }
 
     /**
      * Tests configuration for region value via default AWS region provider chain
