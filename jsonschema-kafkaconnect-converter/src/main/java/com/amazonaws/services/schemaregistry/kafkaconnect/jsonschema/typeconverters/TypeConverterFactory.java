@@ -27,6 +27,7 @@ import org.everit.json.schema.EnumSchema;
 import org.everit.json.schema.NumberSchema;
 import org.everit.json.schema.ObjectSchema;
 import org.everit.json.schema.StringSchema;
+import org.json.JSONObject;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -51,7 +52,10 @@ public class TypeConverterFactory {
             typeConverter = get(Schema.Type.BOOLEAN);
         } else if (jsonSchema instanceof NumberSchema) {
             // If no connect type passed then assume that connect schema is for FLOAT64 type data
-            if (connectType == null) {
+            JSONObject parsedSchema = new JSONObject(jsonSchema.toString());
+            if (parsedSchema.get("type") == "integer") {
+                typeConverter = get(Schema.Type.INT64);
+            } else if (connectType == null) {
                 typeConverter = get(Schema.Type.valueOf("FLOAT64"));
             } else {
                 typeConverter = get(Schema.Type.valueOf(connectType.toUpperCase()));
