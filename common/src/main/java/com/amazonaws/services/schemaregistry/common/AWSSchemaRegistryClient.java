@@ -56,9 +56,15 @@ import software.amazon.awssdk.services.glue.model.RegisterSchemaVersionRequest;
 import software.amazon.awssdk.services.glue.model.RegisterSchemaVersionResponse;
 import software.amazon.awssdk.services.glue.model.RegistryId;
 import software.amazon.awssdk.services.glue.model.SchemaId;
+import software.amazon.awssdk.services.glue.model.SchemaVersionNumber;
+import software.amazon.awssdk.services.glue.model.Compatibility;
+import software.amazon.awssdk.services.glue.model.EntityNotFoundException;
+
+import com.amazonaws.services.schemaregistry.common.compatibility.JsonSchemaCompatibilityChecker;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.List;
 import java.util.Map;
 import java.util.StringJoiner;
 import java.util.UUID;
@@ -293,6 +299,11 @@ public class AWSSchemaRegistryClient {
      */
     public GetSchemaVersionResponse registerSchemaVersion(String schemaDefinition, String schemaName, String dataFormat) throws AWSSchemaRegistryException {
 
+        // Perform client-side JSON Schema compatibility check before registering
+        if ("JSON".equals(dataFormat)) {
+            validateJsonSchemaCompatibility(schemaDefinition, schemaName);
+        }
+
         GetSchemaVersionResponse schemaVersionResponse = null;
 
         try {
@@ -318,6 +329,51 @@ public class AWSSchemaRegistryClient {
         }
 
         return schemaVersionResponse;
+    }
+
+    /**
+     * Validates JSON Schema compatibility client-side before registration.
+     * This is needed because AWS Glue service does not correctly enforce compatibility for JSON Schema.
+     */
+    private void validateJsonSchemaCompatibility(String newSchemaDefinition, String schemaName) {
+        Compatibility compatibility = glueSchemaRegistryConfiguration.getCompatibilitySetting();
+        if (compatibility == null || compatibility == Compatibility.NONE) {
+            return;
+        }
+
+        try {
+            // Get the latest schema version
+            GetSchemaVersionRequest request = GetSchemaVersionRequest.builder()
+                    .schemaId(getSchemaIdRequestObject(schemaName, glueSchemaRegistryConfiguration.getRegistryName()))
+                    .schemaVersionNumber(SchemaVersionNumber.builder().latestVersion(true).build())
+                    .build();
+
+            GetSchemaVersionResponse latestVersion = client.getSchemaVersion(request);
+            String previousSchemaDefinition = latestVersion.schemaDefinition();
+
+            // Perform compatibility check
+            JsonSchemaCompatibilityChecker checker = new JsonSchemaCompatibilityChecker();
+            List<String> errors = checker.checkCompatibility(newSchemaDefinition, previousSchemaDefinition, compatibility);
+
+            if (!errors.isEmpty()) {
+                String errorMessage = String.format(
+                        "Schema compatibility check failed for schema '%s' with %s compatibility. Errors: %s",
+                        schemaName, compatibility, String.join("; ", errors));
+                throw new AWSSchemaRegistryException(errorMessage);
+            }
+
+            log.debug("JSON Schema compatibility check passed for schema '{}'", schemaName);
+
+        } catch (EntityNotFoundException e) {
+            // No previous version exists, this is the first version - skip compatibility check
+            log.debug("No previous schema version found for '{}', skipping compatibility check", schemaName);
+        } catch (AWSSchemaRegistryException e) {
+            // Re-throw our own exceptions
+            throw e;
+        } catch (Exception e) {
+            // Log warning but don't fail - let AWS Glue handle it
+            log.warn("Could not perform client-side JSON Schema compatibility check: {}", e.getMessage());
+        }
     }
 
     private GetSchemaVersionResponse transformToGetSchemaVersionResponse(RegisterSchemaVersionResponse registerSchemaVersionResponse) {
