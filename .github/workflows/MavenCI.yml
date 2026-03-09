@@ -5,9 +5,6 @@ on:
     branches: [ master ]
   pull_request:
     branches: [ master ]
-  release:
-    branches: [ master ]
-    types: [ created ]
 
 jobs:
   build:
@@ -19,15 +16,16 @@ jobs:
       fail-fast: false
       matrix:
         operating-system: [ubuntu-latest, windows-latest, macos-latest]
-        java-version: ['8', '11', '17']
+        java-version: ['8', '11', '17', '21']
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
 
     - name: Set up JDK ${{ matrix.java-version }}
-      uses: actions/setup-java@v1
+      uses: actions/setup-java@v4
       with:
         java-version: ${{ matrix.java-version }}
+        distribution: 'corretto'
 
     - name: Cache Maven packages
       uses: actions/cache@v4
@@ -36,8 +34,5 @@ jobs:
         key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
         restore-keys: ${{ runner.os }}-m2
 
-    - name: Clean, build and install
-      run: mvn --file pom.xml clean install
-
-    - name: Build package
-      run: mvn -B package --file pom.xml
+    - name: Build and test
+      run: mvn --file pom.xml clean verify
