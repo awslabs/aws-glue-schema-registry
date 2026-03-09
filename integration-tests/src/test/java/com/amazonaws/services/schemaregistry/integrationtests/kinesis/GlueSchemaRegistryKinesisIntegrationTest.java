@@ -17,9 +17,9 @@ package com.amazonaws.services.schemaregistry.integrationtests.kinesis;
 
 import cloud.localstack.Constants;
 import cloud.localstack.ServiceName;
-import com.amazonaws.services.kinesis.producer.KinesisProducer;
-import com.amazonaws.services.kinesis.producer.KinesisProducerConfiguration;
-import com.amazonaws.services.kinesis.producer.UserRecordResult;
+import software.amazon.kinesis.producer.KinesisProducer;
+import software.amazon.kinesis.producer.KinesisProducerConfiguration;
+import software.amazon.kinesis.producer.UserRecordResult;
 import com.amazonaws.services.schemaregistry.common.GlueSchemaRegistryDataFormatDeserializer;
 import com.amazonaws.services.schemaregistry.common.GlueSchemaRegistryDataFormatSerializer;
 import com.amazonaws.services.schemaregistry.common.Schema;
