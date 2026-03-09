@@ -66,7 +66,7 @@ public class AWSKafkaAvroDeserializerTest {
         AWSKafkaAvroDeserializer awsKafkaAvroDeserializer1 = new AWSKafkaAvroDeserializer();
         assertNotNull(awsKafkaAvroDeserializer1.getCredentialProvider());
 
-        // Test create with AWSCredentialsProvider constructor
+        // Test create with AwsCredentialsProvider constructor
         AWSKafkaAvroDeserializer awsKafkaAvroDeserializer2 = new AWSKafkaAvroDeserializer(this.mockCredProvider,
                 configs);
         assertNotNull(awsKafkaAvroDeserializer2.getCredentialProvider());
