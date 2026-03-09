@@ -14,6 +14,7 @@
  */
 package com.amazonaws.services.schemaregistry.integrationtests.properties;
 
+import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 
 public interface GlueSchemaRegistryConnectionProperties {
@@ -24,7 +25,7 @@ public interface GlueSchemaRegistryConnectionProperties {
     static String resolveRegion() {
         try {
             return new DefaultAwsRegionProviderChain().getRegion().id();
-        } catch (Exception e) {
+        } catch (SdkClientException e) {
             return "us-east-2";
         }
     }
