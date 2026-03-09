@@ -99,50 +99,55 @@ public class PutRecordGetRecordExample {
         int numOfRecords = Integer.parseInt(cmd.getOptionValue("numRecords", "10"));
 
         //Kinesis data streams client initialization.
-        kinesisClient = KinesisClient.builder().region(Region.of(regionName)).build();
+        try (KinesisClient client = KinesisClient.builder().region(Region.of(regionName)).build()) {
+            kinesisClient = client;
 
-        //Glue Schema Registry serializer initialization for the producer.
-        glueSchemaRegistrySerializer =
-            new GlueSchemaRegistrySerializerImpl(
-                awsCredentialsProvider,
-                getSchemaRegistryConfiguration(regionName)
-            );
+            //Glue Schema Registry serializer initialization for the producer.
+            glueSchemaRegistrySerializer =
+                new GlueSchemaRegistrySerializerImpl(
+                    awsCredentialsProvider,
+                    getSchemaRegistryConfiguration(regionName)
+                );
 
-        //Glue Schema Registry de-serializer initialization for the consumer.
-        glueSchemaRegistryDeserializer =
-            new GlueSchemaRegistryDeserializerImpl(awsCredentialsProvider, getSchemaRegistryConfiguration(regionName));
+            //Glue Schema Registry de-serializer initialization for the consumer.
+            glueSchemaRegistryDeserializer =
+                new GlueSchemaRegistryDeserializerImpl(awsCredentialsProvider, getSchemaRegistryConfiguration(regionName));
 
-        //Define the Glue Schema Registry schema object that will be used to encode data.
-        Schema gsrSchema =
-                new com.amazonaws.services.schemaregistry.common.Schema(getAvroSchema().toString(),
-                                                                        DataFormat.AVRO.name(), schemaName);
+            //Define the Glue Schema Registry schema object that will be used to encode data.
+            Schema gsrSchema =
+                    new com.amazonaws.services.schemaregistry.common.Schema(getAvroSchema().toString(),
+                                                                            DataFormat.AVRO.name(), schemaName);
 
-        LOGGER.info("Client initialization complete.");
+            LOGGER.info("Client initialization complete.");
 
-        Date timestamp = DateTime.now().toDate();
+            Date timestamp = DateTime.now().toDate();
 
-        //Put records into Kinesis stream.
-        putRecordsWithSchema(streamName, numOfRecords, gsrSchema, timestamp);
+            //Put records into Kinesis stream.
+            putRecordsWithSchema(streamName, numOfRecords, gsrSchema, timestamp);
 
-        //Start receiving records from the stream.
-        getRecordsWithSchema(streamName, timestamp);
+            //Start receiving records from the stream.
+            getRecordsWithSchema(streamName, timestamp);
+        }
     }
 
     private static void getRecordsWithSchema(String streamName, Date timestamp) throws IOException {
         //Standard Kinesis code to getRecords from a Kinesis Data Stream.
         String shardIterator;
-        DescribeStreamRequest describeStreamRequest = DescribeStreamRequest.builder()
-                .streamName(streamName)
-                .build();
         List<Shard> shards = new ArrayList<>();
+        String exclusiveStartShardId = null;
 
         DescribeStreamResponse streamRes;
         do {
-            streamRes = kinesisClient.describeStream(describeStreamRequest);
+            DescribeStreamRequest.Builder requestBuilder = DescribeStreamRequest.builder()
+                    .streamName(streamName);
+            if (exclusiveStartShardId != null) {
+                requestBuilder.exclusiveStartShardId(exclusiveStartShardId);
+            }
+            streamRes = kinesisClient.describeStream(requestBuilder.build());
             shards.addAll(streamRes.streamDescription().shards());
 
             if (shards.size() > 0) {
-                shards.get(shards.size() - 1).shardId();
+                exclusiveStartShardId = shards.get(shards.size() - 1).shardId();
             }
         } while (streamRes.streamDescription().hasMoreShards());
 
