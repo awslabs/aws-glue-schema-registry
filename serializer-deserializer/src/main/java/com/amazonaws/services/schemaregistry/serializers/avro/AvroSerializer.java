@@ -36,6 +36,7 @@ import org.apache.avro.io.EncoderFactory;
 import org.apache.avro.specific.SpecificRecord;
 
 import java.io.ByteArrayOutputStream;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Avro serialization helper.
@@ -97,8 +98,8 @@ public class AvroSerializer implements GlueSchemaRegistryDataFormatSerializer {
         try {
             DatumWriterCacheKey datumWriterCacheKey = new DatumWriterCacheKey(schema, AvroRecordType.SPECIFIC_RECORD);
             return datumWriterCache.get(datumWriterCacheKey);
-        } catch (Exception e) {
-            throw new AWSSchemaRegistryException("Failed to get SpecificDatumWriter from cache", e);
+        } catch (ExecutionException e) {
+            throw new AWSSchemaRegistryException("Failed to get SpecificDatumWriter from cache", e.getCause());
         }
     }
 
@@ -106,8 +107,8 @@ public class AvroSerializer implements GlueSchemaRegistryDataFormatSerializer {
         try {
             DatumWriterCacheKey datumWriterCacheKey = new DatumWriterCacheKey(schema, AvroRecordType.GENERIC_RECORD);
             return datumWriterCache.get(datumWriterCacheKey);
-        } catch (Exception e) {
-            throw new AWSSchemaRegistryException("Failed to get GenericDatumWriter from cache", e);
+        } catch (ExecutionException e) {
+            throw new AWSSchemaRegistryException("Failed to get GenericDatumWriter from cache", e.getCause());
         }
     }
 
