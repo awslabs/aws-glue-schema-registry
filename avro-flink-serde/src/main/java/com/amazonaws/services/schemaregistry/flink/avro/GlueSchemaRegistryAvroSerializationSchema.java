@@ -16,7 +16,6 @@
 package com.amazonaws.services.schemaregistry.flink.avro;
 
 import com.google.common.annotations.VisibleForTesting;
-import lombok.SneakyThrows;
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.io.Encoder;
@@ -26,6 +25,8 @@ import org.apache.flink.formats.avro.SchemaCoder;
 
 import javax.annotation.Nullable;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.Map;
 
 /**
@@ -93,7 +94,6 @@ public class GlueSchemaRegistryAvroSerializationSchema<T> extends RegistryAvroSe
      * @param object The incoming element to be serialized
      * @return The serialized bytes.
      */
-    @SneakyThrows
     @Override
     public byte[] serialize(T object) {
         checkAvroInitialized();
@@ -101,14 +101,18 @@ public class GlueSchemaRegistryAvroSerializationSchema<T> extends RegistryAvroSe
         if (object == null) {
             return null;
         } else {
-            ByteArrayOutputStream outputStream = getOutputStream();
-            outputStream.reset();
-            Encoder encoder = getEncoder();
-            getDatumWriter().write(object, encoder);
-            schemaCoder.writeSchema(getSchema(), outputStream);
-            encoder.flush();
+            try {
+                ByteArrayOutputStream outputStream = getOutputStream();
+                outputStream.reset();
+                Encoder encoder = getEncoder();
+                getDatumWriter().write(object, encoder);
+                schemaCoder.writeSchema(getSchema(), outputStream);
+                encoder.flush();
 
-            return outputStream.toByteArray();
+                return outputStream.toByteArray();
+            } catch (IOException e) {
+                throw new UncheckedIOException("Failed to serialize Avro record", e);
+            }
         }
     }
 }

@@ -26,7 +26,6 @@ import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NonNull;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericData;
@@ -94,16 +93,22 @@ public class AvroSerializer implements GlueSchemaRegistryDataFormatSerializer {
         }
     }
 
-    @SneakyThrows
     private DatumWriter<Object> getSpecificDatumWriter(Schema schema) {
-        DatumWriterCacheKey datumWriterCacheKey = new DatumWriterCacheKey(schema, AvroRecordType.SPECIFIC_RECORD);
-        return datumWriterCache.get(datumWriterCacheKey);
+        try {
+            DatumWriterCacheKey datumWriterCacheKey = new DatumWriterCacheKey(schema, AvroRecordType.SPECIFIC_RECORD);
+            return datumWriterCache.get(datumWriterCacheKey);
+        } catch (Exception e) {
+            throw new AWSSchemaRegistryException("Failed to get SpecificDatumWriter from cache", e);
+        }
     }
 
-    @SneakyThrows
     private DatumWriter<Object> getGenericDatumWriter(Schema schema) {
-        DatumWriterCacheKey datumWriterCacheKey = new DatumWriterCacheKey(schema, AvroRecordType.GENERIC_RECORD);
-        return datumWriterCache.get(datumWriterCacheKey);
+        try {
+            DatumWriterCacheKey datumWriterCacheKey = new DatumWriterCacheKey(schema, AvroRecordType.GENERIC_RECORD);
+            return datumWriterCache.get(datumWriterCacheKey);
+        } catch (Exception e) {
+            throw new AWSSchemaRegistryException("Failed to get GenericDatumWriter from cache", e);
+        }
     }
 
     /**

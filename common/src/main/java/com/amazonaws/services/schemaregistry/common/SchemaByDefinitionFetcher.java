@@ -9,7 +9,6 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
 
 import java.util.Map;
 import java.util.UUID;
@@ -61,7 +60,6 @@ public class SchemaByDefinitionFetcher {
      * @return Schema Version ID
      * @throws AWSSchemaRegistryException on any error while fetching the schema version ID
      */
-    @SneakyThrows
     public UUID getORRegisterSchemaVersionId(
         @NonNull String schemaDefinition,
         @NonNull String schemaName,
