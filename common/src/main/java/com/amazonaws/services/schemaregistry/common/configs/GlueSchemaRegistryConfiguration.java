@@ -48,7 +48,7 @@ public class GlueSchemaRegistryConfiguration {
     private String region;
     private long timeToLiveMillis = 24 * 60 * 60 * 1000L;
     private int cacheSize = 200;
-    private AvroRecordType avroRecordType;
+    private AvroRecordType avroRecordType = AvroRecordType.GENERIC_RECORD;
     private ProtobufMessageType protobufMessageType;
     private String registryName;
     private Compatibility compatibilitySetting;
