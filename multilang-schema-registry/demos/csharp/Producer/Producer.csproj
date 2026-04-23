@@ -6,21 +6,25 @@
     <RootNamespace>ProtobufGSRKafkaDemo.Producer</RootNamespace>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <AWSGsrSerDeVersion>1.0.0</AWSGsrSerDeVersion>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="KafkaFlow" Version="3.0.10" />
     <PackageReference Include="KafkaFlow.Extensions.Hosting" Version="3.0.10" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
+    <!--
+      AWS.Glue.SchemaRegistry NuGet package ships platform-specific native libraries.
+      The version suffix must match your target runtime:
+        - linux-x64       : glibc-based Linux (Debian, Ubuntu, Amazon Linux, etc.)
+        - linux-musl-x64  : musl-based Linux (Alpine)
+        - linux-arm64     : glibc-based Linux on ARM64
+      Update the version below if deploying to a different platform.
+    -->
+    <PackageReference Include="AWS.Glue.SchemaRegistry" Version="1.0.1-linux-musl-x64" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="../Shared/Shared.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="AWSGsrSerDe" Version="$(AWSGsrSerDeVersion)" />
   </ItemGroup>
 
 </Project>
