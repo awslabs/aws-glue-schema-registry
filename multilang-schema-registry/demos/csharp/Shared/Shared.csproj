@@ -19,7 +19,7 @@
         - linux-arm64     : glibc-based Linux on ARM64
       Update the version below if deploying to a different platform.
     -->
-    <PackageReference Include="AWS.Glue.SchemaRegistry" Version="1.0.1-linux-musl-x64" />
+    <PackageReference Include="AWS.Glue.SchemaRegistry" Version="1.0.1-linux-x64" />
   </ItemGroup>
 
   <ItemGroup>
