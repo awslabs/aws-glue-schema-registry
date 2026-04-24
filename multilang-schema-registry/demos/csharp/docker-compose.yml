@@ -73,6 +73,5 @@ services:
     volumes:
       - ~/.aws:/root/.aws:ro
       - .:/workplace/demos/csharp
-      - ../../csharp:/workplace/csharp
     working_dir: /workplace/demos/csharp
     command: ["./run-demo.sh"]

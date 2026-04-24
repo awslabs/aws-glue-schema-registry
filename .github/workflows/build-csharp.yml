@@ -138,11 +138,16 @@ jobs:
           components: 'native-image'
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Install Maven 3.9.12
+      - name: Install Maven
         shell: bash
         run: |
-          curl -sSL https://dlcdn.apache.org/maven/maven-3/3.9.12/binaries/apache-maven-3.9.12-bin.tar.gz | tar xz
-          mv apache-maven-3.9.12 /opt/maven
+          MAVEN_VERSION=3.9.15
+          curl -sSL --retry 3 --retry-delay 5 https://dlcdn.apache.org/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz \
+            -o maven.tar.gz || \
+          curl -sSL --retry 3 --retry-delay 5 https://archive.apache.org/dist/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz \
+            -o maven.tar.gz
+          tar xzf maven.tar.gz
+          mv apache-maven-${MAVEN_VERSION} /opt/maven
           echo "MAVEN_HOME=/opt/maven" >> $GITHUB_ENV
           echo "/opt/maven/bin" >> $GITHUB_PATH
     
