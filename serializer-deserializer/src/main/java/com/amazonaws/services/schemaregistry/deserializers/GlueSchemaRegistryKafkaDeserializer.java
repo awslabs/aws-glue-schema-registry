@@ -61,9 +61,9 @@ public class GlueSchemaRegistryKafkaDeserializer implements Deserializer<Object>
     }
 
     /**
-     * Constructor accepting AWSCredentialsProvider.
+     * Constructor accepting AwsCredentialsProvider.
      *
-     * @param credentialProvider AWSCredentialsProvider instance.
+     * @param credentialProvider AwsCredentialsProvider instance.
      */
     public GlueSchemaRegistryKafkaDeserializer(AwsCredentialsProvider credentialProvider,
                                                Map<String, ?> configs) {
