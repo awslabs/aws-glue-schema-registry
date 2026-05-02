@@ -1389,6 +1389,8 @@ public class AvroData {
                         converted = value;
                     } else if (value instanceof GenericFixed) {
                         converted = ByteBuffer.wrap(((GenericFixed) value).bytes());
+                    } else if (value instanceof BigDecimal && Decimal.LOGICAL_NAME.equals(schema.name())) {
+                        converted = ByteBuffer.wrap(Decimal.fromLogical(schema, (BigDecimal) value));
                     } else {
                         throw new DataException("Invalid class for bytes type, expecting byte[] or ByteBuffer "
                                 + "but found " + value.getClass());
