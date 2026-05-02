@@ -107,8 +107,7 @@
         <hamcrest.version>1.1</hamcrest.version>
         <!--  LATEST KCL Does not work with LocalStack yet, remove once new version works -->
         <kinesis.client.version>2.2.9</kinesis.client.version>
-        <!--  LATEST KPL will cause integration test failure in Linux environment, update once we find a way to address the issue -->
-        <kinesis.producer.version>0.15.8</kinesis.producer.version>
+        <kinesis.producer.version>1.0.7</kinesis.producer.version>
         <junit.platform.commons.version>1.6.2</junit.platform.commons.version>
         <junit.platform.surefire.version>1.3.2</junit.platform.surefire.version>
         <guava.version>32.0.0-jre</guava.version>
@@ -303,16 +302,10 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <groupId>com.amazonaws</groupId>
+                <groupId>software.amazon.kinesis</groupId>
                 <artifactId>amazon-kinesis-producer</artifactId>
                 <version>${kinesis.producer.version}</version>
                 <scope>test</scope>
-                <exclusions>
-                    <exclusion>
-                    <groupId>software.amazon.ion</groupId>
-                    <artifactId>ion-java</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.awaitility</groupId>
