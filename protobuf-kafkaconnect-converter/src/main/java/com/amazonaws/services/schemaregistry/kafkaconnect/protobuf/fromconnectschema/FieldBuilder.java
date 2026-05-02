@@ -89,8 +89,9 @@ public class FieldBuilder {
                 messageDescriptorProtoBuilder.addNestedType(buildMap(fieldSchema, mapEntryName,
                     fileDescriptorProtoBuilder, messageDescriptorProtoBuilder));
             } else if (Schema.Type.STRUCT.equals(fieldSchema.type())) {
-                if (fieldSchema.parameters().containsKey(PROTOBUF_TYPE)
-                        && fieldSchema.parameters().get(PROTOBUF_TYPE).equals(PROTOBUF_ONEOF_TYPE)) {
+                Map<String, String> fieldParameters = fieldSchema.parameters();
+                if (fieldParameters != null
+                        && PROTOBUF_ONEOF_TYPE.equals(fieldParameters.get(PROTOBUF_TYPE))) {
                     buildOneof(fieldSchema, fieldName, tagNumber, fileDescriptorProtoBuilder,
                             messageDescriptorProtoBuilder, fieldBuilderMap);
                     continue;
@@ -99,11 +100,15 @@ public class FieldBuilder {
                 // Convert the Struct type schema to a Protobuf message schema
                 DescriptorProtos.DescriptorProto.Builder nestedMessageDescriptorProtoBuilder =
                         DescriptorProtos.DescriptorProto.newBuilder();
-                nestedMessageDescriptorProtoBuilder.setName(getSchemaSimpleName(fieldSchema.name()));
+                String structName = fieldSchema.name() != null
+                        ? fieldSchema.name()
+                        : fieldName.substring(0, 1).toUpperCase() + fieldName.substring(1);
+                nestedMessageDescriptorProtoBuilder.setName(getSchemaSimpleName(structName));
                 build(fieldSchema, fileDescriptorProtoBuilder, nestedMessageDescriptorProtoBuilder);
                 // If schema is at parent level, Protobuf message is added as a message type
                 // If schema is not at parent level, Protobuf message is added as a nested type
-                if (isParentLevel(fileDescriptorProtoBuilder.getPackage(), fieldSchema.name())) {
+                if (fieldSchema.name() != null
+                        && isParentLevel(fileDescriptorProtoBuilder.getPackage(), fieldSchema.name())) {
                     fileDescriptorProtoBuilder.addMessageType(nestedMessageDescriptorProtoBuilder);
                 } else {
                     messageDescriptorProtoBuilder.addNestedType(nestedMessageDescriptorProtoBuilder);
@@ -206,7 +211,15 @@ public class FieldBuilder {
                     + ProtobufSchemaConverterUtils.toMapEntryName(fieldName));
             fieldDescriptorProtoBuilder.setTypeName(typeName);
         } else if (Schema.Type.STRUCT.equals(fieldSchema.type())) {
-            String typeName = getTypeName(fieldSchema.name());
+            String name;
+            if (fieldSchema.name() != null) {
+                name = fieldSchema.name();
+            } else {
+                String simpleName = fieldName.substring(0, 1).toUpperCase() + fieldName.substring(1);
+                name = fileDescriptorProtoBuilder.getPackage() + "."
+                        + messageDescriptorProtoBuilder.getName() + "." + simpleName;
+            }
+            String typeName = getTypeName(name);
             fieldDescriptorProtoBuilder.setTypeName(typeName);
         }
 

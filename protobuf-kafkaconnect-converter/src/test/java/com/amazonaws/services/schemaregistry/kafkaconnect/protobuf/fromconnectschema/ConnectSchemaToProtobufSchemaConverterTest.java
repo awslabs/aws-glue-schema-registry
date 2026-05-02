@@ -150,4 +150,24 @@ public class ConnectSchemaToProtobufSchemaConverterTest {
     public void fromConnectSchema_onNullSchema_ThrowsException() {
         assertThrows(IllegalArgumentException.class, () -> CONNECT_SCHEMA_TO_PROTOBUF_SCHEMA_CONVERTER.convert(null));
     }
+
+    @Test
+    public void fromConnectSchema_structWithNullParametersAndName_doesNotThrowNPE() {
+        // Simulate a Debezium-style schema where STRUCT fields have no protobuf
+        // metadata parameters and no schema name
+        SchemaBuilder nestedStructBuilder = new SchemaBuilder(Schema.Type.STRUCT);
+        // No .name() and no .parameter() calls — both will be null
+        nestedStructBuilder.field("innerField", Schema.STRING_SCHEMA);
+        Schema nestedStruct = nestedStructBuilder.build();
+
+        SchemaBuilder parentSchemaBuilder = new SchemaBuilder(Schema.Type.STRUCT);
+        parentSchemaBuilder.name("ParentMessage");
+        parentSchemaBuilder.field("nestedField", nestedStruct);
+        Schema parentSchema = parentSchemaBuilder.build();
+
+        final Descriptors.FileDescriptor protobufSchema =
+                CONNECT_SCHEMA_TO_PROTOBUF_SCHEMA_CONVERTER.convert(parentSchema);
+
+        assertEquals(1, protobufSchema.getMessageTypes().size());
+    }
 }
