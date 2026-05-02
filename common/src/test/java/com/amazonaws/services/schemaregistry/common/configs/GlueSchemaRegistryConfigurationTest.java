@@ -197,6 +197,7 @@ public class GlueSchemaRegistryConfigurationTest {
         assertNotNull(serDeConfigs.getTimeToLiveMillis());
         assertNotNull(serDeConfigs.getCompressionType().equals(AWSSchemaRegistryConstants.COMPRESSION.NONE));
         assertNotNull(serDeConfigs.getCompatibilitySetting().equals(Compatibility.NONE));
+        assertEquals(AvroRecordType.GENERIC_RECORD, serDeConfigs.getAvroRecordType());
     }
 
 
