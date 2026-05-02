@@ -1169,7 +1169,8 @@ public class AvroData {
     }
 
     private static void validateSchemaValue(Schema schema, Object value) throws DataException {
-        if (value == null && schema != null && !schema.isOptional()) {
+        if ((value == null || value == JsonProperties.NULL_VALUE)
+                && schema != null && !schema.isOptional()) {
             throw new DataException("Found null value for non-optional schema");
         }
     }
@@ -1225,7 +1226,7 @@ public class AvroData {
     private Object toConnectData(Schema schema, Object value, ToConnectContext toConnectContext,
                                  boolean doLogicalConversion) {
         validateSchemaValue(schema, value);
-        if (value == null) {
+        if (value == null || value == JsonProperties.NULL_VALUE) {
             return null;
         }
         try {
