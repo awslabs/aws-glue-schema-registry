@@ -142,9 +142,9 @@ jobs:
         shell: bash
         run: |
           MAVEN_VERSION=3.9.15
-          curl -sSL --retry 3 --retry-delay 5 https://dlcdn.apache.org/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz \
+          curl -fsSL --retry 3 --retry-delay 5 https://dlcdn.apache.org/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz \
             -o maven.tar.gz || \
-          curl -sSL --retry 3 --retry-delay 5 https://archive.apache.org/dist/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz \
+          curl -fsSL --retry 3 --retry-delay 5 https://archive.apache.org/dist/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz \
             -o maven.tar.gz
           tar xzf maven.tar.gz
           mv apache-maven-${MAVEN_VERSION} /opt/maven
