@@ -1,6 +1,5 @@
 ## This module is not recommended
-Please check out [Apache Flink](https://github.com/apache/flink) 
-repository for the latest support: [Avro SerializationSchema and DeserializationSchema](https://github.com/apache/flink/tree/master/flink-formats/flink-avro-glue-schema-registry) and [JSON SerializationSchema and Deserialization](https://github.com/apache/flink/tree/master/flink-formats/flink-json-glue-schema-registry). Protobuf integration will be followed up soon.
+Please check out [Apache Flink AWS Connectors](https://github.com/apache/flink-connector-aws) repository for the latest support: [Avro SerializationSchema and DeserializationSchema](https://github.com/apache/flink-connector-aws/tree/main/flink-formats-aws/flink-avro-glue-schema-registry) and [JSON SerializationSchema and Deserialization](https://github.com/apache/flink-connector-aws/tree/main/flink-formats-aws/flink-json-glue-schema-registry). Protobuf integration will be followed up soon.
 
 ## Instructions
 
