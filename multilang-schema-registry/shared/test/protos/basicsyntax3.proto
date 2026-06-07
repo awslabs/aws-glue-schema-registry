@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package com.amazonaws.services.schemaregistry.tests.protobuf.syntax3.basic;
+
+message Phone {
+  string model = 1;
+  string name = 2;
+  int32 serial = 3;
+}

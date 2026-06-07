@@ -1,0 +1,23 @@
+{
+  "type": "record",
+  "name": "Product",
+  "namespace": "com.amazonaws.services.schemaregistry.test.forward.negative",
+  "doc": "Schema with required field removal - violates FORWARD compatibility (COMPAT-034)",
+  "fields": [
+    {
+      "name": "id",
+      "type": "int",
+      "doc": "Product ID"
+    },
+    {
+      "name": "name",
+      "type": "string",
+      "doc": "Product name"
+    },
+    {
+      "name": "price",
+      "type": "double",
+      "doc": "Product price"
+    }
+  ]
+}

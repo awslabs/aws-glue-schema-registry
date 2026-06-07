@@ -1,0 +1,37 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.2.32616.157
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AWSGsrSerDe", "AWSGsrSerDe\AWSGsrSerDe.csproj", "{A36E4C3C-B7C4-4670-90B1-2FC9D883CCD0}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AWSGsrSerDe.Tests", "AWSGsrSerDe.Tests\AWSGsrSerDe.Tests.csproj", "{AD987D8A-EC56-47E8-837F-4D2A9E4ABA6C}"
+EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "Libs", "Libs\Libs.shproj", "{5801DEDB-DA53-4B21-91CC-E31B118C8029}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A36E4C3C-B7C4-4670-90B1-2FC9D883CCD0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A36E4C3C-B7C4-4670-90B1-2FC9D883CCD0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A36E4C3C-B7C4-4670-90B1-2FC9D883CCD0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A36E4C3C-B7C4-4670-90B1-2FC9D883CCD0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AD987D8A-EC56-47E8-837F-4D2A9E4ABA6C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AD987D8A-EC56-47E8-837F-4D2A9E4ABA6C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AD987D8A-EC56-47E8-837F-4D2A9E4ABA6C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AD987D8A-EC56-47E8-837F-4D2A9E4ABA6C}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {1048530E-CE84-4D97-A3E1-8AFB8946267B}
+	EndGlobalSection
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		Libs\Libs.projitems*{5801dedb-da53-4b21-91cc-e31b118c8029}*SharedItemsImports = 13
+		Libs\Libs.projitems*{a36e4c3c-b7c4-4670-90b1-2fc9d883ccd0}*SharedItemsImports = 5
+	EndGlobalSection
+EndGlobal

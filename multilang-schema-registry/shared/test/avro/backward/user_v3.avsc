@@ -1,0 +1,35 @@
+{
+  "type": "record",
+  "name": "user_v3",
+  "doc": "Third backward evolution - added optional 'age' field with default, demonstrates BACKWARD_ALL compatibility",
+  "fields": [
+    {
+      "name": "id",
+      "type": "string",
+      "doc": "User identifier"
+    },
+    {
+      "name": "name", 
+      "type": "string",
+      "doc": "User full name"
+    },
+    {
+      "name": "active",
+      "type": "boolean",
+      "default": true,
+      "doc": "Account active status"
+    },
+    {
+      "name": "status",
+      "type": "string", 
+      "default": "registered",
+      "doc": "User registration status"
+    },
+    {
+      "name": "age",
+      "type": "int",
+      "default": 0,
+      "doc": "User age"
+    }
+  ]
+}

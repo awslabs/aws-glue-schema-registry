@@ -84,3 +84,25 @@ GlueSchemaRegistryKafkaSerializer/GlueSchemaRegistryKafkaDeserializer.
 
 ## Release 1.1.20
 * Upgrade the dependency version to remove commons:compress dependency
+
+## Release 1.1.21
+* Upgraded Avro dependencies version to fix vulnerabilities
+
+## Release 1.1.22
+* Upgraded protobuf dependencies version to fix vulnerabilities
+
+## Release 1.1.23
+* Upgraded json-schema dependencies version to fix vulnerabilities
+
+## Release 1.1.24
+* Upgraded square-wireschema version to fix vulnerabilities
+
+## Release 1.1.25
+* Upgraded aws-sdk version to fix vulnerabilities
+
+## Release 1.1.26
+* Introduces multilang support for csharp clients
+
+## Release 1.1.27
+* Introduce lz4 shim and dependency upgrade to fix vulnerabilities
+* Updated local integration tests to make requests to local stack syncrounysly to correct for flakyness

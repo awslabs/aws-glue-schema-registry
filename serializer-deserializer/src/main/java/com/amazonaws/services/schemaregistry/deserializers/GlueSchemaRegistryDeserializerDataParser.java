@@ -15,12 +15,13 @@
 package com.amazonaws.services.schemaregistry.deserializers;
 
 import com.amazonaws.services.schemaregistry.common.GlueSchemaRegistryCompressionFactory;
+import com.amazonaws.services.schemaregistry.exception.AWSSchemaRegistryException;
 import com.amazonaws.services.schemaregistry.exception.GlueSchemaRegistryIncompatibleDataException;
 import com.amazonaws.services.schemaregistry.utils.AWSSchemaRegistryConstants;
 import lombok.NonNull;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.UUID;
 
@@ -160,11 +161,14 @@ public final class GlueSchemaRegistryDeserializerDataParser {
         return decompressData(compressionByte, slicedBuffer, dataStart, dataEnd);
     }
 
-    @SneakyThrows
     private byte[] decompressData(Byte compressionByte, ByteBuffer compressedData, int start, int end) {
-        return compressionFactory
-                .getCompressionHandler(compressionByte)
-                .decompress(compressedData.array(), start, end);
+        try {
+            return compressionFactory
+                    .getCompressionHandler(compressionByte)
+                    .decompress(compressedData.array(), start, end);
+        } catch (IOException e) {
+            throw new AWSSchemaRegistryException("Failed to decompress data", e);
+        }
     }
 
     /**

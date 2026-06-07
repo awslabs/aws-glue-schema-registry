@@ -1,0 +1,7 @@
+syntax = "proto3";
+
+package com.amazonaws.services.schemaregistry.tests.protobuf.syntax3.basic;
+
+message hyphenated {
+  int32 amount = 1;
+}

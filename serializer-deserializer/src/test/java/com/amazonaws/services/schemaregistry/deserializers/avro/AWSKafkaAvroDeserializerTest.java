@@ -16,6 +16,7 @@ package com.amazonaws.services.schemaregistry.deserializers.avro;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -26,6 +27,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.amazonaws.services.schemaregistry.deserializers.GlueSchemaRegistryDeserializationFacade;
+import com.amazonaws.services.schemaregistry.deserializers.SecondaryDeserializer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -178,5 +180,106 @@ public class AWSKafkaAvroDeserializerTest {
         awsKafkaAvroDeserializer.configure(configs, false);
 
         assertDoesNotThrow(() -> awsKafkaAvroDeserializer.close());
+    }
+
+    /**
+     * Test routing logic with mocked secondary deserializer.
+     * Verifies that Confluent-formatted data (0x3D header) routes to secondary deserializer.
+     */
+    @Test
+    public void testRoutingLogic_ConfluentData_ShouldRouteToSecondary() {
+        // Confluent data pattern: starts with '=' (0x3D), 6 bytes total
+        byte[] confluentData = {0x3D, 0x44, 0x20, 0x20, 0x3E, 0x44}; // "=D  >D"
+        
+        // Create deserializer with mocked components
+        AWSKafkaAvroDeserializer deserializer = new AWSKafkaAvroDeserializer(mockCredProvider, null);
+        
+        // Mock the primary deserializer facade (should NOT be called)
+        GlueSchemaRegistryDeserializationFacade mockFacade = mock(GlueSchemaRegistryDeserializationFacade.class);
+        deserializer.setGlueSchemaRegistryDeserializationFacade(mockFacade);
+        
+        // Mock the secondary deserializer (should be called)
+        SecondaryDeserializer mockSecondaryDeserializer = mock(SecondaryDeserializer.class);
+        when(mockSecondaryDeserializer.validate(Mockito.any())).thenReturn(true);
+        when(mockSecondaryDeserializer.deserialize("test-topic", confluentData)).thenReturn("secondary-result");
+        
+        // Use reflection to inject the mocked secondary deserializer
+        try {
+            java.lang.reflect.Field field = AWSKafkaAvroDeserializer.class.getDeclaredField("secondaryDeserializer");
+            field.setAccessible(true);
+            field.set(deserializer, mockSecondaryDeserializer);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to inject mock secondary deserializer", e);
+        }
+        
+        // Configure with secondary deserializer (will use our mock)
+        Map<String, Object> configsWithSecondary = new HashMap<>(configs);
+        configsWithSecondary.put(AWSSchemaRegistryConstants.SECONDARY_DESERIALIZER, "mock.class");
+        deserializer.configure(configsWithSecondary, false);
+        
+        // Test: Confluent data should route to secondary deserializer
+        Object result = deserializer.deserialize("test-topic", confluentData);
+        
+        // Verify results
+        assertEquals("secondary-result", result);
+        
+        // Verify secondary deserializer was called
+        Mockito.verify(mockSecondaryDeserializer, Mockito.times(1)).deserialize("test-topic", confluentData);
+        
+        // Verify primary deserializer was NOT called
+        Mockito.verify(mockFacade, Mockito.never()).deserialize(Mockito.any(AWSDeserializerInput.class));
+    }
+
+    /**
+     * Test that Glue-formatted data (starting with HEADER_VERSION_BYTE) goes to primary deserializer.
+     */
+    @Test
+    public void testPrimaryDeserializer_GlueData_ShouldUsePrimary() {
+        // Glue-formatted data: header(1) + compression(1) + UUID(16) + data = 18+ bytes minimum
+        byte[] glueData = new byte[20];
+        glueData[0] = AWSSchemaRegistryConstants.HEADER_VERSION_BYTE; // 0x03
+        glueData[1] = AWSSchemaRegistryConstants.COMPRESSION_DEFAULT_BYTE; // compression byte
+        // Fill remaining bytes (UUID would be bytes 2-17, data starts at 18)
+        for (int i = 2; i < 20; i++) {
+            glueData[i] = (byte) i;
+        }
+        
+        // Create deserializer with mocked components
+        AWSKafkaAvroDeserializer deserializer = new AWSKafkaAvroDeserializer(mockCredProvider, null);
+        
+        // Mock the secondary deserializer (should NOT be called)
+        SecondaryDeserializer mockSecondaryDeserializer = mock(SecondaryDeserializer.class);
+        when(mockSecondaryDeserializer.validate(Mockito.any())).thenReturn(true);
+        
+        // Use reflection to inject the mocked secondary deserializer
+        try {
+            java.lang.reflect.Field field = AWSKafkaAvroDeserializer.class.getDeclaredField("secondaryDeserializer");
+            field.setAccessible(true);
+            field.set(deserializer, mockSecondaryDeserializer);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to inject mock secondary deserializer", e);
+        }
+        
+        // Configure with secondary deserializer (will use our mock)
+        Map<String, Object> configsWithSecondary = new HashMap<>(configs);
+        configsWithSecondary.put(AWSSchemaRegistryConstants.SECONDARY_DESERIALIZER, "mock.class");
+        deserializer.configure(configsWithSecondary, false);
+        
+        // Mock the primary deserializer facade AFTER configuration
+        GlueSchemaRegistryDeserializationFacade mockFacade = mock(GlueSchemaRegistryDeserializationFacade.class);
+        when(mockFacade.deserialize(Mockito.any(AWSDeserializerInput.class))).thenReturn("primary-result");
+        deserializer.setGlueSchemaRegistryDeserializationFacade(mockFacade);
+        
+        // Test: Glue data should route to primary deserializer
+        Object result = deserializer.deserialize("test-topic", glueData);
+        
+        // Verify results
+        assertEquals("primary-result", result);
+        
+        // Verify primary deserializer was called
+        Mockito.verify(mockFacade, Mockito.times(1)).deserialize(Mockito.any(AWSDeserializerInput.class));
+        
+        // Verify secondary deserializer was NOT called
+        Mockito.verify(mockSecondaryDeserializer, Mockito.never()).deserialize(Mockito.anyString(), Mockito.any(byte[].class));
     }
 }

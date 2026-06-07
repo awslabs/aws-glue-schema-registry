@@ -1,0 +1,13 @@
+syntax = "proto2";
+
+package com.amazonaws.services.schemaregistry.tests.protobuf.syntax2;
+
+message Address {
+  required string street = 1;
+  optional int32 zip = 2;
+  optional string city = 3;
+}
+
+message Customer {
+  required string name = 1;
+}

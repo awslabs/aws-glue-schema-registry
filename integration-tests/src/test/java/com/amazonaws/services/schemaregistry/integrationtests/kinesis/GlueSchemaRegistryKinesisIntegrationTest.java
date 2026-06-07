@@ -416,14 +416,16 @@ public class GlueSchemaRegistryKinesisIntegrationTest {
 
             byte[] gsrEncodedBytes = glueSchemaRegistrySerializer.encode(streamName, gsrSchema, serializedBytes);
 
+            String partitionKey = String.valueOf(timestamp.toEpochMilli()) + "-" + i;
             PutRecordRequest putRecordRequest = PutRecordRequest.builder()
                     .streamName(streamName)
-                    .partitionKey(String.valueOf(timestamp.toEpochMilli()))
+                    .partitionKey(partitionKey)
                     .data(SdkBytes.fromByteArray(gsrEncodedBytes))
                     .build();
             shardId = kinesisClient.putRecord(putRecordRequest)
                     .get()
                     .shardId();
+
 
             assertNotNull(shardId);
         }
@@ -502,7 +504,7 @@ public class GlueSchemaRegistryKinesisIntegrationTest {
         Instant timestamp = Instant.now();
         String schemaName = String.format("%s-%s-%s", streamName, dataFormat.name(), compatibility);
         schemasToCleanUp.add(schemaName);
-
+        String partitionKey = Long.toString(timestamp.toEpochMilli());
         for (int i = 0; i < producerRecords.size(); i++) {
             Object record = producerRecords.get(i);
             Schema gsrSchema =
@@ -510,8 +512,10 @@ public class GlueSchemaRegistryKinesisIntegrationTest {
 
             byte[] serializedBytes = dataFormatSerializer.serialize(record);
 
-            putFutures.add(producer.addUserRecord(streamName, Long.toString(timestamp.toEpochMilli()), null,
+            putFutures.add(producer.addUserRecord(streamName, partitionKey, null,
                                                   ByteBuffer.wrap(serializedBytes),gsrSchema));
+            producer.flushSync();
+
         }
 
         String shardId = null;

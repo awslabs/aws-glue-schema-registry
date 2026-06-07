@@ -19,8 +19,8 @@ import com.amazonaws.services.schemaregistry.utils.apicurio.FileDescriptorUtils;
 import com.google.protobuf.DescriptorProtos;
 import com.google.protobuf.Descriptors;
 import lombok.NonNull;
-import lombok.SneakyThrows;
 import org.apache.kafka.connect.data.Schema;
+import org.apache.kafka.connect.errors.DataException;
 
 /**
  * Converts Kafka Connect schemas to Protobuf3 schemas.
@@ -83,8 +83,11 @@ public class ConnectSchemaToProtobufSchemaConverter {
         return messageDescriptorProtoBuilder;
     }
 
-    @SneakyThrows
     private Descriptors.FileDescriptor buildFileDescriptor(DescriptorProtos.FileDescriptorProto fileDescriptorProto) {
-        return Descriptors.FileDescriptor.buildFrom(fileDescriptorProto, FileDescriptorUtils.baseDependencies());
+        try {
+            return Descriptors.FileDescriptor.buildFrom(fileDescriptorProto, FileDescriptorUtils.baseDependencies());
+        } catch (Descriptors.DescriptorValidationException e) {
+            throw new DataException("Failed to build Protobuf FileDescriptor", e);
+        }
     }
 }

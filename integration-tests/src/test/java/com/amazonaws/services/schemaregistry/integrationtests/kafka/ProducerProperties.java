@@ -31,5 +31,6 @@ public class ProducerProperties implements GlueSchemaRegistryConnectionPropertie
     private String inputTopic;
     private String outputTopic;
     private String recordType; // required only for AVRO or Protobuf case
+    private String kafkaCompressionType; // Kafka's native compression type (e.g., "lz4", "snappy", "gzip", "zstd")
 }
 

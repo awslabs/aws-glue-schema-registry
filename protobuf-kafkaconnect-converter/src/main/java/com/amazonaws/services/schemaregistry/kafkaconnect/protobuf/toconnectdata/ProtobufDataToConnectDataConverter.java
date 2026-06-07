@@ -19,9 +19,9 @@ import additionalTypes.Decimals;
 import com.amazonaws.services.schemaregistry.kafkaconnect.protobuf.fromconnectschema.ProtobufSchemaConverterUtils;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Descriptors;
+import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Message;
 import com.google.type.TimeOfDay;
-import lombok.SneakyThrows;
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Struct;
@@ -119,24 +119,27 @@ public class ProtobufDataToConnectDataConverter {
         return units.add(fractionalPart);
     }
 
-    @SneakyThrows
     private Object toConnectDataField(Schema schema, Object value) {
-        if (Date.SCHEMA.name().equals(schema.name())) {
-            com.google.type.Date date = com.google.type.Date.parseFrom(((Message) value).toByteArray());
-            return ProtobufSchemaConverterUtils.convertFromGoogleDate(date);
-        }
-        if (Timestamp.SCHEMA.name().equals(schema.name())) {
-            com.google.protobuf.Timestamp timestamp =
-                    com.google.protobuf.Timestamp.parseFrom(((Message) value).toByteArray());
-            return Timestamp.toLogical(schema, Timestamps.toMillis(timestamp));
-        }
-        if (Time.SCHEMA.name().equals(schema.name())) {
-            TimeOfDay time = TimeOfDay.parseFrom(((Message) value).toByteArray());
-            return ProtobufSchemaConverterUtils.convertFromGoogleTime(time);
-        }
-        if (Decimal.schema(DECIMAL_DEFAULT_SCALE).name().equals(schema.name())) {
-            Decimals.Decimal decimal = Decimals.Decimal.parseFrom(((Message) value).toByteArray());
-            return fromDecimalProto(decimal);
+        try {
+            if (Date.SCHEMA.name().equals(schema.name())) {
+                com.google.type.Date date = com.google.type.Date.parseFrom(((Message) value).toByteArray());
+                return ProtobufSchemaConverterUtils.convertFromGoogleDate(date);
+            }
+            if (Timestamp.SCHEMA.name().equals(schema.name())) {
+                com.google.protobuf.Timestamp timestamp =
+                        com.google.protobuf.Timestamp.parseFrom(((Message) value).toByteArray());
+                return Timestamp.toLogical(schema, Timestamps.toMillis(timestamp));
+            }
+            if (Time.SCHEMA.name().equals(schema.name())) {
+                TimeOfDay time = TimeOfDay.parseFrom(((Message) value).toByteArray());
+                return ProtobufSchemaConverterUtils.convertFromGoogleTime(time);
+            }
+            if (Decimal.schema(DECIMAL_DEFAULT_SCALE).name().equals(schema.name())) {
+                Decimals.Decimal decimal = Decimals.Decimal.parseFrom(((Message) value).toByteArray());
+                return fromDecimalProto(decimal);
+            }
+        } catch (InvalidProtocolBufferException e) {
+            throw new DataException("Failed to parse protobuf message for schema: " + schema.name(), e);
         }
         switch (schema.type()) {
             case INT8:

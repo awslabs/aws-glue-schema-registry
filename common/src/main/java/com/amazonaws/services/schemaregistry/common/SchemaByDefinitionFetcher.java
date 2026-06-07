@@ -9,7 +9,6 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
 
 import java.util.Map;
 import java.util.UUID;
@@ -61,7 +60,6 @@ public class SchemaByDefinitionFetcher {
      * @return Schema Version ID
      * @throws AWSSchemaRegistryException on any error while fetching the schema version ID
      */
-    @SneakyThrows
     public UUID getORRegisterSchemaVersionId(
         @NonNull String schemaDefinition,
         @NonNull String schemaName,
@@ -74,7 +72,9 @@ public class SchemaByDefinitionFetcher {
             return schemaDefinitionToVersionCache.get(schema);
         } catch (Exception ex) {
             Throwable schemaRegistryException = ex.getCause();
-            String exceptionCauseMessage = schemaRegistryException.getCause().getMessage();
+            String exceptionCauseMessage = schemaRegistryException.getCause() != null
+                ? schemaRegistryException.getCause().getMessage()
+                : schemaRegistryException.getMessage();
 
             if (exceptionCauseMessage.contains(AWSSchemaRegistryConstants.SCHEMA_VERSION_NOT_FOUND_MSG)) {
                 if (!glueSchemaRegistryConfiguration.isSchemaAutoRegistrationEnabled()) {
@@ -94,8 +94,8 @@ public class SchemaByDefinitionFetcher {
             } else {
                 String msg =
                     String.format(
-                        "Exception occurred while fetching or registering schema definition = %s, schema name = %s ",
-                        schemaDefinition, schemaName);
+                        "Exception occurred while fetching or registering schema definition = %s, schema name = %s. Error: %s",
+                        schemaDefinition, schemaName, exceptionCauseMessage);
                 throw new AWSSchemaRegistryException(msg, schemaRegistryException);
             }
             schemaDefinitionToVersionCache.put(schema, schemaVersionId);

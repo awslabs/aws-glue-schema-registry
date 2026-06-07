@@ -58,6 +58,22 @@ public class ProtobufWireFormatEncoderTest {
         );
     }
 
+    @Test
+    public void testPrefixMessageIndexToBytes_WhenNullsArePassed_ThrowsException() {
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> PROTOBUF_WIRE_FORMAT.prefixMessageIndexToBytes(null, CUSTOMER_FILE_DESCRIPTOR, CUSTOMER_MESSAGE.getDescriptorForType())
+        );
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> PROTOBUF_WIRE_FORMAT.prefixMessageIndexToBytes(new byte[]{}, null, CUSTOMER_MESSAGE.getDescriptorForType())
+        );
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> PROTOBUF_WIRE_FORMAT.prefixMessageIndexToBytes(new byte[]{}, CUSTOMER_FILE_DESCRIPTOR, null)
+        );
+    }
+
     @ParameterizedTest
     @MethodSource("testMessageProvider")
     public void testEncode_EncodesMessageAndMessageIndex_SuccessfullyDecodesToPOJO(Message message) throws Exception {
@@ -89,6 +105,20 @@ public class ProtobufWireFormatEncoderTest {
             DynamicMessage.parseFrom(Basic.Customer.getDescriptor(), codedInputStream);
 
         assertEquals(DYNAMIC_CUSTOMER_MESSAGE, actualDynamicCustomerMessage);
+    }
+
+    @ParameterizedTest
+    @MethodSource("testMessageProvider")
+    public void testPrefixMessageIndexToBytes_SuccessfullyPrefixesCorrectMessageIndex(Message message)
+        throws Exception {
+        byte[] messageBytes = message.toByteArray();
+        byte[] prefixedBytes = PROTOBUF_WIRE_FORMAT.prefixMessageIndexToBytes(messageBytes, CUSTOMER_FILE_DESCRIPTOR,
+            message.getDescriptorForType());
+        CodedInputStream codedInputStream = CodedInputStream.newInstance(prefixedBytes);
+
+        int actualMessageIndex = codedInputStream.readUInt32();
+
+        assertEquals(MESSAGE_INDEX, actualMessageIndex);
     }
 
     private static Stream<Arguments> testMessageProvider() {

@@ -1,0 +1,23 @@
+{
+  "type": "record",
+  "name": "RestrictedSchema",
+  "namespace": "com.amazonaws.services.schemaregistry.test.disabled",
+  "doc": "Second version that should be rejected in DISABLED mode (COMPAT-025)",
+  "fields": [
+    {
+      "name": "id",
+      "type": "int",
+      "doc": "Unique identifier"
+    },
+    {
+      "name": "name",
+      "type": "string",
+      "doc": "Entity name"
+    },
+    {
+      "name": "description",
+      "type": "string",
+      "doc": "Additional field that should cause rejection in DISABLED mode"
+    }
+  ]
+}

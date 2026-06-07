@@ -73,11 +73,24 @@ public class ProtobufSchemaLoader {
     //as Square doesn't support them by default.
     private final static Set<String> GOOGLE_WELLKNOWN_PROTOS =
         ImmutableSet.<String>builder()
+            .add("any.proto")
             .add("api.proto")
+            .add("descriptor.proto")
+            .add("duration.proto")
+            .add("empty.proto")
             .add("field_mask.proto")
             .add("source_context.proto")
             .add("struct.proto")
+            .add("timestamp.proto")
             .add("type.proto")
+            .add("wrappers.proto")
+            .build();
+
+    //Adding support for Wire library protobuf extensions
+    private static final String WIRE_PATH = "wire/";
+    private final static Set<String> WIRE_PROTOS =
+        ImmutableSet.<String>builder()
+            .add("extensions.proto")
             .build();
 
     private final static String METADATA_PROTO = "metadata.proto";
@@ -96,6 +109,9 @@ public class ProtobufSchemaLoader {
         createDirectory(GOOGLE_WELLKNOWN_PATH.split("/"), inMemoryFileSystem);
         loadProtoFiles(inMemoryFileSystem, classLoader, GOOGLE_WELLKNOWN_PROTOS, GOOGLE_WELLKNOWN_PATH);
 
+        createDirectory(WIRE_PATH.split("/"), inMemoryFileSystem);
+        loadProtoFiles(inMemoryFileSystem, classLoader, WIRE_PROTOS, WIRE_PATH);
+
         createDirectory(METADATA_PATH.split("/"), inMemoryFileSystem);
         loadProtoFiles(inMemoryFileSystem, classLoader, Collections.singleton(METADATA_PROTO), METADATA_PATH);
 
@@ -112,6 +128,9 @@ public class ProtobufSchemaLoader {
         for (String proto : protos) {
             //Loads the proto file resource files.
             final InputStream inputStream = classLoader.getResourceAsStream(protoPath + proto);
+            if (inputStream == null) {
+                throw new IOException("Proto file not found: " + protoPath + proto);
+            }
             final String fileContents = CharStreams.toString(new InputStreamReader(inputStream, Charsets.UTF_8));
             final Path dir = Path.get("/").resolve(protoPath);
             inMemoryFileSystem.createDirectories(dir);

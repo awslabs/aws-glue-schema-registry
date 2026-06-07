@@ -25,7 +25,6 @@ import com.amazonaws.services.schemaregistry.exception.AWSSchemaRegistryExceptio
 import com.amazonaws.services.schemaregistry.utils.AWSSchemaRegistryConstants;
 import lombok.Builder;
 import lombok.NonNull;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.services.glue.model.DataFormat;
@@ -73,7 +72,6 @@ public class GlueSchemaRegistrySerializationFacade {
         this.serializationDataEncoder = new SerializationDataEncoder(this.glueSchemaRegistryConfiguration);
     }
 
-    @SneakyThrows
     public UUID getOrRegisterSchemaVersion(@NonNull AWSSerializerInput serializerInput) {
         String schemaDefinition = serializerInput.getSchemaDefinition();
         String schemaName = serializerInput.getSchemaName();
