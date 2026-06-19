@@ -24,11 +24,19 @@ import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
+import java.util.Map;
 
+import static com.amazonaws.services.schemaregistry.utils.AWSSchemaRegistryConstants.AWS_REGION;
+import static com.amazonaws.services.schemaregistry.utils.AWSSchemaRegistryConstants.JACKSON_SERIALIZATION_FEATURES;
+import static com.fasterxml.jackson.databind.SerializationFeature.FAIL_ON_SELF_REFERENCES;
+import static com.fasterxml.jackson.databind.SerializationFeature.WRITE_SELF_REFERENCES_AS_NULL;
+import static java.util.Collections.singletonMap;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class JsonSerializerTest {
     private static final JsonDataWithSchema GENERIC_TEST_RECORD =
@@ -145,5 +153,31 @@ public class JsonSerializerTest {
     @Test
     public void testSerialize_nullObject_throwsException() {
         assertThrows(IllegalArgumentException.class, () -> jsonSerializer.serialize(null));
+    }
+
+    @Test
+    public void testSerialize_overridesSerializationFeatureToFalse() {
+        Map<String, Object> config = new HashMap<>();
+        config.put(JACKSON_SERIALIZATION_FEATURES, singletonMap(FAIL_ON_SELF_REFERENCES.name(), false));
+        config.put(AWS_REGION, "us-east-1");
+
+
+        GlueSchemaRegistryConfiguration glueSchemaRegistryConfiguration = new GlueSchemaRegistryConfiguration(config);
+        JsonSerializer jsonSerializer = new JsonSerializer(glueSchemaRegistryConfiguration);
+
+        assertFalse(jsonSerializer.getObjectMapper().isEnabled(FAIL_ON_SELF_REFERENCES));
+    }
+
+    @Test
+    public void testSerialize_overridesSerializationFeatureToTrue() {
+        Map<String, Object> config = new HashMap<>();
+        config.put(JACKSON_SERIALIZATION_FEATURES, singletonMap(WRITE_SELF_REFERENCES_AS_NULL.name(), true));
+        config.put(AWS_REGION, "us-east-1");
+
+
+        GlueSchemaRegistryConfiguration glueSchemaRegistryConfiguration = new GlueSchemaRegistryConfiguration(config);
+        JsonSerializer jsonSerializer = new JsonSerializer(glueSchemaRegistryConfiguration);
+
+        assertTrue(jsonSerializer.getObjectMapper().isEnabled(WRITE_SELF_REFERENCES_AS_NULL));
     }
 }

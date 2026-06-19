@@ -20,6 +20,7 @@ import com.amazonaws.services.schemaregistry.exception.AWSSchemaRegistryExceptio
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.kjetland.jackson.jsonSchema.JsonSchemaGenerator;
 import lombok.Builder;
@@ -27,7 +28,6 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections4.CollectionUtils;
 
 import java.nio.charset.StandardCharsets;
 
@@ -38,6 +38,7 @@ import java.nio.charset.StandardCharsets;
 public class JsonSerializer implements GlueSchemaRegistryDataFormatSerializer {
     private static final JsonValidator JSON_VALIDATOR = new JsonValidator();
     private final JsonSchemaGenerator jsonSchemaGenerator;
+    @Getter
     private final ObjectMapper objectMapper;
     @Getter
     @Setter
@@ -55,13 +56,9 @@ public class JsonSerializer implements GlueSchemaRegistryDataFormatSerializer {
         this.objectMapper = new ObjectMapper();
         this.objectMapper.setNodeFactory(jsonNodeFactory);
         if (configs != null) {
-            if (!CollectionUtils.isEmpty(configs.getJacksonSerializationFeatures())) {
+            if (configs.getJacksonSerializationFeatures() != null && !configs.getJacksonSerializationFeatures().isEmpty()) {
                 configs.getJacksonSerializationFeatures()
-                        .forEach(this.objectMapper::enable);
-            }
-            if (!CollectionUtils.isEmpty(configs.getJacksonDeserializationFeatures())) {
-                configs.getJacksonDeserializationFeatures()
-                        .forEach(this.objectMapper::enable);
+                        .forEach(this::overrideObjectMapperFeature);
             }
         }
         this.jsonSchemaGenerator = new JsonSchemaGenerator(this.objectMapper);
@@ -183,5 +180,13 @@ public class JsonSerializer implements GlueSchemaRegistryDataFormatSerializer {
         JsonNode schemaNode = getSchemaNode(jsonDataWithSchema);
         JsonNode dataNode = getDataNode(jsonDataWithSchema);
         JSON_VALIDATOR.validateDataWithSchema(schemaNode, dataNode);
+    }
+
+    private void overrideObjectMapperFeature(SerializationFeature serializationFeature, Boolean flag) {
+        if (flag) {
+            this.objectMapper.enable(serializationFeature);
+        } else {
+            this.objectMapper.disable(serializationFeature);
+        }
     }
 }
