@@ -31,6 +31,8 @@ import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.errors.DataException;
 import org.apache.kafka.connect.json.DecimalFormat;
+import org.everit.json.schema.loader.SchemaLoader;
+import org.json.JSONObject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -102,6 +104,42 @@ public class JsonSchemaConverterTest {
         assertNotNull(converter.getJsonSchemaToConnectSchemaConverter());
     }
 
+    @Test
+    public void testConverter_optional_fields() {
+        converter = new JsonSchemaConverter();
+        converter.configure(getProperties(), false);
+
+        String jsonSchemaString = "{" +
+                "  \"$schema\": \"http://json-schema.org/draft-07/schema#\"," +
+                "  \"type\": \"object\"," +
+                "  \"properties\": {" +
+                "    \"name\": {" +
+                "      \"type\": [" +
+                "        \"string\"," +
+                "        \"null\"" +
+                "      ]" +
+                "    }" +
+                "  }," +
+                "  \"additionalProperties\": false" +
+                "}";
+
+        org.everit.json.schema.Schema jsonSchema = null;
+
+        try {
+            JSONObject jsonSchemaObject = new JSONObject(jsonSchemaString);
+            jsonSchema = SchemaLoader.builder()
+                    .schemaJson(jsonSchemaObject)
+                    .build()
+                    .load()
+                    .build();
+        } catch (Exception e) {
+            throw new DataException("Failed to read JSON Schema : " + jsonSchemaString, e);
+        }
+
+        Schema connectSchema = converter.getJsonSchemaToConnectSchemaConverter().toConnectSchema(jsonSchema);
+        assertEquals(1, connectSchema.fields().size());
+    }
+
     @ParameterizedTest
     @MethodSource(value = "com.amazonaws.services.schemaregistry.kafkaconnect.jsonschema.TestDataProvider#"
                           + "testSchemaAndValueArgumentsProvider")
@@ -138,6 +176,8 @@ public class JsonSchemaConverterTest {
             assertEquals(expected.value(), actual.value());
         }
     }
+
+
 
     @ParameterizedTest
     @MethodSource(value = "com.amazonaws.services.schemaregistry.kafkaconnect.jsonschema.TestDataProvider#"

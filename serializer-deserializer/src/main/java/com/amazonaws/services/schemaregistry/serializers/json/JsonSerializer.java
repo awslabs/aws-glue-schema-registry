@@ -17,9 +17,11 @@ package com.amazonaws.services.schemaregistry.serializers.json;
 import com.amazonaws.services.schemaregistry.common.GlueSchemaRegistryDataFormatSerializer;
 import com.amazonaws.services.schemaregistry.common.configs.GlueSchemaRegistryConfiguration;
 import com.amazonaws.services.schemaregistry.exception.AWSSchemaRegistryException;
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.kjetland.jackson.jsonSchema.JsonSchemaGenerator;
 import lombok.Builder;
@@ -52,8 +54,12 @@ public class JsonSerializer implements GlueSchemaRegistryDataFormatSerializer {
     public JsonSerializer(GlueSchemaRegistryConfiguration configs) {
         this.schemaRegistrySerDeConfigs = configs;
         JsonNodeFactory jsonNodeFactory = JsonNodeFactory.withExactBigDecimals(true);
-        this.objectMapper = new ObjectMapper();
+        this.objectMapper = new ObjectMapper().enable(JsonGenerator.Feature.WRITE_BIGDECIMAL_AS_PLAIN);
         this.objectMapper.setNodeFactory(jsonNodeFactory);
+        SimpleModule module = new SimpleModule();
+        module.addSerializer(Double.class, new JsonDoubleSerializer());
+        module.addSerializer(Long.class, new JsonLongSerializer());
+        this.objectMapper.registerModule(module);
         if (configs != null) {
             if (!CollectionUtils.isEmpty(configs.getJacksonSerializationFeatures())) {
                 configs.getJacksonSerializationFeatures()
