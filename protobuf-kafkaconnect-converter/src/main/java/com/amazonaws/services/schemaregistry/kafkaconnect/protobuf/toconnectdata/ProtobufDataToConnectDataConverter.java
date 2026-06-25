@@ -87,7 +87,7 @@ public class ProtobufDataToConnectDataConverter {
         final Object value = message.getField(fieldDescriptor);
         //Unfortunately Protobuf 3 has a complex way to check for optionals.
         final boolean isOptionalFieldNotSet =
-            fieldDescriptor.hasOptionalKeyword() && !message.hasField(fieldDescriptor);
+            hasOptionalKeyword(fieldDescriptor) && !message.hasField(fieldDescriptor);
 
         if (value == null || isOptionalFieldNotSet) {
             data.put(connectField, null);
@@ -216,5 +216,21 @@ public class ProtobufDataToConnectDataConverter {
 
     private Descriptors.FieldDescriptor getFieldByName(Message message, String fieldName) {
         return message.getDescriptorForType().findFieldByName(fieldName);
+    }
+
+    /**
+     * Replicates protobuf's {@code FieldDescriptor#hasOptionalKeyword()}, which became
+     * package-private (inaccessible) in protobuf-java 4.x. Returns true for proto3 explicit
+     * {@code optional} fields and for proto2 {@code optional} fields not contained in a oneof.
+     */
+    private static boolean hasOptionalKeyword(final Descriptors.FieldDescriptor fieldDescriptor) {
+        if (fieldDescriptor.toProto().getProto3Optional()) {
+            return true;
+        }
+        final String syntax = fieldDescriptor.getFile().toProto().getSyntax();
+        final boolean isProto2 = syntax.isEmpty() || "proto2".equals(syntax);
+        return isProto2
+                && fieldDescriptor.isOptional()
+                && fieldDescriptor.getContainingOneof() == null;
     }
 }

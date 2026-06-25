@@ -229,7 +229,7 @@ public class ProtobufSchemaToConnectSchemaConverter {
             schemaBuilder.parameter(PROTOBUF_ENUM_NAME, fieldDescriptor.getEnumType().getFullName());
         }
 
-        if (fieldDescriptor.hasOptionalKeyword()) {
+        if (hasOptionalKeyword(fieldDescriptor)) {
             schemaBuilder.optional();
         }
 
@@ -243,5 +243,21 @@ public class ProtobufSchemaToConnectSchemaConverter {
         schemaBuilder.parameter(PROTOBUF_TAG, String.valueOf(fieldDescriptor.getNumber()));
 
         return schemaBuilder;
+    }
+
+    /**
+     * Replicates protobuf's {@code FieldDescriptor#hasOptionalKeyword()}, which became
+     * package-private (inaccessible) in protobuf-java 4.x. Returns true for proto3 explicit
+     * {@code optional} fields and for proto2 {@code optional} fields not contained in a oneof.
+     */
+    private static boolean hasOptionalKeyword(final Descriptors.FieldDescriptor fieldDescriptor) {
+        if (fieldDescriptor.toProto().getProto3Optional()) {
+            return true;
+        }
+        final String syntax = fieldDescriptor.getFile().toProto().getSyntax();
+        final boolean isProto2 = syntax.isEmpty() || "proto2".equals(syntax);
+        return isProto2
+                && fieldDescriptor.isOptional()
+                && fieldDescriptor.getContainingOneof() == null;
     }
 }

@@ -2,7 +2,6 @@ syntax = "proto3";
 
 package com.amazonaws.services.schemaregistry.utils.apicurio.syntax3.options;
 
-option php_generic_services = true;
 option php_class_prefix = "Example";
 option php_metadata_namespace = "ExampleOptionsSyntax3";
 option php_namespace = "com.amazonaws.services.schemaregistry.utils.apicurio.syntax3.options.example";
