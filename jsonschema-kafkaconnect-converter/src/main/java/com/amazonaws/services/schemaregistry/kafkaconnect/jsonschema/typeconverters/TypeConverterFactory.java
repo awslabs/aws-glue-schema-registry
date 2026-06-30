@@ -23,6 +23,7 @@ import org.apache.kafka.connect.data.Timestamp;
 import org.apache.kafka.connect.errors.DataException;
 import org.everit.json.schema.ArraySchema;
 import org.everit.json.schema.BooleanSchema;
+import org.everit.json.schema.ConstSchema;
 import org.everit.json.schema.EnumSchema;
 import org.everit.json.schema.NumberSchema;
 import org.everit.json.schema.ObjectSchema;
@@ -60,6 +61,12 @@ public class TypeConverterFactory {
             typeConverter = "bytes".equals(connectType) ? get(Schema.Type.BYTES) : get(Schema.Type.STRING);
         } else if (jsonSchema instanceof EnumSchema) {
             typeConverter = get(Schema.Type.STRING);
+        } else if (jsonSchema instanceof ConstSchema) {
+            // JSON Schema "const" restricts a value to a single permitted value. everit
+            // models this as a ConstSchema (rather than a typed schema), so map it to a
+            // Connect type based on the Java type of the permitted value. This routes both
+            // schema and value conversion through the existing type converters.
+            typeConverter = getForConstValue(((ConstSchema) jsonSchema).getPermittedValue(), connectType);
         } else if (jsonSchema instanceof ArraySchema) {
             if ("map".equals(connectType)) {
                 typeConverter = get(Schema.Type.MAP);
@@ -75,6 +82,41 @@ public class TypeConverterFactory {
         }
 
         return typeConverter;
+    }
+
+    /**
+     * Maps the permitted value of a JSON Schema {@code const} to the appropriate Connect
+     * TypeConverter based on the Java type of the value. A connect type hint, when present,
+     * takes precedence so that values carrying explicit Connect type metadata are honored.
+     *
+     * @param permittedValue the single permitted value of the const schema
+     * @param connectType    optional connect type hint from unprocessed properties
+     * @return the matching TypeConverter
+     */
+    private TypeConverter getForConstValue(Object permittedValue,
+                                           String connectType) {
+        if (connectType != null) {
+            if ("bytes".equals(connectType)) {
+                return get(Schema.Type.BYTES);
+            }
+            if ("map".equals(connectType)) {
+                return get(Schema.Type.MAP);
+            }
+            return get(Schema.Type.valueOf(connectType.toUpperCase()));
+        }
+
+        if (permittedValue instanceof Boolean) {
+            return get(Schema.Type.BOOLEAN);
+        } else if (permittedValue instanceof Integer || permittedValue instanceof Long
+                || permittedValue instanceof Short || permittedValue instanceof Byte) {
+            return get(Schema.Type.INT64);
+        } else if (permittedValue instanceof Float || permittedValue instanceof Double
+                || permittedValue instanceof Number) {
+            return get(Schema.Type.FLOAT64);
+        }
+
+        // Strings and any other JSON scalar (e.g. values surfaced as text) map to STRING.
+        return get(Schema.Type.STRING);
     }
 
     /**

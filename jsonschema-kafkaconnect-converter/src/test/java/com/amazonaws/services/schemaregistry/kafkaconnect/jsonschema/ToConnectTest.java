@@ -143,6 +143,98 @@ public class ToConnectTest {
         assertDoesNotThrow(() -> ConnectSchema.validateValue(actualConnectSchema, actualConnectValue));
     }
 
+    @Test
+    public void testToConnect_constStringType_doesNotThrow() throws Exception {
+        // Customer feedback: JSON Schema "const" types are not supported by the Kafka
+        // Connect translation. everit parses "const" as a ConstSchema, which the
+        // TypeConverterFactory did not handle, producing:
+        //   DataException: Unsupported schema type org.everit.json.schema.ConstSchema
+        JSONObject jsonSchemaObject = new JSONObject("{\n" +
+                "    \"$schema\": \"http://json-schema.org/draft-07/schema#\",\n" +
+                "    \"type\": \"object\",\n" +
+                "    \"properties\": {\n" +
+                "        \"country\": { \"const\": \"United States of America\" }\n" +
+                "    },\n" +
+                "    \"additionalProperties\": false\n" +
+                "}");
+
+        JSONObject jsonSubject = new JSONObject("{ \"country\": \"United States of America\" }");
+
+        org.everit.json.schema.Schema jsonSchema =
+                org.everit.json.schema.loader.SchemaLoader.load(jsonSchemaObject);
+        assertDoesNotThrow(() -> jsonSchema.validate(jsonSubject));
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        JsonNode jsonValue = objectMapper.readTree(jsonSubject.toString());
+
+        Schema actualConnectSchema =
+                assertDoesNotThrow(() -> jsonSchemaToConnectSchemaConverter.toConnectSchema(jsonSchema));
+        assertEquals(Schema.Type.STRING, actualConnectSchema.field("country").schema().type());
+
+        Object actualConnectValue =
+                jsonNodeToConnectValueConverter.toConnectValue(actualConnectSchema, jsonValue);
+        assertDoesNotThrow(() -> ConnectSchema.validateValue(actualConnectSchema, actualConnectValue));
+        assertEquals("United States of America", ((Struct) actualConnectValue).get("country"));
+    }
+
+    @Test
+    public void testToConnect_constNumberType_doesNotThrow() throws Exception {
+        JSONObject jsonSchemaObject = new JSONObject("{\n" +
+                "    \"$schema\": \"http://json-schema.org/draft-07/schema#\",\n" +
+                "    \"type\": \"object\",\n" +
+                "    \"properties\": {\n" +
+                "        \"version\": { \"const\": 1 }\n" +
+                "    },\n" +
+                "    \"additionalProperties\": false\n" +
+                "}");
+
+        JSONObject jsonSubject = new JSONObject("{ \"version\": 1 }");
+
+        org.everit.json.schema.Schema jsonSchema =
+                org.everit.json.schema.loader.SchemaLoader.load(jsonSchemaObject);
+        assertDoesNotThrow(() -> jsonSchema.validate(jsonSubject));
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        JsonNode jsonValue = objectMapper.readTree(jsonSubject.toString());
+
+        Schema actualConnectSchema =
+                assertDoesNotThrow(() -> jsonSchemaToConnectSchemaConverter.toConnectSchema(jsonSchema));
+
+        Object actualConnectValue =
+                jsonNodeToConnectValueConverter.toConnectValue(actualConnectSchema, jsonValue);
+        assertDoesNotThrow(() -> ConnectSchema.validateValue(actualConnectSchema, actualConnectValue));
+    }
+
+    @Test
+    public void testToConnect_constBooleanType_doesNotThrow() throws Exception {
+        JSONObject jsonSchemaObject = new JSONObject("{\n" +
+                "    \"$schema\": \"http://json-schema.org/draft-07/schema#\",\n" +
+                "    \"type\": \"object\",\n" +
+                "    \"properties\": {\n" +
+                "        \"enabled\": { \"const\": true }\n" +
+                "    },\n" +
+                "    \"additionalProperties\": false\n" +
+                "}");
+
+        JSONObject jsonSubject = new JSONObject("{ \"enabled\": true }");
+
+        org.everit.json.schema.Schema jsonSchema =
+                org.everit.json.schema.loader.SchemaLoader.load(jsonSchemaObject);
+        assertDoesNotThrow(() -> jsonSchema.validate(jsonSubject));
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        JsonNode jsonValue = objectMapper.readTree(jsonSubject.toString());
+
+        Schema actualConnectSchema =
+                assertDoesNotThrow(() -> jsonSchemaToConnectSchemaConverter.toConnectSchema(jsonSchema));
+        assertEquals(Schema.Type.BOOLEAN, actualConnectSchema.field("enabled").schema().type());
+
+        Object actualConnectValue =
+                jsonNodeToConnectValueConverter.toConnectValue(actualConnectSchema, jsonValue);
+        assertDoesNotThrow(() -> ConnectSchema.validateValue(actualConnectSchema, actualConnectValue));
+        assertEquals(true, ((Struct) actualConnectValue).get("enabled"));
+    }
+
     @ParameterizedTest
     @MethodSource(value = "com.amazonaws.services.schemaregistry.kafkaconnect.jsonschema.TestDataProvider#"
             + "testSchemaAndValueArgumentsProvider")
