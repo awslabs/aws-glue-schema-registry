@@ -92,8 +92,15 @@ public class JsonSchemaToConnectSchemaConverter {
             boolean hasNullSchema = subSchemas.stream()
                     .anyMatch(schema -> schema instanceof NullSchema);
 
+            // An optional union is a two-subschema combination where one subschema is
+            // NullSchema, e.g. {"type": ["string", "null"]}. Depending on how the JSON
+            // Schema is authored, everit represents this either as oneOf (ONE_CRITERION)
+            // or anyOf (ANY_CRITERION) - notably, a "type" array is parsed as anyOf. Both
+            // shapes describe the same optional, single-type field, so detect either one.
+            // See https://github.com/awslabs/aws-glue-schema-registry/issues/218
             boolean isOptionalUnion =
-                    CombinedSchema.ONE_CRITERION.equals(criterion) && subSchemas.size() == 2 && hasNullSchema;
+                    (CombinedSchema.ONE_CRITERION.equals(criterion) || CombinedSchema.ANY_CRITERION.equals(criterion))
+                            && subSchemas.size() == 2 && hasNullSchema;
             if (isOptionalUnion) {
                 return buildOptionalUnionSchema(subSchemas);
             }

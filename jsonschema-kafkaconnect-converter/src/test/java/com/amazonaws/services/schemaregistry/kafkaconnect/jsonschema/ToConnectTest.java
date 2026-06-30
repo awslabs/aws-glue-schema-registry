@@ -28,6 +28,7 @@ import org.apache.kafka.common.cache.Cache;
 import org.apache.kafka.connect.data.ConnectSchema;
 import org.apache.kafka.connect.data.Date;
 import org.apache.kafka.connect.data.Decimal;
+import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
@@ -139,6 +140,80 @@ public class ToConnectTest {
         Object actualConnectValue =
                 jsonNodeToConnectValueConverter.toConnectValue(actualConnectSchema,
                         jsonValue);
+
+        assertDoesNotThrow(() -> ConnectSchema.validateValue(actualConnectSchema, actualConnectValue));
+    }
+
+    @Test
+    public void testToConnect_optionalUnionTypeArray_doesNotThrow() throws Exception {
+        // Reproduces issue #218: a property declared with a JSON Schema "type" array
+        // like ["string", "null"] is parsed by everit as a CombinedSchema using the
+        // ANY_CRITERION (anyOf), not ONE_CRITERION (oneOf). The converter must still
+        // recognize this as an optional union and mark the field optional, instead of
+        // building an optional union schema and then calling required() on it.
+        JSONObject jsonSchemaObject = new JSONObject("{\n" +
+                "    \"$schema\": \"http://json-schema.org/draft-07/schema#\",\n" +
+                "    \"type\": \"object\",\n" +
+                "    \"properties\": {\n" +
+                "        \"name\": {\n" +
+                "            \"type\": [ \"string\", \"null\" ]\n" +
+                "        }\n" +
+                "    },\n" +
+                "    \"additionalProperties\": false\n" +
+                "}");
+
+        JSONObject jsonSubject = new JSONObject("{ \"name\": \"Cristina Hermann\" }");
+
+        org.everit.json.schema.Schema jsonSchema =
+                org.everit.json.schema.loader.SchemaLoader.load(jsonSchemaObject);
+        assertDoesNotThrow(() -> jsonSchema.validate(jsonSubject));
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        JsonNode jsonValue = objectMapper.readTree(jsonSubject.toString());
+
+        Schema actualConnectSchema =
+                assertDoesNotThrow(() -> jsonSchemaToConnectSchemaConverter.toConnectSchema(jsonSchema));
+
+        // The "name" field must be optional (string), since "null" is one of its types.
+        Field nameField = actualConnectSchema.field("name");
+        assertEquals(Schema.Type.STRING, nameField.schema().type());
+        assertEquals(true, nameField.schema().isOptional());
+
+        Object actualConnectValue =
+                jsonNodeToConnectValueConverter.toConnectValue(actualConnectSchema, jsonValue);
+
+        assertDoesNotThrow(() -> ConnectSchema.validateValue(actualConnectSchema, actualConnectValue));
+        assertEquals("Cristina Hermann", ((Struct) actualConnectValue).get("name"));
+    }
+
+    @Test
+    public void testToConnect_optionalUnionTypeArray_withNullValue_doesNotThrow() throws Exception {
+        // Companion to issue #218: the same schema must also accept an explicit null.
+        JSONObject jsonSchemaObject = new JSONObject("{\n" +
+                "    \"$schema\": \"http://json-schema.org/draft-07/schema#\",\n" +
+                "    \"type\": \"object\",\n" +
+                "    \"properties\": {\n" +
+                "        \"name\": {\n" +
+                "            \"type\": [ \"string\", \"null\" ]\n" +
+                "        }\n" +
+                "    },\n" +
+                "    \"additionalProperties\": false\n" +
+                "}");
+
+        JSONObject jsonSubject = new JSONObject("{ \"name\": null }");
+
+        org.everit.json.schema.Schema jsonSchema =
+                org.everit.json.schema.loader.SchemaLoader.load(jsonSchemaObject);
+        assertDoesNotThrow(() -> jsonSchema.validate(jsonSubject));
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        JsonNode jsonValue = objectMapper.readTree(jsonSubject.toString());
+
+        Schema actualConnectSchema =
+                assertDoesNotThrow(() -> jsonSchemaToConnectSchemaConverter.toConnectSchema(jsonSchema));
+
+        Object actualConnectValue =
+                jsonNodeToConnectValueConverter.toConnectValue(actualConnectSchema, jsonValue);
 
         assertDoesNotThrow(() -> ConnectSchema.validateValue(actualConnectSchema, actualConnectValue));
     }
