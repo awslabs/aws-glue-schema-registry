@@ -218,6 +218,75 @@ public class ToConnectTest {
         assertDoesNotThrow(() -> ConnectSchema.validateValue(actualConnectSchema, actualConnectValue));
     }
 
+    @Test
+    public void testToConnect_threeWayNullableUnion_doesNotThrow() throws Exception {
+        // Extends #218: a nullable union with more than one real type, e.g.
+        // ["string", "integer", "null"], parses to a CombinedSchema with three subschemas.
+        // It must be treated as an optional union of the two real types (string + integer),
+        // not fall through to the non-optional union path and then have required() applied
+        // on an already-optional builder (which throws "optional has already been set").
+        JSONObject jsonSchemaObject = new JSONObject("{\n" +
+                "    \"$schema\": \"http://json-schema.org/draft-07/schema#\",\n" +
+                "    \"type\": \"object\",\n" +
+                "    \"properties\": {\n" +
+                "        \"id\": {\n" +
+                "            \"type\": [ \"string\", \"integer\", \"null\" ]\n" +
+                "        }\n" +
+                "    },\n" +
+                "    \"additionalProperties\": false\n" +
+                "}");
+
+        org.everit.json.schema.Schema jsonSchema =
+                org.everit.json.schema.loader.SchemaLoader.load(jsonSchemaObject);
+
+        // The reported symptom of #218 is a SchemaBuilderException during schema
+        // construction; this must no longer throw for a three-way nullable union.
+        Schema actualConnectSchema =
+                assertDoesNotThrow(() -> jsonSchemaToConnectSchemaConverter.toConnectSchema(jsonSchema));
+
+        // The union of the two real types becomes an optional oneOf-style struct.
+        Field idField = actualConnectSchema.field("id");
+        assertEquals(Schema.Type.STRUCT, idField.schema().type());
+        assertEquals(true, idField.schema().isOptional());
+        assertEquals(2, idField.schema().fields().size());
+        // Note: deserializing a *non-null* value into a multi-type union is a separate,
+        // pre-existing limitation of the union value matcher in StructTypeConverter (it
+        // affects non-nullable multi-type unions too and is out of scope for this fix). The
+        // null-value path is covered below.
+    }
+
+    @Test
+    public void testToConnect_threeWayNullableUnion_withNullValue_doesNotThrow() throws Exception {
+        // Companion: the three-way nullable union must also accept an explicit null.
+        JSONObject jsonSchemaObject = new JSONObject("{\n" +
+                "    \"$schema\": \"http://json-schema.org/draft-07/schema#\",\n" +
+                "    \"type\": \"object\",\n" +
+                "    \"properties\": {\n" +
+                "        \"id\": {\n" +
+                "            \"type\": [ \"string\", \"integer\", \"null\" ]\n" +
+                "        }\n" +
+                "    },\n" +
+                "    \"additionalProperties\": false\n" +
+                "}");
+
+        JSONObject jsonSubject = new JSONObject("{ \"id\": null }");
+
+        org.everit.json.schema.Schema jsonSchema =
+                org.everit.json.schema.loader.SchemaLoader.load(jsonSchemaObject);
+        assertDoesNotThrow(() -> jsonSchema.validate(jsonSubject));
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        JsonNode jsonValue = objectMapper.readTree(jsonSubject.toString());
+
+        Schema actualConnectSchema =
+                assertDoesNotThrow(() -> jsonSchemaToConnectSchemaConverter.toConnectSchema(jsonSchema));
+
+        Object actualConnectValue =
+                jsonNodeToConnectValueConverter.toConnectValue(actualConnectSchema, jsonValue);
+
+        assertDoesNotThrow(() -> ConnectSchema.validateValue(actualConnectSchema, actualConnectValue));
+    }
+
     @ParameterizedTest
     @MethodSource(value = "com.amazonaws.services.schemaregistry.kafkaconnect.jsonschema.TestDataProvider#"
             + "testSchemaAndValueArgumentsProvider")
