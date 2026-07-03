@@ -37,6 +37,7 @@ import software.amazon.awssdk.services.sts.StsClient;
 import software.amazon.awssdk.services.sts.auth.StsAssumeRoleCredentialsProvider;
 
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Amazon Schema Registry Avro converter for Kafka Connect users.
@@ -48,6 +49,7 @@ public class AWSKafkaAvroConverter implements Converter {
     private AWSKafkaAvroSerializer serializer;
     private AWSKafkaAvroDeserializer deserializer;
     private AvroData avroData;
+    private final ConcurrentHashMap<String, org.apache.avro.Schema> parsedSchemaCache = new ConcurrentHashMap<>();
 
     private boolean isKey;
 
@@ -155,14 +157,13 @@ public class AWSKafkaAvroConverter implements Converter {
      */
     @VisibleForTesting
     protected org.apache.avro.Schema extractAvroSchema(final byte[] value, final Object deserialized) {
-        final org.apache.avro.Schema.Parser parser = new org.apache.avro.Schema.Parser();
-
         // Check if this is GSR data that can be processed by GSR deserialization facade
         if (deserializer.getGlueSchemaRegistryDeserializationFacade().canDeserialize(value)) {
             // GSR data: extract schema from registry metadata
             try {
                 final String schemaDefinition = deserializer.getGlueSchemaRegistryDeserializationFacade().getSchemaDefinition(value);
-                return parser.parse(schemaDefinition);
+                return parsedSchemaCache.computeIfAbsent(schemaDefinition,
+                    schemaDef -> new org.apache.avro.Schema.Parser().parse(schemaDef));
             } catch (final Exception e) {
                 throw new DataException("Failed to extract schema from GSR metadata", e);
             }
