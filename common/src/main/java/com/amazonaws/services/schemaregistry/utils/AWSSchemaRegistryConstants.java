@@ -167,6 +167,13 @@ public final class AWSSchemaRegistryConstants {
     public static final String JACKSON_DESERIALIZATION_FEATURES = "jacksonDeserializationFeatures";
 
     /**
+     * Configuration to enable nullable fields in JSON Schema generation.
+     * When enabled, uses JsonSchemaConfig.nullableJsonSchemaDraft4() which generates
+     * schemas with oneOf[null, type] for nullable fields.
+     */
+    public static final String JSON_SCHEMA_NULLABLE_ENABLED = "jsonSchemaNullableEnabled";
+
+    /**
      * Name of the UserAgent application using the serializer/de-serializer library.
      * Ex: KPL, Kafka, KafkaConnect etc.
      */
