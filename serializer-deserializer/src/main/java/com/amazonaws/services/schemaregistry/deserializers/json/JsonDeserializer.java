@@ -94,7 +94,10 @@ public class JsonDeserializer implements GlueSchemaRegistryDataFormatDeserialize
             JsonNode schemaNode = objectMapper.readTree(schema);
             JsonNode classNameNode = schemaNode.get("className");
 
-            if (classNameNode != null) {
+            boolean classNameResolutionEnabled = schemaRegistrySerDeConfigs != null
+                    && schemaRegistrySerDeConfigs.isJsonClassNameResolutionEnabled();
+
+            if (classNameResolutionEnabled && classNameNode != null) {
                 String className = classNameNode.asText();
                 deserializedObject = objectMapper.readValue(data, Class.forName(className));
             } else {

@@ -54,6 +54,7 @@ public class GlueSchemaRegistryConfiguration {
     private Compatibility compatibilitySetting;
     private String description;
     private boolean schemaAutoRegistrationEnabled = false;
+    private boolean jsonClassNameResolutionEnabled = false;
     private Map<String, String> tags = new HashMap<>();
     private Map<String, String> metadata;
     private String secondaryDeserializer;
@@ -97,6 +98,7 @@ public class GlueSchemaRegistryConfiguration {
         validateAndSetCompatibility(configs);
         validateAndSetCompressionType(configs);
         validateAndSetSchemaAutoRegistrationSetting(configs);
+        validateAndSetJsonClassNameResolutionSetting(configs);
         validateAndSetJacksonSerializationFeatures(configs);
         validateAndSetJacksonDeserializationFeatures(configs);
         validateAndSetTags(configs);
@@ -267,6 +269,17 @@ public class GlueSchemaRegistryConfiguration {
         } else {
             log.info("schemaAutoRegistrationEnabled is not defined in the properties. Using the default value {}",
                      schemaAutoRegistrationEnabled);
+        }
+    }
+
+    private void validateAndSetJsonClassNameResolutionSetting(Map<String, ?> configs) {
+        if (isPresent(configs, AWSSchemaRegistryConstants.JSON_CLASS_NAME_RESOLUTION_ENABLED)) {
+            this.jsonClassNameResolutionEnabled = Boolean.parseBoolean(
+                    configs.get(AWSSchemaRegistryConstants.JSON_CLASS_NAME_RESOLUTION_ENABLED)
+                            .toString());
+        } else {
+            log.info("jsonClassNameResolutionEnabled is not defined in the properties. Using the default value {}",
+                     jsonClassNameResolutionEnabled);
         }
     }
 
