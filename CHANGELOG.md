@@ -106,3 +106,6 @@ GlueSchemaRegistryKafkaSerializer/GlueSchemaRegistryKafkaDeserializer.
 ## Release 1.1.27
 * Introduce lz4 shim and dependency upgrade to fix vulnerabilities
 * Updated local integration tests to make requests to local stack syncrounysly to correct for flakyness
+
+## Release 1.1.28
+* JSON deserializer no longer resolves the schema's `className` field into a POJO by default; it now returns `JsonDataWithSchema` unless `jsonClassNameResolutionEnabled` is set to `true`. This is a breaking change for consumers that relied on automatic POJO deserialization.

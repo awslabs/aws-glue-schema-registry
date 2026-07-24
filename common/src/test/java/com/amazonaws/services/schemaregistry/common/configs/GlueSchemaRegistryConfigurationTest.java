@@ -34,6 +34,7 @@ import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -410,5 +411,40 @@ public class GlueSchemaRegistryConfigurationTest {
         props.put(AWSSchemaRegistryConstants.PROXY_URL, "http:// proxy.url: 8080");
         Exception exception = assertThrows(AWSSchemaRegistryException.class, () -> new GlueSchemaRegistryConfiguration(props));
         assertEquals("Proxy URL property is not a valid URL: "+proxy, exception.getMessage());
+    }
+
+    /**
+     * Tests that JSON class name resolution defaults to disabled (secure default) when not configured.
+     */
+    @Test
+    public void testJsonClassNameResolution_withoutConfig_defaultsToDisabled() {
+        Properties props = createTestProperties();
+        GlueSchemaRegistryConfiguration glueSchemaRegistryConfiguration = new GlueSchemaRegistryConfiguration(props);
+
+        assertFalse(glueSchemaRegistryConfiguration.isJsonClassNameResolutionEnabled());
+    }
+
+    /**
+     * Tests that customers can opt in to JSON class name resolution.
+     */
+    @Test
+    public void testJsonClassNameResolution_setToTrue_isEnabled() {
+        Properties props = createTestProperties();
+        props.put(AWSSchemaRegistryConstants.JSON_CLASS_NAME_RESOLUTION_ENABLED, "true");
+        GlueSchemaRegistryConfiguration glueSchemaRegistryConfiguration = new GlueSchemaRegistryConfiguration(props);
+
+        assertTrue(glueSchemaRegistryConfiguration.isJsonClassNameResolutionEnabled());
+    }
+
+    /**
+     * Tests that JSON class name resolution can be explicitly disabled.
+     */
+    @Test
+    public void testJsonClassNameResolution_setToFalse_isDisabled() {
+        Properties props = createTestProperties();
+        props.put(AWSSchemaRegistryConstants.JSON_CLASS_NAME_RESOLUTION_ENABLED, "false");
+        GlueSchemaRegistryConfiguration glueSchemaRegistryConfiguration = new GlueSchemaRegistryConfiguration(props);
+
+        assertFalse(glueSchemaRegistryConfiguration.isJsonClassNameResolutionEnabled());
     }
 }

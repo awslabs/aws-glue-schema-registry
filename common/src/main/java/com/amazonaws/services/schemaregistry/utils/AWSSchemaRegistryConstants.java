@@ -173,6 +173,17 @@ public final class AWSSchemaRegistryConstants {
     public static final String USER_AGENT_APP = "userAgentApp";
 
     /**
+     * Controls whether the JSON deserializer resolves the target class from the
+     * {@code className} field embedded in the schema and deserializes into that
+     * POJO via reflection. Defaults to {@code false} so that untrusted schemas
+     * cannot drive instantiation of arbitrary classes; the deserializer returns
+     * a {@code JsonDataWithSchema} regardless of the presence of
+     * {@code className}. Set to {@code true} to opt in to the legacy behavior of
+     * deserializing into the class named by the schema's {@code className} field.
+     */
+    public static final String JSON_CLASS_NAME_RESOLUTION_ENABLED = "jsonClassNameResolutionEnabled";
+
+    /**
      * IAM Role ARN to assume for accessing the registry
      */
     public static final String ASSUME_ROLE_ARN = "assumeRoleArn";
