@@ -119,6 +119,9 @@ public class GlueSchemaRegistryDeserializationFacadeTest {
             RecordGenerator.createGenericMultipleTypesAvroRecord();
     private static final Car specificJsonCarRecord = RecordGenerator.createSpecificJsonRecord();
     private static final Employee specificJsonEmpployeeRecord = RecordGenerator.createInvalidEmployeeJsonRecord();
+    private static final String CAR_CLASS_NAME = Car.class.getName();
+    /** The className injected into {@link Employee}'s schema, which intentionally does not resolve. */
+    private static final String INVALID_CLASS_NAME = "wrong.class.name";
     private static final User userDefinedPojoAvro = RecordGenerator.createSpecificAvroRecord();
     private static GlueSchemaRegistryConfiguration glueSchemaRegistryConfiguration =
             new GlueSchemaRegistryConfiguration(new HashMap<String, Object>() {{
@@ -551,6 +554,9 @@ public class GlueSchemaRegistryDeserializationFacadeTest {
                                                                       AWSSchemaRegistryConstants.COMPRESSION compressionType) {
         configs.put(AWSSchemaRegistryConstants.COMPRESSION_TYPE, compressionType.name());
         configs.put(AWSSchemaRegistryConstants.AVRO_RECORD_TYPE, avroRecordType);
+        // The JSON specific record in this provider carries a className, so opt in to className
+        // resolution and allow that class in order to get a typed POJO back.
+        enableJsonClassNameResolution(CAR_CLASS_NAME);
         byte[] serializedData = createSerializedData(record, dataFormat, inputSchemaDefinition, schemaVersionId);
 
         GetSchemaVersionResponse schemaVersionResponse = GetSchemaVersionResponse.builder()
@@ -578,6 +584,7 @@ public class GlueSchemaRegistryDeserializationFacadeTest {
 
         configs.remove(AWSSchemaRegistryConstants.AVRO_RECORD_TYPE);
         configs.remove(AWSSchemaRegistryConstants.COMPRESSION_TYPE);
+        disableJsonClassNameResolution();
     }
 
     @ParameterizedTest
@@ -592,6 +599,9 @@ public class GlueSchemaRegistryDeserializationFacadeTest {
         configs.put(AWSSchemaRegistryConstants.AVRO_RECORD_TYPE, avroRecordType);
         configs.put(AWSSchemaRegistryConstants.JACKSON_DESERIALIZATION_FEATURES,
                     Arrays.asList(DeserializationFeature.EAGER_DESERIALIZER_FETCH.name()));
+        // The JSON specific record in this provider carries a className, so opt in to className
+        // resolution and allow that class in order to get a typed POJO back.
+        enableJsonClassNameResolution(CAR_CLASS_NAME);
         byte[] serializedData = createSerializedData(record, dataFormat, inputSchemaDefinition, schemaVersionId);
 
         GetSchemaVersionResponse schemaVersionResponse = GetSchemaVersionResponse.builder()
@@ -620,6 +630,7 @@ public class GlueSchemaRegistryDeserializationFacadeTest {
         configs.remove(AWSSchemaRegistryConstants.AVRO_RECORD_TYPE);
         configs.remove(AWSSchemaRegistryConstants.COMPRESSION_TYPE);
         configs.remove(AWSSchemaRegistryConstants.JACKSON_DESERIALIZATION_FEATURES);
+        disableJsonClassNameResolution();
     }
 
     /**
@@ -634,6 +645,9 @@ public class GlueSchemaRegistryDeserializationFacadeTest {
                                                                           String avroRecordType,
                                                                           AWSSchemaRegistryConstants.COMPRESSION compressionType) {
         configs.put(AWSSchemaRegistryConstants.COMPRESSION_TYPE, compressionType.name());
+        // Allowlist the (non-existent) class named by the schema so that resolution is actually
+        // attempted; the failure under test is Class.forName, not the allowlist check.
+        enableJsonClassNameResolution(INVALID_CLASS_NAME);
 
         byte[] serializedData = createSerializedData(record, dataFormat, inputSchemaDefinition, schemaVersionId);
 
@@ -653,6 +667,7 @@ public class GlueSchemaRegistryDeserializationFacadeTest {
                 prepareDeserializerInput(serializedData)));
 
         configs.remove(AWSSchemaRegistryConstants.COMPRESSION_TYPE);
+        disableJsonClassNameResolution();
     }
 
     /**
@@ -874,6 +889,25 @@ public class GlueSchemaRegistryDeserializationFacadeTest {
      *
      * @return GlueSchemaRegistryDeserializationFacade instance.
      */
+    /**
+     * Opts in to className-based JSON deserialization and allows the given class, so that a schema
+     * carrying a {@code className} is deserialized into that POJO rather than a JsonDataWithSchema.
+     *
+     * @param allowedClassName fully qualified class name to add to the allowlist
+     */
+    private void enableJsonClassNameResolution(String allowedClassName) {
+        configs.put(AWSSchemaRegistryConstants.JSON_CLASS_NAME_RESOLUTION_ENABLED, true);
+        configs.put(AWSSchemaRegistryConstants.JSON_CLASS_NAME_ALLOWLIST, allowedClassName);
+    }
+
+    /**
+     * Restores the default (disabled) className resolution behavior for subsequent tests.
+     */
+    private void disableJsonClassNameResolution() {
+        configs.remove(AWSSchemaRegistryConstants.JSON_CLASS_NAME_RESOLUTION_ENABLED);
+        configs.remove(AWSSchemaRegistryConstants.JSON_CLASS_NAME_ALLOWLIST);
+    }
+
     private GlueSchemaRegistryDeserializationFacade createGSRDeserializationFacade() {
         GlueSchemaRegistryDeserializationFacade glueSchemaRegistryDeserializationFacade =
                 GlueSchemaRegistryDeserializationFacade.builder()

@@ -20,19 +20,25 @@ import com.amazonaws.services.schemaregistry.deserializers.GlueSchemaRegistryDes
 import com.amazonaws.services.schemaregistry.exception.AWSSchemaRegistryException;
 import com.amazonaws.services.schemaregistry.serializers.json.JsonDataWithSchema;
 import com.amazonaws.services.schemaregistry.common.Schema;
+import com.amazonaws.services.schemaregistry.utils.AWSSchemaRegistryConstants;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
+import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.Collections;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Json specific de-serializer responsible for handling the Json data format
@@ -44,6 +50,10 @@ public class JsonDeserializer implements GlueSchemaRegistryDataFormatDeserialize
     private static final GlueSchemaRegistryDeserializerDataParser DESERIALIZER_DATA_PARSER =
             GlueSchemaRegistryDeserializerDataParser.getInstance();
     private final ObjectMapper objectMapper;
+    /** Class names already warned about, so the allowlist-miss warning is not logged per record. */
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    private final Set<String> warnedClassNames = Collections.newSetFromMap(new ConcurrentHashMap<>());
     @Getter
     @Setter
     private GlueSchemaRegistryConfiguration schemaRegistrySerDeConfigs;
@@ -99,7 +109,15 @@ public class JsonDeserializer implements GlueSchemaRegistryDataFormatDeserialize
 
             if (classNameResolutionEnabled && classNameNode != null) {
                 String className = classNameNode.asText();
-                deserializedObject = objectMapper.readValue(data, Class.forName(className));
+                Set<String> allowlist = schemaRegistrySerDeConfigs.getJsonClassNameAllowlist();
+                if (allowlist != null && allowlist.contains(className)) {
+                    deserializedObject = objectMapper.readValue(data, Class.forName(className));
+                } else {
+                    warnOnceForDisallowedClassName(className);
+                    JsonNode dataNode = objectMapper.readTree(data);
+                    deserializedObject = JsonDataWithSchema.builder(schemaNode.toString(), dataNode.toString())
+                            .build();
+                }
             } else {
                 JsonNode dataNode = objectMapper.readTree(data);
                 deserializedObject = JsonDataWithSchema.builder(schemaNode.toString(), dataNode.toString())
@@ -110,6 +128,22 @@ public class JsonDeserializer implements GlueSchemaRegistryDataFormatDeserialize
         } catch (IOException | ClassNotFoundException e) {
             String message = String.format("Exception occurred while de-serializing JSON message.");
             throw new AWSSchemaRegistryException(message, e);
+        }
+    }
+
+    /**
+     * Warns that a schema's className was not allowlisted, at most once per distinct class name.
+     * The condition is configuration-scoped rather than record-scoped, so logging it on every
+     * record would flood the logs at message throughput rate.
+     *
+     * @param className the class name named by the schema but absent from the allowlist
+     */
+    private void warnOnceForDisallowedClassName(String className) {
+        if (warnedClassNames.add(className)) {
+            log.warn("className '{}' is not in the configured allowlist. "
+                     + "Returning JsonDataWithSchema instead. "
+                     + "Add the class to {} to enable typed deserialization.",
+                     className, AWSSchemaRegistryConstants.JSON_CLASS_NAME_ALLOWLIST);
         }
     }
 }

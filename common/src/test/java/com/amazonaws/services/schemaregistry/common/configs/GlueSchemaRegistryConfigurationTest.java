@@ -447,4 +447,43 @@ public class GlueSchemaRegistryConfigurationTest {
 
         assertFalse(glueSchemaRegistryConfiguration.isJsonClassNameResolutionEnabled());
     }
+
+    /**
+     * Tests that the JSON class name allowlist is parsed correctly from a comma-separated string.
+     */
+    @Test
+    public void testJsonClassNameAllowlist_commaSeparated_isParsedCorrectly() {
+        Properties props = createTestProperties();
+        props.put(AWSSchemaRegistryConstants.JSON_CLASS_NAME_ALLOWLIST, "com.example.Foo, com.example.Bar");
+        GlueSchemaRegistryConfiguration config = new GlueSchemaRegistryConfiguration(props);
+
+        assertEquals(2, config.getJsonClassNameAllowlist().size());
+        assertTrue(config.getJsonClassNameAllowlist().contains("com.example.Foo"));
+        assertTrue(config.getJsonClassNameAllowlist().contains("com.example.Bar"));
+    }
+
+    /**
+     * Tests that the allowlist defaults to empty when not configured.
+     */
+    @Test
+    public void testJsonClassNameAllowlist_notConfigured_defaultsToEmpty() {
+        Properties props = createTestProperties();
+        GlueSchemaRegistryConfiguration config = new GlueSchemaRegistryConfiguration(props);
+
+        assertNotNull(config.getJsonClassNameAllowlist());
+        assertTrue(config.getJsonClassNameAllowlist().isEmpty());
+    }
+
+    /**
+     * Tests that the allowlist handles a single class correctly.
+     */
+    @Test
+    public void testJsonClassNameAllowlist_singleClass_isParsedCorrectly() {
+        Properties props = createTestProperties();
+        props.put(AWSSchemaRegistryConstants.JSON_CLASS_NAME_ALLOWLIST, "com.example.SingleClass");
+        GlueSchemaRegistryConfiguration config = new GlueSchemaRegistryConfiguration(props);
+
+        assertEquals(1, config.getJsonClassNameAllowlist().size());
+        assertTrue(config.getJsonClassNameAllowlist().contains("com.example.SingleClass"));
+    }
 }

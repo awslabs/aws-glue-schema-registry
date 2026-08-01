@@ -30,10 +30,14 @@ import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 import software.amazon.awssdk.services.glue.model.Compatibility;
 
 import java.net.URI;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -55,6 +59,7 @@ public class GlueSchemaRegistryConfiguration {
     private String description;
     private boolean schemaAutoRegistrationEnabled = false;
     private boolean jsonClassNameResolutionEnabled = false;
+    private Set<String> jsonClassNameAllowlist = Collections.emptySet();
     private Map<String, String> tags = new HashMap<>();
     private Map<String, String> metadata;
     private String secondaryDeserializer;
@@ -280,6 +285,13 @@ public class GlueSchemaRegistryConfiguration {
         } else {
             log.info("jsonClassNameResolutionEnabled is not defined in the properties. Using the default value {}",
                      jsonClassNameResolutionEnabled);
+        }
+
+        if (isPresent(configs, AWSSchemaRegistryConstants.JSON_CLASS_NAME_ALLOWLIST)) {
+            String allowlistValue = configs.get(AWSSchemaRegistryConstants.JSON_CLASS_NAME_ALLOWLIST).toString().trim();
+            if (!allowlistValue.isEmpty()) {
+                this.jsonClassNameAllowlist = new HashSet<>(Arrays.asList(allowlistValue.split("\\s*,\\s*")));
+            }
         }
     }
 

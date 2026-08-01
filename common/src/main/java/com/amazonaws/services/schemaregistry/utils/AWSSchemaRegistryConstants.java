@@ -178,10 +178,32 @@ public final class AWSSchemaRegistryConstants {
      * POJO via reflection. Defaults to {@code false} so that untrusted schemas
      * cannot drive instantiation of arbitrary classes; the deserializer returns
      * a {@code JsonDataWithSchema} regardless of the presence of
-     * {@code className}. Set to {@code true} to opt in to the legacy behavior of
-     * deserializing into the class named by the schema's {@code className} field.
+     * {@code className}.
+     * <p>
+     * Setting this to {@code true} is necessary but not sufficient to restore the
+     * legacy POJO behavior: each target class must also be listed in
+     * {@link #JSON_CLASS_NAME_ALLOWLIST}. With this enabled and the allowlist empty,
+     * every record still deserializes to {@code JsonDataWithSchema}.
+     *
+     * @see #JSON_CLASS_NAME_ALLOWLIST
      */
     public static final String JSON_CLASS_NAME_RESOLUTION_ENABLED = "jsonClassNameResolutionEnabled";
+
+    /**
+     * Comma-separated list of fully qualified class names that the JSON deserializer is
+     * permitted to instantiate when {@link #JSON_CLASS_NAME_RESOLUTION_ENABLED} is
+     * {@code true}. Surrounding whitespace around each entry is ignored, so
+     * {@code "com.example.Foo, com.example.Bar"} is equivalent to
+     * {@code "com.example.Foo,com.example.Bar"}.
+     * <p>
+     * Defaults to empty, meaning no class is resolved. A schema whose {@code className}
+     * is absent from this list deserializes to {@code JsonDataWithSchema} and the
+     * mismatch is logged at WARN level. Listing only the classes actually expected on
+     * the topic keeps an untrusted schema from selecting an unintended target type.
+     *
+     * @see #JSON_CLASS_NAME_RESOLUTION_ENABLED
+     */
+    public static final String JSON_CLASS_NAME_ALLOWLIST = "jsonClassNameAllowlist";
 
     /**
      * IAM Role ARN to assume for accessing the registry

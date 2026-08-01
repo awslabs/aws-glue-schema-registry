@@ -76,6 +76,14 @@ public class JsonDeserializerTest {
         return new JsonDeserializer(new GlueSchemaRegistryConfiguration(configs));
     }
 
+    private static JsonDeserializer deserializerWithAllowlist(String allowlist) {
+        Map<String, Object> configs = new HashMap<>();
+        configs.put(AWSSchemaRegistryConstants.AWS_REGION, "us-east-1");
+        configs.put(AWSSchemaRegistryConstants.JSON_CLASS_NAME_RESOLUTION_ENABLED, "true");
+        configs.put(AWSSchemaRegistryConstants.JSON_CLASS_NAME_ALLOWLIST, allowlist);
+        return new JsonDeserializer(new GlueSchemaRegistryConfiguration(configs));
+    }
+
     @Test
     public void testDeserialize_nullArgs_throwsException() {
         Schema testSchema = new Schema(GEOLOCATION_SCHEMA, DataFormat.JSON.name(), "testJson");
@@ -109,12 +117,65 @@ public class JsonDeserializerTest {
 
     @Test
     public void testDeserialize_schemaWithClassName_resolutionEnabled_returnsSpecificPojo() {
-        JsonDeserializer deserializer = deserializerWithClassNameResolution(true);
+        // Resolution enabled + className in allowlist -> typed POJO
+        JsonDeserializer deserializer = deserializerWithAllowlist(
+                "com.amazonaws.services.schemaregistry.serializers.json.Car");
         Schema schema = new Schema(CAR_SCHEMA, DataFormat.JSON.name(), "testJson");
 
         Object result = deserializer.deserialize(toSerializedBuffer(CAR_PAYLOAD), schema);
 
         assertTrue(result instanceof Car);
+    }
+
+    @Test
+    public void testDeserialize_schemaWithClassName_resolutionEnabled_noAllowlist_returnsJsonDataWithSchema() {
+        // Resolution enabled but no allowlist configured -> falls back to JsonDataWithSchema
+        JsonDeserializer deserializer = deserializerWithClassNameResolution(true);
+        Schema schema = new Schema(CAR_SCHEMA, DataFormat.JSON.name(), "testJson");
+
+        Object result = deserializer.deserialize(toSerializedBuffer(CAR_PAYLOAD), schema);
+
+        assertTrue(result instanceof JsonDataWithSchema);
+        assertEquals(CAR_PAYLOAD, ((JsonDataWithSchema) result).getPayload());
+    }
+
+    @Test
+    public void testDeserialize_schemaWithClassName_classNotInAllowlist_returnsJsonDataWithSchema() {
+        // Resolution enabled + allowlist configured but className NOT in it -> falls back
+        JsonDeserializer deserializer = deserializerWithAllowlist("com.example.SomeOtherClass");
+        Schema schema = new Schema(CAR_SCHEMA, DataFormat.JSON.name(), "testJson");
+
+        Object result = deserializer.deserialize(toSerializedBuffer(CAR_PAYLOAD), schema);
+
+        assertTrue(result instanceof JsonDataWithSchema);
+        assertEquals(CAR_PAYLOAD, ((JsonDataWithSchema) result).getPayload());
+    }
+
+    @Test
+    public void testDeserialize_schemaWithClassName_multipleClassesInAllowlist_returnsSpecificPojo() {
+        // Multiple classes in allowlist, target is one of them
+        JsonDeserializer deserializer = deserializerWithAllowlist(
+                "com.example.Foo, com.amazonaws.services.schemaregistry.serializers.json.Car, com.example.Bar");
+        Schema schema = new Schema(CAR_SCHEMA, DataFormat.JSON.name(), "testJson");
+
+        Object result = deserializer.deserialize(toSerializedBuffer(CAR_PAYLOAD), schema);
+
+        assertTrue(result instanceof Car);
+    }
+
+    @Test
+    public void testDeserialize_classNotInAllowlist_repeatedRecords_allReturnJsonDataWithSchema() {
+        // The allowlist-miss warning is only logged once per class name; verify that suppressing
+        // the log on later records does not change what those records deserialize to.
+        JsonDeserializer deserializer = deserializerWithAllowlist("com.example.SomeOtherClass");
+        Schema schema = new Schema(CAR_SCHEMA, DataFormat.JSON.name(), "testJson");
+
+        for (int i = 0; i < 3; i++) {
+            Object result = deserializer.deserialize(toSerializedBuffer(CAR_PAYLOAD), schema);
+
+            assertTrue(result instanceof JsonDataWithSchema, "record " + i + " should not resolve to a POJO");
+            assertEquals(CAR_PAYLOAD, ((JsonDataWithSchema) result).getPayload());
+        }
     }
 
     @Test

@@ -279,8 +279,10 @@ The recommended way to use the AWS Glue Schema Registry Library for Java is to c
 You could use a Java POJO and pass the object as a record.
 We use [mbknor-jackson-jsonschema](https://github.com/mbknor/mbknor-jackson-jsonSchema) to generate a JSON Schema for
  the POJO passed. This library can also inject additional information in the JSON Schema.
- 
- **GSR Library uses the "className" to fully classified class name to deserialize back to an Object of the POJO**
+
+ **GSR Library uses the "className" fully qualified class name to deserialize back to an Object of the POJO.
+ As of 1.1.28 this is opt-in — see [Deserializing JSON into a Java POJO (className resolution)](#deserializing-json-into-a-java-pojo-classname-resolution).
+ Without it, the deserializer returns a `JsonDataWithSchema` even when the schema carries a `className`.**
 
 Example class :
 
@@ -338,6 +340,37 @@ public class Car {
 }
 
 ```
+
+### Deserializing JSON into a Java POJO (className resolution)
+
+By default the JSON deserializer returns a `JsonDataWithSchema`, even when the schema carries a
+`className` property. Resolving that property would let the schema decide which class the
+deserializer instantiates via reflection, so it must be opted into explicitly.
+
+To deserialize into your POJO, set **both** properties on the consumer:
+
+```java
+    // Opt in to reading the schema's "className" property. Defaults to false.
+    properties.put(AWSSchemaRegistryConstants.JSON_CLASS_NAME_RESOLUTION_ENABLED, true);
+
+    // Comma-separated list of fully qualified class names the deserializer may instantiate.
+    // Defaults to empty, so this must be set for the flag above to have any effect.
+    properties.put(AWSSchemaRegistryConstants.JSON_CLASS_NAME_ALLOWLIST,
+                   "com.example.Car,com.example.Truck");
+```
+
+Notes:
+
+* Setting `JSON_CLASS_NAME_RESOLUTION_ENABLED` on its own has no effect — with an empty allowlist
+  every record still deserializes to `JsonDataWithSchema`.
+* A record whose `className` is not on the allowlist deserializes to `JsonDataWithSchema` and logs
+  a WARN naming the class (once per distinct class name, not once per record).
+* List only the classes you actually expect on the topic. Each entry is one class the deserializer
+  is permitted to construct from data it received.
+
+**This is a behavior change in 1.1.28.** Consumers that previously relied on automatic POJO
+deserialization must set both properties to keep working; otherwise they will receive
+`JsonDataWithSchema` and fail on the cast.
 
 ### Using AWS Glue Schema Registry with Kinesis Data Streams
 
