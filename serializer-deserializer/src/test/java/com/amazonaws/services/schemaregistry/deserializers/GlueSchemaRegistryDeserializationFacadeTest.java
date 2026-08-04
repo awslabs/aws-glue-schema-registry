@@ -41,6 +41,7 @@ import org.apache.avro.generic.GenericDatumWriter;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.io.BinaryEncoder;
 import org.apache.avro.io.EncoderFactory;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -316,6 +317,16 @@ public class GlueSchemaRegistryDeserializationFacadeTest {
     }
 
     /**
+     * Clears the className resolution opt-in from the shared configs map. Runs even when a test
+     * fails partway through, so an aborted test cannot leak the opt-in into later tests.
+     */
+    @AfterEach
+    public void disableJsonClassNameResolution() {
+        configs.remove(AWSSchemaRegistryConstants.JSON_CLASS_NAME_RESOLUTION_ENABLED);
+        configs.remove(AWSSchemaRegistryConstants.JSON_CLASS_NAME_ALLOWLIST);
+    }
+
+    /**
      * Tests the GlueSchemaRegistryemployeeDeserializationFacade instantiation when an no configuration is provided.
      */
     @Test
@@ -584,7 +595,6 @@ public class GlueSchemaRegistryDeserializationFacadeTest {
 
         configs.remove(AWSSchemaRegistryConstants.AVRO_RECORD_TYPE);
         configs.remove(AWSSchemaRegistryConstants.COMPRESSION_TYPE);
-        disableJsonClassNameResolution();
     }
 
     @ParameterizedTest
@@ -630,7 +640,6 @@ public class GlueSchemaRegistryDeserializationFacadeTest {
         configs.remove(AWSSchemaRegistryConstants.AVRO_RECORD_TYPE);
         configs.remove(AWSSchemaRegistryConstants.COMPRESSION_TYPE);
         configs.remove(AWSSchemaRegistryConstants.JACKSON_DESERIALIZATION_FEATURES);
-        disableJsonClassNameResolution();
     }
 
     /**
@@ -667,7 +676,6 @@ public class GlueSchemaRegistryDeserializationFacadeTest {
                 prepareDeserializerInput(serializedData)));
 
         configs.remove(AWSSchemaRegistryConstants.COMPRESSION_TYPE);
-        disableJsonClassNameResolution();
     }
 
     /**
@@ -898,14 +906,6 @@ public class GlueSchemaRegistryDeserializationFacadeTest {
     private void enableJsonClassNameResolution(String allowedClassName) {
         configs.put(AWSSchemaRegistryConstants.JSON_CLASS_NAME_RESOLUTION_ENABLED, true);
         configs.put(AWSSchemaRegistryConstants.JSON_CLASS_NAME_ALLOWLIST, allowedClassName);
-    }
-
-    /**
-     * Restores the default (disabled) className resolution behavior for subsequent tests.
-     */
-    private void disableJsonClassNameResolution() {
-        configs.remove(AWSSchemaRegistryConstants.JSON_CLASS_NAME_RESOLUTION_ENABLED);
-        configs.remove(AWSSchemaRegistryConstants.JSON_CLASS_NAME_ALLOWLIST);
     }
 
     private GlueSchemaRegistryDeserializationFacade createGSRDeserializationFacade() {

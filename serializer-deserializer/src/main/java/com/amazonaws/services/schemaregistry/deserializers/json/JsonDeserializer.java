@@ -49,6 +49,12 @@ import java.util.concurrent.ConcurrentHashMap;
 public class JsonDeserializer implements GlueSchemaRegistryDataFormatDeserializer {
     private static final GlueSchemaRegistryDeserializerDataParser DESERIALIZER_DATA_PARSER =
             GlueSchemaRegistryDeserializerDataParser.getInstance();
+    /**
+     * Upper bound on {@link #warnedClassNames}. The dedup key comes from the schema, which a
+     * producer controls, so an unbounded set would grow for the lifetime of the deserializer.
+     * Past this many distinct class names the warning is logged every time instead of once.
+     */
+    static final int MAX_WARNED_CLASS_NAMES = 100;
     private final ObjectMapper objectMapper;
     /** Class names already warned about, so the allowlist-miss warning is not logged per record. */
     @EqualsAndHashCode.Exclude
@@ -135,11 +141,16 @@ public class JsonDeserializer implements GlueSchemaRegistryDataFormatDeserialize
      * Warns that a schema's className was not allowlisted, at most once per distinct class name.
      * The condition is configuration-scoped rather than record-scoped, so logging it on every
      * record would flood the logs at message throughput rate.
+     * <p>
+     * Dedup state is capped at {@link #MAX_WARNED_CLASS_NAMES} entries so that a stream of
+     * distinct schema-supplied class names cannot grow it without bound. Beyond the cap the
+     * warning repeats rather than being suppressed, trading duplicate log lines for a fixed
+     * memory ceiling.
      *
      * @param className the class name named by the schema but absent from the allowlist
      */
     private void warnOnceForDisallowedClassName(String className) {
-        if (warnedClassNames.add(className)) {
+        if (warnedClassNames.size() >= MAX_WARNED_CLASS_NAMES || warnedClassNames.add(className)) {
             log.warn("className '{}' is not in the configured allowlist. "
                      + "Returning JsonDataWithSchema instead. "
                      + "Add the class to {} to enable typed deserialization.",

@@ -486,4 +486,45 @@ public class GlueSchemaRegistryConfigurationTest {
         assertEquals(1, config.getJsonClassNameAllowlist().size());
         assertTrue(config.getJsonClassNameAllowlist().contains("com.example.SingleClass"));
     }
+
+    /**
+     * Tests that stray commas do not put an empty, never-matching entry into the allowlist.
+     */
+    @Test
+    public void testJsonClassNameAllowlist_strayCommas_areIgnored() {
+        Properties props = createTestProperties();
+        props.put(AWSSchemaRegistryConstants.JSON_CLASS_NAME_ALLOWLIST,
+                  ",com.example.Foo,,com.example.Bar, ,");
+        GlueSchemaRegistryConfiguration config = new GlueSchemaRegistryConfiguration(props);
+
+        assertEquals(2, config.getJsonClassNameAllowlist().size());
+        assertTrue(config.getJsonClassNameAllowlist().contains("com.example.Foo"));
+        assertTrue(config.getJsonClassNameAllowlist().contains("com.example.Bar"));
+        assertFalse(config.getJsonClassNameAllowlist().contains(""));
+    }
+
+    /**
+     * Tests that an allowlist of only separators and whitespace leaves the default empty allowlist.
+     */
+    @Test
+    public void testJsonClassNameAllowlist_onlySeparators_defaultsToEmpty() {
+        Properties props = createTestProperties();
+        props.put(AWSSchemaRegistryConstants.JSON_CLASS_NAME_ALLOWLIST, " , , ");
+        GlueSchemaRegistryConfiguration config = new GlueSchemaRegistryConfiguration(props);
+
+        assertTrue(config.getJsonClassNameAllowlist().isEmpty());
+    }
+
+    /**
+     * Tests that a value that is neither "true" nor "false" leaves resolution disabled, which is
+     * the safe direction for a security opt-in.
+     */
+    @Test
+    public void testJsonClassNameResolution_unrecognizedValue_isDisabled() {
+        Properties props = createTestProperties();
+        props.put(AWSSchemaRegistryConstants.JSON_CLASS_NAME_RESOLUTION_ENABLED, "ture");
+        GlueSchemaRegistryConfiguration config = new GlueSchemaRegistryConfiguration(props);
+
+        assertFalse(config.isJsonClassNameResolutionEnabled());
+    }
 }

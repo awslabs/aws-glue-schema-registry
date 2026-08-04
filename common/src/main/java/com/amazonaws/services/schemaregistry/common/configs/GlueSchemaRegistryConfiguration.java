@@ -33,7 +33,6 @@ import java.net.URI;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -279,18 +278,31 @@ public class GlueSchemaRegistryConfiguration {
 
     private void validateAndSetJsonClassNameResolutionSetting(Map<String, ?> configs) {
         if (isPresent(configs, AWSSchemaRegistryConstants.JSON_CLASS_NAME_RESOLUTION_ENABLED)) {
-            this.jsonClassNameResolutionEnabled = Boolean.parseBoolean(
-                    configs.get(AWSSchemaRegistryConstants.JSON_CLASS_NAME_RESOLUTION_ENABLED)
-                            .toString());
+            String value = configs.get(AWSSchemaRegistryConstants.JSON_CLASS_NAME_RESOLUTION_ENABLED)
+                    .toString();
+            // Boolean.parseBoolean maps anything that is not "true" to false, so a typo such as
+            // "ture" would silently leave resolution off. Call that out rather than letting the
+            // user believe they opted in.
+            if (!"true".equalsIgnoreCase(value) && !"false".equalsIgnoreCase(value)) {
+                log.warn("Unrecognized value '{}' for {}; interpreting it as false.",
+                         value, AWSSchemaRegistryConstants.JSON_CLASS_NAME_RESOLUTION_ENABLED);
+            }
+            this.jsonClassNameResolutionEnabled = Boolean.parseBoolean(value);
         } else {
             log.info("jsonClassNameResolutionEnabled is not defined in the properties. Using the default value {}",
                      jsonClassNameResolutionEnabled);
         }
 
         if (isPresent(configs, AWSSchemaRegistryConstants.JSON_CLASS_NAME_ALLOWLIST)) {
-            String allowlistValue = configs.get(AWSSchemaRegistryConstants.JSON_CLASS_NAME_ALLOWLIST).toString().trim();
-            if (!allowlistValue.isEmpty()) {
-                this.jsonClassNameAllowlist = new HashSet<>(Arrays.asList(allowlistValue.split("\\s*,\\s*")));
+            String allowlistValue = configs.get(AWSSchemaRegistryConstants.JSON_CLASS_NAME_ALLOWLIST).toString();
+            // Drop empty entries so that leading, trailing or doubled commas do not put a
+            // never-matching "" into the allowlist.
+            Set<String> allowedClassNames = Arrays.stream(allowlistValue.split(","))
+                    .map(String::trim)
+                    .filter(className -> !className.isEmpty())
+                    .collect(Collectors.toSet());
+            if (!allowedClassNames.isEmpty()) {
+                this.jsonClassNameAllowlist = allowedClassNames;
             }
         }
     }

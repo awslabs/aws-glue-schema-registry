@@ -27,6 +27,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.amazonaws.services.schemaregistry.deserializers.json.JsonDeserializer.MAX_WARNED_CLASS_NAMES;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -74,6 +75,17 @@ public class JsonDeserializerTest {
         configs.put(AWSSchemaRegistryConstants.AWS_REGION, "us-east-1");
         configs.put(AWSSchemaRegistryConstants.JSON_CLASS_NAME_RESOLUTION_ENABLED, String.valueOf(enabled));
         return new JsonDeserializer(new GlueSchemaRegistryConfiguration(configs));
+    }
+
+    /**
+     * Builds a minimal JSON schema carrying the given {@code className}, to exercise the
+     * deserializer against class names a producer could have put in the schema.
+     */
+    private static String schemaWithClassName(String className) {
+        return "{\"$schema\":\"http://json-schema.org/draft-04/schema#\",\"title\":\"Simple Car "
+               + "Schema\",\"type\":\"object\",\"additionalProperties\":false,"
+               + "\"className\":\"" + className + "\","
+               + "\"properties\":{\"make\":{\"type\":\"string\"},\"model\":{\"type\":\"string\"}}}";
     }
 
     private static JsonDeserializer deserializerWithAllowlist(String allowlist) {
@@ -189,5 +201,24 @@ public class JsonDeserializerTest {
 
         assertTrue(result instanceof JsonDataWithSchema);
         assertEquals(CAR_PAYLOAD, ((JsonDataWithSchema) result).getPayload());
+    }
+
+    @Test
+    public void testDeserialize_manyDistinctDisallowedClassNames_warnStateStaysBounded() {
+        // The warning dedup key is the schema's className, which the producer controls. Feeding a
+        // stream of distinct disallowed names must not grow the dedup set without bound.
+        JsonDeserializer deserializer = deserializerWithAllowlist("com.example.SomeOtherClass");
+
+        for (int i = 0; i < 500; i++) {
+            Schema schema = new Schema(schemaWithClassName("com.example.Generated" + i),
+                                       DataFormat.JSON.name(), "testJson");
+
+            Object result = deserializer.deserialize(toSerializedBuffer(CAR_PAYLOAD), schema);
+
+            assertTrue(result instanceof JsonDataWithSchema, "record " + i + " should not resolve to a POJO");
+        }
+
+        assertTrue(deserializer.getWarnedClassNames().size() <= MAX_WARNED_CLASS_NAMES,
+                   "warned class name set grew past the cap: " + deserializer.getWarnedClassNames().size());
     }
 }
