@@ -893,11 +893,6 @@ public class GlueSchemaRegistryDeserializationFacadeTest {
     }
 
     /**
-     * Helper method to create GlueSchemaRegistryDeserializationFacade instance.
-     *
-     * @return GlueSchemaRegistryDeserializationFacade instance.
-     */
-    /**
      * Opts in to className-based JSON deserialization and allows the given class, so that a schema
      * carrying a {@code className} is deserialized into that POJO rather than a JsonDataWithSchema.
      *
@@ -908,6 +903,11 @@ public class GlueSchemaRegistryDeserializationFacadeTest {
         configs.put(AWSSchemaRegistryConstants.JSON_CLASS_NAME_ALLOWLIST, allowedClassName);
     }
 
+    /**
+     * Helper method to create GlueSchemaRegistryDeserializationFacade instance.
+     *
+     * @return GlueSchemaRegistryDeserializationFacade instance.
+     */
     private GlueSchemaRegistryDeserializationFacade createGSRDeserializationFacade() {
         GlueSchemaRegistryDeserializationFacade glueSchemaRegistryDeserializationFacade =
                 GlueSchemaRegistryDeserializationFacade.builder()

@@ -196,10 +196,22 @@ public final class AWSSchemaRegistryConstants {
      * {@code "com.example.Foo, com.example.Bar"} is equivalent to
      * {@code "com.example.Foo,com.example.Bar"}.
      * <p>
+     * An entry ending in {@code ".*"} allows every class directly under that package,
+     * so {@code "com.example.pojos.*"} matches {@code com.example.pojos.Car} but not
+     * {@code com.example.pojos.nested.Car} and not {@code com.example.pojosX.Car}. The
+     * match is a literal prefix test, not a regular expression; {@code *} is only
+     * meaningful as a trailing {@code ".*"} and is literal anywhere else. A bare
+     * {@code "*"} is rejected, since allowing every class on the classpath is the
+     * behavior this allowlist exists to prevent.
+     * <p>
+     * Prefer naming classes explicitly. A package entry also allows any class added to
+     * that package later, which is a decision made once here rather than reviewed at the
+     * point the class appears.
+     * <p>
      * Defaults to empty, meaning no class is resolved. A schema whose {@code className}
-     * is absent from this list deserializes to {@code JsonDataWithSchema} and the
-     * mismatch is logged at WARN level. Listing only the classes actually expected on
-     * the topic keeps an untrusted schema from selecting an unintended target type.
+     * matches no entry deserializes to {@code JsonDataWithSchema} and the mismatch is
+     * logged at WARN level. Listing only the classes actually expected on the topic keeps
+     * an untrusted schema from selecting an unintended target type.
      *
      * @see #JSON_CLASS_NAME_RESOLUTION_ENABLED
      */

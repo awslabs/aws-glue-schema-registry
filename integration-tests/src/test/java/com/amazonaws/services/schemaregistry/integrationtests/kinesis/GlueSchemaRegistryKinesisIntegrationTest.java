@@ -115,6 +115,10 @@ public class GlueSchemaRegistryKinesisIntegrationTest {
     private static final String SCHEMA_REGISTRY_ENDPOINT_OVERRIDE = GlueSchemaRegistryConnectionProperties.ENDPOINT;
     private static final String REGION = GlueSchemaRegistryConnectionProperties.REGION;
     private static final String TEST_KINESIS_STREAM_PREFIX = "gsr-integ-test-kinesis-stream-";
+    // The class named by the specific-record JSON generator's schema, allowlisted so that
+    // JSON + SPECIFIC_RECORD deserializes back into the POJO rather than a JsonDataWithSchema.
+    private static final String JSON_SPECIFIC_RECORD_CLASS_NAME =
+            "com.amazonaws.services.schemaregistry.integrationtests.generators.Car";
 
     // Testing with single shard - can be increased but will require code changes to iterate from multiple shard Ids
     private static final int SHARD_COUNT = 1;
@@ -194,6 +198,13 @@ public class GlueSchemaRegistryKinesisIntegrationTest {
             configs.setProtobufMessageType(ProtobufMessageType.DYNAMIC_MESSAGE);
         } else {
             configs.setAvroRecordType(avroRecordType);
+        }
+        // As of 2.0.0 the JSON deserializer only resolves a schema's "className" into a POJO when
+        // resolution is opted into and the class is allowlisted. Only the specific-record JSON
+        // generator emits a schema carrying a className, so opt in for that combination alone.
+        if (dataFormat.equals(DataFormat.JSON) && AvroRecordType.SPECIFIC_RECORD.equals(avroRecordType)) {
+            configs.setJsonClassNameResolutionEnabled(true);
+            configs.setJsonClassNameAllowlist(Collections.singleton(JSON_SPECIFIC_RECORD_CLASS_NAME));
         }
         configs.setCompatibilitySetting(compatibility);
         configs.setCompressionType(compression);

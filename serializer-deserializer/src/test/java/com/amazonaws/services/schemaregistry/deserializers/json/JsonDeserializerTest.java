@@ -29,6 +29,7 @@ import java.util.Map;
 
 import static com.amazonaws.services.schemaregistry.deserializers.json.JsonDeserializer.MAX_WARNED_CLASS_NAMES;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -204,6 +205,30 @@ public class JsonDeserializerTest {
     }
 
     @Test
+    public void testDeserialize_classNameInAllowedPackage_returnsSpecificPojo() {
+        // A package entry spares consumers from listing every POJO on the topic.
+        JsonDeserializer deserializer =
+                deserializerWithAllowlist("com.amazonaws.services.schemaregistry.serializers.json.*");
+        Schema schema = new Schema(CAR_SCHEMA, DataFormat.JSON.name(), "testJson");
+
+        Object result = deserializer.deserialize(toSerializedBuffer(CAR_PAYLOAD), schema);
+
+        assertTrue(result instanceof Car);
+    }
+
+    @Test
+    public void testDeserialize_classNameOutsideAllowedPackage_returnsJsonDataWithSchema() {
+        // The allowed package is a sibling of the one the schema names, so it must not match.
+        JsonDeserializer deserializer = deserializerWithAllowlist("com.amazonaws.services.schemaregistry.other.*");
+        Schema schema = new Schema(CAR_SCHEMA, DataFormat.JSON.name(), "testJson");
+
+        Object result = deserializer.deserialize(toSerializedBuffer(CAR_PAYLOAD), schema);
+
+        assertTrue(result instanceof JsonDataWithSchema);
+        assertEquals(CAR_PAYLOAD, ((JsonDataWithSchema) result).getPayload());
+    }
+
+    @Test
     public void testDeserialize_manyDistinctDisallowedClassNames_warnStateStaysBounded() {
         // The warning dedup key is the schema's className, which the producer controls. Feeding a
         // stream of distinct disallowed names must not grow the dedup set without bound.
@@ -220,5 +245,55 @@ public class JsonDeserializerTest {
 
         assertTrue(deserializer.getWarnedClassNames().size() <= MAX_WARNED_CLASS_NAMES,
                    "warned class name set grew past the cap: " + deserializer.getWarnedClassNames().size());
+    }
+
+    @Test
+    public void testDeserialize_belowWarnCap_doesNotAnnounceSuppression() {
+        // Suppression must not kick in for a class count a real consumer could reach.
+        JsonDeserializer deserializer = deserializerWithAllowlist("com.example.SomeOtherClass");
+
+        for (int i = 0; i < MAX_WARNED_CLASS_NAMES - 1; i++) {
+            Schema schema = new Schema(schemaWithClassName("com.example.Generated" + i),
+                                       DataFormat.JSON.name(), "testJson");
+            deserializer.deserialize(toSerializedBuffer(CAR_PAYLOAD), schema);
+        }
+
+        assertEquals(MAX_WARNED_CLASS_NAMES - 1, deserializer.getWarnedClassNames().size());
+        assertFalse(deserializer.getWarnCapNoticeEmitted().get(),
+                    "suppression was announced before the cap was reached");
+    }
+
+    @Test
+    public void testDeserialize_pastWarnCap_announcesSuppressionOnceAndStopsCollecting() {
+        // Past the cap the deserializer stops warning rather than warning per record, and says so
+        // once so that the silence is not itself a surprise.
+        JsonDeserializer deserializer = deserializerWithAllowlist("com.example.SomeOtherClass");
+
+        for (int i = 0; i < MAX_WARNED_CLASS_NAMES + 50; i++) {
+            Schema schema = new Schema(schemaWithClassName("com.example.Generated" + i),
+                                       DataFormat.JSON.name(), "testJson");
+            deserializer.deserialize(toSerializedBuffer(CAR_PAYLOAD), schema);
+        }
+
+        // Single-threaded, so the cap is exact: names seen after it are not retained at all.
+        assertEquals(MAX_WARNED_CLASS_NAMES, deserializer.getWarnedClassNames().size());
+        assertFalse(deserializer.getWarnedClassNames().contains("com.example.Generated" + MAX_WARNED_CLASS_NAMES),
+                    "a class name seen past the cap was still added to the dedup set");
+        assertTrue(deserializer.getWarnCapNoticeEmitted().get(),
+                   "reaching the cap did not announce that warnings are suppressed");
+    }
+
+    @Test
+    public void testDeserialize_classNameInSubPackageOfAllowedPackage_returnsJsonDataWithSchema() {
+        // The allowed package is the parent of the one the schema names. Allowing a package is not
+        // a decision to allow everything beneath it, so this must not resolve.
+        JsonDeserializer deserializer =
+                deserializerWithAllowlist("com.amazonaws.services.schemaregistry.serializers.*");
+        Schema schema = new Schema(CAR_SCHEMA, DataFormat.JSON.name(), "testJson");
+
+        Object result = deserializer.deserialize(toSerializedBuffer(CAR_PAYLOAD), schema);
+
+        assertTrue(result instanceof JsonDataWithSchema);
+        assertEquals(CAR_PAYLOAD, ((JsonDataWithSchema) result).getPayload());
     }
 }
