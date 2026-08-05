@@ -281,7 +281,7 @@ We use [mbknor-jackson-jsonschema](https://github.com/mbknor/mbknor-jackson-json
  the POJO passed. This library can also inject additional information in the JSON Schema.
 
  **GSR Library uses the "className" fully qualified class name to deserialize back to an Object of the POJO.
- As of 2.0.0, className resolution is opt-in — see
+ Introduced in 2.0.0; disabled by default — see
  [Deserializing JSON into a Java POJO (className resolution)](#deserializing-json-into-a-java-pojo-classname-resolution).
  Until you enable it, the deserializer returns a `JsonDataWithSchema` even when the schema carries a `className`.**
 
