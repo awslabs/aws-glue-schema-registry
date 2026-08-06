@@ -62,7 +62,7 @@ The recommended way to use the AWS Glue Schema Registry Library for Java is to c
   <dependency>
       <groupId>software.amazon.glue</groupId>
       <artifactId>schema-registry-serde</artifactId>
-      <version>1.1.26</version>
+      <version>2.0.0</version>
   </dependency>
   ```
 ### Code Example
@@ -279,8 +279,11 @@ The recommended way to use the AWS Glue Schema Registry Library for Java is to c
 You could use a Java POJO and pass the object as a record.
 We use [mbknor-jackson-jsonschema](https://github.com/mbknor/mbknor-jackson-jsonSchema) to generate a JSON Schema for
  the POJO passed. This library can also inject additional information in the JSON Schema.
- 
- **GSR Library uses the "className" to fully classified class name to deserialize back to an Object of the POJO**
+
+ **GSR Library uses the "className" fully qualified class name to deserialize back to an Object of the POJO.
+ Introduced in 2.0.0; disabled by default — see
+ [Deserializing JSON into a Java POJO (className resolution)](#deserializing-json-into-a-java-pojo-classname-resolution).
+ Until you enable it, the deserializer returns a `JsonDataWithSchema` even when the schema carries a `className`.**
 
 Example class :
 
@@ -338,6 +341,52 @@ public class Car {
 }
 
 ```
+
+### Deserializing JSON into a Java POJO (className resolution)
+
+By default the JSON deserializer returns a `JsonDataWithSchema`, even when the schema carries a
+`className` property. Resolving that property would let the schema decide which class the
+deserializer instantiates via reflection, so it must be opted into explicitly.
+
+To deserialize into your POJO, set **both** properties on the consumer:
+
+```java
+    // Opt in to reading the schema's "className" property. Defaults to false.
+    properties.put(AWSSchemaRegistryConstants.JSON_CLASS_NAME_RESOLUTION_ENABLED, true);
+
+    // Comma-separated list of fully qualified class names the deserializer may instantiate.
+    // Defaults to empty, so this must be set for the flag above to have any effect.
+    properties.put(AWSSchemaRegistryConstants.JSON_CLASS_NAME_ALLOWLIST,
+                   "com.example.Car,com.example.Truck");
+```
+
+An entry ending in `.*` allows every class directly in that package, which avoids listing each POJO
+individually:
+
+```java
+    properties.put(AWSSchemaRegistryConstants.JSON_CLASS_NAME_ALLOWLIST, "com.example.pojos.*");
+```
+
+Notes:
+
+* Setting `JSON_CLASS_NAME_RESOLUTION_ENABLED` on its own has no effect — with an empty allowlist
+  every record still deserializes to `JsonDataWithSchema`.
+* A record whose `className` matches no allowlist entry deserializes to `JsonDataWithSchema` and
+  logs a WARN naming the class, once per distinct class name rather than once per record. Past 100
+  distinct names the deserializer logs that it is suppressing further warnings and stops, so a
+  stream of unrecognized class names can neither flood the log nor grow its dedup state without
+  bound.
+* List only the classes you actually expect on the topic. Each entry is one class the deserializer
+  is permitted to construct from data it received.
+* A package entry matches direct members only: `com.example.pojos.*` allows
+  `com.example.pojos.Car` but not `com.example.pojos.nested.Car`. Entries are matched literally,
+  not as regular expressions, and a bare `*` is rejected.
+* Prefer naming classes explicitly. A package entry also allows any class added to that package
+  later, which is a decision you make once here rather than reviewing when the class appears.
+
+**This is a breaking behavior change in 2.0.0.** Consumers that previously relied on automatic POJO
+deserialization must set both properties to keep working; otherwise they will receive
+`JsonDataWithSchema` and fail on the cast.
 
 ### Using AWS Glue Schema Registry with Kinesis Data Streams
 
@@ -492,7 +541,7 @@ It should look like this
 * If using bash, run the below commands to set-up your CLASSPATH in your bash_profile. (For any other shell, update the environment accordingly.)
   ```bash
       echo 'export GSR_LIB_BASE_DIR=<>' >>~/.bash_profile
-      echo 'export GSR_LIB_VERSION=1.1.26' >>~/.bash_profile
+      echo 'export GSR_LIB_VERSION=2.0.0' >>~/.bash_profile
       echo 'export KAFKA_HOME=<your kafka installation directory>' >>~/.bash_profile
       echo 'export CLASSPATH=$CLASSPATH:$GSR_LIB_BASE_DIR/avro-kafkaconnect-converter/target/schema-registry-kafkaconnect-converter-$GSR_LIB_VERSION.jar:$GSR_LIB_BASE_DIR/common/target/schema-registry-common-$GSR_LIB_VERSION.jar:$GSR_LIB_BASE_DIR/avro-serializer-deserializer/target/schema-registry-serde-$GSR_LIB_VERSION.jar' >>~/.bash_profile
       source ~/.bash_profile
@@ -551,7 +600,7 @@ It should look like this
   <dependency>
         <groupId>software.amazon.glue</groupId>
         <artifactId>schema-registry-kafkastreams-serde</artifactId>
-        <version>1.1.26</version>
+        <version>2.0.0</version>
   </dependency>
   ```
 
@@ -589,7 +638,7 @@ repository for the latest support: [Avro SerializationSchema and Deserialization
   <dependency>
        <groupId>software.amazon.glue</groupId>
        <artifactId>schema-registry-flink-serde</artifactId>
-       <version>1.1.26</version>
+       <version>2.0.0</version>
   </dependency>
   ```
 ### Code Example

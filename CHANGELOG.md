@@ -106,3 +106,8 @@ GlueSchemaRegistryKafkaSerializer/GlueSchemaRegistryKafkaDeserializer.
 ## Release 1.1.27
 * Introduce lz4 shim and dependency upgrade to fix vulnerabilities
 * Updated local integration tests to make requests to local stack syncrounysly to correct for flakyness
+
+## Release 2.0.0
+* **Breaking change.** JSON deserializer no longer resolves the schema's `className` field into a POJO by default; it now returns `JsonDataWithSchema`. Consumers that relied on automatic POJO deserialization will fail on the cast. To restore the previous behavior, set **both** of the following:
+  * `jsonClassNameResolutionEnabled=true`
+  * `jsonClassNameAllowlist=<comma-separated fully qualified class names>` — only classes on this list are instantiated. An entry ending in `.*` allows every class directly in that package, so `com.example.pojos.*` avoids listing each POJO; entries are matched literally rather than as regular expressions, and a bare `*` is rejected. Setting `jsonClassNameResolutionEnabled` alone has no effect, since the allowlist defaults to empty; records whose `className` matches no entry deserialize to `JsonDataWithSchema` and log a WARN.

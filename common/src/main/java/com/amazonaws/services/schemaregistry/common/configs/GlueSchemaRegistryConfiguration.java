@@ -30,11 +30,15 @@ import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 import software.amazon.awssdk.services.glue.model.Compatibility;
 
 import java.net.URI;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Glue Schema Registry Configuration entries.
@@ -43,6 +47,11 @@ import java.util.stream.Collectors;
 @Data
 public class GlueSchemaRegistryConfiguration {
     private static final String DELIMITER = "-";
+    /**
+     * Suffix marking an allowlist entry as a package rather than a class, as in
+     * {@code "com.example.pojos.*"}.
+     */
+    private static final String PACKAGE_WILDCARD_SUFFIX = ".*";
     private AWSSchemaRegistryConstants.COMPRESSION compressionType = AWSSchemaRegistryConstants.COMPRESSION.NONE;
     private String endPoint;
     private String region;
@@ -54,6 +63,8 @@ public class GlueSchemaRegistryConfiguration {
     private Compatibility compatibilitySetting;
     private String description;
     private boolean schemaAutoRegistrationEnabled = false;
+    private boolean jsonClassNameResolutionEnabled = false;
+    private Set<String> jsonClassNameAllowlist = Collections.emptySet();
     private Map<String, String> tags = new HashMap<>();
     private Map<String, String> metadata;
     private String secondaryDeserializer;
@@ -97,6 +108,7 @@ public class GlueSchemaRegistryConfiguration {
         validateAndSetCompatibility(configs);
         validateAndSetCompressionType(configs);
         validateAndSetSchemaAutoRegistrationSetting(configs);
+        validateAndSetJsonClassNameResolutionSetting(configs);
         validateAndSetJacksonSerializationFeatures(configs);
         validateAndSetJacksonDeserializationFeatures(configs);
         validateAndSetTags(configs);
@@ -268,6 +280,125 @@ public class GlueSchemaRegistryConfiguration {
             log.info("schemaAutoRegistrationEnabled is not defined in the properties. Using the default value {}",
                      schemaAutoRegistrationEnabled);
         }
+    }
+
+    private void validateAndSetJsonClassNameResolutionSetting(Map<String, ?> configs) {
+        if (isPresent(configs, AWSSchemaRegistryConstants.JSON_CLASS_NAME_RESOLUTION_ENABLED)) {
+            String value = configs.get(AWSSchemaRegistryConstants.JSON_CLASS_NAME_RESOLUTION_ENABLED)
+                    .toString();
+            // Boolean.parseBoolean maps anything that is not "true" to false, so a typo such as
+            // "ture" would silently leave resolution off. Call that out rather than letting the
+            // user believe they opted in.
+            if (!"true".equalsIgnoreCase(value) && !"false".equalsIgnoreCase(value)) {
+                log.warn("Unrecognized value '{}' for {}; interpreting it as false.",
+                         value, AWSSchemaRegistryConstants.JSON_CLASS_NAME_RESOLUTION_ENABLED);
+            }
+            this.jsonClassNameResolutionEnabled = Boolean.parseBoolean(value);
+        } else {
+            log.info("jsonClassNameResolutionEnabled is not defined in the properties. Using the default value {}",
+                     jsonClassNameResolutionEnabled);
+        }
+
+        if (isPresent(configs, AWSSchemaRegistryConstants.JSON_CLASS_NAME_ALLOWLIST)) {
+            Object allowlistValue = configs.get(AWSSchemaRegistryConstants.JSON_CLASS_NAME_ALLOWLIST);
+            // Accept either a comma-separated String or a List, matching how the other collection
+            // configs (tags, Jackson features) are supplied. Anything else would otherwise fall
+            // through to toString() and silently produce a single never-matching entry.
+            Stream<String> rawEntries;
+            if (allowlistValue instanceof List) {
+                rawEntries = ((List<?>) allowlistValue).stream().map(String::valueOf);
+            } else if (allowlistValue instanceof String) {
+                rawEntries = Arrays.stream(((String) allowlistValue).split(","));
+            } else {
+                throw new AWSSchemaRegistryException(String.format(
+                        "%s must be a comma-separated String or a List of class names.",
+                        AWSSchemaRegistryConstants.JSON_CLASS_NAME_ALLOWLIST));
+            }
+            // Drop empty entries so that leading, trailing or doubled commas do not put a
+            // never-matching "" into the allowlist.
+            Set<String> allowedClassNames = rawEntries
+                    .map(String::trim)
+                    .filter(className -> !className.isEmpty())
+                    .collect(Collectors.toSet());
+            // A bare "*" would allow every class on the classpath, which is the behavior this
+            // allowlist exists to prevent. Reject it rather than honoring it, so the opt-in cannot
+            // be widened back to the pre-2.0.0 default by a single character.
+            if (allowedClassNames.contains("*") || allowedClassNames.contains(PACKAGE_WILDCARD_SUFFIX)) {
+                throw new AWSSchemaRegistryException(String.format(
+                        "%s must not contain a bare wildcard. List classes explicitly, or scope a "
+                        + "package with a prefix such as \"com.example.pojos.*\".",
+                        AWSSchemaRegistryConstants.JSON_CLASS_NAME_ALLOWLIST));
+            }
+            if (!allowedClassNames.isEmpty()) {
+                this.jsonClassNameAllowlist = allowedClassNames;
+            }
+        }
+    }
+
+    /**
+     * Whether the JSON deserializer may instantiate {@code className}, given the configured
+     * allowlist. An entry matches either exactly, or as a package when it ends in
+     * {@code ".*"}: {@code "com.example.pojos.*"} allows {@code com.example.pojos.Car} but
+     * not {@code com.example.pojos.nested.Car}, since a nested package is a separate
+     * decision from the one the operator made.
+     * <p>
+     * Matching is a literal prefix test rather than a regular expression. Patterns supplied
+     * by configuration would otherwise have to be trusted not to match more than intended,
+     * and would put untrusted schema content through a regex engine.
+     * <p>
+     * A bare wildcard never matches, independently of the rejection in
+     * {@code validateAndSetJsonClassNameResolutionSetting}. That rejection only covers entries
+     * parsed from configuration, while the generated {@code setJsonClassNameAllowlist} can
+     * install a set directly, so the rule is enforced at the point of use as well.
+     *
+     * @param className fully qualified class name named by the schema
+     * @return {@code true} if the allowlist permits instantiating it
+     */
+    public boolean isClassNameAllowed(String className) {
+        if (className == null || jsonClassNameAllowlist == null) {
+            return false;
+        }
+        if (jsonClassNameAllowlist.contains(className)) {
+            return true;
+        }
+        return jsonClassNameAllowlist.stream()
+                .filter(entry -> entry.endsWith(PACKAGE_WILDCARD_SUFFIX))
+                .filter(entry -> !isBareWildcard(entry))
+                .anyMatch(entry -> isDirectlyInPackage(className, entry));
+    }
+
+    /**
+     * Whether an allowlist entry is a wildcard with no package to scope it. Honoring one would
+     * allow every class on the classpath, which is the behavior this allowlist exists to prevent.
+     *
+     * @param entry allowlist entry, already trimmed
+     * @return {@code true} if the entry is {@code "*"} or {@code ".*"}
+     */
+    private static boolean isBareWildcard(String entry) {
+        return "*".equals(entry) || PACKAGE_WILDCARD_SUFFIX.equals(entry);
+    }
+
+    /**
+     * Whether {@code className} sits directly in the package named by a {@code ".*"} allowlist
+     * entry, with no further package segment. The remainder after the package prefix must be a
+     * simple class name, so {@code com.example.pojos.nested.Car} does not match
+     * {@code com.example.pojos.*}. Nested classes such as {@code Car$Engine} do match, as they
+     * are declared inside a class that the entry already allows.
+     *
+     * @param className    fully qualified class name named by the schema
+     * @param packageEntry allowlist entry ending in {@code ".*"}
+     * @return {@code true} if the class is a direct member of that package
+     */
+    private static boolean isDirectlyInPackage(String className,
+                                               String packageEntry) {
+        // Drop only the "*", keeping the dot before it, so that "com.example.pojos.*" cannot
+        // match "com.example.pojosX".
+        String packagePrefix = packageEntry.substring(0, packageEntry.length() - 1);
+        if (!className.startsWith(packagePrefix)) {
+            return false;
+        }
+        String remainder = className.substring(packagePrefix.length());
+        return !remainder.isEmpty() && remainder.indexOf('.') < 0;
     }
 
     private void validateAndSetTags(Map<String, ?> configs) throws AWSSchemaRegistryException {

@@ -24,5 +24,9 @@ public class ConsumerProperties implements GlueSchemaRegistryConnectionPropertie
     private String topicName;
     private String avroRecordType;
     private String protobufMessageType;
+    // As of 2.0.0, resolving a JSON schema's "className" into a POJO is opt-in and gated behind an
+    // allowlist. Consumers expecting a typed POJO back must set both of these.
+    private Boolean jsonClassNameResolutionEnabled;
+    private String jsonClassNameAllowlist;
 }
 
