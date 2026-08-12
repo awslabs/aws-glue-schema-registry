@@ -454,7 +454,7 @@ public class GlueSchemaRegistryConfiguration {
         }
     }
 
-    private boolean isPresent(Map<String, ?> configs,
+    public boolean isPresent(Map<String, ?> configs,
                               String key) {
         if (!GlueSchemaRegistryUtils.getInstance()
                 .checkIfPresentInMap(configs, key)) {
