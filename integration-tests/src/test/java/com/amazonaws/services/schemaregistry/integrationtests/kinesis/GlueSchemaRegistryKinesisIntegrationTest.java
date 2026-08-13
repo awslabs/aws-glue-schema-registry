@@ -70,6 +70,7 @@ import software.amazon.awssdk.services.kinesis.model.GetRecordsResponse;
 import software.amazon.awssdk.services.kinesis.model.GetShardIteratorRequest;
 import software.amazon.awssdk.services.kinesis.model.PutRecordRequest;
 import software.amazon.awssdk.services.kinesis.model.Record;
+import software.amazon.awssdk.services.kinesis.model.ResourceInUseException;
 import software.amazon.awssdk.services.kinesis.model.ShardIteratorType;
 import software.amazon.awssdk.services.kinesis.model.StreamStatus;
 import software.amazon.kinesis.common.ConfigsBuilder;
@@ -256,8 +257,21 @@ public class GlueSchemaRegistryKinesisIntegrationTest {
                 .streamName(streamName)
                 .shardCount(SHARD_COUNT)
                 .build();
-        kinesisClient.createStream(createStreamRequest)
-                .get();
+        try {
+            kinesisClient.createStream(createStreamRequest)
+                    .get();
+        } catch (ExecutionException e) {
+            // CreateStream is not idempotent and carries no idempotency token. If the first
+            // attempt is slow enough that the SDK classifies it as a retryable failure, the
+            // retry is a second, genuinely new create, and it reports ResourceInUseException
+            // even though the original attempt succeeded server-side. The postcondition this
+            // fixture needs is that the stream exists, and that exception is evidence it does,
+            // so it is not a failure. The Awaitility barrier below still gates on ACTIVE.
+            if (!(e.getCause() instanceof ResourceInUseException)) {
+                throw e;
+            }
+            LOGGER.info("Kinesis Stream {} already exists; a create was retried. Continuing.", streamName);
+        }
         Awaitility.await()
                 .until(() -> StreamStatus.ACTIVE.equals(kinesisClient.describeStream(DescribeStreamRequest.builder()
                                                                                              .streamName(streamName)
