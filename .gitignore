@@ -26,6 +26,7 @@ integration-tests/volume/lib/kinesis-local/0.4.12/package-lock.json
 integration-tests/volume/cache/server.test.pem.crt
 integration-tests/volume/cache/server.test.pem.key
 integration-tests/volume/lib/kinesis-local/0.4.12/package.json
+integration-tests/volume/lib/kinesis-local/0.5.2
 
 multilang-schema-registry/csharp/AWSGsrSerDe/AWSGsrSerDe/glue_schema_registry_deserializer.cs
 multilang-schema-registry/csharp/AWSGsrSerDe/AWSGsrSerDe/glue_schema_registry_schema.cs
