@@ -21,6 +21,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.kjetland.jackson.jsonSchema.JsonSchemaConfig;
 import com.kjetland.jackson.jsonSchema.JsonSchemaGenerator;
 import lombok.Builder;
 import lombok.Getter;
@@ -64,7 +65,7 @@ public class JsonSerializer implements GlueSchemaRegistryDataFormatSerializer {
                         .forEach(this.objectMapper::enable);
             }
         }
-        this.jsonSchemaGenerator = new JsonSchemaGenerator(this.objectMapper);
+        this.jsonSchemaGenerator = buildJsonSchemaGenerator(this.objectMapper, configs);
     }
 
     /**
@@ -183,5 +184,14 @@ public class JsonSerializer implements GlueSchemaRegistryDataFormatSerializer {
         JsonNode schemaNode = getSchemaNode(jsonDataWithSchema);
         JsonNode dataNode = getDataNode(jsonDataWithSchema);
         JSON_VALIDATOR.validateDataWithSchema(schemaNode, dataNode);
+    }
+
+    private JsonSchemaGenerator buildJsonSchemaGenerator(ObjectMapper objectMapper,
+                                                         GlueSchemaRegistryConfiguration configs) {
+        if (configs != null && configs.isJsonSchemaNullableEnabled()) {
+            JsonSchemaConfig jsonSchemaConfig = JsonSchemaConfig.nullableJsonSchemaDraft4();
+            return new JsonSchemaGenerator(objectMapper, jsonSchemaConfig);
+        }
+        return new JsonSchemaGenerator(objectMapper);
     }
 }

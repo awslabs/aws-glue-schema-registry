@@ -78,6 +78,7 @@ public class GlueSchemaRegistryConfiguration {
 
     private List<SerializationFeature> jacksonSerializationFeatures;
     private List<DeserializationFeature> jacksonDeserializationFeatures;
+    private boolean jsonSchemaNullableEnabled = false;
 
     public GlueSchemaRegistryConfiguration(String region) {
         Map<String, Object> config = new HashMap<>();
@@ -111,6 +112,7 @@ public class GlueSchemaRegistryConfiguration {
         validateAndSetJsonClassNameResolutionSetting(configs);
         validateAndSetJacksonSerializationFeatures(configs);
         validateAndSetJacksonDeserializationFeatures(configs);
+        validateAndSetJsonSchemaNullableEnabled(configs);
         validateAndSetTags(configs);
         validateAndSetMetadata(configs);
         validateAndSetUserAgent(configs);
@@ -451,6 +453,13 @@ public class GlueSchemaRegistryConfiguration {
             } else {
                 throw new AWSSchemaRegistryException("Jackson Deserialization features should be a list");
             }
+        }
+    }
+
+    private void validateAndSetJsonSchemaNullableEnabled(Map<String, ?> configs) {
+        if (isPresent(configs, AWSSchemaRegistryConstants.JSON_SCHEMA_NULLABLE_ENABLED)) {
+            this.jsonSchemaNullableEnabled = Boolean.parseBoolean(
+                    configs.get(AWSSchemaRegistryConstants.JSON_SCHEMA_NULLABLE_ENABLED).toString());
         }
     }
 
