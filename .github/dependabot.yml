@@ -4,13 +4,19 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: "maven"
     directory: "/"
     schedule:
       interval: "weekly"
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: "nuget"
     directory: "/multilang-schema-registry/csharp/AWSGsrSerDe"
     schedule:
       interval: "weekly"
+    cooldown:
+      default-days: 7
