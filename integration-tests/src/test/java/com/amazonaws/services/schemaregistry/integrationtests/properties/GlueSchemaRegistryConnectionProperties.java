@@ -19,4 +19,8 @@ public interface GlueSchemaRegistryConnectionProperties {
     // Glue Service Endpoint
     String REGION = Regions.getCurrentRegion() == null ? "us-east-2" : Regions.getCurrentRegion().getName().toLowerCase();
     String ENDPOINT = String.format("https://glue.%s.amazonaws.com", REGION);
+    String SRC_REGION = Regions.getCurrentRegion() == null ? "us-east-1" : Regions.getCurrentRegion().getName().toLowerCase();
+    String SRC_ENDPOINT = String.format("https://glue.%s.amazonaws.com", SRC_REGION);
+    String DEST_REGION = "us-east-2";
+    String DEST_ENDPOINT = String.format("https://glue.%s.amazonaws.com", DEST_REGION);
 }

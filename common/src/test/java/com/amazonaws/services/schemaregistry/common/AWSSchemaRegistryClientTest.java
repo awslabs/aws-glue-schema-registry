@@ -38,10 +38,14 @@ import software.amazon.awssdk.services.glue.model.DataFormat;
 import software.amazon.awssdk.services.glue.model.EntityNotFoundException;
 import software.amazon.awssdk.services.glue.model.GetSchemaByDefinitionRequest;
 import software.amazon.awssdk.services.glue.model.GetSchemaByDefinitionResponse;
+import software.amazon.awssdk.services.glue.model.GetSchemaRequest;
+import software.amazon.awssdk.services.glue.model.GetSchemaResponse;
 import software.amazon.awssdk.services.glue.model.GetSchemaVersionRequest;
 import software.amazon.awssdk.services.glue.model.GetSchemaVersionResponse;
 import software.amazon.awssdk.services.glue.model.GetTagsRequest;
 import software.amazon.awssdk.services.glue.model.GetTagsResponse;
+import software.amazon.awssdk.services.glue.model.ListSchemaVersionsRequest;
+import software.amazon.awssdk.services.glue.model.ListSchemaVersionsResponse;
 import software.amazon.awssdk.services.glue.model.MetadataKeyValuePair;
 import software.amazon.awssdk.services.glue.model.PutSchemaVersionMetadataRequest;
 import software.amazon.awssdk.services.glue.model.PutSchemaVersionMetadataResponse;
@@ -51,6 +55,7 @@ import software.amazon.awssdk.services.glue.model.RegisterSchemaVersionRequest;
 import software.amazon.awssdk.services.glue.model.RegisterSchemaVersionResponse;
 import software.amazon.awssdk.services.glue.model.RegistryId;
 import software.amazon.awssdk.services.glue.model.SchemaId;
+import software.amazon.awssdk.services.glue.model.SchemaVersionListItem;
 
 import java.io.File;
 import java.io.IOException;
@@ -277,6 +282,22 @@ public class AWSSchemaRegistryClientTest {
     }
 
     @Test
+    public void testGetSchemaResponse_nullSchemaVersionId_throwsException() {
+        Assertions.assertThrows(IllegalArgumentException.class , () ->  awsSchemaRegistryClient
+                .getSchemaVersionResponse(null));
+    }
+
+    @Test
+    public void testGetSchemaResponse_setSchemaVersionId_returnsResponseSchemaId() {
+        GetSchemaResponse getSchemaResponse = GetSchemaResponse.builder().schemaArn(SCHEMA_ID_FOR_TESTING.toString()).build();
+        SchemaId schemaId = SchemaId.builder().schemaArn(SCHEMA_ID_FOR_TESTING.toString()).build();
+        GetSchemaRequest getSchemaRequest = GetSchemaRequest.builder().schemaId(schemaId).build();
+        when(mockGlueClient.getSchema(getSchemaRequest)).thenReturn(getSchemaResponse);
+
+        assertEquals(SCHEMA_ID_FOR_TESTING.toString(), awsSchemaRegistryClient.getSchemaResponse(schemaId).schemaArn());
+    }
+
+    @Test
     public void testGetSchemaVersionResponse_nullSchemaVersionId_throwsException() {
         Assertions.assertThrows(IllegalArgumentException.class , () ->  awsSchemaRegistryClient
                 .getSchemaVersionResponse(null));
@@ -291,6 +312,27 @@ public class AWSSchemaRegistryClientTest {
         assertEquals(SCHEMA_ID_FOR_TESTING.toString(), awsSchemaRegistryClient.getSchemaVersionResponse(SCHEMA_ID_FOR_TESTING.toString()).schemaVersionId());
     }
 
+    @Test
+    public void testGetSchemaVersions_setSchemaName_returnsListOfSchemaVersions() throws NoSuchFieldException, IllegalAccessException {
+        awsSchemaRegistryClient = configureAWSSchemaRegistryClientWithSerdeConfig(awsSchemaRegistryClient,
+                glueSchemaRegistryConfiguration);
+
+        SchemaId schemaId = SchemaId.builder().schemaName(SCHEMA_ID_FOR_TESTING.toString()).registryName("User-Topic").build();
+        ListSchemaVersionsRequest listSchemaVersionsRequest = ListSchemaVersionsRequest.builder().schemaId(schemaId).build();
+        ListSchemaVersionsResponse listSchemaVersionsResponse = ListSchemaVersionsResponse.builder().schemas(SchemaVersionListItem
+                .builder()
+                .schemaArn(SCHEMA_ID_FOR_TESTING.toString())
+                .build()).build();
+        when(mockGlueClient.listSchemaVersions(listSchemaVersionsRequest)).thenReturn(listSchemaVersionsResponse);
+
+        assertEquals(SCHEMA_ID_FOR_TESTING.toString(), awsSchemaRegistryClient.getSchemaVersions(SCHEMA_ID_FOR_TESTING.toString()).get(0).schemaArn());
+    }
+
+    @Test
+    public void testGetSchemaVersions_nullSchemaName_throwsException() {
+        Assertions.assertThrows(IllegalArgumentException.class , () ->  awsSchemaRegistryClient
+                .getSchemaVersions(null));
+    }
 
     private Map<String, String> getConfigsWithAutoRegistrationSetting(boolean autoRegistrationSetting) {
         Map<String, String> localConfigs = new HashMap<>();
@@ -314,6 +356,22 @@ public class AWSSchemaRegistryClientTest {
             assertEquals(EntityNotFoundException.class, e.getCause().getClass());
             assertEquals(AWSSchemaRegistryException.class, e.getClass());
             String expectedErrorMessage = "Failed to get schema version Id = " + SCHEMA_ID_FOR_TESTING;
+            assertEquals(expectedErrorMessage, e.getMessage());
+        }
+    }
+
+    @Test
+    public void testGetSchemaResponse_clientExceptionResponse_returnsAWSSchemaRegistryException() {
+        SchemaId schemaId = SchemaId.builder().schemaArn(SCHEMA_ID_FOR_TESTING.toString()).build();
+        GetSchemaRequest getSchemaRequest = GetSchemaRequest.builder().schemaId(schemaId).build();
+        when(mockGlueClient.getSchema(getSchemaRequest)).thenThrow(EntityNotFoundException.class);
+
+        try {
+            awsSchemaRegistryClient.getSchemaResponse(SchemaId.builder().schemaArn(SCHEMA_ID_FOR_TESTING.toString()).build());
+        } catch (Exception e) {
+            assertEquals(EntityNotFoundException.class, e.getCause().getClass());
+            assertEquals(AWSSchemaRegistryException.class, e.getClass());
+            String expectedErrorMessage = "Failed to get schema Id = " + schemaId;
             assertEquals(expectedErrorMessage, e.getMessage());
         }
     }
