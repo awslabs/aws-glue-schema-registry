@@ -31,6 +31,8 @@ import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
+import software.amazon.awssdk.http.SdkHttpClient;
+import software.amazon.awssdk.http.apache.ApacheHttpClient;
 import software.amazon.awssdk.services.glue.GlueClient;
 import software.amazon.awssdk.services.glue.model.CreateSchemaRequest;
 import software.amazon.awssdk.services.glue.model.CreateSchemaResponse;
@@ -64,6 +66,7 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -170,6 +173,82 @@ public class AWSSchemaRegistryClientTest {
         String expectedMessage = String.format("Malformed uri, please pass the valid uri for creating the client",
                 glueSchemaRegistryConfiguration.getEndPoint());
         assertEquals(expectedMessage, awsSchemaRegistryException.getMessage());
+    }
+
+    /**
+     * When a custom {@link SdkHttpClient.Builder} is set on the configuration, the client must
+     * build its HTTP client from that injected builder rather than the default. Verifying that
+     * {@code build()} is called on the injected builder proves the injected client is the one
+     * actually used (task ant-tfc-mast-297).
+     */
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testConstructor_injectedHttpClientBuilder_isUsedToBuildClient() {
+        SdkHttpClient.Builder<?> mockHttpClientBuilder = mock(SdkHttpClient.Builder.class);
+        when(mockHttpClientBuilder.build()).thenReturn(mock(SdkHttpClient.class));
+
+        glueSchemaRegistryConfiguration = new GlueSchemaRegistryConfiguration(configs);
+        glueSchemaRegistryConfiguration.setHttpClientBuilder(mockHttpClientBuilder);
+        AwsCredentialsProvider mockAwsCredentialsProvider = mock(AwsCredentialsProvider.class);
+
+        assertDoesNotThrow(() -> new AWSSchemaRegistryClient(mockAwsCredentialsProvider,
+                glueSchemaRegistryConfiguration));
+
+        verify(mockHttpClientBuilder, times(1)).build();
+    }
+
+    /**
+     * A real Apache HTTP client builder injected through the configuration must be accepted and
+     * produce a working Glue client. This is the additive path that lets IRSA
+     * ({@code WebIdentityTokenFileCredentialsProvider} + STS) work and avoids the
+     * "Multiple HTTP implementations were found on the classpath" error.
+     */
+    @Test
+    public void testConstructor_injectedApacheHttpClientBuilder_buildsClientSuccessfully() {
+        glueSchemaRegistryConfiguration = new GlueSchemaRegistryConfiguration(configs);
+        glueSchemaRegistryConfiguration.setHttpClientBuilder(ApacheHttpClient.builder());
+        AwsCredentialsProvider mockAwsCredentialsProvider = mock(AwsCredentialsProvider.class);
+
+        assertDoesNotThrow(() -> new AWSSchemaRegistryClient(mockAwsCredentialsProvider,
+                glueSchemaRegistryConfiguration));
+    }
+
+    /**
+     * With no HTTP client builder set (the default), the client must still build successfully,
+     * falling back to {@code UrlConnectionHttpClient}. This preserves the historical behavior for
+     * existing consumers.
+     */
+    @Test
+    public void testConstructor_noHttpClientBuilder_usesDefaultAndBuildsClientSuccessfully() {
+        glueSchemaRegistryConfiguration = new GlueSchemaRegistryConfiguration(configs);
+        assertNull(glueSchemaRegistryConfiguration.getHttpClientBuilder());
+        AwsCredentialsProvider mockAwsCredentialsProvider = mock(AwsCredentialsProvider.class);
+
+        assertDoesNotThrow(() -> new AWSSchemaRegistryClient(mockAwsCredentialsProvider,
+                glueSchemaRegistryConfiguration));
+    }
+
+    /**
+     * When both a proxy URL and a custom HTTP client builder are configured, the injected builder
+     * wins and the configured proxy is ignored (proxy configuration is the caller's responsibility
+     * on their own builder). The client must still build from the injected builder.
+     */
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testConstructor_proxyUrlWithInjectedBuilder_usesInjectedBuilderAndIgnoresProxy() {
+        SdkHttpClient.Builder<?> mockHttpClientBuilder = mock(SdkHttpClient.Builder.class);
+        when(mockHttpClientBuilder.build()).thenReturn(mock(SdkHttpClient.class));
+
+        Map<String, Object> proxyConfigs = new HashMap<>(configs);
+        proxyConfigs.put(AWSSchemaRegistryConstants.PROXY_URL, "http://proxy.example.com:8080");
+        glueSchemaRegistryConfiguration = new GlueSchemaRegistryConfiguration(proxyConfigs);
+        glueSchemaRegistryConfiguration.setHttpClientBuilder(mockHttpClientBuilder);
+        AwsCredentialsProvider mockAwsCredentialsProvider = mock(AwsCredentialsProvider.class);
+
+        assertDoesNotThrow(() -> new AWSSchemaRegistryClient(mockAwsCredentialsProvider,
+                glueSchemaRegistryConfiguration));
+
+        verify(mockHttpClientBuilder, times(1)).build();
     }
 
     /**

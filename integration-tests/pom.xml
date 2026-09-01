@@ -66,6 +66,12 @@
             <artifactId>schema-registry-serde</artifactId>
             <version>${parent.version}</version>
         </dependency>
+        <!-- Test-only: exercises the injectable HTTP client path in the cross-client compat integration test. -->
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>apache-client</artifactId>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>software.amazon.glue</groupId>
             <artifactId>schema-registry-kafkastreams-serde</artifactId>

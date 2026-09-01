@@ -26,6 +26,7 @@ import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.EnumUtils;
 import software.amazon.awssdk.core.exception.SdkClientException;
+import software.amazon.awssdk.http.SdkHttpClient;
 import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 import software.amazon.awssdk.services.glue.model.Compatibility;
 
@@ -69,6 +70,24 @@ public class GlueSchemaRegistryConfiguration {
     private Map<String, String> metadata;
     private String secondaryDeserializer;
     private URI proxyUrl;
+
+    /**
+     * Builder for the {@link SdkHttpClient} used by the internal Glue client. This is a
+     * programmatic-only option (it is not read from the properties map): callers that
+     * construct the configuration in code may set it, for example
+     * {@code config.setHttpClientBuilder(ApacheHttpClient.builder())}.
+     * <p>
+     * When left {@code null}, the client defaults to
+     * {@code software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient}, preserving the
+     * historical behavior. Injecting a builder lets callers avoid the "Multiple HTTP
+     * implementations were found on the classpath" error and use a client that works with
+     * credential providers that call STS, such as {@code WebIdentityTokenFileCredentialsProvider}
+     * (IAM Roles for Service Accounts).
+     * <p>
+     * When a builder is injected, {@link #proxyUrl} is ignored; configure any proxy on the
+     * injected builder instead.
+     */
+    private SdkHttpClient.Builder<?> httpClientBuilder;
 
     /**
      * Name of the application using the serializer/deserializer.

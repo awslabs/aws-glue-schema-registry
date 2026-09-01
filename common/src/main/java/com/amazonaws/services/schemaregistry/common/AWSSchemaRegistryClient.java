@@ -31,6 +31,7 @@ import software.amazon.awssdk.core.interceptor.Context;
 import software.amazon.awssdk.core.interceptor.ExecutionAttributes;
 import software.amazon.awssdk.core.interceptor.ExecutionInterceptor;
 import software.amazon.awssdk.core.retry.RetryPolicy;
+import software.amazon.awssdk.http.SdkHttpClient;
 import software.amazon.awssdk.http.urlconnection.ProxyConfiguration;
 import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
 import software.amazon.awssdk.regions.Region;
@@ -90,18 +91,13 @@ public class AWSSchemaRegistryClient {
                 .retryPolicy(retryPolicy)
                 .addExecutionInterceptor(new UserAgentRequestInterceptor())
                 .build();
-        UrlConnectionHttpClient.Builder urlConnectionHttpClientBuilder = UrlConnectionHttpClient.builder();
-        if (glueSchemaRegistryConfiguration.getProxyUrl() != null) {
-        	log.debug("Creating http client using proxy {}", glueSchemaRegistryConfiguration.getProxyUrl().toString());
-    		ProxyConfiguration proxy = ProxyConfiguration.builder().endpoint(glueSchemaRegistryConfiguration.getProxyUrl()).build();
-    		urlConnectionHttpClientBuilder.proxyConfiguration(proxy);
-        }
+        SdkHttpClient httpClient = buildHttpClient(glueSchemaRegistryConfiguration);
 
         GlueClientBuilder glueClientBuilder = GlueClient
                 .builder()
                 .credentialsProvider(credentialsProvider)
                 .overrideConfiguration(overrideConfiguration)
-                .httpClient(urlConnectionHttpClientBuilder.build())
+                .httpClient(httpClient)
                 .region(Region.of(glueSchemaRegistryConfiguration.getRegion()));
 
         if (glueSchemaRegistryConfiguration.getEndPoint() != null) {
@@ -130,6 +126,36 @@ public class AWSSchemaRegistryClient {
 
     public AWSSchemaRegistryClient(@NonNull GlueClient glueClient) {
         this.client = glueClient;
+    }
+
+    /**
+     * Build the HTTP client for the Glue client. If the configuration carries a custom
+     * {@link software.amazon.awssdk.http.SdkHttpClient.Builder}, it is used as supplied;
+     * otherwise the historical default of {@link UrlConnectionHttpClient} is built, with the
+     * configured proxy applied. When a custom builder is injected, the configured proxy URL is
+     * ignored (the caller owns proxy configuration on their builder).
+     *
+     * @param configuration schema registry configuration
+     * @return the HTTP client to use for the Glue client
+     */
+    private SdkHttpClient buildHttpClient(GlueSchemaRegistryConfiguration configuration) {
+        if (configuration.getHttpClientBuilder() != null) {
+            if (configuration.getProxyUrl() != null) {
+                log.warn("Both a custom httpClientBuilder and proxyUrl ({}) are configured; the "
+                         + "proxyUrl is ignored. Configure the proxy on the injected HTTP client builder.",
+                         configuration.getProxyUrl());
+            }
+            return configuration.getHttpClientBuilder().build();
+        }
+
+        UrlConnectionHttpClient.Builder urlConnectionHttpClientBuilder = UrlConnectionHttpClient.builder();
+        if (configuration.getProxyUrl() != null) {
+            log.debug("Creating http client using proxy {}", configuration.getProxyUrl().toString());
+            ProxyConfiguration proxy =
+                    ProxyConfiguration.builder().endpoint(configuration.getProxyUrl()).build();
+            urlConnectionHttpClientBuilder.proxyConfiguration(proxy);
+        }
+        return urlConnectionHttpClientBuilder.build();
     }
 
     /**
