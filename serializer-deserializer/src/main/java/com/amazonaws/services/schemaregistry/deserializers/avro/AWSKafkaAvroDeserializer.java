@@ -63,9 +63,9 @@ public class AWSKafkaAvroDeserializer implements Deserializer<Object> {
     }
 
     /**
-     * Constructor accepting AWSCredentialsProvider.
+     * Constructor accepting AwsCredentialsProvider.
      *
-     * @param credentialProvider AWSCredentialsProvider instance.
+     * @param credentialProvider AwsCredentialsProvider instance.
      */
     public AWSKafkaAvroDeserializer(AwsCredentialsProvider credentialProvider, Map<String, ?> configs) {
         this.credentialProvider = credentialProvider;

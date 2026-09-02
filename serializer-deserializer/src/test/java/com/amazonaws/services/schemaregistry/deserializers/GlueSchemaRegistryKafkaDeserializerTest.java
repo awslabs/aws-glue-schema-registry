@@ -61,7 +61,7 @@ public class GlueSchemaRegistryKafkaDeserializerTest {
         GlueSchemaRegistryKafkaDeserializer glueSchemaRegistryKafkaDeserializer1 = new GlueSchemaRegistryKafkaDeserializer();
         assertNotNull(glueSchemaRegistryKafkaDeserializer1.getCredentialProvider());
 
-        // Test create with AWSCredentialsProvider constructor
+        // Test create with AwsCredentialsProvider constructor
         GlueSchemaRegistryKafkaDeserializer glueSchemaRegistryKafkaDeserializer2 = new GlueSchemaRegistryKafkaDeserializer(this.mockCredProvider,
                 configs);
         assertNotNull(glueSchemaRegistryKafkaDeserializer2.getCredentialProvider());
