@@ -145,7 +145,17 @@ public class AWSSchemaRegistryClient {
                          + "proxyUrl is ignored. Configure the proxy on the injected HTTP client builder.",
                          configuration.getProxyUrl());
             }
-            return configuration.getHttpClientBuilder().build();
+            try {
+                return configuration.getHttpClientBuilder().build();
+            } catch (RuntimeException e) {
+                // An injected builder can fail to build for reasons the default UrlConnectionHttpClient
+                // never would (missing/incompatible dependency, invalid builder configuration). Wrap it in
+                // the same exception type the rest of this constructor uses so callers get one consistent,
+                // actionable failure instead of a leaked client-specific exception.
+                throw new AWSSchemaRegistryException(
+                        "Failed to build the injected HTTP client from the supplied httpClientBuilder. "
+                        + "Verify the SdkHttpClient.Builder set on GlueSchemaRegistryConfiguration.", e);
+            }
         }
 
         UrlConnectionHttpClient.Builder urlConnectionHttpClientBuilder = UrlConnectionHttpClient.builder();

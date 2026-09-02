@@ -252,6 +252,33 @@ public class AWSSchemaRegistryClientTest {
     }
 
     /**
+     * Negative case: when the injected HTTP client builder fails to build (e.g. missing/incompatible
+     * dependency or invalid builder configuration), the client-specific exception must be wrapped in an
+     * {@link AWSSchemaRegistryException} so callers see the same consistent failure type this constructor
+     * already uses, with an actionable message and the original cause preserved (task ant-tfc-mast-297).
+     */
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testConstructor_injectedHttpClientBuilderThrows_wrapsInAWSSchemaRegistryException() {
+        SdkHttpClient.Builder<?> mockHttpClientBuilder = mock(SdkHttpClient.Builder.class);
+        IllegalStateException cause = new IllegalStateException("boom from injected client");
+        when(mockHttpClientBuilder.build()).thenThrow(cause);
+
+        glueSchemaRegistryConfiguration = new GlueSchemaRegistryConfiguration(configs);
+        glueSchemaRegistryConfiguration.setHttpClientBuilder(mockHttpClientBuilder);
+        AwsCredentialsProvider mockAwsCredentialsProvider = mock(AwsCredentialsProvider.class);
+
+        AWSSchemaRegistryException exception = assertThrows(AWSSchemaRegistryException.class,
+                () -> new AWSSchemaRegistryClient(mockAwsCredentialsProvider, glueSchemaRegistryConfiguration));
+
+        assertTrue(exception.getMessage().contains("httpClientBuilder"),
+                "wrapped message should point the caller at the injected httpClientBuilder");
+        assertEquals(cause, exception.getCause(),
+                "original client-specific exception must be preserved as the cause");
+        verify(mockHttpClientBuilder, times(1)).build();
+    }
+
+    /**
      * Tests positive case for querySchemaVersionMetadata by building request and response
      */
     @Test

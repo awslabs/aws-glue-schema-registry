@@ -15,27 +15,42 @@
 
 package com.amazonaws.services.schemaregistry.integrationtests.compat;
 
+import com.amazonaws.services.schemaregistry.common.GlueSchemaRegistryDataFormatSerializer;
 import com.amazonaws.services.schemaregistry.common.Schema;
 import com.amazonaws.services.schemaregistry.common.configs.GlueSchemaRegistryConfiguration;
 import com.amazonaws.services.schemaregistry.deserializers.GlueSchemaRegistryDeserializerImpl;
+import com.amazonaws.services.schemaregistry.integrationtests.generators.TestDataGenerator;
+import com.amazonaws.services.schemaregistry.integrationtests.generators.TestDataGeneratorFactory;
+import com.amazonaws.services.schemaregistry.integrationtests.generators.TestDataGeneratorType;
+import com.amazonaws.services.schemaregistry.serializers.GlueSchemaRegistrySerializerFactory;
 import com.amazonaws.services.schemaregistry.serializers.GlueSchemaRegistrySerializerImpl;
 import com.amazonaws.services.schemaregistry.utils.AWSSchemaRegistryConstants;
-import org.apache.avro.generic.GenericData;
-import org.apache.avro.generic.GenericDatumWriter;
-import org.apache.avro.generic.GenericRecord;
-import org.apache.avro.io.BinaryEncoder;
-import org.apache.avro.io.EncoderFactory;
+import com.amazonaws.services.schemaregistry.utils.AvroRecordType;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.http.apache.ApacheHttpClient;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.glue.GlueClient;
+import software.amazon.awssdk.services.glue.model.Compatibility;
+import software.amazon.awssdk.services.glue.model.DataFormat;
+import software.amazon.awssdk.services.glue.model.DeleteSchemaRequest;
+import software.amazon.awssdk.services.glue.model.EntityNotFoundException;
+import software.amazon.awssdk.services.glue.model.SchemaId;
 
-import java.io.ByteArrayOutputStream;
+import java.time.Duration;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Backward-compatibility integration test for the injectable HTTP client change (task ant-tfc-mast-297).
@@ -43,96 +58,176 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * <p>The change lets callers inject a custom {@code SdkHttpClient.Builder} (e.g. Apache) instead of the
  * hard-coded {@code UrlConnectionHttpClient}. The concern this test addresses is whether a consumer of a
  * released ("old") version can still read data produced by a build carrying this change ("new"), and vice
- * versa.
+ * versa, for every supported data format.
  *
  * <p>The change only affects how the internal Glue client's HTTP transport is built; it does not touch the
- * serialized wire format. This test proves that empirically against real Glue: it serializes the same
- * record and schema twice, once with the default (unchanged) HTTP client and once with an injected Apache
- * client, and asserts the encoded byte arrays are <b>identical</b>. Because the default path is unchanged
- * from the released version, byte-identical output means anything a released consumer could read before it
- * can still read now, regardless of which HTTP client the producer used. Round-trips through both a default
- * and an Apache-injected deserializer confirm the data decodes back to the original in every combination.
+ * serialized wire format. This test proves that empirically against real Glue for <b>AVRO, JSON, and
+ * PROTOBUF</b>: for each format it serializes the same record twice, once with the default (unchanged) HTTP
+ * client and once with an injected Apache client, and asserts that <b>both the schema and the data</b> are
+ * encoded identically. Because the default path is unchanged from the released version, byte-identical
+ * output means anything a released consumer could read before it can still read now, regardless of which
+ * HTTP client the producer used. Round-trips through both a default and an Apache-injected deserializer
+ * confirm the schema and data decode back to the original in every producer/consumer combination.
+ *
+ * <p>{@link #injectedClientBuildFailure_surfacesError()} is the negative case: an injected client pointed at
+ * an unreachable endpoint must surface an error rather than silently succeeding.
  *
  * <p>Requires real AWS credentials for Glue (default region us-east-2). Run under the {@code surefire}
- * profile of this module.
+ * profile of this module. Schemas created here are deleted in {@link #cleanUpSchemas()}.
  */
 public class CrossClientWireCompatIntegrationTest {
 
-    private static final String AVRO_SCHEMA_DEFINITION =
-            "{\"type\":\"record\",\"name\":\"XVerRecord\",\"namespace\":\"com.amazonaws.services."
-            + "schemaregistry.integrationtests.compat\",\"fields\":[{\"name\":\"name\",\"type\":\"string\"},"
-            + "{\"name\":\"favorite_number\",\"type\":\"int\"}]}";
+    private static final String REGION = "us-east-2";
+    private static final String REGISTRY_NAME = "default-registry";
+    private static final String TRANSPORT_NAME = "xver-compat";
 
-    // Unique per run so the test is self-contained and easy to clean up afterwards.
-    private static final String SCHEMA_NAME = "xver-wire-compat-" + UUID.randomUUID();
+    private final DefaultCredentialsProvider credentials = DefaultCredentialsProvider.create();
+    private final GlueSchemaRegistrySerializerFactory serializerFactory = new GlueSchemaRegistrySerializerFactory();
+    private final TestDataGeneratorFactory testDataGeneratorFactory = new TestDataGeneratorFactory();
+
+    // Schema names created by this test, deleted in @AfterAll so each run leaves the registry clean.
+    private static final Set<String> SCHEMAS_TO_CLEAN_UP = ConcurrentHashMap.newKeySet();
 
     private Map<String, Object> baseConfigs() {
         Map<String, Object> configs = new HashMap<>();
-        configs.put(AWSSchemaRegistryConstants.AWS_REGION, "us-east-2");
+        configs.put(AWSSchemaRegistryConstants.AWS_REGION, REGION);
         configs.put(AWSSchemaRegistryConstants.SCHEMA_AUTO_REGISTRATION_SETTING, "true");
-        configs.put(AWSSchemaRegistryConstants.REGISTRY_NAME, "default-registry");
+        configs.put(AWSSchemaRegistryConstants.REGISTRY_NAME, REGISTRY_NAME);
         return configs;
     }
 
-    private byte[] avroEncodedPayload() throws Exception {
-        org.apache.avro.Schema avroSchema = new org.apache.avro.Schema.Parser().parse(AVRO_SCHEMA_DEFINITION);
-        GenericRecord record = new GenericData.Record(avroSchema);
-        record.put("name", "cross-version");
-        record.put("favorite_number", 7);
-
-        GenericDatumWriter<GenericRecord> writer = new GenericDatumWriter<>(avroSchema);
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        BinaryEncoder encoder = EncoderFactory.get().binaryEncoder(out, null);
-        writer.write(record, encoder);
-        encoder.flush();
-        return out.toByteArray();
+    private GlueSchemaRegistryConfiguration defaultConfig() {
+        return new GlueSchemaRegistryConfiguration(baseConfigs());
     }
 
-    @Test
-    public void injectedApacheClient_producesIdenticalWireBytes_andRoundTripsAcrossClients() throws Exception {
-        DefaultCredentialsProvider credentials = DefaultCredentialsProvider.create();
-        Schema schema = new Schema(AVRO_SCHEMA_DEFINITION, "AVRO", SCHEMA_NAME);
-        byte[] payload = avroEncodedPayload();
+    private GlueSchemaRegistryConfiguration apacheConfig() {
+        GlueSchemaRegistryConfiguration config = new GlueSchemaRegistryConfiguration(baseConfigs());
+        config.setHttpClientBuilder(ApacheHttpClient.builder());
+        return config;
+    }
 
-        // Producer with the default (unchanged) HTTP client - i.e. released behavior.
-        GlueSchemaRegistryConfiguration defaultConfig = new GlueSchemaRegistryConfiguration(baseConfigs());
+    /**
+     * For each supported format: the default HTTP client and an injected Apache HTTP client must produce
+     * byte-identical schema and data, and every producer/consumer client combination must round-trip the
+     * schema and data back to the original.
+     */
+    @ParameterizedTest(name = "{0}")
+    @EnumSource(value = DataFormat.class, names = {"AVRO", "JSON", "PROTOBUF"})
+    public void injectedApacheClient_producesIdenticalSchemaAndData_andRoundTrips(DataFormat dataFormat)
+            throws Exception {
+        // A generic, no-compatibility record for this format, reusing the shared integration-test generators.
+        TestDataGeneratorType generatorType =
+                TestDataGeneratorType.valueOf(dataFormat, AvroRecordType.GENERIC_RECORD, Compatibility.NONE);
+        TestDataGenerator<?> generator = testDataGeneratorFactory.getInstance(generatorType);
+        Object record = generator.createRecords().get(0);
+
+        String schemaName = "xver-wire-compat-" + dataFormat.name() + "-" + UUID.randomUUID();
+        SCHEMAS_TO_CLEAN_UP.add(schemaName);
+
+        // Derive the schema definition and the pre-GSR serialized payload from the record (format-specific,
+        // HTTP-client-independent).
+        GlueSchemaRegistryDataFormatSerializer formatSerializer =
+                serializerFactory.getInstance(dataFormat, defaultConfig());
+        String schemaDefinition = formatSerializer.getSchemaDefinition(record);
+        byte[] payload = formatSerializer.serialize(record);
+        Schema schema = new Schema(schemaDefinition, dataFormat.name(), schemaName);
+
+        // Producers: default (released behavior) vs injected Apache client (new behavior).
         GlueSchemaRegistrySerializerImpl defaultSerializer =
-                new GlueSchemaRegistrySerializerImpl(credentials, defaultConfig);
-
-        // Producer with an injected Apache HTTP client - the new behavior enabled by this change.
-        GlueSchemaRegistryConfiguration apacheConfig = new GlueSchemaRegistryConfiguration(baseConfigs());
-        apacheConfig.setHttpClientBuilder(ApacheHttpClient.builder());
+                new GlueSchemaRegistrySerializerImpl(credentials, defaultConfig());
         GlueSchemaRegistrySerializerImpl apacheSerializer =
-                new GlueSchemaRegistrySerializerImpl(credentials, apacheConfig);
+                new GlueSchemaRegistrySerializerImpl(credentials, apacheConfig());
 
-        byte[] encodedByDefault = defaultSerializer.encode("xver-compat", schema, payload);
-        byte[] encodedByApache = apacheSerializer.encode("xver-compat", schema, payload);
+        byte[] encodedByDefault = defaultSerializer.encode(TRANSPORT_NAME, schema, payload);
+        byte[] encodedByApache = apacheSerializer.encode(TRANSPORT_NAME, schema, payload);
 
-        // Core backward-compat assertion: the injected HTTP client does not change the wire format at all,
-        // so a consumer of any version reads exactly the same bytes it always would.
+        // Core backward-compat assertion: the injected HTTP client changes neither the schema nor the data
+        // on the wire, so a consumer of any version reads exactly the same bytes it always would.
         assertArrayEquals(encodedByDefault, encodedByApache,
-                "Injecting an Apache HTTP client must not change the serialized wire bytes");
+                dataFormat + ": injecting an Apache HTTP client must not change the serialized wire bytes");
 
-        // Every producer/consumer client combination must round-trip back to the original payload.
+        // Consumers: default vs injected Apache client.
         GlueSchemaRegistryDeserializerImpl defaultDeserializer =
-                new GlueSchemaRegistryDeserializerImpl(credentials, new GlueSchemaRegistryConfiguration(baseConfigs()));
-
-        GlueSchemaRegistryConfiguration apacheDeserConfig = new GlueSchemaRegistryConfiguration(baseConfigs());
-        apacheDeserConfig.setHttpClientBuilder(ApacheHttpClient.builder());
+                new GlueSchemaRegistryDeserializerImpl(credentials, defaultConfig());
         GlueSchemaRegistryDeserializerImpl apacheDeserializer =
-                new GlueSchemaRegistryDeserializerImpl(credentials, apacheDeserConfig);
+                new GlueSchemaRegistryDeserializerImpl(credentials, apacheConfig());
 
+        // Data must round-trip in every producer/consumer combination.
         assertArrayEquals(payload, defaultDeserializer.getData(encodedByDefault),
-                "default consumer must read default-produced data");
+                dataFormat + ": default consumer must read default-produced data");
         assertArrayEquals(payload, defaultDeserializer.getData(encodedByApache),
-                "default consumer must read Apache-produced data");
+                dataFormat + ": default consumer must read Apache-produced data");
         assertArrayEquals(payload, apacheDeserializer.getData(encodedByDefault),
-                "Apache consumer must read default-produced data");
+                dataFormat + ": Apache consumer must read default-produced data");
         assertArrayEquals(payload, apacheDeserializer.getData(encodedByApache),
-                "Apache consumer must read Apache-produced data");
+                dataFormat + ": Apache consumer must read Apache-produced data");
 
-        // The schema resolved from the encoded bytes must match what was registered, in both directions.
-        assertEquals(AVRO_SCHEMA_DEFINITION, defaultDeserializer.getSchema(encodedByApache).getSchemaDefinition(),
-                "schema resolved from Apache-produced data must match the registered definition");
+        // Schema must also resolve identically regardless of which client produced or consumed the bytes.
+        String schemaFromDefault = defaultDeserializer.getSchema(encodedByDefault).getSchemaDefinition();
+        String schemaFromApache = apacheDeserializer.getSchema(encodedByApache).getSchemaDefinition();
+        assertEquals(schemaDefinition, schemaFromDefault,
+                dataFormat + ": schema resolved from default-produced data must match the registered definition");
+        assertEquals(schemaDefinition, schemaFromApache,
+                dataFormat + ": schema resolved from Apache-produced data must match the registered definition");
+        assertEquals(schemaFromDefault, schemaFromApache,
+                dataFormat + ": the resolved schema must be identical across default and injected clients");
+    }
+
+    /**
+     * Negative case: an injected HTTP client that cannot reach Glue (unresolvable endpoint) must surface an
+     * error on use rather than silently succeeding. This confirms failures from the injected transport
+     * propagate to the caller.
+     */
+    @Test
+    public void injectedClientBuildFailure_surfacesError() throws Exception {
+        DataFormat dataFormat = DataFormat.AVRO;
+        TestDataGeneratorType generatorType =
+                TestDataGeneratorType.valueOf(dataFormat, AvroRecordType.GENERIC_RECORD, Compatibility.NONE);
+        Object record = testDataGeneratorFactory.getInstance(generatorType).createRecords().get(0);
+
+        GlueSchemaRegistryConfiguration badEndpointConfig = new GlueSchemaRegistryConfiguration(baseConfigs());
+        // Inject an Apache client with a short timeout and point Glue at an unresolvable endpoint so the call
+        // fails fast rather than hanging.
+        badEndpointConfig.setHttpClientBuilder(
+                ApacheHttpClient.builder().connectionTimeout(Duration.ofSeconds(2)));
+        badEndpointConfig.setEndPoint("https://glue.this-endpoint-does-not-exist.aws.invalid");
+
+        GlueSchemaRegistryDataFormatSerializer formatSerializer =
+                serializerFactory.getInstance(dataFormat, defaultConfig());
+        Schema schema = new Schema(formatSerializer.getSchemaDefinition(record), dataFormat.name(),
+                "xver-wire-compat-negative-" + UUID.randomUUID());
+        byte[] payload = formatSerializer.serialize(record);
+
+        GlueSchemaRegistrySerializerImpl badSerializer =
+                new GlueSchemaRegistrySerializerImpl(credentials, badEndpointConfig);
+
+        // Registration against the unreachable endpoint must throw; the injected client does not mask it.
+        assertThrows(Exception.class, () -> badSerializer.encode(TRANSPORT_NAME, schema, payload),
+                "an injected client pointed at an unreachable endpoint must surface an error");
+    }
+
+    @AfterAll
+    public static void cleanUpSchemas() {
+        if (SCHEMAS_TO_CLEAN_UP.isEmpty()) {
+            return;
+        }
+        try (GlueClient glueClient = GlueClient.builder()
+                .region(Region.of(REGION))
+                .credentialsProvider(DefaultCredentialsProvider.create())
+                .build()) {
+            for (String schemaName : SCHEMAS_TO_CLEAN_UP) {
+                try {
+                    glueClient.deleteSchema(DeleteSchemaRequest.builder()
+                            .schemaId(SchemaId.builder()
+                                    .registryName(REGISTRY_NAME)
+                                    .schemaName(schemaName)
+                                    .build())
+                            .build());
+                } catch (EntityNotFoundException ignored) {
+                    // Already gone (e.g. never registered) - nothing to clean up.
+                }
+            }
+        }
+        SCHEMAS_TO_CLEAN_UP.clear();
     }
 }
