@@ -72,7 +72,6 @@ import java.util.logging.Logger;
  */
 public class PutRecordGetRecordExample {
     private static final String AVRO_USER_SCHEMA_FILE = "src/main/resources/user.avsc";
-    private static KinesisClient kinesisClient;
     private static final Logger LOGGER = Logger.getLogger(PutRecordGetRecordExample.class.getSimpleName());
     private static AwsCredentialsProvider awsCredentialsProvider =
         DefaultCredentialsProvider
@@ -99,9 +98,7 @@ public class PutRecordGetRecordExample {
         int numOfRecords = Integer.parseInt(cmd.getOptionValue("numRecords", "10"));
 
         //Kinesis data streams client initialization.
-        try (KinesisClient client = KinesisClient.builder().region(Region.of(regionName)).build()) {
-            kinesisClient = client;
-
+        try (KinesisClient kinesisClient = KinesisClient.builder().region(Region.of(regionName)).build()) {
             //Glue Schema Registry serializer initialization for the producer.
             glueSchemaRegistrySerializer =
                 new GlueSchemaRegistrySerializerImpl(
@@ -123,14 +120,14 @@ public class PutRecordGetRecordExample {
             Date timestamp = DateTime.now().toDate();
 
             //Put records into Kinesis stream.
-            putRecordsWithSchema(streamName, numOfRecords, gsrSchema, timestamp);
+            putRecordsWithSchema(kinesisClient, streamName, numOfRecords, gsrSchema, timestamp);
 
             //Start receiving records from the stream.
-            getRecordsWithSchema(streamName, timestamp);
+            getRecordsWithSchema(kinesisClient, streamName, timestamp);
         }
     }
 
-    private static void getRecordsWithSchema(String streamName, Date timestamp) throws IOException {
+    private static void getRecordsWithSchema(KinesisClient kinesisClient, String streamName, Date timestamp) throws IOException {
         //Standard Kinesis code to getRecords from a Kinesis Data Stream.
         String shardIterator;
         List<Shard> shards = new ArrayList<>();
@@ -176,7 +173,7 @@ public class PutRecordGetRecordExample {
         }
     }
 
-    private static void putRecordsWithSchema(String streamName, int numOfRecords, Schema gsrSchema, Date timestamp) {
+    private static void putRecordsWithSchema(KinesisClient kinesisClient, String streamName, int numOfRecords, Schema gsrSchema, Date timestamp) {
         //Standard Kinesis code to putRecords into a Kinesis Data Stream.
         List<PutRecordsRequestEntry> recordsRequestEntries = new ArrayList<>();
 
