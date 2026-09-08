@@ -18,6 +18,7 @@ package com.amazonaws.services.schemaregistry.common.configs;
 import com.amazonaws.services.schemaregistry.exception.AWSSchemaRegistryException;
 import com.amazonaws.services.schemaregistry.utils.AWSSchemaRegistryConstants;
 import com.amazonaws.services.schemaregistry.utils.AvroRecordType;
+import com.kjetland.jackson.jsonSchema.JsonSchemaConfig;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -34,7 +35,9 @@ import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -410,5 +413,74 @@ public class GlueSchemaRegistryConfigurationTest {
         props.put(AWSSchemaRegistryConstants.PROXY_URL, "http:// proxy.url: 8080");
         Exception exception = assertThrows(AWSSchemaRegistryException.class, () -> new GlueSchemaRegistryConfiguration(props));
         assertEquals("Proxy URL property is not a valid URL: "+proxy, exception.getMessage());
+    }
+
+    /**
+     * Tests jsonSchemaNullableEnabled defaults to false when not supplied.
+     */
+    @Test
+    public void testBuildConfig_jsonSchemaNullableEnabled_defaultsToFalse() {
+        Properties props = createTestProperties();
+        GlueSchemaRegistryConfiguration serDeConfigs = new GlueSchemaRegistryConfiguration(props);
+        assertFalse(serDeConfigs.isJsonSchemaNullableEnabled());
+    }
+
+    /**
+     * Tests jsonSchemaNullableEnabled is parsed from a boolean value.
+     */
+    @Test
+    public void testBuildConfig_jsonSchemaNullableEnabled_booleanValue_succeeds() {
+        Map<String, Object> configs = new HashMap<>();
+        configs.put(AWSSchemaRegistryConstants.AWS_REGION, "US-West-1");
+        configs.put(AWSSchemaRegistryConstants.JSON_SCHEMA_NULLABLE_ENABLED, true);
+        GlueSchemaRegistryConfiguration serDeConfigs = new GlueSchemaRegistryConfiguration(configs);
+        assertTrue(serDeConfigs.isJsonSchemaNullableEnabled());
+    }
+
+    /**
+     * Tests jsonSchemaNullableEnabled is parsed from a string value.
+     */
+    @Test
+    public void testBuildConfig_jsonSchemaNullableEnabled_stringValue_succeeds() {
+        Properties props = createTestProperties();
+        props.put(AWSSchemaRegistryConstants.JSON_SCHEMA_NULLABLE_ENABLED, "true");
+        GlueSchemaRegistryConfiguration serDeConfigs = new GlueSchemaRegistryConfiguration(props);
+        assertTrue(serDeConfigs.isJsonSchemaNullableEnabled());
+    }
+
+    /**
+     * Tests jsonSchemaConfig object is stored as-is when a valid JsonSchemaConfig is supplied.
+     */
+    @Test
+    public void testBuildConfig_jsonSchemaConfig_objectIsStored() {
+        JsonSchemaConfig jsonSchemaConfig = JsonSchemaConfig.nullableJsonSchemaDraft4();
+        Map<String, Object> configs = new HashMap<>();
+        configs.put(AWSSchemaRegistryConstants.AWS_REGION, "US-West-1");
+        configs.put(AWSSchemaRegistryConstants.JSON_SCHEMA_CONFIG, jsonSchemaConfig);
+        GlueSchemaRegistryConfiguration serDeConfigs = new GlueSchemaRegistryConfiguration(configs);
+        assertEquals(jsonSchemaConfig, serDeConfigs.getJsonSchemaConfig());
+    }
+
+    /**
+     * Tests jsonSchemaConfig with a value of the wrong type throws.
+     */
+    @Test
+    public void testBuildConfig_jsonSchemaConfig_wrongType_throwsException() {
+        Map<String, Object> configs = new HashMap<>();
+        configs.put(AWSSchemaRegistryConstants.AWS_REGION, "US-West-1");
+        configs.put(AWSSchemaRegistryConstants.JSON_SCHEMA_CONFIG, "not-a-config");
+        Exception exception = assertThrows(AWSSchemaRegistryException.class,
+                () -> new GlueSchemaRegistryConfiguration(configs));
+        assertTrue(exception.getMessage().contains("jsonSchemaConfig instance must be of type"));
+    }
+
+    /**
+     * Tests jsonSchemaConfig is null when not supplied.
+     */
+    @Test
+    public void testBuildConfig_jsonSchemaConfig_defaultsToNull() {
+        Properties props = createTestProperties();
+        GlueSchemaRegistryConfiguration serDeConfigs = new GlueSchemaRegistryConfiguration(props);
+        assertNull(serDeConfigs.getJsonSchemaConfig());
     }
 }

@@ -339,6 +339,54 @@ public class Car {
 
 ```
 
+#### Nullable fields in generated JSON Schema
+
+By default the generator emits a bare type for each property, so a field that is not in the `required`
+list still cannot hold a `null` value (for example `"addressId": { "type": "string" }`). Setting
+`@JsonProperty(required = false)` only removes a field from the `required` list; it does not make the
+value itself nullable.
+
+If you need the generated schema to accept `null` for non-required, non-primitive fields, set the
+`jsonSchemaNullableEnabled` configuration property to `true`. When enabled, the generator uses
+`JsonSchemaConfig.nullableJsonSchemaDraft4()`, producing a `oneOf` with a null branch:
+
+```java
+Map<String, Object> configs = new HashMap<>();
+configs.put(AWSSchemaRegistryConstants.AWS_REGION, "us-east-1");
+configs.put(AWSSchemaRegistryConstants.JSON_SCHEMA_NULLABLE_ENABLED, true);
+```
+
+Schema for a nullable `addressId` field, before and after:
+
+```jsonc
+// jsonSchemaNullableEnabled = false (default)
+"addressId": { "type": "string" }
+
+// jsonSchemaNullableEnabled = true
+"addressId": {
+  "oneOf": [
+    { "type": "null", "title": "Not included" },
+    { "type": "string" }
+  ]
+}
+```
+
+This property is **disabled by default** and does not change existing behavior. Enabling it changes the
+generated schema text, which registers a new schema version, so it is an opt-in choice for the producer.
+To suppress nullability on an individual field while the feature is on, mark that field
+`@JsonProperty(required = true)`.
+
+For advanced cases, you can supply a fully-customized generator configuration instead of the single
+flag by passing a `com.kjetland.jackson.jsonSchema.JsonSchemaConfig` instance under the
+`jsonSchemaConfig` property. When present it takes precedence over `jsonSchemaNullableEnabled`, letting
+you combine nullable support with other generator options rather than choosing one preset:
+
+```java
+Map<String, Object> configs = new HashMap<>();
+configs.put(AWSSchemaRegistryConstants.AWS_REGION, "us-east-1");
+configs.put(AWSSchemaRegistryConstants.JSON_SCHEMA_CONFIG, JsonSchemaConfig.nullableJsonSchemaDraft4());
+```
+
 ### Using AWS Glue Schema Registry with Kinesis Data Streams
 
 **Kinesis Client library (KCL) / Kinesis Producer Library (KPL):** [Getting started with AWS Glue Schema Registry with AWS Kinesis Data Streams](https://docs.aws.amazon.com/glue/latest/dg/schema-registry-integrations.html#schema-registry-integrations-kds)

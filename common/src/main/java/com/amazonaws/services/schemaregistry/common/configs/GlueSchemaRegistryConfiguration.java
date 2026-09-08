@@ -22,6 +22,7 @@ import com.amazonaws.services.schemaregistry.utils.GlueSchemaRegistryUtils;
 import com.amazonaws.services.schemaregistry.utils.ProtobufMessageType;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.kjetland.jackson.jsonSchema.JsonSchemaConfig;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.EnumUtils;
@@ -67,7 +68,20 @@ public class GlueSchemaRegistryConfiguration {
 
     private List<SerializationFeature> jacksonSerializationFeatures;
     private List<DeserializationFeature> jacksonDeserializationFeatures;
+
+    /**
+     * When {@code true}, the JSON schema generator produces nullable fields
+     * ({@code oneOf[null, type]}) using {@code JsonSchemaConfig.nullableJsonSchemaDraft4()}.
+     * Defaults to {@code false} so existing schema generation is unchanged.
+     */
     private boolean jsonSchemaNullableEnabled = false;
+
+    /**
+     * Optional, programmatically-supplied JSON schema generator configuration.
+     * When set, it takes precedence over {@link #jsonSchemaNullableEnabled}, allowing callers to
+     * combine nullable support with other generator options rather than choosing a single preset.
+     */
+    private JsonSchemaConfig jsonSchemaConfig;
 
     public GlueSchemaRegistryConfiguration(String region) {
         Map<String, Object> config = new HashMap<>();
@@ -101,6 +115,7 @@ public class GlueSchemaRegistryConfiguration {
         validateAndSetJacksonSerializationFeatures(configs);
         validateAndSetJacksonDeserializationFeatures(configs);
         validateAndSetJsonSchemaNullableEnabled(configs);
+        validateAndSetJsonSchemaConfig(configs);
         validateAndSetTags(configs);
         validateAndSetMetadata(configs);
         validateAndSetUserAgent(configs);
@@ -328,7 +343,21 @@ public class GlueSchemaRegistryConfiguration {
     private void validateAndSetJsonSchemaNullableEnabled(Map<String, ?> configs) {
         if (isPresent(configs, AWSSchemaRegistryConstants.JSON_SCHEMA_NULLABLE_ENABLED)) {
             this.jsonSchemaNullableEnabled = Boolean.parseBoolean(
-                    configs.get(AWSSchemaRegistryConstants.JSON_SCHEMA_NULLABLE_ENABLED).toString());
+                    configs.get(AWSSchemaRegistryConstants.JSON_SCHEMA_NULLABLE_ENABLED)
+                            .toString());
+        }
+    }
+
+    private void validateAndSetJsonSchemaConfig(Map<String, ?> configs) {
+        if (isPresent(configs, AWSSchemaRegistryConstants.JSON_SCHEMA_CONFIG)) {
+            Object value = configs.get(AWSSchemaRegistryConstants.JSON_SCHEMA_CONFIG);
+            if (value instanceof JsonSchemaConfig) {
+                this.jsonSchemaConfig = (JsonSchemaConfig) value;
+            } else {
+                throw new AWSSchemaRegistryException(
+                        "The jsonSchemaConfig instance must be of type "
+                                + JsonSchemaConfig.class.getName());
+            }
         }
     }
 
