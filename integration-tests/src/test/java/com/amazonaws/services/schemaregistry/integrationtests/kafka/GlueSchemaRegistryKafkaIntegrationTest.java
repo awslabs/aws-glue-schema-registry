@@ -76,6 +76,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @Slf4j
 public class GlueSchemaRegistryKafkaIntegrationTest {
     private static final String TOPIC_NAME_PREFIX = "SchemaRegistryTests";
+    // The class named by the specific-record JSON generator's schema, allowlisted so that
+    // JSON + SPECIFIC_RECORD deserializes back into the POJO rather than a JsonDataWithSchema.
+    private static final String JSON_SPECIFIC_RECORD_CLASS_NAME =
+            "com.amazonaws.services.schemaregistry.integrationtests.generators.Car";
     private static final String INPUT_TOPIC_NAME_PREFIX_FOR_STREAMS = "SchemaRegistryTestsStreamsInput";
     private static final String OUTPUT_TOPIC_NAME_PREFIX_FOR_STREAMS = "SchemaRegistryTestsStreamsOutput";
     private static final String SCHEMA_REGISTRY_ENDPOINT_OVERRIDE = GlueSchemaRegistryConnectionProperties.ENDPOINT;
@@ -212,6 +216,13 @@ public class GlueSchemaRegistryKafkaIntegrationTest {
         ConsumerProperties.ConsumerPropertiesBuilder consumerPropertiesBuilder = ConsumerProperties.builder().topicName(topic);
         consumerPropertiesBuilder.protobufMessageType(ProtobufMessageType.DYNAMIC_MESSAGE.getName());
         consumerPropertiesBuilder.avroRecordType(avroRecordType.getName()); // Only required for the case of AVRO
+        // Only the specific-record JSON generator emits a schema carrying a className; opt in to
+        // resolving it for that combination so the consumer gets a POJO back rather than a
+        // JsonDataWithSchema.
+        if (dataFormat.equals(DataFormat.JSON) && AvroRecordType.SPECIFIC_RECORD.equals(avroRecordType)) {
+            consumerPropertiesBuilder.jsonClassNameResolutionEnabled(true);
+            consumerPropertiesBuilder.jsonClassNameAllowlist(JSON_SPECIFIC_RECORD_CLASS_NAME);
+        }
 
         List<ConsumerRecord<String, Object>> consumerRecords = kafkaHelper.doConsumeRecords(consumerPropertiesBuilder.build());
 
@@ -252,6 +263,13 @@ public class GlueSchemaRegistryKafkaIntegrationTest {
         ConsumerProperties.ConsumerPropertiesBuilder consumerPropertiesBuilder = ConsumerProperties.builder().topicName(topic);
         consumerPropertiesBuilder.protobufMessageType(ProtobufMessageType.DYNAMIC_MESSAGE.getName());
         consumerPropertiesBuilder.avroRecordType(avroRecordType.getName()); // Only required for the case of AVRO
+        // Only the specific-record JSON generator emits a schema carrying a className; opt in to
+        // resolving it for that combination so the consumer gets a POJO back rather than a
+        // JsonDataWithSchema.
+        if (dataFormat.equals(DataFormat.JSON) && AvroRecordType.SPECIFIC_RECORD.equals(avroRecordType)) {
+            consumerPropertiesBuilder.jsonClassNameResolutionEnabled(true);
+            consumerPropertiesBuilder.jsonClassNameAllowlist(JSON_SPECIFIC_RECORD_CLASS_NAME);
+        }
 
         List<ConsumerRecord<String, Object>> consumerRecords = kafkaHelper.doConsumeRecords(consumerPropertiesBuilder.build());
 

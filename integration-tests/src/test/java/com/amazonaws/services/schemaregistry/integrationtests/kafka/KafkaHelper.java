@@ -363,6 +363,14 @@ public class KafkaHelper {
             properties.put(AWSSchemaRegistryConstants.PROTOBUF_MESSAGE_TYPE,
                     consumerProperties.getProtobufMessageType());
         }
+        if(consumerProperties.getJsonClassNameResolutionEnabled() != null) {
+            properties.put(AWSSchemaRegistryConstants.JSON_CLASS_NAME_RESOLUTION_ENABLED,
+                    consumerProperties.getJsonClassNameResolutionEnabled());
+        }
+        if(consumerProperties.getJsonClassNameAllowlist() != null) {
+            properties.put(AWSSchemaRegistryConstants.JSON_CLASS_NAME_ALLOWLIST,
+                    consumerProperties.getJsonClassNameAllowlist());
+        }
         return properties;
     }
 
