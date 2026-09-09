@@ -147,7 +147,7 @@ bool glue_schema_registry_deserializer_can_decode(glue_schema_registry_deseriali
         return false;
     }
 
-    bool result = can_decode(thread, array, p_err);
+    bool result = can_decode(thread, array, p_err) != 0;
 
     if (graal_detach_thread(thread) != 0) {
         log_warn("Failed to detach thread from GraalVM isolate in deserializer can_decode", ERR_CODE_GRAAL_DETACH_FAILED);
