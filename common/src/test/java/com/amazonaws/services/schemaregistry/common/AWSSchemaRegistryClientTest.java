@@ -167,7 +167,7 @@ public class AWSSchemaRegistryClientTest {
                 () -> new AWSSchemaRegistryClient(mockAwsCredentialsProvider, glueSchemaRegistryConfiguration));
         assertEquals(URISyntaxException.class, awsSchemaRegistryException.getCause().getClass());
 
-        String expectedMessage = String.format("Malformed uri, please pass the valid uri for creating the client",
+        String expectedMessage = String.format("Malformed uri, please pass the valid uri for creating the client: %s",
                 glueSchemaRegistryConfiguration.getEndPoint());
         assertEquals(expectedMessage, awsSchemaRegistryException.getMessage());
     }
