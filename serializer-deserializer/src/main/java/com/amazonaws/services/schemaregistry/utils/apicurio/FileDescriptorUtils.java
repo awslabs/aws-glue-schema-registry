@@ -795,8 +795,8 @@ public class FileDescriptorUtils {
             options.add(option);
         }
         return new ProtoFileElement(DEFAULT_LOCATION, packageName, syntax, imports.build(),
-                publicImports.build(), types.build(), services.build(), Collections.emptyList(),
-                options.build());
+                publicImports.build(), Collections.emptyList(), types.build(), services.build(),
+                Collections.emptyList(), options.build());
     }
 
     private static MessageElement toMessage(FileDescriptorProto file, DescriptorProto descriptor) {
