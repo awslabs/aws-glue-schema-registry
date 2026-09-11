@@ -474,6 +474,24 @@ The cache is available by default. However, it can be fine-tuned by providing ca
     properties.put(AWSSchemaRegistryConstants.CACHE_SIZE, "100"); // Maximum number of elements in a cache - If not passed, defaults to 200
 ```
 
+### Using a custom HTTP client (e.g. IRSA on EKS)
+
+By default the internal Glue client uses `UrlConnectionHttpClient`. You can inject a different
+`SdkHttpClient` (for example the Apache client) programmatically on the configuration. This is useful when
+another SDK HTTP implementation is already on the classpath (avoiding the "Multiple HTTP implementations
+were found on the classpath" error) or when using a credentials provider that calls STS, such as
+`WebIdentityTokenFileCredentialsProvider` (IAM Roles for Service Accounts / IRSA on EKS).
+
+```java
+    GlueSchemaRegistryConfiguration config = new GlueSchemaRegistryConfiguration(properties);
+    // If not set, defaults to UrlConnectionHttpClient (unchanged behavior).
+    config.setHttpClientBuilder(software.amazon.awssdk.http.apache.ApacheHttpClient.builder());
+```
+
+This is a programmatic-only option (it is not read from the properties map) and does not change the
+serialized wire format. When a custom builder is injected, any `proxyUrl` set on the configuration is
+ignored — configure the proxy on the injected builder instead.
+
 ### Migrating from a third party Schema Registry
 
 To migrate to AWS Glue Schema Registry from a third party schema registry for AVRO data types for Kafka, add this 
