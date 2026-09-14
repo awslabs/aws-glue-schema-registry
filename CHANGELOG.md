@@ -1,4 +1,12 @@
 # Changelog
+## Release 2.0.0 (proposed - BREAKING CHANGE)
+* **BREAKING:** Dropped Scala 2.12 support. The library is now built against the
+  Scala 2.13 Kafka and `mbknor-jackson-jsonschema` artifacts
+  (`kafka_2.13`, `mbknor-jackson-jsonschema_2.13`). Because a single set of
+  artifacts is published, consumers still on Scala 2.12 must migrate to 2.13.
+  This aligns with Apache Kafka 4.0 and Apache Spark 4.0, both of which drop
+  Scala 2.12. See #350; supersedes the reverted #310/#314.
+
 ## Release 1.0.0
 * Initial Release
 
