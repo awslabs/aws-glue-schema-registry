@@ -167,6 +167,26 @@ public final class AWSSchemaRegistryConstants {
     public static final String JACKSON_DESERIALIZATION_FEATURES = "jacksonDeserializationFeatures";
 
     /**
+     * Configuration to enable nullable fields in JSON Schema generation from POJOs.
+     * When enabled, the JSON schema generator uses
+     * {@code JsonSchemaConfig.nullableJsonSchemaDraft4()}, which produces
+     * {@code oneOf[{"type":"null"}, type]} for non-required, non-primitive fields.
+     * Disabled by default; enabling it changes the generated schema text and therefore
+     * registers a new schema version, so it is an opt-in decision for the producer.
+     */
+    public static final String JSON_SCHEMA_NULLABLE_ENABLED = "jsonSchemaNullableEnabled";
+
+    /**
+     * Advanced configuration to supply a fully-customized JSON schema generator config.
+     * The value must be a {@code com.kjetland.jackson.jsonSchema.JsonSchemaConfig} instance
+     * and can only be provided programmatically (not via a string properties file).
+     * When present, it takes precedence over {@link #JSON_SCHEMA_NULLABLE_ENABLED}, allowing
+     * callers to combine nullable support with other generator options rather than choosing
+     * one preset. See https://github.com/mbknor/mbknor-jackson-jsonSchema for available options.
+     */
+    public static final String JSON_SCHEMA_CONFIG = "jsonSchemaConfig";
+
+    /**
      * Name of the UserAgent application using the serializer/de-serializer library.
      * Ex: KPL, Kafka, KafkaConnect etc.
      */

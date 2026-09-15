@@ -21,6 +21,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.kjetland.jackson.jsonSchema.JsonSchemaConfig;
 import com.kjetland.jackson.jsonSchema.JsonSchemaGenerator;
 import lombok.Builder;
 import lombok.Getter;
@@ -64,7 +65,34 @@ public class JsonSerializer implements GlueSchemaRegistryDataFormatSerializer {
                         .forEach(this.objectMapper::enable);
             }
         }
-        this.jsonSchemaGenerator = new JsonSchemaGenerator(this.objectMapper);
+        this.jsonSchemaGenerator = buildJsonSchemaGenerator(this.objectMapper, configs);
+    }
+
+    /**
+     * Builds the JSON schema generator honoring the following precedence:
+     * <ol>
+     *     <li>An explicit {@code JsonSchemaConfig} supplied via configuration.</li>
+     *     <li>The {@code jsonSchemaNullableEnabled} flag, which uses the
+     *     {@code nullableJsonSchemaDraft4()} preset.</li>
+     *     <li>The library default (unchanged behavior).</li>
+     * </ol>
+     *
+     * @param objectMapper the object mapper backing the generator
+     * @param configs      the schema registry configuration (may be {@code null})
+     * @return a configured {@link JsonSchemaGenerator}
+     */
+    private JsonSchemaGenerator buildJsonSchemaGenerator(ObjectMapper objectMapper,
+                                                         GlueSchemaRegistryConfiguration configs) {
+        if (configs == null) {
+            return new JsonSchemaGenerator(objectMapper);
+        }
+        if (configs.getJsonSchemaConfig() != null) {
+            return new JsonSchemaGenerator(objectMapper, configs.getJsonSchemaConfig());
+        }
+        if (configs.isJsonSchemaNullableEnabled()) {
+            return new JsonSchemaGenerator(objectMapper, JsonSchemaConfig.nullableJsonSchemaDraft4());
+        }
+        return new JsonSchemaGenerator(objectMapper);
     }
 
     /**
