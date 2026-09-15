@@ -75,6 +75,18 @@
     <build>
         <plugins>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <configuration>
+                    <!-- The parent excludes com.amazonaws.services.schemaregistry, which is the only
+                         package in this module. That leaves javadoc with nothing to document, so it
+                         silently attaches no artifact and Maven Central rejects the bundle with
+                         "Javadocs must be provided but not found in entries". Override the exclusion
+                         here so this module produces a javadoc jar. -->
+                    <excludePackageNames>none</excludePackageNames>
+                </configuration>
+            </plugin>
+            <plugin>
                 <artifactId>maven-shade-plugin</artifactId>
                 <version>3.2.1</version>
                 <configuration>
