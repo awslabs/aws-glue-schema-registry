@@ -82,6 +82,9 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <glue.schema.registry.groupId>software.amazon.glue</glue.schema.registry.groupId>
         <aws.sdk.v2.version>2.32.25</aws.sdk.v2.version>
+        <!-- Netty arrives transitively via awssdk netty-nio-client and zookeeper. Pinned ahead of
+             those to remediate CVE-2026-33870; drop this once the AWS SDK ships 4.1.132.Final+. -->
+        <netty.version>4.1.138.Final</netty.version>
         <kafka.scala.version>2.13</kafka.scala.version>
         <kafka.version>3.9.2</kafka.version>
         <avro.version>1.11.4</avro.version>
@@ -133,6 +136,13 @@
                 <groupId>com.fasterxml.jackson</groupId>
                 <artifactId>jackson-bom</artifactId>
                 <version>${jackson.version}</version>
+                <scope>import</scope>
+                <type>pom</type>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-bom</artifactId>
+                <version>${netty.version}</version>
                 <scope>import</scope>
                 <type>pom</type>
             </dependency>
