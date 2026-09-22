@@ -75,7 +75,7 @@ public class ProtobufWireFormatDecoder {
     private Object deserializeToPojo(final Descriptors.Descriptor descriptor, final CodedInputStream codedInputStream) {
         final String className = ProtobufClassName.from(descriptor);
         try {
-            final Class<?> classType = Class.forName(className);
+            final Class<?> classType = Thread.currentThread().getContextClassLoader().loadClass(className);
             final Method parseMethod = classType.getMethod("parseFrom", CodedInputStream.class);
             return parseMethod.invoke(classType, codedInputStream);
         } catch (Exception e) {
