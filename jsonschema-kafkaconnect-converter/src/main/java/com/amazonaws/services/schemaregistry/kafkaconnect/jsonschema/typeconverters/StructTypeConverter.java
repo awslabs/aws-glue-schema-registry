@@ -259,7 +259,7 @@ public class StructTypeConverter implements TypeConverter {
                             final JsonNode value,
                             final JsonSchemaDataConfig jsonSchemaDataConfig) {
         jsonNodeToConnectValueConverter = new JsonNodeToConnectValueConverter(jsonSchemaDataConfig);
-        Object converted = null;
+        Struct converted = null;
         if (schema.name() != null && schema.name()
                 .equals(JsonSchemaConverterConstants.JSON_SCHEMA_TYPE_ONEOF)) {
             // Special case support for union types
@@ -267,11 +267,14 @@ public class StructTypeConverter implements TypeConverter {
                 Schema fieldSchema = field.schema();
 
                 if (isInstanceOfJsonSchemaTypeForSimpleSchema(fieldSchema, value) || structSchemaEquals(fieldSchema,
-                                                                                                        value)) {
-                    converted = new Struct(schema.schema()).put("field" + (field.index() + 1),
-                                                                jsonNodeToConnectValueConverter.toConnectValue(
-                                                                        fieldSchema, value));
-                    break;
+                                                                                                          value)) {
+                    if (converted == null) {
+                        converted = new Struct(schema.schema());
+                    }
+                    converted.put("field" + (field.index() + 1),
+                            jsonNodeToConnectValueConverter.toConnectValue(
+                                    fieldSchema, value));
+
                 }
             }
             if (converted == null) {
