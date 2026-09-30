@@ -27,6 +27,7 @@ import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 
 /**
@@ -35,6 +36,7 @@ import java.util.Map;
  */
 public class GlueSchemaRegistryInputStreamDeserializer {
     private final GlueSchemaRegistryDeserializationFacade glueSchemaRegistryDeserializationFacade;
+    private final ConcurrentHashMap<String, Schema> parsedSchemaCache = new ConcurrentHashMap<>();
 
     /**
      * Constructor accepts configuration map for AWS Deserializer
@@ -69,13 +71,14 @@ public class GlueSchemaRegistryInputStreamDeserializer {
         byte[] deserializedBytes = glueSchemaRegistryDeserializationFacade.getActualData(inputBytes);
         mutableByteArrayInputStream.setBuffer(deserializedBytes);
 
-        Schema schema;
-        try {
-            schema = (new Schema.Parser()).parse(schemaDefinition);
-        } catch (SchemaParseException e) {
-            String message = "Error occurred while parsing schema, see inner exception for details.";
-            throw new AWSSchemaRegistryException(message, e);
-        }
+        Schema schema = parsedSchemaCache.computeIfAbsent(schemaDefinition, schemaDef -> {
+            try {
+                return (new Schema.Parser()).parse(schemaDef);
+            } catch (SchemaParseException e) {
+                String message = "Error occurred while parsing schema, see inner exception for details.";
+                throw new AWSSchemaRegistryException(message, e);
+            }
+        });
 
         return schema;
     }
