@@ -2,7 +2,7 @@ version: "3.8"
 
 services:
   zookeeper:
-    image: public.ecr.aws/bitnami/zookeeper:3.8
+    image: soldevelo/zookeeper:3.8
     container_name: zookeeper
     environment:
       - ALLOW_ANONYMOUS_LOGIN=yes
@@ -10,7 +10,7 @@ services:
       - "2181:2181"
 
   kafka-1:
-    image: public.ecr.aws/bitnami/kafka:3.5
+    image: soldevelo/kafka:3.5
     container_name: kafka-1
     depends_on: [zookeeper]
     environment:
@@ -32,7 +32,7 @@ services:
       "
 
   kafka-2:
-    image: public.ecr.aws/bitnami/kafka:3.5
+    image: soldevelo/kafka:3.5
     container_name: kafka-2
     depends_on: [zookeeper]
     environment:
@@ -45,7 +45,7 @@ services:
       - ALLOW_PLAINTEXT_LISTENER=yes
 
   kafka-3:
-    image: public.ecr.aws/bitnami/kafka:3.5
+    image: soldevelo/kafka:3.5
     container_name: kafka-3
     depends_on: [zookeeper]
     environment:
