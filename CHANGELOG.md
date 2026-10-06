@@ -122,5 +122,5 @@ GlueSchemaRegistryKafkaSerializer/GlueSchemaRegistryKafkaDeserializer.
 * **Fix.** The Protobuf Kafka Connect converter no longer throws a `NullPointerException` for STRUCT fields whose schema has no Protobuf metadata, on both the schema conversion and data conversion paths. Note the remaining limitation: a STRUCT built with `SchemaBuilder.struct()` and no `.name(...)` still throws, because the unnamed case is not yet handled.
 
 ## Release 2.0.1
-* Upgraded Jackson to 2.22.3
-* Upgraded Netty to 4.1.138.Final
+* **Security fix.** Upgraded Jackson to 2.22.3 to remediate [CVE-2025-52999](https://nvd.nist.gov/vuln/detail/CVE-2025-52999).
+* **Security fix.** Upgraded Netty to 4.1.138.Final to remediate [CVE-2026-33870](https://nvd.nist.gov/vuln/detail/CVE-2026-33870).
