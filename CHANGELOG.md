@@ -120,3 +120,7 @@ GlueSchemaRegistryKafkaSerializer/GlueSchemaRegistryKafkaDeserializer.
 * **Behavior change.** `@SneakyThrows` has been removed to fix a runtime `NoClassDefFoundError: lombok/Lombok`. Checked exceptions are now wrapped in `AWSSchemaRegistryException`, `UncheckedIOException`, or `DataException` depending on the module. Consumers catching specific exception types around serialization or deserialization may need to adjust their catch blocks.
 * **Fix.** Removed the compile-scope `kotlinx-serialization-core-jvm` declaration, which resolves the long-standing build failure for consumers on older Kotlin compilers. It was never referenced by GSR source and is needed only at runtime, but compile scope placed its `Require-Kotlin-Version` constraint on every consumer's compile classpath. Also upgraded `okio` and `okio-fakefilesystem` to 3.18.2, which had disagreed with each other at 3.4.0 and 3.2.0.
 * **Fix.** The Protobuf Kafka Connect converter no longer throws a `NullPointerException` for STRUCT fields whose schema has no Protobuf metadata, on both the schema conversion and data conversion paths. Note the remaining limitation: a STRUCT built with `SchemaBuilder.struct()` and no `.name(...)` still throws, because the unnamed case is not yet handled.
+
+## Release 2.0.1
+* Upgraded Jackson to 2.22.3
+* Upgraded Netty to 4.1.138.Final
