@@ -9,15 +9,19 @@ on:
     branches: [ master ]
     types: [ created ]
 
+permissions:
+  contents: read
+
 jobs:
   git-secrets-scan:
     runs-on: ubuntu-latest
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Install git-secrets
         run: |
@@ -105,8 +109,10 @@ jobs:
           fi
 
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         
+        with:
+          persist-credentials: false
       - name: Install CMake and dependencies
         shell: bash
         run: |
@@ -131,7 +137,7 @@ jobs:
           ${{ matrix.dotnet_setup }}
 
       - name: Set up Java
-        uses: graalvm/setup-graalvm@v1
+        uses: graalvm/setup-graalvm@5298d94fb55a4f185c602eeac5de1b553882abe2 # v1.6.4
         with:
           distribution: 'graalvm'
           java-version: '21.0.2'       
@@ -198,12 +204,13 @@ jobs:
         arch: [x64]
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           fetch-depth: 0
+          persist-credentials: false
         
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
         
       - name: Build GraalVM musl container
         run: |
