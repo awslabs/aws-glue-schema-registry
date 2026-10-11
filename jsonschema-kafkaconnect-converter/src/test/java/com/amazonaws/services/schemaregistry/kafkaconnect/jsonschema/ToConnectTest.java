@@ -33,6 +33,7 @@ import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.data.Time;
 import org.apache.kafka.connect.data.Timestamp;
+import org.apache.kafka.connect.errors.DataException;
 import org.apache.kafka.connect.json.DecimalFormat;
 import org.everit.json.schema.ArraySchema;
 import org.everit.json.schema.BooleanSchema;
@@ -54,6 +55,8 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.everit.json.schema.loader.SchemaLoader;
 import org.json.JSONObject;
@@ -141,6 +144,125 @@ public class ToConnectTest {
                         jsonValue);
 
         assertDoesNotThrow(() -> ConnectSchema.validateValue(actualConnectSchema, actualConnectValue));
+    }
+
+    // ---------------------------------------------------------------------------------
+    // JSON Schema "const" support (draft-06+). A const may be any JSON value - scalar,
+    // object, or array - and everit surfaces it as a ConstSchema. The converter infers a
+    // Connect schema from the shape of the permitted value. These tests cover each shape
+    // plus the ambiguous cases that must fail fast with a clear error.
+    // ---------------------------------------------------------------------------------
+
+    private Schema convertConstProperty(String constJson, String valueJson) throws Exception {
+        JSONObject jsonSchemaObject = new JSONObject("{"
+                + "\"$schema\": \"http://json-schema.org/draft-07/schema#\","
+                + "\"type\": \"object\","
+                + "\"properties\": { \"c\": " + constJson + " },"
+                + "\"additionalProperties\": false }");
+
+        org.everit.json.schema.Schema jsonSchema =
+                org.everit.json.schema.loader.SchemaLoader.load(jsonSchemaObject);
+
+        Schema connectSchema = jsonSchemaToConnectSchemaConverter.toConnectSchema(jsonSchema);
+
+        // Also exercise the value path so we prove data actually deserializes, not just
+        // that the schema builds.
+        ObjectMapper objectMapper = new ObjectMapper();
+        JsonNode jsonValue = objectMapper.readTree("{ \"c\": " + valueJson + " }");
+        Object connectValue = jsonNodeToConnectValueConverter.toConnectValue(connectSchema, jsonValue);
+        ConnectSchema.validateValue(connectSchema, connectValue);
+
+        return connectSchema.field("c").schema();
+    }
+
+    @Test
+    public void testToConnect_constString_mapsToString() throws Exception {
+        Schema fieldSchema = convertConstProperty("{ \"const\": \"US\" }", "\"US\"");
+        assertEquals(Schema.Type.STRING, fieldSchema.type());
+    }
+
+    @Test
+    public void testToConnect_constInteger_mapsToInt64() throws Exception {
+        Schema fieldSchema = convertConstProperty("{ \"const\": 1 }", "1");
+        assertEquals(Schema.Type.INT64, fieldSchema.type());
+    }
+
+    @Test
+    public void testToConnect_constNumber_mapsToFloat64() throws Exception {
+        Schema fieldSchema = convertConstProperty("{ \"const\": 1.5 }", "1.5");
+        assertEquals(Schema.Type.FLOAT64, fieldSchema.type());
+    }
+
+    @Test
+    public void testToConnect_constBoolean_mapsToBoolean() throws Exception {
+        Schema fieldSchema = convertConstProperty("{ \"const\": true }", "true");
+        assertEquals(Schema.Type.BOOLEAN, fieldSchema.type());
+    }
+
+    @Test
+    public void testToConnect_constObject_mapsToStruct() throws Exception {
+        Schema fieldSchema = convertConstProperty(
+                "{ \"const\": { \"code\": \"US\", \"rank\": 1 } }",
+                "{ \"code\": \"US\", \"rank\": 1 }");
+        assertEquals(Schema.Type.STRUCT, fieldSchema.type());
+        assertEquals(Schema.Type.STRING, fieldSchema.field("code").schema().type());
+        assertEquals(Schema.Type.INT64, fieldSchema.field("rank").schema().type());
+    }
+
+    @Test
+    public void testToConnect_constArray_mapsToArrayOfElementType() throws Exception {
+        Schema fieldSchema = convertConstProperty("{ \"const\": [\"a\", \"b\"] }", "[\"a\", \"b\"]");
+        assertEquals(Schema.Type.ARRAY, fieldSchema.type());
+        assertEquals(Schema.Type.STRING, fieldSchema.valueSchema().type());
+    }
+
+    @Test
+    public void testToConnect_constNestedObjectAndArray_mapsRecursively() throws Exception {
+        Schema fieldSchema = convertConstProperty(
+                "{ \"const\": { \"name\": \"x\", \"tags\": [\"a\", \"b\"] } }",
+                "{ \"name\": \"x\", \"tags\": [\"a\", \"b\"] }");
+        assertEquals(Schema.Type.STRUCT, fieldSchema.type());
+        assertEquals(Schema.Type.STRING, fieldSchema.field("name").schema().type());
+        assertEquals(Schema.Type.ARRAY, fieldSchema.field("tags").schema().type());
+        assertEquals(Schema.Type.STRING, fieldSchema.field("tags").schema().valueSchema().type());
+    }
+
+    @Test
+    public void testToConnect_constObjectValue_deserializesToStruct() throws Exception {
+        JSONObject jsonSchemaObject = new JSONObject("{"
+                + "\"$schema\": \"http://json-schema.org/draft-07/schema#\","
+                + "\"type\": \"object\","
+                + "\"properties\": { \"region\": { \"const\": { \"code\": \"US\", \"rank\": 1 } } },"
+                + "\"additionalProperties\": false }");
+        org.everit.json.schema.Schema jsonSchema =
+                org.everit.json.schema.loader.SchemaLoader.load(jsonSchemaObject);
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        JsonNode jsonValue = objectMapper.readTree("{ \"region\": { \"code\": \"US\", \"rank\": 1 } }");
+
+        Schema connectSchema = jsonSchemaToConnectSchemaConverter.toConnectSchema(jsonSchema);
+        Object connectValue = jsonNodeToConnectValueConverter.toConnectValue(connectSchema, jsonValue);
+
+        assertDoesNotThrow(() -> ConnectSchema.validateValue(connectSchema, connectValue));
+        Struct region = (Struct) ((Struct) connectValue).get("region");
+        assertEquals("US", region.get("code"));
+        assertEquals(1L, region.get("rank"));
+    }
+
+    @Test
+    public void testToConnect_constEmptyArray_throwsClearError() {
+        DataException ex = assertThrows(DataException.class,
+                () -> convertConstProperty("{ \"const\": [] }", "[]"));
+        assertTrue(ex.getMessage().contains("empty 'const' array"),
+                "Unexpected message: " + ex.getMessage());
+    }
+
+    @Test
+    public void testToConnect_constHeterogeneousArray_throwsClearError() {
+        DataException ex = assertThrows(DataException.class,
+                () -> convertConstProperty("{ \"const\": [\"a\", 1] }", "[\"a\", 1]"));
+        assertTrue(ex.getMessage().contains("heterogeneous 'const' array"),
+                "Unexpected message: " + ex.getMessage());
     }
 
     @ParameterizedTest

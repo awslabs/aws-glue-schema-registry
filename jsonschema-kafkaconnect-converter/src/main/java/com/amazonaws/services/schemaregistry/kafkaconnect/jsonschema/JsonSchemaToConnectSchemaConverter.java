@@ -27,13 +27,16 @@ import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.errors.DataException;
 import org.everit.json.schema.CombinedSchema;
+import org.everit.json.schema.ConstSchema;
 import org.everit.json.schema.NullSchema;
 import org.everit.json.schema.ReferenceSchema;
 
+import java.math.BigInteger;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 /**
@@ -84,6 +87,13 @@ public class JsonSchemaToConnectSchemaConverter {
 
         if (typeConverter != null) {
             builder = typeConverter.toConnectSchema(jsonSchema, jsonSchemaDataConfig);
+        } else if (jsonSchema instanceof ConstSchema) {
+            // JSON Schema "const" (draft-06+) restricts a value to a single permitted
+            // value, which may be any JSON value - scalar, object, or array. everit exposes
+            // that value via getPermittedValue(). We infer a Connect schema from the value's
+            // shape so both schema translation and value deserialization work through the
+            // normal Connect type machinery. See issue: const types unsupported.
+            builder = buildConstSchema((ConstSchema) jsonSchema);
         } else if (jsonSchema instanceof CombinedSchema) {
             CombinedSchema combinedSchema = (CombinedSchema) jsonSchema;
             Collection<org.everit.json.schema.Schema> subSchemas = combinedSchema.getSubschemas();
@@ -119,6 +129,85 @@ public class JsonSchemaToConnectSchemaConverter {
                 .filter(schema -> !(schema instanceof NullSchema))
                 .findAny();
         return toConnectSchema(oneOfSchema.get(), false);
+    }
+
+    /**
+     * Builds a Connect schema for a JSON Schema {@code const} by inferring the schema from
+     * the Java type of the single permitted value. Objects become STRUCTs, arrays become
+     * ARRAYs (with a homogeneous element type), and scalars map to their Connect types.
+     *
+     * <p>Note: this preserves the <em>type</em> of the const value so that data flows
+     * through correctly, but it does not enforce the const <em>constraint</em> (that the
+     * value must equal the permitted value); Connect's schema model has no equivalent, and
+     * the constraint is not round-tripped, consistent with how other JSON Schema validation
+     * keywords (pattern, minimum, format, ...) are handled.
+     */
+    private SchemaBuilder buildConstSchema(ConstSchema constSchema) {
+        return inferSchemaBuilderFromValue(constSchema.getPermittedValue());
+    }
+
+    private SchemaBuilder inferSchemaBuilderFromValue(Object value) {
+        if (value == null) {
+            throw new DataException(
+                    "Cannot infer a Connect schema for a JSON Schema 'const' with a null value");
+        } else if (value instanceof Boolean) {
+            return SchemaBuilder.bool();
+        } else if (value instanceof Integer || value instanceof Long || value instanceof Short
+                || value instanceof Byte || value instanceof BigInteger) {
+            return SchemaBuilder.int64();
+        } else if (value instanceof Number) {
+            // Float, Double, BigDecimal and any other non-integral number.
+            return SchemaBuilder.float64();
+        } else if (value instanceof CharSequence) {
+            return SchemaBuilder.string();
+        } else if (value instanceof Map) {
+            return inferStructBuilderFromValue((Map<?, ?>) value);
+        } else if (value instanceof Collection) {
+            return inferArrayBuilderFromValue((Collection<?>) value);
+        }
+        throw new DataException("Unsupported JSON Schema 'const' value type: "
+                + value.getClass().getName());
+    }
+
+    private SchemaBuilder inferStructBuilderFromValue(Map<?, ?> map) {
+        SchemaBuilder builder = SchemaBuilder.struct();
+        // Sort by key so the generated STRUCT has a deterministic field order regardless of
+        // the Map implementation everit returns.
+        Map<String, Object> sortedFields = new TreeMap<>();
+        for (Map.Entry<?, ?> entry : map.entrySet()) {
+            sortedFields.put(String.valueOf(entry.getKey()), entry.getValue());
+        }
+        for (Map.Entry<String, Object> entry : sortedFields.entrySet()) {
+            if (entry.getValue() == null) {
+                throw new DataException("Cannot infer a Connect schema for the 'const' object field '"
+                        + entry.getKey() + "' because its value is null");
+            }
+            builder.field(entry.getKey(), inferSchemaBuilderFromValue(entry.getValue()).build());
+        }
+        return builder;
+    }
+
+    private SchemaBuilder inferArrayBuilderFromValue(Collection<?> collection) {
+        if (collection.isEmpty()) {
+            throw new DataException(
+                    "Cannot infer a Connect element schema for an empty 'const' array");
+        }
+        Schema elementSchema = null;
+        for (Object element : collection) {
+            if (element == null) {
+                throw new DataException(
+                        "Cannot infer a Connect schema for a null element in a 'const' array");
+            }
+            Schema candidate = inferSchemaBuilderFromValue(element).build();
+            if (elementSchema == null) {
+                elementSchema = candidate;
+            } else if (!elementSchema.equals(candidate)) {
+                throw new DataException("Cannot convert a heterogeneous 'const' array to a Connect ARRAY; "
+                        + "all elements must have the same type, but found " + elementSchema.type()
+                        + " and " + candidate.type());
+            }
+        }
+        return SchemaBuilder.array(elementSchema);
     }
 
     private SchemaBuilder buildNonOptionalUnionSchema(Collection<org.everit.json.schema.Schema> subSchemas,
