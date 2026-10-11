@@ -20,6 +20,7 @@ import com.amazonaws.services.schemaregistry.utils.AWSSchemaRegistryConstants;
 import com.amazonaws.services.schemaregistry.utils.RecordGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.kjetland.jackson.jsonSchema.JsonSchemaConfig;
 import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
@@ -28,7 +29,9 @@ import java.util.HashMap;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class JsonSerializerTest {
     private static final JsonDataWithSchema GENERIC_TEST_RECORD =
@@ -135,6 +138,77 @@ public class JsonSerializerTest {
                                   + "\"serviceChecks\":{\"type\":\"array\",\"items\":{\"type\":\"number\"}}},"
                                   + "\"required\":[\"make\",\"model\",\"used\",\"miles\",\"year\"]}";
         assertEquals(schemaDefinition, jsonSerializer.getSchemaDefinition(SPECIFIC_TEST_RECORD));
+    }
+
+    private JsonSerializer jsonSerializerWith(String key, Object value) {
+        return new JsonSerializer(new GlueSchemaRegistryConfiguration(new HashMap<String, Object>() {{
+            put(AWSSchemaRegistryConstants.AWS_REGION, "us-west-2");
+            put(key, value);
+        }}));
+    }
+
+    @Test
+    public void testPojo_getSchemaDefinition_nullableDisabledByDefault_unchanged() {
+        // Default (flag off) must produce the exact same schema as before, proving no breaking change.
+        String schemaDefinition = "{\"$schema\":\"http://json-schema.org/draft-04/schema#\",\"title\":\"Simple Car "
+                                  + "Schema\",\"type\":\"object\",\"additionalProperties\":false,"
+                                  + "\"description\":\"This is a car\",\"className\":\"com.amazonaws.services"
+                                  + ".schemaregistry.serializers.json.Car\","
+                                  + "\"properties\":{\"make\":{\"type\":\"string\"},\"model\":{\"type\":\"string\"},"
+                                  + "\"used\":{\"type\":\"boolean\",\"default\":true},"
+                                  + "\"miles\":{\"type\":\"integer\",\"maximum\":200000,\"multipleOf\":1000},"
+                                  + "\"year\":{\"type\":\"integer\",\"minimum\":2000},"
+                                  + "\"purchaseDate\":{\"type\":\"integer\",\"format\":\"utc-millisec\"},"
+                                  + "\"listedDate\":{\"type\":\"integer\",\"format\":\"utc-millisec\"},"
+                                  + "\"owners\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}},"
+                                  + "\"serviceChecks\":{\"type\":\"array\",\"items\":{\"type\":\"number\"}}},"
+                                  + "\"required\":[\"make\",\"model\",\"used\",\"miles\",\"year\"]}";
+        assertEquals(schemaDefinition, jsonSerializer.getSchemaDefinition(SPECIFIC_TEST_RECORD));
+    }
+
+    @Test
+    public void testPojo_getSchemaDefinition_nullableEnabled_producesOneOfNull() {
+        JsonSerializer nullableSerializer =
+                jsonSerializerWith(AWSSchemaRegistryConstants.JSON_SCHEMA_NULLABLE_ENABLED, true);
+        String schema = nullableSerializer.getSchemaDefinition(SPECIFIC_TEST_RECORD);
+
+        // Nullable, non-required fields become a oneOf that includes a null branch.
+        assertTrue(schema.contains("oneOf"), "Expected oneOf in nullable schema but was: " + schema);
+        assertTrue(schema.contains("\"type\":\"null\""),
+                "Expected a null type branch in nullable schema but was: " + schema);
+    }
+
+    @Test
+    public void testPojo_getSchemaDefinition_nullableEnabledViaStringValue_producesOneOfNull() {
+        JsonSerializer nullableSerializer =
+                jsonSerializerWith(AWSSchemaRegistryConstants.JSON_SCHEMA_NULLABLE_ENABLED, "true");
+        String schema = nullableSerializer.getSchemaDefinition(SPECIFIC_TEST_RECORD);
+
+        assertTrue(schema.contains("oneOf"), "Expected oneOf when flag set via string 'true'");
+        assertTrue(schema.contains("\"type\":\"null\""), "Expected null type branch when flag set via string 'true'");
+    }
+
+    @Test
+    public void testPojo_getSchemaDefinition_customConfigOverridesFlag() {
+        // Explicit JsonSchemaConfig must take precedence even when the nullable flag is left off.
+        JsonSerializer customConfigSerializer =
+                new JsonSerializer(new GlueSchemaRegistryConfiguration(new HashMap<String, Object>() {{
+                    put(AWSSchemaRegistryConstants.AWS_REGION, "us-west-2");
+                    put(AWSSchemaRegistryConstants.JSON_SCHEMA_NULLABLE_ENABLED, false);
+                    put(AWSSchemaRegistryConstants.JSON_SCHEMA_CONFIG, JsonSchemaConfig.nullableJsonSchemaDraft4());
+                }}));
+        String schema = customConfigSerializer.getSchemaDefinition(SPECIFIC_TEST_RECORD);
+
+        assertTrue(schema.contains("oneOf"), "Expected custom nullable config to be applied over the disabled flag");
+        assertTrue(schema.contains("\"type\":\"null\""), "Expected null type branch from custom config");
+    }
+
+    @Test
+    public void testPojo_getSchemaDefinition_nullableFieldsRemainNonNull_whenDisabled() {
+        // Sanity: with the default serializer, no field is turned into a nullable union.
+        String schema = jsonSerializer.getSchemaDefinition(SPECIFIC_TEST_RECORD);
+        assertFalse(schema.contains("oneOf"), "Default schema should not contain oneOf");
+        assertFalse(schema.contains("\"type\":\"null\""), "Default schema should not contain a null type branch");
     }
 
     @Test
