@@ -33,7 +33,6 @@ import org.everit.json.schema.ReferenceSchema;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -92,9 +91,19 @@ public class JsonSchemaToConnectSchemaConverter {
             boolean hasNullSchema = subSchemas.stream()
                     .anyMatch(schema -> schema instanceof NullSchema);
 
-            boolean isOptionalUnion =
-                    CombinedSchema.ONE_CRITERION.equals(criterion) && subSchemas.size() == 2 && hasNullSchema;
-            if (isOptionalUnion) {
+            // A nullable union is a oneOf/anyOf that includes a NullSchema, e.g.
+            // {"type": ["string", "null"]} or {"type": ["string", "integer", "null"]}.
+            // (A "type" array is parsed by everit as anyOf; an explicit oneOf uses
+            // ONE_CRITERION.) In all these cases the null branch means the field is
+            // optional, and the field should carry the union of the remaining, non-null
+            // types. Build that optional schema and return it directly - it must not fall
+            // through to populateConnectProperties, which would call required() on an
+            // already-optional builder and throw "optional has already been set".
+            // See https://github.com/awslabs/aws-glue-schema-registry/issues/218
+            boolean isNullableUnion = hasNullSchema
+                    && (CombinedSchema.ONE_CRITERION.equals(criterion)
+                            || CombinedSchema.ANY_CRITERION.equals(criterion));
+            if (isNullableUnion) {
                 return buildOptionalUnionSchema(subSchemas);
             }
 
@@ -115,10 +124,23 @@ public class JsonSchemaToConnectSchemaConverter {
     }
 
     private Schema buildOptionalUnionSchema(Collection<org.everit.json.schema.Schema> subSchemas) {
-        Optional<org.everit.json.schema.Schema> oneOfSchema = subSchemas.stream()
+        List<org.everit.json.schema.Schema> nonNullSubSchemas = subSchemas.stream()
                 .filter(schema -> !(schema instanceof NullSchema))
-                .findAny();
-        return toConnectSchema(oneOfSchema.get(), false);
+                .collect(Collectors.toList());
+
+        // Exactly one real type plus null: the field is simply that type, made optional
+        // (e.g. ["string", "null"] -> optional STRING).
+        if (nonNullSubSchemas.size() == 1) {
+            return toConnectSchema(nonNullSubSchemas.get(0), false);
+        }
+
+        // More than one real type plus null (e.g. ["string", "integer", "null"]): build the
+        // oneOf-style union struct over the non-null types and mark it optional. Passing
+        // hasNullSchema=true makes buildNonOptionalUnionSchema apply optional(); we then
+        // build and return it directly rather than routing through populateConnectProperties
+        // (which would call required() and throw "optional has already been set").
+        SchemaBuilder builder = buildNonOptionalUnionSchema(nonNullSubSchemas, true);
+        return builder.build();
     }
 
     private SchemaBuilder buildNonOptionalUnionSchema(Collection<org.everit.json.schema.Schema> subSchemas,
