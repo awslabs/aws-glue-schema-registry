@@ -20,7 +20,9 @@ import com.amazonaws.services.schemaregistry.tests.protobuf.syntax3.basic.Hyphen
 import com.amazonaws.services.schemaregistry.tests.protobuf.syntax3.basic.NestedConflictingClassNameOuterClass;
 import com.amazonaws.services.schemaregistry.tests.protobuf.syntax3.basic.Unicode;
 import com.amazonaws.services.schemaregistry.tests.protobuf.syntax3.snake_case.AnotherSnakeCaseProtoFile;
+import com.amazonaws.services.schemaregistry.utils.AWSSchemaRegistryConstants;
 import com.amazonaws.services.schemaregistry.utils.ProtobufMessageType;
+import com.amazonaws.services.schemaregistry.utils.apicurio.FileDescriptorUtils;
 import com.google.protobuf.Descriptors;
 import com.google.protobuf.DynamicMessage;
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -32,11 +34,15 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import static com.amazonaws.services.schemaregistry.serializers.protobuf.ProtobufGenerator.*;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -107,6 +113,123 @@ public class ProtobufWireFormatDecoderTest {
         Throwable rootCause = ex.getCause();
         assertEquals(ClassNotFoundException.class, rootCause.getClass());
         assertEquals("foo.NonExistent$NonExistentSchema", rootCause.getMessage());
+    }
+
+    /**
+     * A schema may name any class on the consumer's classpath through {@code java_package} plus
+     * the message name. Resolving one that is not a Protobuf message must fail, and must fail
+     * without initializing it: {@code Class.forName(String)} runs the static initializer as a
+     * side effect of loading, so a decoder that loads before it checks lets a schema author run
+     * code in the consumer.
+     */
+    @Test
+    public void testDecode_WhenSchemaNamesNonMessageClass_ThrowsAndDoesNotInitializeIt()
+        throws Exception {
+
+        Message probeMessage = craftMessageResolvingTo(
+            "com.amazonaws.services.schemaregistry.deserializers.protobuf",
+            "StaticInitializerProbe");
+        byte[] data = protobufSerializer.serialize(probeMessage);
+        Descriptors.FileDescriptor fileDescriptor = probeMessage.getDescriptorForType().getFile();
+
+        Exception ex = assertThrows(RuntimeException.class,
+            () -> decoder.decode(data, fileDescriptor, ProtobufMessageType.POJO));
+
+        // Asserted before the message, so that a regression is reported as the security property
+        // it breaks rather than as a changed string.
+        assertFalse(StaticInitializerFlag.isTripped(),
+            "StaticInitializerProbe was initialized, so a schema can still run a static "
+                + "initializer on the consumer");
+
+        assertEquals("Protobuf schema resolves to class "
+            + "com.amazonaws.services.schemaregistry.deserializers.protobuf.StaticInitializerProbe, "
+            + "which is not a com.google.protobuf.Message.", ex.getMessage());
+    }
+
+    @Test
+    public void testDecode_WhenAllowlistExcludesResolvedClass_ThrowsException() throws IOException {
+        ProtobufWireFormatDecoder allowlistedDecoder =
+            decoderWithAllowlist("com.example.NotOnThisTopic");
+        byte[] data = protobufSerializer.serialize(BASIC_SYNTAX3_MESSAGE);
+        Descriptors.FileDescriptor fileDescriptor = BASIC_SYNTAX3_MESSAGE.getDescriptorForType().getFile();
+
+        Exception ex = assertThrows(RuntimeException.class,
+            () -> allowlistedDecoder.decode(data, fileDescriptor, ProtobufMessageType.POJO));
+        assertEquals(String.format(
+            "Protobuf schema resolves to class %s, which is not permitted by protobufClassNameAllowlist.",
+            Basicsyntax3.Phone.class.getName()), ex.getMessage());
+    }
+
+    @Test
+    public void testDecode_WhenAllowlistNamesResolvedClass_Succeeds() throws IOException {
+        ProtobufWireFormatDecoder allowlistedDecoder =
+            decoderWithAllowlist(Basicsyntax3.Phone.class.getName());
+        byte[] data = protobufSerializer.serialize(BASIC_SYNTAX3_MESSAGE);
+        Descriptors.FileDescriptor fileDescriptor = BASIC_SYNTAX3_MESSAGE.getDescriptorForType().getFile();
+
+        Object decoded = allowlistedDecoder.decode(data, fileDescriptor, ProtobufMessageType.POJO);
+
+        assertEquals(BASIC_SYNTAX3_MESSAGE, decoded);
+    }
+
+    @Test
+    public void testDecode_WhenAllowlistScopesPackageOfResolvedClass_Succeeds() throws IOException {
+        ProtobufWireFormatDecoder allowlistedDecoder = decoderWithAllowlist(
+            "com.amazonaws.services.schemaregistry.tests.protobuf.syntax3.basic.*");
+        byte[] data = protobufSerializer.serialize(BASIC_SYNTAX3_MESSAGE);
+        Descriptors.FileDescriptor fileDescriptor = BASIC_SYNTAX3_MESSAGE.getDescriptorForType().getFile();
+
+        Object decoded = allowlistedDecoder.decode(data, fileDescriptor, ProtobufMessageType.POJO);
+
+        assertEquals(BASIC_SYNTAX3_MESSAGE, decoded);
+    }
+
+    /**
+     * An unset allowlist must leave existing POJO consumers working, so it means "no allowlist
+     * configured" rather than "deny every class". The {@code Message} check is what bounds an
+     * unconfigured consumer.
+     */
+    @Test
+    public void testDecode_WhenAllowlistIsUnset_Succeeds() throws IOException {
+        ProtobufWireFormatDecoder defaultDecoder = new ProtobufWireFormatDecoder(
+            new MessageIndexFinder(), new GlueSchemaRegistryConfiguration("us-west-2"));
+        byte[] data = protobufSerializer.serialize(BASIC_SYNTAX3_MESSAGE);
+        Descriptors.FileDescriptor fileDescriptor = BASIC_SYNTAX3_MESSAGE.getDescriptorForType().getFile();
+
+        Object decoded = defaultDecoder.decode(data, fileDescriptor, ProtobufMessageType.POJO);
+
+        assertEquals(BASIC_SYNTAX3_MESSAGE, decoded);
+    }
+
+    private ProtobufWireFormatDecoder decoderWithAllowlist(String allowlist) {
+        Map<String, Object> props = new HashMap<>();
+        props.put(AWSSchemaRegistryConstants.AWS_REGION, "us-west-2");
+        props.put(AWSSchemaRegistryConstants.PROTOBUF_CLASS_NAME_ALLOWLIST, allowlist);
+        return new ProtobufWireFormatDecoder(new MessageIndexFinder(),
+            new GlueSchemaRegistryConfiguration(props));
+    }
+
+    /**
+     * Builds a message from schema text whose options make
+     * {@link ProtobufClassName#from(Descriptors.Descriptor)} resolve to
+     * {@code javaPackage.messageName}. Setting {@code java_multiple_files} drops the outer class
+     * segment, so the schema author picks the fully qualified name outright. The schema text goes
+     * through the same parser the deserializer uses on registry content.
+     */
+    private Message craftMessageResolvingTo(String javaPackage,
+                                            String messageName)
+        throws Descriptors.DescriptorValidationException {
+
+        String schemaDefinition = String.format(
+            "package attacker;%n"
+                + "option java_package = \"%s\";%n"
+                + "option java_multiple_files = true;%n"
+                + "message %s { optional string a = 1; }", javaPackage, messageName);
+
+        Descriptors.FileDescriptor fileDescriptor = FileDescriptorUtils
+            .protoFileToFileDescriptor(schemaDefinition, messageName + ".proto", Optional.of("attacker"));
+
+        return DynamicMessage.newBuilder(fileDescriptor.findMessageTypeByName(messageName)).build();
     }
 
     private static Stream<Arguments> getPOJODecoderTestCases() {
