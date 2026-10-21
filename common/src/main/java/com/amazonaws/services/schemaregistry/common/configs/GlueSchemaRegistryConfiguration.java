@@ -66,6 +66,13 @@ public class GlueSchemaRegistryConfiguration {
     private boolean schemaAutoRegistrationEnabled = false;
     private boolean jsonClassNameResolutionEnabled = false;
     private Set<String> jsonClassNameAllowlist = Collections.emptySet();
+    /**
+     * Classes the Protobuf deserializer may instantiate in POJO mode. Empty means no
+     * restriction beyond the {@code com.google.protobuf.Message} check applied
+     * unconditionally in {@code ProtobufWireFormatDecoder}, not deny-all; see
+     * {@link AWSSchemaRegistryConstants#PROTOBUF_CLASS_NAME_ALLOWLIST}.
+     */
+    private Set<String> protobufClassNameAllowlist = Collections.emptySet();
     private Map<String, String> tags = new HashMap<>();
     private Map<String, String> metadata;
     private String secondaryDeserializer;
@@ -128,6 +135,7 @@ public class GlueSchemaRegistryConfiguration {
         validateAndSetCompressionType(configs);
         validateAndSetSchemaAutoRegistrationSetting(configs);
         validateAndSetJsonClassNameResolutionSetting(configs);
+        validateAndSetProtobufClassNameAllowlist(configs);
         validateAndSetJacksonSerializationFeatures(configs);
         validateAndSetJacksonDeserializationFeatures(configs);
         validateAndSetTags(configs);
@@ -318,40 +326,62 @@ public class GlueSchemaRegistryConfiguration {
                      jsonClassNameResolutionEnabled);
         }
 
-        if (isPresent(configs, AWSSchemaRegistryConstants.JSON_CLASS_NAME_ALLOWLIST)) {
-            Object allowlistValue = configs.get(AWSSchemaRegistryConstants.JSON_CLASS_NAME_ALLOWLIST);
-            // Accept either a comma-separated String or a List, matching how the other collection
-            // configs (tags, Jackson features) are supplied. Anything else would otherwise fall
-            // through to toString() and silently produce a single never-matching entry.
-            Stream<String> rawEntries;
-            if (allowlistValue instanceof List) {
-                rawEntries = ((List<?>) allowlistValue).stream().map(String::valueOf);
-            } else if (allowlistValue instanceof String) {
-                rawEntries = Arrays.stream(((String) allowlistValue).split(","));
-            } else {
-                throw new AWSSchemaRegistryException(String.format(
-                        "%s must be a comma-separated String or a List of class names.",
-                        AWSSchemaRegistryConstants.JSON_CLASS_NAME_ALLOWLIST));
-            }
-            // Drop empty entries so that leading, trailing or doubled commas do not put a
-            // never-matching "" into the allowlist.
-            Set<String> allowedClassNames = rawEntries
-                    .map(String::trim)
-                    .filter(className -> !className.isEmpty())
-                    .collect(Collectors.toSet());
-            // A bare "*" would allow every class on the classpath, which is the behavior this
-            // allowlist exists to prevent. Reject it rather than honoring it, so the opt-in cannot
-            // be widened back to the pre-2.0.0 default by a single character.
-            if (allowedClassNames.contains("*") || allowedClassNames.contains(PACKAGE_WILDCARD_SUFFIX)) {
-                throw new AWSSchemaRegistryException(String.format(
-                        "%s must not contain a bare wildcard. List classes explicitly, or scope a "
-                        + "package with a prefix such as \"com.example.pojos.*\".",
-                        AWSSchemaRegistryConstants.JSON_CLASS_NAME_ALLOWLIST));
-            }
-            if (!allowedClassNames.isEmpty()) {
-                this.jsonClassNameAllowlist = allowedClassNames;
-            }
+        Set<String> allowedClassNames =
+                parseClassNameAllowlist(configs, AWSSchemaRegistryConstants.JSON_CLASS_NAME_ALLOWLIST);
+        if (!allowedClassNames.isEmpty()) {
+            this.jsonClassNameAllowlist = allowedClassNames;
         }
+    }
+
+    private void validateAndSetProtobufClassNameAllowlist(Map<String, ?> configs) {
+        Set<String> allowedClassNames =
+                parseClassNameAllowlist(configs, AWSSchemaRegistryConstants.PROTOBUF_CLASS_NAME_ALLOWLIST);
+        if (!allowedClassNames.isEmpty()) {
+            this.protobufClassNameAllowlist = allowedClassNames;
+        }
+    }
+
+    /**
+     * Reads a class-name allowlist from the properties map. Shared by the JSON and Protobuf
+     * allowlists so that entry syntax cannot drift between the two.
+     *
+     * @param configs    properties map
+     * @param configKey  key to read
+     * @return the parsed entries, or an empty set when the key is absent
+     */
+    private Set<String> parseClassNameAllowlist(Map<String, ?> configs,
+                                                String configKey) {
+        if (!isPresent(configs, configKey)) {
+            return Collections.emptySet();
+        }
+        Object allowlistValue = configs.get(configKey);
+        // Accept either a comma-separated String or a List, matching how the other collection
+        // configs (tags, Jackson features) are supplied. Anything else would otherwise fall
+        // through to toString() and silently produce a single never-matching entry.
+        Stream<String> rawEntries;
+        if (allowlistValue instanceof List) {
+            rawEntries = ((List<?>) allowlistValue).stream().map(String::valueOf);
+        } else if (allowlistValue instanceof String) {
+            rawEntries = Arrays.stream(((String) allowlistValue).split(","));
+        } else {
+            throw new AWSSchemaRegistryException(String.format(
+                    "%s must be a comma-separated String or a List of class names.", configKey));
+        }
+        // Drop empty entries so that leading, trailing or doubled commas do not put a
+        // never-matching "" into the allowlist.
+        Set<String> allowedClassNames = rawEntries
+                .map(String::trim)
+                .filter(className -> !className.isEmpty())
+                .collect(Collectors.toSet());
+        // A bare "*" would allow every class on the classpath, which is the behavior this
+        // allowlist exists to prevent. Reject it rather than honoring it, so the opt-in cannot
+        // be widened back to the pre-2.0.0 default by a single character.
+        if (allowedClassNames.contains("*") || allowedClassNames.contains(PACKAGE_WILDCARD_SUFFIX)) {
+            throw new AWSSchemaRegistryException(String.format(
+                    "%s must not contain a bare wildcard. List classes explicitly, or scope a "
+                    + "package with a prefix such as \"com.example.pojos.*\".", configKey));
+        }
+        return allowedClassNames;
     }
 
     /**
@@ -377,10 +407,46 @@ public class GlueSchemaRegistryConfiguration {
         if (className == null || jsonClassNameAllowlist == null) {
             return false;
         }
-        if (jsonClassNameAllowlist.contains(className)) {
+        return matchesAllowlist(className, jsonClassNameAllowlist);
+    }
+
+    /**
+     * Whether the Protobuf deserializer may instantiate {@code className} in POJO mode.
+     * Entry matching is identical to {@link #isClassNameAllowed(String)}.
+     * <p>
+     * An empty allowlist returns {@code true}, meaning "no restriction configured", which is
+     * the opposite of the empty-means-deny-all rule for the JSON allowlist. POJO-mode Protobuf
+     * has no equivalent of {@code JsonDataWithSchema} to fall back to, so a deny-all default
+     * would break every existing consumer rather than degrading it. The unconditional
+     * {@code com.google.protobuf.Message} check in {@code ProtobufWireFormatDecoder} is what
+     * bounds an unconfigured consumer; this allowlist narrows it further to a named set.
+     *
+     * @param className fully qualified class name derived from the schema
+     * @return {@code true} if the allowlist permits instantiating it, or is empty
+     */
+    public boolean isProtobufClassNameAllowed(String className) {
+        if (protobufClassNameAllowlist == null || protobufClassNameAllowlist.isEmpty()) {
             return true;
         }
-        return jsonClassNameAllowlist.stream()
+        if (className == null) {
+            return false;
+        }
+        return matchesAllowlist(className, protobufClassNameAllowlist);
+    }
+
+    /**
+     * Exact-or-package match of {@code className} against {@code allowlist}.
+     *
+     * @param className fully qualified class name named by the schema
+     * @param allowlist configured entries, already trimmed
+     * @return {@code true} if any entry permits the class
+     */
+    private static boolean matchesAllowlist(String className,
+                                            Set<String> allowlist) {
+        if (allowlist.contains(className)) {
+            return true;
+        }
+        return allowlist.stream()
                 .filter(entry -> entry.endsWith(PACKAGE_WILDCARD_SUFFIX))
                 .filter(entry -> !isBareWildcard(entry))
                 .anyMatch(entry -> isDirectlyInPackage(className, entry));

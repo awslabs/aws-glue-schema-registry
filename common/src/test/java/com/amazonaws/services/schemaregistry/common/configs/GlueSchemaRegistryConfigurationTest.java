@@ -531,11 +531,120 @@ public class GlueSchemaRegistryConfigurationTest {
     }
 
     /**
+     * Tests that the Protobuf allowlist defaults to empty when not configured.
+     */
+    @Test
+    public void testProtobufClassNameAllowlist_notConfigured_defaultsToEmpty() {
+        Properties props = createTestProperties();
+        GlueSchemaRegistryConfiguration config = new GlueSchemaRegistryConfiguration(props);
+
+        assertNotNull(config.getProtobufClassNameAllowlist());
+        assertTrue(config.getProtobufClassNameAllowlist().isEmpty());
+    }
+
+    /**
+     * Tests that the Protobuf allowlist is parsed with the same entry syntax as the JSON one.
+     */
+    @Test
+    public void testProtobufClassNameAllowlist_commaSeparated_isParsedCorrectly() {
+        Properties props = createTestProperties();
+        props.put(AWSSchemaRegistryConstants.PROTOBUF_CLASS_NAME_ALLOWLIST,
+                  ",com.example.Foo, com.example.Bar, ,");
+        GlueSchemaRegistryConfiguration config = new GlueSchemaRegistryConfiguration(props);
+
+        assertEquals(2, config.getProtobufClassNameAllowlist().size());
+        assertTrue(config.getProtobufClassNameAllowlist().contains("com.example.Foo"));
+        assertTrue(config.getProtobufClassNameAllowlist().contains("com.example.Bar"));
+        assertFalse(config.getProtobufClassNameAllowlist().contains(""));
+    }
+
+    /**
+     * Tests that an unconfigured Protobuf allowlist permits any class, which is the opposite of
+     * the empty-means-deny-all rule for JSON. POJO-mode Protobuf has no safe fallback object to
+     * return, so deny-all by default would break every existing consumer rather than degrade it.
+     * The {@code Message} check in the decoder is what bounds an unconfigured consumer.
+     */
+    @Test
+    public void testIsProtobufClassNameAllowed_notConfigured_allowsAnyClass() {
+        Properties props = createTestProperties();
+        GlueSchemaRegistryConfiguration config = new GlueSchemaRegistryConfiguration(props);
+
+        assertTrue(config.isProtobufClassNameAllowed("com.example.pojos.Car"));
+        assertTrue(config.isProtobufClassNameAllowed("anything.At.All"));
+    }
+
+    /**
+     * Tests that an exact Protobuf allowlist entry allows that class and nothing else.
+     */
+    @Test
+    public void testIsProtobufClassNameAllowed_exactEntry_matchesOnlyThatClass() {
+        GlueSchemaRegistryConfiguration config =
+                configWithProtobufAllowlist("com.example.pojos.Car");
+
+        assertTrue(config.isProtobufClassNameAllowed("com.example.pojos.Car"));
+        assertFalse(config.isProtobufClassNameAllowed("com.example.pojos.Truck"));
+        assertFalse(config.isProtobufClassNameAllowed(null));
+    }
+
+    /**
+     * Tests that a Protobuf package entry allows direct members only, including the nested
+     * classes that protoc generates with a {@code $} separator.
+     */
+    @Test
+    public void testIsProtobufClassNameAllowed_packageEntry_matchesDirectMembersOnly() {
+        GlueSchemaRegistryConfiguration config =
+                configWithProtobufAllowlist("com.example.pojos.*");
+
+        assertTrue(config.isProtobufClassNameAllowed("com.example.pojos.Car"));
+        assertTrue(config.isProtobufClassNameAllowed("com.example.pojos.Outer$Inner"));
+        assertFalse(config.isProtobufClassNameAllowed("com.example.pojos.nested.Car"));
+        assertFalse(config.isProtobufClassNameAllowed("com.example.pojosX.Car"));
+    }
+
+    /**
+     * Tests that a bare wildcard is rejected for Protobuf as it is for JSON, so the allowlist
+     * cannot be widened to every class on the classpath by a single character.
+     */
+    @Test
+    public void testProtobufClassNameAllowlist_bareWildcard_throwsException() {
+        Properties props = createTestProperties();
+        props.put(AWSSchemaRegistryConstants.PROTOBUF_CLASS_NAME_ALLOWLIST, "com.example.Foo,*");
+
+        AWSSchemaRegistryException ex = assertThrows(AWSSchemaRegistryException.class,
+                                                     () -> new GlueSchemaRegistryConfiguration(props));
+        assertTrue(ex.getMessage().contains(AWSSchemaRegistryConstants.PROTOBUF_CLASS_NAME_ALLOWLIST));
+    }
+
+    /**
+     * Tests that the two allowlists are independent, so configuring one data format does not
+     * silently change what the other permits.
+     */
+    @Test
+    public void testClassNameAllowlists_areIndependentPerDataFormat() {
+        Properties props = createTestProperties();
+        props.put(AWSSchemaRegistryConstants.PROTOBUF_CLASS_NAME_ALLOWLIST, "com.example.ProtoOnly");
+        GlueSchemaRegistryConfiguration config = new GlueSchemaRegistryConfiguration(props);
+
+        assertTrue(config.isProtobufClassNameAllowed("com.example.ProtoOnly"));
+        assertTrue(config.getJsonClassNameAllowlist().isEmpty());
+        assertFalse(config.isClassNameAllowed("com.example.ProtoOnly"));
+    }
+
+    /**
      * Builds a configuration whose allowlist is the given comma-separated value.
      */
     private GlueSchemaRegistryConfiguration configWithAllowlist(String allowlist) {
         Properties props = createTestProperties();
         props.put(AWSSchemaRegistryConstants.JSON_CLASS_NAME_ALLOWLIST, allowlist);
+        return new GlueSchemaRegistryConfiguration(props);
+    }
+
+    /**
+     * Builds a configuration whose Protobuf allowlist is the given comma-separated value.
+     */
+    private GlueSchemaRegistryConfiguration configWithProtobufAllowlist(String allowlist) {
+        Properties props = createTestProperties();
+        props.put(AWSSchemaRegistryConstants.PROTOBUF_CLASS_NAME_ALLOWLIST, allowlist);
         return new GlueSchemaRegistryConfiguration(props);
     }
 
