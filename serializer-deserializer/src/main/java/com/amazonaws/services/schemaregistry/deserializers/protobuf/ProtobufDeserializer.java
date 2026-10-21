@@ -50,7 +50,7 @@ public class ProtobufDeserializer implements GlueSchemaRegistryDataFormatDeseria
 
     @Builder
     public ProtobufDeserializer(GlueSchemaRegistryConfiguration configs) {
-        this.protoDecoder = new ProtobufWireFormatDecoder(new MessageIndexFinder());
+        this.protoDecoder = new ProtobufWireFormatDecoder(new MessageIndexFinder(), configs);
         this.protobufMessageType = configs.getProtobufMessageType();
         this.schemaParserCache =
             CacheBuilder
