@@ -89,10 +89,13 @@
         <kafka.version>3.9.2</kafka.version>
         <avro.version>1.11.4</avro.version>
         <mbknor.jsonschema.converter.version>1.0.39</mbknor.jsonschema.converter.version>
+        <!-- scala-library arrives transitively via mbknor-jackson-jsonschema, which pins 2.13.1. Pinned ahead
+             of it to remediate CVE-2022-36944; 2.13.x releases are binary compatible. -->
+        <scala.library.version>2.13.18</scala.library.version>
         <everit.json.schema.version>1.14.5</everit.json.schema.version>
         <classgraph.version>4.8.120</classgraph.version>
         <commons.lang.version>3.8.1</commons.lang.version>
-        <jackson.version>2.22.3</jackson.version>
+        <jackson.version>2.22.4</jackson.version>
         <!-- Protobuf -->
         <proto-plugin.version>0.6.1</proto-plugin.version>
 	<protobuf.version>3.25.5</protobuf.version>
@@ -273,6 +276,11 @@
                 <groupId>com.kjetland</groupId>
                 <artifactId>mbknor-jackson-jsonschema_${kafka.scala.version}</artifactId>
                 <version>${mbknor.jsonschema.converter.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.scala-lang</groupId>
+                <artifactId>scala-library</artifactId>
+                <version>${scala.library.version}</version>
             </dependency>
             <!-- Temporarily adding dependency on a transitive dependency to fix security bug in underlying library. Remove when dependency is upgraded. -->
             <dependency>
