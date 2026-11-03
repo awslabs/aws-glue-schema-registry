@@ -2,6 +2,13 @@
 # Fail bash if any command fails
 set -e
 
+# Kafka Connect worker image
+CONNECT_IMAGE=apache/kafka:3.8.0
+# Suffix for this run's Glue schema names, so schema versions left by earlier runs cannot fail it
+RUN_ID=$(date +%y%m%d%H%M%S)-$RANDOM
+# Per-run copies of the connector configs and the plugin directories
+CONNECT_WORK_DIR=target/kafka-connect
+
 ### Begin with a clean start
 cleanUpDockerResources() {
     docker kill $(docker ps -q)
@@ -57,44 +64,59 @@ downloadMongoDBConnector() {
         echo "$MONGO_CONNECTOR does not exist, downloading.."
         wget -O mongo-kafka-connect-1.3.0-all.jar https://search.maven.org/remotecontent?filepath=org/mongodb/kafka/mongo-kafka-connect/1.3.0/mongo-kafka-connect-1.3.0-all.jar
     fi
+    ## mongo-kafka-connect 1.3.0 needs Avro 1.9.2 at runtime but does not bundle it
+    MONGO_CONNECTOR_AVRO=avro-1.9.2.jar
+    if [ -f "$MONGO_CONNECTOR_AVRO" ]; then
+        echo "$MONGO_CONNECTOR_AVRO exists, not downloading.."
+    else
+        echo "$MONGO_CONNECTOR_AVRO does not exist, downloading.."
+        wget -O ${MONGO_CONNECTOR_AVRO} https://repo1.maven.org/maven2/org/apache/avro/avro/1.9.2/avro-1.9.2.jar
+    fi
 }
 
 AVRO_CONVERTER=schema-registry-kafkaconnect-converter-*.jar
 JSON_SCHEMA_CONVERTER=jsonschema-kafkaconnect-converter-*.jar
 PROTOBUF_SCHEMA_CONVERTER=protobuf-kafkaconnect-converter-*.jar
 
+## Each converter and the Mongo connector get their own plugin directory, so the worker loads each
+## with an isolated classloader instead of putting them on its classpath
 copyGSRConverters() {
-    cp ../avro-kafkaconnect-converter/target/${AVRO_CONVERTER} .
-    cp ../jsonschema-kafkaconnect-converter/target/${JSON_SCHEMA_CONVERTER} .
-    cp ../protobuf-kafkaconnect-converter/target/${PROTOBUF_SCHEMA_CONVERTER} .
+    rm -rf ${CONNECT_WORK_DIR}/plugins
+    mkdir -p ${CONNECT_WORK_DIR}/plugins/avro ${CONNECT_WORK_DIR}/plugins/json \
+        ${CONNECT_WORK_DIR}/plugins/protobuf ${CONNECT_WORK_DIR}/plugins/mongo
+    cp ../avro-kafkaconnect-converter/target/${AVRO_CONVERTER} ${CONNECT_WORK_DIR}/plugins/avro/
+    cp ../jsonschema-kafkaconnect-converter/target/${JSON_SCHEMA_CONVERTER} ${CONNECT_WORK_DIR}/plugins/json/
+    cp ../protobuf-kafkaconnect-converter/target/${PROTOBUF_SCHEMA_CONVERTER} ${CONNECT_WORK_DIR}/plugins/protobuf/
+    cp ${MONGO_CONNECTOR} ${MONGO_CONNECTOR_AVRO} ${CONNECT_WORK_DIR}/plugins/mongo/
+}
+
+## Copies the connector configs for this run and suffixes the Glue schema names with RUN_ID
+prepareConnectConfigs() {
+    rm -rf ${CONNECT_WORK_DIR}/${1}
+    cp -r kafka-connect-${1}-configs ${CONNECT_WORK_DIR}/${1}
+    sed -i "s/^\(\(key\|value\)\.converter\.schemaName=.*\)$/\1-${RUN_ID}/" \
+        ${CONNECT_WORK_DIR}/${1}/worker.properties ${CONNECT_WORK_DIR}/${1}/file-sink-standalone.properties
 }
 
 startKafkaConnectTasks() {
-    if [ $1 == 'avro' ]; then
-        CONVERTER_JAR=${AVRO_CONVERTER}
-    elif [ $1 == 'json' ]; then
-        CONVERTER_JAR=${JSON_SCHEMA_CONVERTER}
-    elif [ $1 == 'protobuf' ]; then
-        CONVERTER_JAR=${PROTOBUF_SCHEMA_CONVERTER}
-    fi
-
-    ### Get inside the kafka_connect container and run source and sink connector tasks
-    docker pull public.ecr.aws/d4c7g6k3/1ambda/kafka-connect:latest
-    docker run -e CONNECT_BOOTSTRAP_SERVERS="kafka:9092" -d -it -v "$(pwd)":/integration-tests \
+    ### Run the source and sink connector tasks in a Kafka Connect worker.
+    ### FileStreamSink is not on the worker classpath since Kafka 3.2, so it is copied to a plugin directory.
+    docker pull ${CONNECT_IMAGE}
+    docker run -d --user root --net=host \
+    -v "$(pwd)/${CONNECT_WORK_DIR}/${1}":/connect \
+    -v "$(pwd)/${CONNECT_WORK_DIR}/plugins/${1}":/plugins/gsr:ro \
+    -v "$(pwd)/${CONNECT_WORK_DIR}/plugins/mongo":/plugins/mongo:ro \
     -v $HOME/.aws/credentials:/root/.aws/credentials:ro \
-    --net=host public.ecr.aws/d4c7g6k3/1ambda/kafka-connect:latest bash \
-    -c "unset JMX_PORT;\\
-    cd /integration-tests/kafka-connect-${1}-configs;\\
-    cp ../${CONVERTER_JAR} /opt/kafka_2.11-0.10.0.0/libs/;\\
-    cp ../mongo-kafka-connect-1.3.0-all.jar /opt/kafka_2.11-0.10.0.0/libs/;\\
-    stop /opt/kafka_2.11-0.10.0.0/bin/connect-standalone.sh;\\
-    nohup /opt/kafka_2.11-0.10.0.0/bin/connect-standalone.sh worker.properties mongo-source-standalone.properties \\
+    --entrypoint bash ${CONNECT_IMAGE} \
+    -c "mkdir -p /plugins/connect-file && cp /opt/kafka/libs/connect-file-*.jar /plugins/connect-file/ && \
+    cd /connect && \
+    /opt/kafka/bin/connect-standalone.sh worker.properties mongo-source-standalone.properties \
     file-sink-standalone.properties"
 }
 
 validateSinkOutput() {
     ### Assert if sink file is generated and records exist
-    SINK_FILE=kafka-connect-${1}-configs/sink-file.txt
+    SINK_FILE=${CONNECT_WORK_DIR}/${1}/sink-file.txt
     if [ -f "$SINK_FILE" ]; then
         echo "$SINK_FILE was generated successfully, validating contents.."
         count=$(wc -l < "$SINK_FILE")
@@ -108,9 +130,19 @@ validateSinkOutput() {
     fi
 }
 
+## Deletes the Glue schemas this run registered for the format
+deleteConnectSchemas() {
+    region=$(sed -n 's/^value\.converter\.region=//p' ${CONNECT_WORK_DIR}/${1}/worker.properties)
+    for schemaName in $(sed -n 's/^\(key\|value\)\.converter\.schemaName=//p' ${CONNECT_WORK_DIR}/${1}/worker.properties); do
+        echo "Deleting Glue schema ${schemaName}.."
+        aws glue delete-schema --region ${region} \
+            --schema-id SchemaName=${schemaName},RegistryName=default-registry > /dev/null \
+            || echo "Could not delete Glue schema ${schemaName}"
+    done
+}
+
 cleanUpConnectFiles() {
-    rm -rf kafka-connect-${1}-configs/sink-file.txt
-    rm -rf kafka-connect-${1}-configs/standalone.offsets
+    rm -rf ${CONNECT_WORK_DIR}/${1}
 }
 
 cleanUpDockerResources || true
@@ -135,11 +167,13 @@ copyGSRConverters
 runConnectTests() {
     docker-compose up --no-attach localstack &
     setUpMongoDBLocal
+    prepareConnectConfigs ${1}
     startKafkaConnectTasks ${1}
     echo "Waiting for Sink task to pick up data.."
     sleep 60
     validateSinkOutput ${1}
     ## Clean-up
+    deleteConnectSchemas ${1}
     cleanUpConnectFiles ${1}
     cleanUpDockerResources
 }
