@@ -94,8 +94,9 @@ copyGSRConverters() {
 prepareConnectConfigs() {
     rm -rf ${CONNECT_WORK_DIR}/${1}
     cp -r kafka-connect-${1}-configs ${CONNECT_WORK_DIR}/${1}
-    sed -i "s/^\(\(key\|value\)\.converter\.schemaName=.*\)$/\1-${RUN_ID}/" \
+    sed -E -i.bak "s/^((key|value)\.converter\.schemaName=.*)$/\1-${RUN_ID}/" \
         ${CONNECT_WORK_DIR}/${1}/worker.properties ${CONNECT_WORK_DIR}/${1}/file-sink-standalone.properties
+    rm -f ${CONNECT_WORK_DIR}/${1}/*.bak
 }
 
 startKafkaConnectTasks() {
@@ -133,7 +134,7 @@ validateSinkOutput() {
 ## Deletes the Glue schemas this run registered for the format
 deleteConnectSchemas() {
     region=$(sed -n 's/^value\.converter\.region=//p' ${CONNECT_WORK_DIR}/${1}/worker.properties)
-    for schemaName in $(sed -n 's/^\(key\|value\)\.converter\.schemaName=//p' ${CONNECT_WORK_DIR}/${1}/worker.properties); do
+    for schemaName in $(sed -E -n 's/^(key|value)\.converter\.schemaName=//p' ${CONNECT_WORK_DIR}/${1}/worker.properties); do
         echo "Deleting Glue schema ${schemaName}.."
         aws glue delete-schema --region ${region} \
             --schema-id SchemaName=${schemaName},RegistryName=default-registry > /dev/null \
