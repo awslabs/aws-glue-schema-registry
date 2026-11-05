@@ -232,10 +232,6 @@
             <artifactId>junit-jupiter-api</artifactId>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>com.google.protobuf</groupId>
-            <artifactId>protobuf-java</artifactId>
-        </dependency>
         <!-- Temporarily adding dependency on a transitive dependency to fix security bug in underlying library. Remove when dependency is upgraded. -->
         <dependency>
             <groupId>org.apache.commons</groupId>
