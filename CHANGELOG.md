@@ -124,3 +124,9 @@ GlueSchemaRegistryKafkaSerializer/GlueSchemaRegistryKafkaDeserializer.
 ## Release 2.0.1
 * **Security fix.** Upgraded Jackson to 2.22.3 to remediate [CVE-2025-52999](https://nvd.nist.gov/vuln/detail/CVE-2025-52999).
 * **Security fix.** Upgraded Netty to 4.1.138.Final to remediate [CVE-2026-33870](https://nvd.nist.gov/vuln/detail/CVE-2026-33870).
+
+## Release 2.0.2
+* **Security fix.** Pinned `scala-library` to 2.13.18 to remediate [CVE-2022-36944](https://nvd.nist.gov/vuln/detail/CVE-2022-36944). It arrives transitively through `mbknor-jackson-jsonschema`, which asks for 2.13.1, and is bundled in the Kafka Connect converter jars.
+* **Security fix.** Upgraded Jackson to 2.22.4 to remediate [CVE-2026-110879](https://nvd.nist.gov/vuln/detail/CVE-2026-110879).
+* **Fix.** `schema-registry-serde` and `schema-registry-common` now declare `scala-library` and Jackson directly, so applications that depend on them resolve the fixed versions without pinning them.
+* **Fix.** Removed a duplicate `protobuf-java` declaration from the `schema-registry-serde` POM, which Maven 3.10 rejects.
