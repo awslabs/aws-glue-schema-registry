@@ -1,0 +1,4 @@
+# Maintainers must approve each change to the GitHub Actions workflows
+# and to this file.
+/.github/workflows/ @awslabs/amazon-glue-schema-registry
+/.github/CODEOWNERS @awslabs/amazon-glue-schema-registry
