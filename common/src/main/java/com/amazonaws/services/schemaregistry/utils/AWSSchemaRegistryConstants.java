@@ -218,6 +218,31 @@ public final class AWSSchemaRegistryConstants {
     public static final String JSON_CLASS_NAME_ALLOWLIST = "jsonClassNameAllowlist";
 
     /**
+     * Comma-separated list of fully qualified class names that the Protobuf deserializer is
+     * permitted to instantiate when {@link #PROTOBUF_MESSAGE_TYPE} is {@code POJO}. Entry
+     * syntax matches {@link #JSON_CLASS_NAME_ALLOWLIST}: surrounding whitespace is ignored,
+     * an entry ending in {@code ".*"} allows every class directly under that package, the
+     * match is a literal prefix test rather than a regular expression, and a bare {@code "*"}
+     * is rejected.
+     * <p>
+     * Defaults to empty, which does <em>not</em> mean "deny every class". It means no
+     * restriction beyond the unconditional check that the resolved class is a
+     * {@code com.google.protobuf.Message}. This inverts the meaning of an empty
+     * {@link #JSON_CLASS_NAME_ALLOWLIST} deliberately: the JSON deserializer has a safe
+     * fallback to return in {@code JsonDataWithSchema}, whereas POJO-mode Protobuf has no
+     * fallback object, so defaulting to deny-all would break every existing consumer.
+     * <p>
+     * Set this when a topic carries a known, fixed set of message types. The {@code Message}
+     * check alone stops a schema from naming an arbitrary class on the classpath, but it
+     * cannot stop a schema from naming a <em>different</em> generated message type than the
+     * one the application expects. An allowlist is the only control for that case.
+     *
+     * @see #PROTOBUF_MESSAGE_TYPE
+     * @see #JSON_CLASS_NAME_ALLOWLIST
+     */
+    public static final String PROTOBUF_CLASS_NAME_ALLOWLIST = "protobufClassNameAllowlist";
+
+    /**
      * IAM Role ARN to assume for accessing the registry
      */
     public static final String ASSUME_ROLE_ARN = "assumeRoleArn";
