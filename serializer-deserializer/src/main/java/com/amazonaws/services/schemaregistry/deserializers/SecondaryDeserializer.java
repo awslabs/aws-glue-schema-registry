@@ -17,10 +17,10 @@ package com.amazonaws.services.schemaregistry.deserializers;
 import com.amazonaws.services.schemaregistry.exception.AWSSchemaRegistryException;
 import com.amazonaws.services.schemaregistry.utils.AWSSchemaRegistryConstants;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.common.serialization.Deserializer;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.Arrays;
 import java.util.Map;
 
 @Slf4j
@@ -45,19 +45,43 @@ public class SecondaryDeserializer {
 
     }
 
+    /**
+     * Reports whether the configured class is a Kafka {@link Deserializer}, checking it before it
+     * is initialized or constructed.
+     *
+     * @param configs property map carrying {@code secondaryDeserializer}
+     * @return {@code true} if the configured class is a Kafka {@link Deserializer}
+     * @throws AWSSchemaRegistryException if the class cannot be found or cannot be instantiated
+     */
     public boolean validate(Map<String, ?> configs) {
         Object className = configs.get(AWSSchemaRegistryConstants.SECONDARY_DESERIALIZER);
         String secDeserializer = String.valueOf(className);
 
+        final Class<?> candidate;
         try {
-            this.clz = Class.forName(secDeserializer);
-            this.obj = this.clz.newInstance();
-            return Arrays.asList(this.clz.getInterfaces()).contains(Class.forName(
-                    "org.apache.kafka.common.serialization.Deserializer"));
-        } catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
+            // initialize=false defers the static initializer until the check below passes.
+            // Same classloader the one-argument Class.forName used.
+            candidate = Class.forName(secDeserializer, false, SecondaryDeserializer.class.getClassLoader());
+        } catch (ClassNotFoundException e) {
             String message = "Can't find the class or instantiate it.";
             throw new AWSSchemaRegistryException(message, e);
         }
+
+        // isAssignableFrom, not getInterfaces(): the latter misses an interface inherited
+        // from a superclass.
+        if (!Deserializer.class.isAssignableFrom(candidate)) {
+            return false;
+        }
+
+        try {
+            this.clz = candidate;
+            this.obj = candidate.newInstance();
+        } catch (IllegalAccessException | InstantiationException e) {
+            String message = "Can't find the class or instantiate it.";
+            throw new AWSSchemaRegistryException(message, e);
+        }
+
+        return true;
     }
 
     public Object deserialize(String topic, byte[] data) {

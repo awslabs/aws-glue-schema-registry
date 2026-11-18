@@ -15,6 +15,7 @@
 package com.amazonaws.services.schemaregistry.deserializers;
 
 import com.amazonaws.services.schemaregistry.common.configs.GlueSchemaRegistryConfiguration;
+import com.amazonaws.services.schemaregistry.deserializers.external.SecondaryDeserializerProbeFlag;
 import com.amazonaws.services.schemaregistry.exception.AWSSchemaRegistryException;
 import com.amazonaws.services.schemaregistry.utils.AWSSchemaRegistryConstants;
 import org.apache.kafka.common.serialization.IntegerDeserializer;
@@ -33,6 +34,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -46,6 +48,10 @@ public class SecondaryDeserializerTest {
             "com.amazonaws.services.schemaregistry.deserializers.external.ThirdPartyDeserializer";
     private static final String NON_KAFKA_SECONDARY_DESERIALIZER =
             "com.amazonaws.services.schemaregistry.deserializers.external.NotKafkaDeserializer";
+    private static final String NON_KAFKA_SECONDARY_DESERIALIZER_PROBE =
+            "com.amazonaws.services.schemaregistry.deserializers.external.NotKafkaDeserializerProbe";
+    private static final String INHERITED_SECONDARY_DESERIALIZER =
+            "com.amazonaws.services.schemaregistry.deserializers.external.InheritedDeserializer";
     private static final String EMPTY_SECONDARY_DESERIALIZER = "";
     private static final String NON_KAFKA_SECONDARY_DESERIALIZER_EXCEPTION_MSG =
             "The secondary deserializer is not from Kafka";
@@ -177,6 +183,41 @@ public class SecondaryDeserializerTest {
                 () -> glueSchemaRegistryKafkaDeserializer.configure(configs, true));
 
         assertEquals(NULL_SECONDARY_DESERIALIZER_EXCEPTION_MSG, exception.getMessage());
+    }
+
+    /**
+     * Rejection alone is not the property under test: the configured class must not run at all.
+     */
+    @Test
+    public void testSecondaryDeserializer_nonKafkaDeserializer_isNeitherInitializedNorConstructed() {
+        Map<String, Object> configs = getConfigsWithSecondaryDeserializer(NON_KAFKA_SECONDARY_DESERIALIZER_PROBE);
+        GlueSchemaRegistryKafkaDeserializer glueSchemaRegistryKafkaDeserializer = new GlueSchemaRegistryKafkaDeserializer();
+
+        Exception exception = assertThrows(AWSSchemaRegistryException.class,
+                () -> glueSchemaRegistryKafkaDeserializer.configure(configs, true));
+
+        // Before the message assertion, so a regression reports the broken property.
+        assertFalse(SecondaryDeserializerProbeFlag.staticInitRan(),
+                "NotKafkaDeserializerProbe was initialized, so a configured class can still run a "
+                        + "static initializer in the worker");
+        assertFalse(SecondaryDeserializerProbeFlag.constructed(),
+                "NotKafkaDeserializerProbe was constructed, so a configured class can still run a "
+                        + "constructor in the worker");
+
+        assertEquals(NON_KAFKA_SECONDARY_DESERIALIZER_EXCEPTION_MSG, exception.getMessage());
+    }
+
+    /**
+     * getInterfaces() rejected a de-serializer that inherits the interface. isAssignableFrom does not.
+     */
+    @Test
+    public void testSecondaryDeserializer_deserializerInheritingTheInterface_isAccepted() {
+        byte[] serializedBytes = { 0000 };
+
+        Map<String, Object> configs = getConfigsWithSecondaryDeserializer(INHERITED_SECONDARY_DESERIALIZER);
+        Object deserializedObject = deserialize(configs, serializedBytes);
+
+        assertNotNull(deserializedObject);
     }
 
     private Map<String, Object> getConfigsWithSecondaryDeserializer(String className) {
