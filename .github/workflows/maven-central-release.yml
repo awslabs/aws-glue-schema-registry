@@ -1,0 +1,53 @@
+name: Maven Central Release
+
+# Starts the Maven Central release build in AWS CodeBuild when a release is
+# published. This workflow only starts the build. It checks out no code, reads
+# no secret, and builds, signs and publishes nothing. CodeBuild does that work.
+
+on:
+  release:
+    types: [published]
+
+permissions: {}
+
+concurrency:
+  group: maven-central-release-${{ github.event.release.tag_name }}
+  cancel-in-progress: false
+
+jobs:
+  start-release-build:
+    if: github.repository == 'awslabs/aws-glue-schema-registry' && !github.event.release.prerelease
+    runs-on: ubuntu-latest
+    environment: maven-central-release
+    permissions:
+      id-token: write
+    timeout-minutes: 10
+    steps:
+      - name: Check the tag
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          if ! [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::The release tag '$TAG' is not vX.Y.Z."
+            exit 1
+          fi
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: arn:aws:iam::129015943925:role/gsr-maven-central-publish-oidc-role
+          aws-region: us-west-2
+          role-session-name: gsr-maven-central-release-${{ github.run_id }}
+
+      - name: Start the release build
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          if ! build_id="$(aws codebuild start-build \
+            --project-name gsr-maven-release-build \
+            --source-version "refs/tags/$TAG" \
+            --query 'build.id' --output text)"; then
+            echo "::error::StartBuild failed for the release tag '$TAG'."
+            exit 1
+          fi
+          echo "Started CodeBuild build: $build_id"
