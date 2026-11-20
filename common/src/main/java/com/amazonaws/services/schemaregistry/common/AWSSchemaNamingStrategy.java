@@ -28,7 +28,7 @@ public interface AWSSchemaNamingStrategy {
     default String getSchemaName(String transportName,
                                  Object data,
                                  boolean isKey) {
-        return isKey ? getSchemaName(transportName) : getSchemaName(transportName, data);
+        return isKey ? getSchemaName(transportName).concat(".key") : getSchemaName(transportName, data);
     }
 
     /**
