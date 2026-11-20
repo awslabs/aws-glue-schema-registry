@@ -130,3 +130,9 @@ GlueSchemaRegistryKafkaSerializer/GlueSchemaRegistryKafkaDeserializer.
 * **Security fix.** Upgraded Jackson to 2.22.4 to remediate [CVE-2026-110879](https://nvd.nist.gov/vuln/detail/CVE-2026-110879).
 * **Fix.** `schema-registry-serde` and `schema-registry-common` now declare `scala-library` and Jackson directly, so applications that depend on them resolve the fixed versions without pinning them.
 * **Fix.** Removed a duplicate `protobuf-java` declaration from the `schema-registry-serde` POM, which Maven 3.10 rejects.
+
+## Release 3.0.0
+* **Breaking change.** The Avro deserializer rejects a `SPECIFIC_RECORD` reader class that is not an `org.apache.avro.specific.SpecificRecord`, and resolves it without initializing it. A schema naming such a class, or one absent from the classpath, now throws `IllegalArgumentException` instead of being loaded and constructed. `GENERIC_RECORD` mode is unchanged.
+* **Breaking change.** The Protobuf deserializer rejects a `POJO`-mode class that is not a `com.google.protobuf.Message`, and resolves it without running its static initializer. Such a schema now throws `RuntimeException`. `DYNAMIC_MESSAGE` mode is unchanged.
+* **New feature.** New `protobufClassNameAllowlist` restricts `POJO`-mode Protobuf deserialization to named classes. Entry syntax matches `jsonClassNameAllowlist`, but an empty allowlist means no restriction beyond the `Message` check rather than deny-all, since POJO mode has no fallback object.
+* **Build change.** Publishing a GitHub release now starts the Maven Central build in AWS CodeBuild (`maven-central-release.yml`). `.github/CODEOWNERS` requires maintainer approval for workflow changes, and `central-publishing-maven-plugin` moves from 0.7.0 to 0.12.0 in the parent and all module POMs.
