@@ -16,7 +16,8 @@ concurrency:
 
 jobs:
   start-release-build:
-    if: github.repository == 'awslabs/aws-glue-schema-registry' && !github.event.release.prerelease
+    # C# releases (csharp-vX.Y.Z) are handled by nuget-release.yml.
+    if: github.repository == 'awslabs/aws-glue-schema-registry' && !github.event.release.prerelease && startsWith(github.event.release.tag_name, 'v')
     runs-on: ubuntu-latest
     environment: maven-central-release
     permissions:
