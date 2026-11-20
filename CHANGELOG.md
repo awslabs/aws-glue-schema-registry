@@ -136,3 +136,6 @@ GlueSchemaRegistryKafkaSerializer/GlueSchemaRegistryKafkaDeserializer.
 * **Breaking change.** The Protobuf deserializer rejects a `POJO`-mode class that is not a `com.google.protobuf.Message`, and resolves it without running its static initializer. Such a schema now throws `RuntimeException`. `DYNAMIC_MESSAGE` mode is unchanged.
 * **New feature.** New `protobufClassNameAllowlist` restricts `POJO`-mode Protobuf deserialization to named classes. Entry syntax matches `jsonClassNameAllowlist`, but an empty allowlist means no restriction beyond the `Message` check rather than deny-all, since POJO mode has no fallback object.
 * **Build change.** Publishing a GitHub release now starts the Maven Central build in AWS CodeBuild (`maven-central-release.yml`). `.github/CODEOWNERS` requires maintainer approval for workflow changes, and `central-publishing-maven-plugin` moves from 0.7.0 to 0.12.0 in the parent and all module POMs.
+
+## Release 3.0.1
+* **Fix.** `SecondaryDeserializer.validate()` checks that the configured class is a Kafka `Deserializer` before initializing or constructing it. It also now accepts a deserializer that inherits the interface from a superclass, which the previous `getInterfaces()` check rejected.
