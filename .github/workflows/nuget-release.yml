@@ -1,24 +1,18 @@
 name: NuGet Release
 
 # Starts the C# (NuGet) release in AWS CodeBuild when a csharp-vX.Y.Z release is
-# published, or when a maintainer runs it by hand for an existing tag. This
-# workflow only starts the build. It checks out no code, reads no secret, and
+# published. There is no manual trigger: a release is the only way to start it.
+# This workflow only starts the build. It checks out no code, reads no secret, and
 # builds, signs and publishes nothing. CodeBuild does that work.
 
 on:
   release:
     types: [published]
-  workflow_dispatch:
-    inputs:
-      tag:
-        description: Existing csharp-vX.Y.Z tag to build
-        required: true
-        type: string
 
 permissions: {}
 
 concurrency:
-  group: nuget-release-${{ github.event.release.tag_name || inputs.tag }}
+  group: nuget-release-${{ github.event.release.tag_name }}
   cancel-in-progress: false
 
 jobs:
@@ -26,8 +20,8 @@ jobs:
     # Java releases (vX.Y.Z) are handled by maven-central-release.yml.
     if: >-
       github.repository == 'awslabs/aws-glue-schema-registry' &&
-      (github.event_name == 'workflow_dispatch' ||
-       (!github.event.release.prerelease && startsWith(github.event.release.tag_name, 'csharp-v')))
+      !github.event.release.prerelease &&
+      startsWith(github.event.release.tag_name, 'csharp-v')
     runs-on: ubuntu-latest
     environment: nuget-release
     permissions:
@@ -36,7 +30,7 @@ jobs:
     steps:
       - name: Check the tag
         env:
-          TAG: ${{ github.event.release.tag_name || inputs.tag }}
+          TAG: ${{ github.event.release.tag_name }}
         run: |
           if ! [[ "$TAG" =~ ^csharp-v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "::error::The release tag '$TAG' is not csharp-vX.Y.Z."
@@ -52,7 +46,7 @@ jobs:
 
       - name: Start the release build
         env:
-          TAG: ${{ github.event.release.tag_name || inputs.tag }}
+          TAG: ${{ github.event.release.tag_name }}
         run: |
           if ! build_id="$(aws codebuild start-build \
             --project-name gsr-csharp-release-source \
