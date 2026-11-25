@@ -18,7 +18,12 @@ RUN microdnf install -y dnf dnf-plugins-core && \
     dnf clean all && rm -rf /var/cache/dnf
 
 WORKDIR /tmp
-RUN curl -L https://github.com/madler/zlib/releases/download/v1.3/zlib-1.3.tar.gz | tar -xz && \
+# SHA-256 of zlib-1.3.tar.gz, checked against the release signature of Mark Adler's key
+# 5ED46A6721D365587791E2AA783FCD8E58BCAFBA.
+ARG ZLIB_SHA256=ff0ba4c292013dbc27530b3a81e1f9a813cd39de01ca5e0f8bf355702efa593e
+RUN curl -fsSL -o zlib-1.3.tar.gz https://github.com/madler/zlib/releases/download/v1.3/zlib-1.3.tar.gz && \
+    echo "${ZLIB_SHA256}  zlib-1.3.tar.gz" | sha256sum -c - && \
+    tar -xzf zlib-1.3.tar.gz && rm zlib-1.3.tar.gz && \
     cd zlib-1.3 && \
     CC=x86_64-linux-musl-gcc CFLAGS="-fPIC -O2" ./configure --static && \
     make && \
