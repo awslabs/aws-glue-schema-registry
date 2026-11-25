@@ -1,0 +1,30 @@
+name: Release Tag Check
+
+# Release tags must be vX.Y.Z (Java, Maven Central) or csharp-vX.Y.Z (C#, NuGet).
+# A pre-release may add a suffix (vX.Y.Z-rc1); a full release may not.
+
+on:
+  push:
+    tags: ['**']
+  release:
+    types: [published, edited]
+
+permissions: {}
+
+jobs:
+  check-tag:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check the tag
+        env:
+          TAG: ${{ github.event.release.tag_name || github.ref_name }}
+          EVENT: ${{ github.event_name }}
+          PRERELEASE: ${{ github.event.release.prerelease }}
+        run: |
+          full='^(v|csharp-v)[0-9]+\.[0-9]+\.[0-9]+$'
+          pre='^(v|csharp-v)[0-9]+\.[0-9]+\.[0-9]+-[0-9A-Za-z.-]+$'
+          if [[ $TAG =~ $full ]]; then exit 0; fi
+          if [[ $TAG =~ $pre ]] && { [[ $EVENT == push ]] || [[ $PRERELEASE == true ]]; }; then exit 0; fi
+          echo "::error::Tag '$TAG' must be vX.Y.Z or csharp-vX.Y.Z (a pre-release may add -suffix)."
+          exit 1
